@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Project EDEN — Earth Data &amp; Environment Navigator · ফসল চক্র সিদ্ধান্ত সহায়ক সেবা</title>
+  <title>মাটি কহন · Mati Kohon — নাসার তথ্যে ফসল চক্র ও মাঠের পরামর্শ</title>
   <meta name="theme-color" content="#EEE9E2">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -12,6 +12,7 @@
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,300..500,0..1,0&display=block" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="theme.css">
+  <link rel="stylesheet" href="brand.css">
 </head>
 <body class="state-entry">
   <!--
@@ -23,16 +24,16 @@
   <header class="app-header">
     <div class="header-left">
       <div class="brand">
-        <span class="brand-icon">🌱</span>
+        <span class="brand-icon" aria-hidden="true"><span class="material-symbols-outlined" aria-hidden="true">eco</span></span>
         <div class="brand-text">
-          <h1 class="brand-title">EDEN</h1>
-          <span class="brand-subtitle" data-i18n="brand.subtitle">Project EDEN • Earth Data & Environment Navigator • নাসা স্যাটেলাইট ও কৃষি তথ্য সেবা</span>
+          <h1 class="brand-title" data-i18n="brand.title">মাটি কহন</h1>
+          <span class="brand-subtitle" data-i18n="brand.subtitle">নাসার তথ্যে মাঠের পরামর্শ</span>
         </div>
       </div>
 
       <!-- LOCATION HIERARCHY -->
       <div class="location-badge">
-        <span class="geo-icon">📍</span>
+        <span class="geo-icon"><span class="material-symbols-outlined" aria-hidden="true">location_on</span></span>
         <div class="geo-hierarchy">
           <span class="district" data-i18n="geo.district">রাজশাহী</span>
           <span class="sep">›</span>
@@ -79,7 +80,7 @@
   <section class="entry-screen" id="entryScreen" aria-labelledby="entryTitle">
     <div class="entry-inner">
       <div class="entry-step" id="entryChoose">
-        <p class="entry-eyebrow" data-i18n="entry.eyebrow">মাটি কহন · Project EDEN</p>
+        <p class="entry-eyebrow" data-i18n="entry.eyebrow">মাটি কহন · নাসার তথ্যে মাঠের পরামর্শ</p>
         <h1 id="entryTitle" data-i18n="entry.title">কীভাবে প্রবেশ করবেন?</h1>
         <p class="entry-lead" data-i18n="entry.lead">আপনার ভূমিকা বেছে নিন। দর্শনার্থী হিসেবে সাইন-ইন ছাড়াই খোলা তথ্য দেখা যায়।</p>
         <p class="entry-checking" id="entryChecking" role="status" hidden>
@@ -166,44 +167,25 @@
     </div>
   </section>
 
-  <!-- SCREEN TABS NAVIGATION (each tab lists the roles that see it) -->
-  <nav class="screen-nav">
-    <button class="nav-tab active" data-screen="screen-overview" data-roles="visitor officer">
-      <span class="tab-num" data-num="1">১</span> <span data-i18n="nav.overview">ড্যাশবোর্ড ওভারভিউ</span>
-    </button>
-    <button class="nav-tab" data-screen="screen-weather" data-roles="visitor officer">
-      <span class="tab-num"></span> <span data-i18n="nav.weather">আবহাওয়া</span>
-    </button>
-    <button class="nav-tab" data-screen="screen-farmer" data-roles="farmer">
-      <span class="tab-num" data-num="7">৭</span> <span data-i18n="nav.farmer">কৃষক পোর্টাল</span>
-    </button>
-    <button class="nav-tab" data-screen="screen-planner" data-roles="farmer officer">
-      <span class="tab-num" data-num="2">২</span> <span data-i18n="nav.planner">রোটেশন প্ল্যানার</span>
-    </button>
-    <button class="nav-tab" data-screen="screen-comparison" data-roles="officer">
-      <span class="tab-num" data-num="3">৩</span> <span data-i18n="nav.comparison">৭-ডাইমেনশন তুলনা</span>
-    </button>
-    <button class="nav-tab" data-screen="screen-evidence" data-roles="officer">
-      <span class="tab-num" data-num="4">৪</span> <span data-i18n="nav.evidence">স্যাটেলাইট প্রমাণ ও যুক্তি</span>
-    </button>
-    <button class="nav-tab" data-screen="screen-ipm" data-roles="officer">
-      <span class="tab-num" data-num="5">৫</span> <span data-i18n="nav.ipm">পরিবেশ ও কম কীটনাশক</span>
-    </button>
-    <button class="nav-tab" data-screen="screen-officer" data-roles="officer">
-      <span class="tab-num" data-num="6">৬</span> <span data-i18n="nav.officer">কৃষি কর্মকর্তা ডেস্ক</span>
-    </button>
-    <button class="nav-tab" data-screen="screen-delivery" data-roles="officer">
-      <span class="tab-num" data-num="8">৮</span> <span data-i18n="nav.delivery">অডিও প্রিভিউ ও কল ডেলিভারি</span>
-    </button>
-    <button class="nav-tab" data-screen="screen-companion" data-roles="farmer">
-      <span class="tab-num" data-num="9">৯</span> <span data-i18n="nav.companion">কৃষক মোবাইল সাথী</span>
-    </button>
-    <button class="nav-tab" data-screen="screen-quality" data-roles="officer">
-      <span class="tab-num" data-num="10">১০</span> <span data-i18n="nav.quality">ডেটা মান ও ফ্রেশনেস</span>
-    </button>
-    <button class="nav-tab" data-screen="screen-cattle" data-roles="officer">
-      <span class="tab-num"></span> <span data-i18n="nav.cattle">গবাদিপশু ও খামার</span>
-    </button>
+  <!-- SCREEN NAVIGATION: a side rail grouped by what each role does (each item lists the roles that see it) -->
+  <div class="app-body">
+  <nav class="screen-nav" aria-label="Sections">
+    <p class="nav-group" data-roles="officer" data-i18n="navg.work">কাজ</p>
+    <button class="nav-tab active" data-screen="screen-overview" data-roles="visitor officer"><span class="material-symbols-outlined" aria-hidden="true">space_dashboard</span> <span data-i18n="nav.overview">আজকের চিত্র</span></button>
+    <button class="nav-tab" data-screen="screen-farmer" data-roles="farmer"><span class="material-symbols-outlined" aria-hidden="true">home</span> <span data-i18n="nav.farmer">আমার পরামর্শ</span></button>
+    <button class="nav-tab" data-screen="screen-officer" data-roles="officer"><span class="material-symbols-outlined" aria-hidden="true">assignment_ind</span> <span data-i18n="nav.officer">কৃষকের কেস</span></button>
+    <button class="nav-tab" data-screen="screen-delivery" data-roles="officer"><span class="material-symbols-outlined" aria-hidden="true">call</span> <span data-i18n="nav.delivery">কল ও এসএমএস</span></button>
+    <p class="nav-group" data-roles="officer" data-i18n="navg.plan">পরিকল্পনা</p>
+    <button class="nav-tab" data-screen="screen-planner" data-roles="farmer officer"><span class="material-symbols-outlined" aria-hidden="true">agriculture</span> <span data-i18n="nav.planner">ফসল চক্র পরিকল্পনা</span></button>
+    <button class="nav-tab" data-screen="screen-comparison" data-roles="officer"><span class="material-symbols-outlined" aria-hidden="true">balance</span> <span data-i18n="nav.comparison">বিকল্প তুলনা</span></button>
+    <button class="nav-tab" data-screen="screen-ipm" data-roles="officer"><span class="material-symbols-outlined" aria-hidden="true">pest_control</span> <span data-i18n="nav.ipm">কম কীটনাশক</span></button>
+    <p class="nav-group" data-roles="officer" data-i18n="navg.field">মাঠ</p>
+    <button class="nav-tab" data-screen="screen-weather" data-roles="visitor officer"><span class="material-symbols-outlined" aria-hidden="true">partly_cloudy_day</span> <span data-i18n="nav.weather">আবহাওয়া</span></button>
+    <button class="nav-tab" data-screen="screen-cattle" data-roles="officer"><span class="material-symbols-outlined" aria-hidden="true">pets</span> <span data-i18n="nav.cattle">গবাদিপশু</span></button>
+    <button class="nav-tab" data-screen="screen-companion" data-roles="farmer"><span class="material-symbols-outlined" aria-hidden="true">smartphone</span> <span data-i18n="nav.companion">মোবাইল অ্যাপ</span></button>
+    <p class="nav-group" data-roles="officer" data-i18n="navg.evidence">তথ্য ও প্রমাণ</p>
+    <button class="nav-tab" data-screen="screen-evidence" data-roles="officer"><span class="material-symbols-outlined" aria-hidden="true">satellite_alt</span> <span data-i18n="nav.evidence">স্যাটেলাইট প্রমাণ</span></button>
+    <button class="nav-tab" data-screen="screen-quality" data-roles="officer"><span class="material-symbols-outlined" aria-hidden="true">fact_check</span> <span data-i18n="nav.quality">তথ্যের মান</span></button>
   </nav>
 
   <!-- MAIN CONTAINER -->
@@ -213,10 +195,8 @@
     <!-- SCREEN 1: SAAO OVERVIEW DASHBOARD          -->
     <!-- ========================================== -->
     <section id="screen-overview" class="screen-section active">
-      <div class="overview-grid">
-        <!-- LEFT COLUMN: SUMMARY & ACTIONS -->
-        <div class="overview-left">
-          <div class="card banner-card">
+      <div class="ov-hero">
+        <div class="card banner-card">
             <div class="banner-content">
               <span class="season-badge" data-i18n="overview.season">বর্তমান মৌসুম: আমন ২০২৬</span>
               <h2 data-i18n="overview.title">তালন্দ ইউনিয়ন: আমন থেকে রবি ফসল চক্র সিদ্ধান্ত</h2>
@@ -241,11 +221,10 @@
               <span class="stat-label" data-i18n="overview.replayLabel">মৌসুমের হিস্টোরিক্যাল রি-প্লে</span>
             </div>
           </div>
-
-          <!-- SUMMARY METRIC CARDS -->
-          <div class="stats-row">
+      </div>
+      <div class="stats-row">
             <div class="stat-card">
-              <div class="stat-icon water">💧</div>
+              <div class="stat-icon water"><span class="material-symbols-outlined" aria-hidden="true">water_drop</span></div>
               <div class="stat-body">
                 <span class="stat-title" data-i18n="overview.rainTitle">বৃষ্টি, শেষ ৩০ দিন (NASA IMERG)</span>
                 <span class="stat-value" id="statRainValue">…</span>
@@ -254,7 +233,7 @@
             </div>
 
             <div class="stat-card">
-              <div class="stat-icon soil">🌱</div>
+              <div class="stat-icon soil"><span class="material-symbols-outlined" aria-hidden="true">humidity_percentage</span></div>
               <div class="stat-body">
                 <span class="stat-title" data-i18n="overview.smapTitle">শিকড় অঞ্চলের আর্দ্রতা (NASA SMAP L4)</span>
                 <span class="stat-value" id="statSmapValue">…</span>
@@ -263,7 +242,7 @@
             </div>
 
             <div class="stat-card">
-              <div class="stat-icon crop">🌾</div>
+              <div class="stat-icon crop"><span class="material-symbols-outlined" aria-hidden="true">grass</span></div>
               <div class="stat-body">
                 <span class="stat-title" data-i18n="overview.varietyTitle">প্রস্তাবিত আমন জাত</span>
                 <span class="stat-value" id="statVarietyValue">…</span>
@@ -272,34 +251,49 @@
             </div>
           </div>
 
-          <!-- RECENT ADVICE LOG -->
-          <div class="card" data-roles="officer">
-            <div class="card-header">
-              <h3 data-i18n="overview.farmersTitle">সাম্প্রতিক সুপারিশ ও কৃষক ফলো-আপ (তালন্দ ব্লক)</h3>
-              <span class="badge badge-warning" data-i18n="overview.sampleBadge">নমুনা সারি: কৃষক সাক্ষাৎকার বাকি</span>
-            </div>
-            <div class="table-responsive">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th data-i18n="overview.col.name">কৃষকের নাম</th>
-                    <th data-i18n="overview.col.village">গ্রাম ও জমি</th>
-                    <th data-i18n="overview.col.rotation">সুপারিশকৃত চক্র</th>
-                    <th data-i18n="overview.col.status">অবস্থা</th>
-                    <th data-i18n="overview.col.action">অ্যাকশন</th>
-                  </tr>
-                </thead>
-                <tbody id="recentFarmersTable">
-                  <!-- Sample rows from /api/v1/overview -->
-                </tbody>
-              </table>
+      <!-- WHAT NEEDS ATTENTION NOW: today's alert, this week's crop-stage alerts, where to check for damage -->
+      <div class="ov-section-head">
+        <h2 data-i18n="overview.attentionTitle">এখন যা দেখতে হবে</h2>
+        <p class="subtitle" data-i18n="overview.attentionSub">নাসার আজকের তথ্য থেকে সতর্কতা আর এই সপ্তাহের মাঠের কাজ</p>
+      </div>
+      <div class="ov-attention">
+        <div class="ov-attention-stack">
+          <div class="card alert-card">
+            <div class="alert-icon"><span class="material-symbols-outlined" aria-hidden="true">warning</span></div>
+            <div class="alert-content">
+              <h4 id="alertTitle">…</h4>
+              <p id="alertText"></p>
+              <div class="alert-solution">
+                <strong data-i18n="overview.solution">সমাধান:</strong> <span id="alertSolution"></span>
+              </div>
             </div>
           </div>
+          <div class="card field-week-card">
+            <div class="card-header">
+              <h3 data-i18n="overview.fieldTitle">এই সপ্তাহে মাঠে</h3>
+              <span class="badge badge-neutral" id="fieldWeekBadge">—</span>
+            </div>
+            <ul class="kv-list" id="fieldWeekList"></ul>
+            <p class="warning-note" id="fieldWeekNote"></p>
+          </div>
         </div>
+        <div class="card flood-check-card">
+            <div class="card-header">
+              <h3 data-i18n="overview.floodTitle">বন্যা ও ফসলের ক্ষতি কোথায় আগে দেখবেন</h3>
+              <span class="badge badge-neutral" id="floodCheckBadge">—</span>
+            </div>
+            <ul class="kv-list" id="floodCheckList"></ul>
+            <p class="warning-note" id="floodCheckNote"></p>
+          </div>
+      </div>
 
-        <!-- RIGHT COLUMN: SATELLITE DATA & ALERTS -->
-        <div class="overview-right">
-          <div class="card">
+      <!-- THE MAP AND THIS PLACE -->
+      <div class="ov-section-head">
+        <h2 data-i18n="overview.mapSection">মানচিত্র ও এই জায়গা</h2>
+        <p class="subtitle" data-i18n="overview.mapSectionSub">৫৪৪ উপজেলার নাসা তথ্য; মানচিত্রে একটি উপজেলা বেছে নিলে পুরো পাতা সেটির জন্য বদলায়</p>
+      </div>
+      <div class="ov-map-row">
+        <div class="card map-card">
             <div class="card-header">
               <h3 data-i18n="overview.satTitle">স্যাটেলাইট নজরদারি (তানোর পাইলট পয়েন্ট)</h3>
               <span class="badge badge-info" id="dataDateBadge">…</span>
@@ -314,6 +308,15 @@
                 <div id="mapFacts" class="map-facts" aria-live="polite"></div>
                 <div id="mapLegend" class="map-legend"></div>
                 <details id="mapTable" class="map-table"></details>
+              </div>
+              
+              
+            </div>
+          </div>
+        <div class="ov-map-side">
+          <div class="card place-card">
+              <div class="card-header">
+                <h3 data-i18n="overview.placeTitle">এই জায়গার মাটি, পানি ও ফসল</h3>
               </div>
               <p class="map-pin-label"><span class="status-dot"></span> <span id="mapPinLabel">তানোর পাইলট পয়েন্ট</span></p>
               <div class="map-specs">
@@ -339,41 +342,6 @@
                 </div>
               </div>
             </div>
-          </div>
-
-          <!-- ACTIVE AGROMET ALERT -->
-          <div class="card alert-card">
-            <div class="alert-icon">⚠️</div>
-            <div class="alert-content">
-              <h4 id="alertTitle">…</h4>
-              <p id="alertText"></p>
-              <div class="alert-solution">
-                <strong data-i18n="overview.solution">সমাধান:</strong> <span id="alertSolution"></span>
-              </div>
-            </div>
-          </div>
-
-          <!-- THIS WEEK IN THE FIELD: crop-stage alerts from the daily NASA update and a 7-day forecast -->
-          <div class="card field-week-card">
-            <div class="card-header">
-              <h3 data-i18n="overview.fieldTitle">এই সপ্তাহে মাঠে</h3>
-              <span class="badge badge-neutral" id="fieldWeekBadge">—</span>
-            </div>
-            <ul class="kv-list" id="fieldWeekList"></ul>
-            <p class="warning-note" id="fieldWeekNote"></p>
-          </div>
-
-          <!-- WHERE TO CHECK FOR FLOOD DAMAGE: NASA OPERA water now on land normally dry in winter -->
-          <div class="card flood-check-card">
-            <div class="card-header">
-              <h3 data-i18n="overview.floodTitle">বন্যা ও ফসলের ক্ষতি কোথায় আগে দেখবেন</h3>
-              <span class="badge badge-neutral" id="floodCheckBadge">—</span>
-            </div>
-            <ul class="kv-list" id="floodCheckList"></ul>
-            <p class="warning-note" id="floodCheckNote"></p>
-          </div>
-
-          <!-- FIELD PEST REPORTS (union level) -->
           <div class="card">
             <div class="card-header">
               <h3 data-i18n="overview.pestTitle">মাঠের বালাই খবর (কর্মকর্তার পর্যবেক্ষণ)</h3>
@@ -383,6 +351,31 @@
           </div>
         </div>
       </div>
+
+      <!-- OFFICER FOLLOW-UPS -->
+      <div class="card" data-roles="officer">
+            <div class="card-header">
+              <h3 data-i18n="overview.farmersTitle">সাম্প্রতিক সুপারিশ ও কৃষক ফলো-আপ (তালন্দ ব্লক)</h3>
+              <span class="badge badge-warning" data-i18n="overview.sampleBadge">নমুনা সারি: কৃষক সাক্ষাৎকার বাকি</span>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th data-i18n="overview.col.name">কৃষকের নাম</th>
+                    <th data-i18n="overview.col.village">গ্রাম ও জমি</th>
+                    <th data-i18n="overview.col.rotation">সুপারিশকৃত চক্র</th>
+                    <th data-i18n="overview.col.status">অবস্থা</th>
+                    <th data-i18n="overview.col.action">অ্যাকশন</th>
+                  </tr>
+                </thead>
+                <tbody id="recentFarmersTable">
+                  <!-- Sample rows from /api/v1/overview -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+
 
       <!-- EARLY WARNINGS BEYOND THE ROTATION -->
       <div class="card live-card">
@@ -499,7 +492,7 @@
 
             <div class="slider-group">
               <div class="slider-header">
-                <span data-i18n="planner.wWater">💧 পানির সাশ্রয় ও সেচ নিরাপত্তা</span>
+                <span data-i18n="planner.wWater">পানির সাশ্রয় ও সেচ নিরাপত্তা</span>
                 <span id="valWeightWater" class="slider-val">৫০%</span>
               </div>
               <input type="range" id="weightWater" min="0" max="100" value="50" oninput="updateWeights()">
@@ -507,7 +500,7 @@
 
             <div class="slider-group">
               <div class="slider-header">
-                <span data-i18n="planner.wIncome">💰 নিট মুনাফা ও অর্থনৈতিক স্থায়িত্ব</span>
+                <span data-i18n="planner.wIncome">নিট মুনাফা ও অর্থনৈতিক স্থায়িত্ব</span>
                 <span id="valWeightIncome" class="slider-val">৩০%</span>
               </div>
               <input type="range" id="weightIncome" min="0" max="100" value="30" oninput="updateWeights()">
@@ -515,7 +508,7 @@
 
             <div class="slider-group">
               <div class="slider-header">
-                <span data-i18n="planner.wSoil">🌱 মাটির পুষ্টি ও জৈব পদার্থ</span>
+                <span data-i18n="planner.wSoil">মাটির পুষ্টি ও জৈব পদার্থ</span>
                 <span id="valWeightSoil" class="slider-val">২০%</span>
               </div>
               <input type="range" id="weightSoil" min="0" max="100" value="20" oninput="updateWeights()">
@@ -523,7 +516,7 @@
 
             <div class="slider-group">
               <div class="slider-header">
-                <span data-i18n="planner.wPest">🐛 কম কীটনাশক (বালাই চাপ কম)</span>
+                <span data-i18n="planner.wPest">কম কীটনাশক (বালাই চাপ কম)</span>
                 <span id="valWeightPest" class="slider-val">১০%</span>
               </div>
               <input type="range" id="weightPest" min="0" max="100" value="10" oninput="updateWeights()">
@@ -531,7 +524,7 @@
           </div>
 
           <button class="btn btn-primary btn-block" onclick="runPlannerCalculation()" data-i18n="planner.run">
-            ⚡ ৭-ডাইমেনশন সিমুলেশন ও রি-প্লে রান করুন
+            ৭-ডাইমেনশন সিমুলেশন ও রি-প্লে রান করুন
           </button>
         </div>
 
@@ -853,10 +846,10 @@
               </div>
               <div class="obs-priorities">
                 <label><strong data-i18n="officer.obsPriorities">কৃষকের অগ্রাধিকার (সাক্ষাৎকার থেকে)</strong></label>
-                <div class="slider-group"><div class="slider-header"><span data-i18n="planner.wWater">💧 পানির সাশ্রয় ও সেচ নিরাপত্তা</span><span id="valObsWater" class="slider-val">৫০%</span></div><input type="range" id="obsWater" min="0" max="100" value="50" oninput="updateObsWeights()"></div>
-                <div class="slider-group"><div class="slider-header"><span data-i18n="planner.wIncome">💰 নিট মুনাফা ও অর্থনৈতিক স্থায়িত্ব</span><span id="valObsIncome" class="slider-val">২০%</span></div><input type="range" id="obsIncome" min="0" max="100" value="20" oninput="updateObsWeights()"></div>
-                <div class="slider-group"><div class="slider-header"><span data-i18n="planner.wSoil">🌱 মাটির পুষ্টি ও জৈব পদার্থ</span><span id="valObsSoil" class="slider-val">২০%</span></div><input type="range" id="obsSoil" min="0" max="100" value="20" oninput="updateObsWeights()"></div>
-                <div class="slider-group"><div class="slider-header"><span data-i18n="planner.wPest">🐛 কম কীটনাশক (বালাই চাপ কম)</span><span id="valObsPest" class="slider-val">১০%</span></div><input type="range" id="obsPestPriority" min="0" max="100" value="10" oninput="updateObsWeights()"></div>
+                <div class="slider-group"><div class="slider-header"><span data-i18n="planner.wWater">পানির সাশ্রয় ও সেচ নিরাপত্তা</span><span id="valObsWater" class="slider-val">৫০%</span></div><input type="range" id="obsWater" min="0" max="100" value="50" oninput="updateObsWeights()"></div>
+                <div class="slider-group"><div class="slider-header"><span data-i18n="planner.wIncome">নিট মুনাফা ও অর্থনৈতিক স্থায়িত্ব</span><span id="valObsIncome" class="slider-val">২০%</span></div><input type="range" id="obsIncome" min="0" max="100" value="20" oninput="updateObsWeights()"></div>
+                <div class="slider-group"><div class="slider-header"><span data-i18n="planner.wSoil">মাটির পুষ্টি ও জৈব পদার্থ</span><span id="valObsSoil" class="slider-val">২০%</span></div><input type="range" id="obsSoil" min="0" max="100" value="20" oninput="updateObsWeights()"></div>
+                <div class="slider-group"><div class="slider-header"><span data-i18n="planner.wPest">কম কীটনাশক (বালাই চাপ কম)</span><span id="valObsPest" class="slider-val">১০%</span></div><input type="range" id="obsPestPriority" min="0" max="100" value="10" oninput="updateObsWeights()"></div>
               </div>
               <div class="form-group obs-note">
                 <label for="obsNote" data-i18n="officer.obsNote">কর্মকর্তার নোট (কৃষকের কাছে যাবে)</label>
@@ -1092,7 +1085,7 @@
             <h3 data-i18n="keypad.title">সাধারণ বাটন ফোনের কিপ্যাড ইন্টারঅ্যাকশন (IVR DTMF Mapping)</h3>
             <span class="badge badge-primary" data-i18n="keypad.badge">স্মার্টফোন প্রয়োজন নেই</span>
           </div>
-          <p data-i18n="keypad.intro">কৃষক যখন 'EDEN' টোল-ফ্রি নম্বরে কল দেন বা স্বয়ংক্রিয় ফোন পান, তখন তিনি কিপ্যাডের বোতাম চেপে নিজের পছন্দ জানান:</p>
+          <p data-i18n="keypad.intro">কৃষক যখন মাটি কহনের টোল-ফ্রি নম্বরে কল দেন বা স্বয়ংক্রিয় ফোন পান, তখন তিনি কিপ্যাডের বোতাম চেপে নিজের পছন্দ জানান:</p>
 
           <div class="keypad-mapping-list">
             <div class="keypad-item">
@@ -1153,7 +1146,7 @@
           <p class="subtitle" data-i18n="delivery.subtitle">কৃষককে ফোন কল বা এসএমএস পাঠানোর আগে হুবহু অনুমোদিত বাংলা টেক্সট যাচাই করুন</p>
 
           <div class="preview-speech-box">
-            <div class="speech-quote-icon">📢</div>
+            <div class="speech-quote-icon"><span class="material-symbols-outlined" aria-hidden="true">campaign</span></div>
             <p id="previewBanglaText" class="speech-text" lang="bn">…</p>
           </div>
           <p id="previewEnglishGloss" class="speech-gloss" hidden></p>
@@ -1202,21 +1195,21 @@
             <label class="channel-option active">
               <input type="radio" name="deliveryChannel" value="ivr" checked>
               <div class="channel-body">
-                <strong data-i18n="delivery.ivr">📞 স্বয়ংক্রিয় ফোন কল (IVR)</strong>
+                <strong data-i18n="delivery.ivr">স্বয়ংক্রিয় ফোন কল (IVR)</strong>
                 <span data-i18n="delivery.ivrNote">সাধারণ বাটন ফোনে বাংলায় স্বয়ংক্রিয় কথা বলবে</span>
               </div>
             </label>
             <label class="channel-option">
               <input type="radio" name="deliveryChannel" value="sms">
               <div class="channel-body">
-                <strong data-i18n="delivery.sms">💬 বাংলা এসএমএস (SMS)</strong>
+                <strong data-i18n="delivery.sms">বাংলা এসএমএস (SMS)</strong>
                 <span data-i18n="delivery.smsNote">ইউনিকোড বাংলায় সংক্ষিপ্ত বার্তা প্রেরণ</span>
               </div>
             </label>
             <label class="channel-option">
               <input type="radio" name="deliveryChannel" value="saao_call">
               <div class="channel-body">
-                <strong data-i18n="delivery.saao">👨‍🌾 SAAO সরাসরি কল</strong>
+                <strong data-i18n="delivery.saao">SAAO সরাসরি কল</strong>
                 <span data-i18n="delivery.saaoNote">মাঠ কর্মকর্তা নিজে ফোনে কথা বলে পরামর্শ দেবেন</span>
               </div>
             </label>
@@ -1237,7 +1230,7 @@
           </div>
 
           <button class="btn btn-success btn-block" onclick="dispatchAdviceCall()" data-i18n="delivery.dispatch">
-            🚀 কৃষকের কাছে পরামর্শ পাঠিয়ে দিন (Dispatch Now)
+            কৃষকের কাছে পরামর্শ পাঠিয়ে দিন (Dispatch Now)
           </button>
         </div>
       </div>
@@ -1251,7 +1244,7 @@
         <p class="subtitle" data-i18n="voice.subtitle">কৃষক যা বলেন বা লেখেন তা থেকে ফসল, জমির ধরন ও অগ্রাধিকার বোঝা হয়, তারপর ইঞ্জিন নাসা তথ্যে পুরো বছরের চক্র হিসাব করে বাংলায় উত্তর দেয়। ফোনে এই উত্তর Awaj পড়ে শোনাবে।</p>
         <div class="voice-input-row">
           <textarea id="voiceText" class="form-control" rows="2" lang="bn">আমি সূর্যমুখী আর মসুর ডাল করতে চাই</textarea>
-          <button id="btnMic" class="btn btn-secondary" onclick="startVoiceInput()" data-i18n="voice.mic">🎤 বলুন</button>
+          <button id="btnMic" class="btn btn-secondary" onclick="startVoiceInput()" data-i18n="voice.mic">বলুন</button>
         </div>
         <button class="btn btn-primary" onclick="answerVoice()" data-i18n="voice.answer">উত্তর তৈরি করুন</button>
         <div id="voiceHeard" class="voice-heard"></div>
@@ -1260,8 +1253,8 @@
         <div class="voice-actions">
           <button class="btn btn-audio" onclick="speakVoiceReply()" data-i18n="voice.play">▶ উত্তর শুনুন</button>
           <input id="voicePhone" class="form-control" placeholder="01XXXXXXXXX" inputmode="tel" autocomplete="off">
-          <button class="btn btn-success" onclick="callVoiceReply()" data-i18n="voice.call">📞 Awaj দিয়ে কল</button>
-          <button class="btn btn-secondary" onclick="callKeypadMenu()" data-i18n="voice.keypad">📟 কিপ্যাড মেনু কল</button>
+          <button class="btn btn-success" onclick="callVoiceReply()" data-i18n="voice.call">Awaj দিয়ে কল</button>
+          <button class="btn btn-secondary" onclick="callKeypadMenu()" data-i18n="voice.keypad">কিপ্যাড মেনু কল</button>
         </div>
         <div id="voiceCallStatus" class="call-log-box"></div>
       </div>
@@ -1287,8 +1280,8 @@
               <!-- PHONE HEADER -->
               <div class="phone-header">
                 <div class="phone-topbar">
-                  <span>EDEN</span>
-                  <span data-i18n="companion.ready">📶 অফলাইন রেডি</span>
+                  <span>মাটি কহন</span>
+                  <span data-i18n="companion.ready">অফলাইন রেডি</span>
                 </div>
                 <div class="farmer-greeting">
                   <h3 data-i18n="companion.greeting">আসসালামু আলাইকুম (নমুনা কৃষক)</h3>
@@ -1303,7 +1296,7 @@
                   <h4 id="compAction">…</h4>
                   <p id="compActionText"></p>
                   <button class="phone-btn primary" onclick="switchScreen('screen-delivery')" data-i18n="companion.listen">
-                    🔊 পরামর্শটি শুনুন (Play)
+                    পরামর্শটি শুনুন (Play)
                   </button>
                 </div>
 
@@ -1331,7 +1324,7 @@
                   <span class="card-tag" data-i18n="companion.contact">মাঠ কর্মকর্তার সাথে যোগাযোগ</span>
                   <p data-i18n="companion.contactText">কোনো দ্বিধা বা প্রশ্ন থাকলে আপনার ব্লকের কর্মকর্তার সাথে কথা বলুন:</p>
                   <button class="phone-btn secondary" onclick="simulateFarmerKeypad('9'); switchScreen('screen-delivery')" data-i18n="companion.call">
-                    📞 কৃষি কর্মকর্তা (SAAO)-কে কল-ব্যাক অনুরোধ
+                    কৃষি কর্মকর্তা (SAAO)-কে কল-ব্যাক অনুরোধ
                   </button>
                 </div>
 
@@ -1377,7 +1370,7 @@
       </div>
 
       <div class="quality-guidelines card">
-        <h3 data-i18n="quality.policyTitle">EDEN ডেটা সততা নীতিমালা (Data Integrity Policy)</h3>
+        <h3 data-i18n="quality.policyTitle">মাটি কহন ডেটা সততা নীতিমালা (Data Integrity Policy)</h3>
         <div class="guidelines-grid">
           <div class="policy-box">
             <strong data-i18n="quality.p1Title">১. নো সাইলেন্ট জিরো (No Silent Zeros):</strong>
@@ -1575,6 +1568,7 @@
       </div>
     </section>
   </main>
+  </div>
 
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script type="module" src="app.js"></script>

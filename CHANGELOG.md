@@ -2,6 +2,14 @@
 
 What changed in Project EDEN, newest first, with who made each change and the branch it came from. Every branch below was merged into `main` on 1 October 2026.
 
+## 27 October 2026 · A redesigned dashboard: Mati Kohon colours, a side rail, an overview in order (Tasrif, `feature/dashboard-redesign`)
+
+- **Palette:** `apps/saao-dashboard/public/brand.css`, loaded last, re-tints the whole dashboard to forest #05270B, moss #2F5C1A, leaf #8AB640, sky #46C6E5, lake #29789E and night #123A5E. Deep forest and night frame the app; content stays on light slabs with the bevel and 2px corners; leaf marks what is active, sky and lake water and information, amber only warnings.
+- **Navigation by task:** the 12 numbered tabs become a side rail grouped by what each role does (officer: Work, Plan, Field, Data and evidence) with plain names and icons ("Farmer cases", "Calls and SMS", "Compare options"); on phones it is a scrolling bar.
+- **Overview in order:** the plan and the place first, then "What needs attention now" (today's alert, this week in the field, where to check for flood damage), then the map beside the place's soil, water and crops, then the officer's follow-ups. Before, everything after the first cards sat in the narrow right column and the left half of the page was empty.
+- **Product name:** EDEN becomes মাটি কহন / Mati Kohon in the header, title, role picker, keypad text and data policy. Emoji icons became Material Symbols; rotation names show a real arrow (→); small Bangla text is at least 12.5px.
+- **Tests:** every new label has its English text (400 of 400).
+
 ## 27 October 2026 · Calls in our own voice through SysTech (Tasrif, `feature/nisar`)
 
 - **SysTech calls:** `services/api/src/systech.ts` sends the advice call through SysTech's VoiceBlast portal or its Voice Broadcast REST API, playing our Google Cloud TTS recording converted to G.711 u-law (checked byte for byte against Python's `audioop`). Awaj still needs its support to enable Direct TTS; VoiceBlast works now.

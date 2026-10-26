@@ -37,11 +37,13 @@ const isoDate = (iso) => {
   return lang === 'en' ? `${d} ${EN_MONTHS[m - 1]} ${y}` : `${bnDigits(d)} ${BN_MONTHS[m - 1]} ${bnDigits(y)}`;
 };
 const bnDateOf = (text) => (text.endsWith('ি') || text.endsWith('ে') ? `${text}র` : text.endsWith('ই') ? `${text}য়ের` : `${text}ের`);
-const escapeHtml = (text) => String(text ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// The engine names rotations "BRRI dhan71 -> BARI Masur-8" (the Android seed matches that text); show a real arrow
+const arrows = (text) => String(text ?? '').replace(/ -> /g, ' → ');
+const escapeHtml = (text) => arrows(text).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const $ = (id) => document.getElementById(id);
 const setText = (id, text) => {
   const el = $(id);
-  if (el) el.textContent = text;
+  if (el) el.textContent = text == null ? text : arrows(text);
 };
 const setHtml = (id, html) => {
   const el = $(id);
@@ -71,7 +73,7 @@ const amanName = (variety) => tr(AMAN[variety] || variety, variety);
 
 function applyStaticText() {
   document.documentElement.lang = lang;
-  document.title = tr('Project EDEN — Earth Data & Environment Navigator · ফসল চক্র সিদ্ধান্ত সহায়ক সেবা', 'Project EDEN — Earth Data & Environment Navigator · crop rotation decision support');
+  document.title = tr('মাটি কহন · Mati Kohon — নাসার তথ্যে ফসল চক্র ও মাঠের পরামর্শ', 'Mati Kohon — crop rotations and field advice from NASA data');
   document.querySelectorAll('[data-i18n]').forEach(el => {
     if (el.dataset.bn === undefined) el.dataset.bn = el.innerHTML;
     const english = EN[el.dataset.i18n];
@@ -479,7 +481,7 @@ function pestReportsHtml(reports) {
   }
   return reports.map(r => `
     <div class="pest-report">
-      <span class="pest-name">🐛 ${escapeHtml(tr(r.bn, r.en))}</span>
+      <span class="pest-name">${escapeHtml(tr(r.bn, r.en))}</span>
       <span>${tr(`${num(r.fields)}টি জমি`, `${r.fields} field${r.fields === 1 ? '' : 's'}`)}${r.highSeverity ? ` • <span class="badge badge-danger">${tr(`${num(r.highSeverity)}টিতে বেশি`, `${r.highSeverity} severe`)}</span>` : ''}</span>
     </div>`).join('');
 }
@@ -758,10 +760,10 @@ function renderEvidence(advice) {
 // ---------------------------------------------------------------------------
 
 function renderStewardship(option) {
-  const icons = { water: '💧', fertilizer: '🌱', pesticide: '🐛', soil: '🟫', metals: '⚠️' };
+  const icons = { water: 'water_drop', fertilizer: 'compost', pesticide: 'pest_control', soil: 'landslide', metals: 'warning' };
   setHtml('stewardshipList', (option?.stewardship || []).map(t => `
     <li class="care-item ${t.kind}">
-      <span class="care-icon" aria-hidden="true">${icons[t.kind] || '•'}</span>
+      <span class="care-icon material-symbols-outlined" aria-hidden="true">${icons[t.kind] || 'info'}</span>
       <div><p>${escapeHtml(tr(t.bn, t.en))}</p><span class="ipm-source">${escapeHtml(t.source)}</span></div>
     </li>`).join(''));
 }
@@ -1637,11 +1639,11 @@ window.startVoiceInput = function() {
   const rec = new Recognition();
   rec.lang = 'bn-BD';
   rec.interimResults = true;
-  setText('btnMic', tr('🎙️ শুনছি…', '🎙️ Listening…'));
+  setText('btnMic', tr('শুনছি…', 'Listening…'));
   rec.onresult = (e) => { $('voiceText').value = [...e.results].map(r => r[0].transcript).join(' '); };
   rec.onerror = (e) => setHtml('voiceCallStatus', `<span class="log-line">${escapeHtml(tr('মাইক্রোফোন', 'Microphone'))}: ${escapeHtml(e.error)}</span>`);
   rec.onend = () => {
-    setText('btnMic', tr('🎤 বলুন', '🎤 Speak'));
+    setText('btnMic', tr('বলুন', 'Speak'));
     if ($('voiceText').value.trim()) window.answerVoice();
   };
   rec.start();
@@ -1685,7 +1687,7 @@ function renderVoice() {
     : `<span class="crop-chip-season">${tr('কোনো ফসলের নাম পাওয়া যায়নি; প্রচলিত চক্র দেখানো হলো', 'No crop named; showing the usual rotations')}</span>`);
   const reply = $('voiceReply');
   reply.hidden = false;
-  reply.innerHTML = `<div class="speech-quote-icon">📢</div><p class="speech-text">${escapeHtml(v.reply.speechBangla)}</p>`;
+  reply.innerHTML = `<div class="speech-quote-icon"><span class="material-symbols-outlined" aria-hidden="true">campaign</span></div><p class="speech-text">${escapeHtml(v.reply.speechBangla)}</p>`;
   const sms = $('voiceSms');
   sms.hidden = false;
   sms.textContent = `SMS (${tr(`${num(v.reply.smsSegments)} অংশ`, `${v.reply.smsSegments} part${v.reply.smsSegments > 1 ? 's' : ''}`)}): ${v.reply.smsBangla}`;
