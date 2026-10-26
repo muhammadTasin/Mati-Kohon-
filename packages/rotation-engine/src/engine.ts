@@ -24,7 +24,7 @@ import type { RabiCatalogEntry } from './data/crop_catalog.ts';
 import { IPM_AMAN, IPM_BY_RABI, IPM_GENERAL } from './data/ipm_catalog.ts';
 import { diseaseData, typicalDiseaseDays, type DiseaseNow } from './data/disease.ts';
 import { budgetHere, groundwaterBudgetData } from './data/groundwater_budget.ts';
-import { FIELD_ALERT_METHOD, fieldAlerts, type FieldCrops, type FieldWeather, type FloodNow } from './field_alerts.ts';
+import { FIELD_ALERT_METHOD, drainText, fieldAlerts, type FieldCrops, type FieldWeather, type FloodNow } from './field_alerts.ts';
 import { stewardshipTips } from './stewardship.ts';
 import {
   CHOICE_BY_ID,
@@ -1303,6 +1303,23 @@ export class RotationEngine {
       }
     }
 
+    // Low land after the flood alert's window (November to January): how fast this year's water is leaving, from
+    // NISAR radar and OPERA, against the date the plan takes from last year's drainage
+    const md = todayIso.slice(5);
+    const drainNow = md >= '11-01' || md <= '01-31' ? drainText(floodReading?.drain) : null;
+    if (drainNow && (request.landType === 'low' || request.landType === 'very_low')) {
+      const freeBy = floodReading?.drain?.freeBy;
+      const shift = freeBy && rules.ready ? seasonDay(freeBy.slice(5) as MonthDay) - seasonDay(rules.ready) : null;
+      const boro = rabiCat?.crop === 'Boro rice';
+      const later = shift !== null && shift >= 10, sooner = shift !== null && shift <= -10;
+      notesBangla.push(`${drainNow.bn}${later
+        ? ` এটি এই পরিকল্পনার ধরা তারিখের (~${bnDate(rules.ready!)}) প্রায় ${bnDigits(shift!)} দিন পরে: ${boro ? 'বোরোর বীজতলা এমনভাবে দিন যাতে জমি খালি হওয়ার দিন চারার বয়স ৩৫-৪৫ দিন হয়।' : 'রবি ফসল সেই অনুযায়ী দেরিতে বুনুন।'}`
+        : sooner ? ` এটি এই পরিকল্পনার ধরা তারিখের (~${bnDate(rules.ready!)}) প্রায় ${bnDigits(-shift!)} দিন আগে: রবি ফসল আগে বোনা যাবে।` : ''}`);
+      notesEnglish.push(`${drainNow.en}${later
+        ? ` That is about ${shift} days after the date this plan assumes (~${enDate(rules.ready!)}): ${boro ? 'time the Boro seedbed so the seedlings are 35-45 days old when the land is free (BRRI).' : 'sow the winter crop correspondingly later.'}`
+        : sooner ? ` That is about ${-shift!} days before the date this plan assumes (~${enDate(rules.ready!)}): the winter crop can go in sooner.` : ''}`);
+    }
+
     if (!rules.aman) {
       notesBangla.push(`${landBn} জমিতে জুন থেকে নভেম্বর পানি থাকে: আমন বা গ্রীষ্মের ফসল হয় না; পানি নামলে (~${bnDate(rules.ready!)}) রবি ফসল।`);
       notesEnglish.push(`On ${landEn} land water stands from June to November: no Aman or summer crop; the winter crop goes in once the water leaves (~${enDate(rules.ready!)}, after BRRI's haor seedbed dates).`);
@@ -1411,7 +1428,7 @@ export class RotationEngine {
       landEvidenceEnglish: evidenceEn,
       diseaseWeather: disease ? { date: disease.date, rules: diseaseRows, method: diseaseData().method } : null,
       groundwaterBudget: budget ? { ...budget, source: groundwaterBudgetData().source, caution: groundwaterBudgetData().caution } : null,
-      fieldAlerts: field || floodReading ? { through: field?.through ?? null, observedTo: field?.observedTo ?? null, forecastFrom: field?.forecast?.from ?? null, rainSource: field?.rainSource ?? null, floodDate: floodReading?.date ?? null, alerts: thisWeek, method: FIELD_ALERT_METHOD } : null,
+      fieldAlerts: field || floodReading ? { through: field?.through ?? null, observedTo: field?.observedTo ?? null, forecastFrom: field?.forecast?.from ?? null, rainSource: field?.rainSource ?? null, floodDate: floodReading?.date ?? null, floodSensor: floodReading ? floodReading.sensor ?? 'opera' : null, drain: floodReading?.drain ?? null, alerts: thisWeek, method: FIELD_ALERT_METHOD } : null,
       patterns,
       patternsSource: patterns.length ? profileData().sources.patterns ?? null : null,
       croppingIntensityPct: local.intensityPct,

@@ -1,0 +1,35 @@
+{
+ "source": "NASA-ISRO NISAR GCOV (PROVISIONAL, ASF DAAC) 80 m HH/HV against NASA OPERA DSWx-HLS v1 within 2 days",
+ "window": [
+  "2026-09-20",
+  "2026-10-25"
+ ],
+ "sites": {
+  "Khaliajuri": [
+   91.1212,
+   24.7023
+  ],
+  "Itna": [
+   91.0826,
+   24.5491
+  ],
+  "Paikgachha": [
+   89.3403,
+   22.5906
+  ],
+  "Tanore": [
+   88.5312,
+   24.6202
+  ],
+  "Batiaghata": [
+   89.5162,
+   22.7143
+  ]
+ },
+ "best_rule": "HH<-8.5",
+ "best_kappa": 0.666,
+ "chosen_rule": "HH<-9.0",
+ "accuracy": 0.834,
+ "kappa": 0.665,
+ "retrieved_utc": "2026-10-26T18:22:02+00:00"
+}

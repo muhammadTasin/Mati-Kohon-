@@ -50,7 +50,14 @@ export interface FieldCrops {
 
 export type FieldAlertId = 'flood_now' | 'aman_dry_spell' | 'rice_heat' | 'cold_seedbed' | 'wheat_heat' | 'boro_awd';
 
-/** Flood water now from NASA OPERA DSWx-HLS (research/live/flood_now.py). */
+/** This season's drainage from the flood readings since the peak (research/live/nisar_water.py). */
+export interface FloodDrain {
+  from: { date: string; floodShare: number; sensor: 'opera' | 'nisar' };
+  to: { date: string; floodShare: number; sensor: 'opera' | 'nisar' };
+  perWeek: number | null; // flood share lost per week; null when not falling yet
+  freeBy: string | null; // when the flood share falls below 5% at that pace (or already did); null beyond 45 days
+}
+/** Flood water now from NASA OPERA DSWx-HLS (research/live/flood_now.py) or NASA-ISRO NISAR radar (nisar_water.py). */
 export interface FloodNow {
   date: string | null; // the mean date of the latest clear looks
   seenShare: number; // the share of the upazila seen clear both now and in February
@@ -59,6 +66,43 @@ export interface FloodNow {
   waterDry: number | null;
   /** OPERA radar, 2025: water above the dry-season share around the same date a year earlier (reads higher than optical). */
   lastYearRadar?: number | null;
+  /** Which satellite the reading is from (OPERA when not given). */
+  sensor?: 'opera' | 'nisar';
+  drain?: FloodDrain | null;
+}
+
+/** The satellite a flood reading came from, as the farmer hears it. */
+export function seenBy(sensor: FloodNow['sensor']): { bn: string; en: string } {
+  return sensor === 'nisar' ? { bn: 'নাসা-ইসরোর NISAR রাডার', en: 'NASA-ISRO NISAR radar' } : { bn: 'নাসার OPERA উপগ্রহ', en: 'NASA OPERA' };
+}
+
+/** This season's drainage in a sentence, or null when there is nothing to say. */
+export function drainText(d: FloodDrain | null | undefined): { bn: string; en: string } | null {
+  if (!d) return null;
+  const pct = (x: number) => r0(x * 100);
+  const by = d.from.sensor === d.to.sensor ? seenBy(d.to.sensor) : { bn: 'নাসার OPERA ও NISAR', en: 'NASA OPERA and NISAR' };
+  if (d.perWeek && d.freeBy) {
+    return {
+      bn: `এ বছর (${by.bn}) পানি ${bnDate(d.from.date.slice(5))}-এর ${bnDigits(pct(d.from.floodShare))}% থেকে ${bnDate(d.to.date.slice(5))}-এ ${bnDigits(pct(d.to.floodShare))}%-এ নেমেছে, সপ্তাহে প্রায় ${bnDigits(pct(d.perWeek))} ভাগ; এভাবে নামলে জমি ~${bnDate(d.freeBy.slice(5))} নাগাদ খালি হবে।`,
+      en: `This year (${by.en}) the water has fallen from ${pct(d.from.floodShare)}% on ${enDate(d.from.date.slice(5))} to ${pct(d.to.floodShare)}% on ${enDate(d.to.date.slice(5))}, about ${pct(d.perWeek)} points a week; at that pace the land is free around ${enDate(d.freeBy.slice(5))}.`,
+    };
+  }
+  if (d.perWeek) {
+    return {
+      bn: `এ বছর (${by.bn}) পানি ${bnDate(d.from.date.slice(5))}-এর ${bnDigits(pct(d.from.floodShare))}% থেকে ${bnDate(d.to.date.slice(5))}-এ ${bnDigits(pct(d.to.floodShare))}%-এ নেমেছে, সপ্তাহে প্রায় ${bnDigits(pct(d.perWeek))} ভাগ; এত ধীরে যে জমি কবে খালি হবে তা এখনো বলা যায় না।`,
+      en: `This year (${by.en}) the water has fallen from ${pct(d.from.floodShare)}% on ${enDate(d.from.date.slice(5))} to ${pct(d.to.floodShare)}% on ${enDate(d.to.date.slice(5))}, about ${pct(d.perWeek)} points a week, too slowly yet to say when the land will be free.`,
+    };
+  }
+  if (d.freeBy) {
+    return { bn: `এ বছর (${by.bn}) জমির বাড়তি পানি ${bnDate(d.freeBy.slice(5))} নাগাদ নেমে গেছে।`, en: `This year (${by.en}) the extra water had left the land by ${enDate(d.freeBy.slice(5))}.` };
+  }
+  if (d.to.floodShare >= FLOOD_WATCH) {
+    return {
+      bn: `এ বছর (${by.bn}) ${bnDate(d.to.date.slice(5))}-এ জমির ${bnDigits(pct(d.to.floodShare))}% পানির নিচে; পানি এখনো নামতে শুরু করেনি।`,
+      en: `This year (${by.en}) ${pct(d.to.floodShare)}% of the land was under water on ${enDate(d.to.date.slice(5))}, and it has not started to fall yet.`,
+    };
+  }
+  return null;
 }
 export type FieldAlertLevel = 'high' | 'watch' | 'advice' | 'clear';
 export interface FieldAlert {
@@ -92,7 +136,7 @@ export const FIELD_ALERT_METHOD = {
   coldSeedbed: `Boro seedbeds, 15 November to 15 February: a minimum of ${COLD_C} C or less in the last 3 days or the next 3 is high, ${COLD_WATCH_C} C watch. Cover the seedbed with clear polythene at night and keep 3-5 cm of water in it (BRRI and DAE cold-wave advice, as reported).`,
   wheatHeat: `Wheat in the 5 weeks before harvest: ${WHEAT_HEAT_C} C or more in the last 3 days or the next 5 (grain-filling heat, Wardlaw and Wrigley 1994). Irrigation helps less than sowing on time, so this is a watch.`,
   boroAwd: 'Boro from 10 days after transplanting to 2 weeks before harvest, except a week either side of flowering: irrigate only when the water in a perforated field pipe is 15 cm below the soil surface (IRRI safe AWD, up to about 30% less water without yield loss). Daily loss = 1.2 x reference ET + 2 mm seepage.',
-  floodNow: `NASA OPERA DSWx-HLS (Landsat and Sentinel-2, 30 m read at 120 m): each pixel's latest clear look in the last 24 days against December 2025 and February 2026 (lasting water is water in both, so Boro paddies do not count); ${FLOOD_WATCH * 100}% of the land seen under water where it is normally dry in winter is watch, ${FLOOD_HIGH * 100}% high, 1 July to 31 October where Aman is grown. Replanting: BR22, BR23, BRRI dhan46 or 54 until 15 September (DAE agromet advisories 2020 and 2024); ordinary Aman dies after about 5 days under water, BRRI dhan51, 52 and 79 survive about 2 weeks (BRRI). Cloud hides the monsoon from optical satellites, and OPERA's radar maps over Bangladesh stop on 16 July 2026.`,
+  floodNow: `NASA OPERA DSWx-HLS (Landsat and Sentinel-2, 30 m read at 120 m): each pixel's latest clear look in the last 24 days against December 2025 and February 2026 (lasting water is water in both, so Boro paddies do not count); ${FLOOD_WATCH * 100}% of the land seen under water where it is normally dry in winter is watch, ${FLOOD_HIGH * 100}% high, 1 July to 31 October where Aman is grown. Replanting: BR22, BR23, BRRI dhan46 or 54 until 15 September (DAE agromet advisories 2020 and 2024); ordinary Aman dies after about 5 days under water, BRRI dhan51, 52 and 79 survive about 2 weeks (BRRI). Cloud hides the monsoon from optical satellites, and OPERA's radar maps over Bangladesh stop on 16 July 2026, so NASA-ISRO NISAR L-band radar (80 m, HH below -9 dB is open water; 83% pixel agreement with OPERA within 2 days on 18 pairs, within 2 points on haor water, about 13 points low on the coast where ponds and water under rice read as land) stands in when its reading is newer. Drainage: the flood share's fall since this season's peak, in points a week, and the date it would fall below 5% at that pace.`,
   temperatures: 'NASA POWER (0.5 degree) for past days and Open-Meteo for the forecast are grid values; a field can be 1-2 C hotter or colder.',
 };
 
@@ -279,11 +323,12 @@ function floodNow(t: number, f: FloodNow, drained80: string | null | undefined):
   const pct = r0(f.floodShare * 100);
   const lastYear = typeof f.lastYearRadar === 'number' ? r0(f.lastYearRadar * 100) : null;
   const when = f.date ? { bn: ` (${bnDate(f.date.slice(5))})`, en: ` (${enDate(f.date.slice(5))})` } : { bn: '', en: '' };
+  const by = seenBy(f.sensor);
   const head = {
-    bn: `নাসার OPERA উপগ্রহে${when.bn} উপজেলার দেখা জমির ${bnDigits(pct)}% পানির নিচে, যেখানে শীতে সাধারণত পানি থাকে না${lastYear !== null ? ` (গত বছর এই সময়ে রাডারে ${bnDigits(lastYear)}%${usual ? ', অর্থাৎ মৌসুমের স্বাভাবিক পানি' : ''})` : ''}।`,
-    en: `NASA OPERA${when.en}: ${pct}% of the upazila's land seen is under water where it is normally dry in winter${lastYear !== null ? ` (${lastYear}% by radar at this time last year${usual ? ', so about the usual seasonal water' : ''})` : ''}.`,
+    bn: `${by.bn}ে${when.bn} উপজেলার দেখা জমির ${bnDigits(pct)}% পানির নিচে, যেখানে শীতে সাধারণত পানি থাকে না${lastYear !== null ? ` (গত বছর এই সময়ে রাডারে ${bnDigits(lastYear)}%${usual ? ', অর্থাৎ মৌসুমের স্বাভাবিক পানি' : ''})` : ''}।`,
+    en: `${by.en}${when.en}: ${pct}% of the upazila's land seen is under water where it is normally dry in winter${lastYear !== null ? ` (${lastYear}% by radar at this time last year${usual ? ', so about the usual seasonal water' : ''})` : ''}.`,
   };
-  const numbers = { floodSharePct: pct, seenSharePct: r0(f.seenShare * 100), lastYearRadarPct: lastYear, date: f.date, drained80: drained80 ?? null };
+  const numbers = { floodSharePct: pct, seenSharePct: r0(f.seenShare * 100), lastYearRadarPct: lastYear, date: f.date, drained80: drained80 ?? null, sensor: f.sensor ?? 'opera', freeBy: f.drain?.freeBy ?? null };
   const base = { id: 'flood_now' as const, level, crop: 'aman' as const, numbers, titleBangla: 'বন্যার পানি', titleEnglish: 'Flood water' };
   if (d <= '09-10') {
     return {
@@ -301,9 +346,11 @@ function floodNow(t: number, f: FloodNow, drained80: string | null | undefined):
       smsBangla: 'বন্যায় আমন নষ্ট হলে আগাম রবি ফসলের প্রস্তুতি নিন।',
     };
   }
-  const drain = drained80
+  const thisYear = drainText(f.drain);
+  const lastSeason = drained80
     ? { bn: ` ২০২৫ মৌসুমে এই উপজেলার বর্ষার পানির ৮০% নেমেছিল ~${bnDate(drained80.slice(5))} (নাসার OPERA রাডার)।`, en: ` In the 2025 season, 80% of this upazila's monsoon water had drained by ~${enDate(drained80.slice(5))} (NASA OPERA radar).` }
     : { bn: '', en: '' };
+  const drain = { bn: `${thisYear ? ` ${thisYear.bn}` : ''}${lastSeason.bn}`, en: `${thisYear ? ` ${thisYear.en}` : ''}${lastSeason.en}` };
   return {
     ...base,
     textBangla: `${head.bn} জমির পানি নামলেই রবি ফসল বুনুন, রস থাকতে থাকতে।${drain.bn}`,
@@ -327,10 +374,11 @@ export function fieldAlerts(todayIso: string, crops: FieldCrops, w: FieldWeather
     // Flood water on part of the upazila and a dry paddy at the district point: low fields are wet, so only the higher
     // fields that have dried need the irrigation, and it is a watch rather than an order
     if (a && (a.level === 'high' || a.level === 'watch') && out.some(x => x.id === 'flood_now')) {
+      const by = seenBy(extra.flood?.sensor);
       a = {
         ...a, level: 'watch',
-        textBangla: `${a.textBangla} উপজেলার নিচু জমিতে বন্যার পানি আছে (নাসার OPERA); শুধু যে উঁচু খেত শুকিয়ে গেছে সেখানে সেচ দিন।`,
-        textEnglish: `${a.textEnglish} Low land in the upazila is under flood water (NASA OPERA); irrigate only the higher fields that have dried.`,
+        textBangla: `${a.textBangla} উপজেলার নিচু জমিতে বন্যার পানি আছে (${by.bn}); শুধু যে উঁচু খেত শুকিয়ে গেছে সেখানে সেচ দিন।`,
+        textEnglish: `${a.textEnglish} Low land in the upazila is under flood water (${by.en}); irrigate only the higher fields that have dried.`,
         smsBangla: 'উঁচু খেত শুকিয়ে গেলে একবার সেচ দিন।',
       };
     }

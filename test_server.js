@@ -8,13 +8,21 @@ const BASE = `http://localhost:${PORT}`;
 // The officer desk writes to a throwaway store so tests never touch the demo data
 const STORE = path.join(os.tmpdir(), `eden-officer-test-${process.pid}.json`);
 const CATTLE_STORE = path.join(os.tmpdir(), `eden-cattle-test-${process.pid}.json`);
+// A NISAR radar flood reading three days old, written fresh each run (readings older than 21 days are not used)
+const NISAR = path.join(os.tmpdir(), `eden-nisar-test-${process.pid}.json`);
+const daysAgo = (n) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
+fs.writeFileSync(NISAR, JSON.stringify({ source: 'test', made: new Date().toISOString(), window: [daysAgo(12), daysAgo(0)], passes: { found: 2, read: 2 },
+  thresholds: { hhWaterDb: -10 }, summary: { upazilas: 1, withFloodShare: 1, floodAtLeast10pct: 1, floodAtLeast25pct: 1, draining: 1 },
+  upazilas: { ADM3_Barhatta: { date: daysAgo(3), seenShare: 0.9, floodShare: 0.3, waterNow: 0.45, waterDry: 0.2, lastYearRadar: 0.01, sensor: 'nisar',
+    drain: { from: { date: daysAgo(20), floodShare: 0.45, sensor: 'opera' }, to: { date: daysAgo(3), floodShare: 0.3, sensor: 'nisar' }, perWeek: 0.062, freeBy: daysAgo(-30) } } } }));
 const OFFICER_CODE = process.env.EDEN_OFFICER_CODE || 'talanda-demo';
 const serverProc = spawn('node', ['--experimental-strip-types', 'services/api/src/server.ts'], {
   stdio: ['inherit', 'pipe', 'pipe'],
   // tests never place a real call, never reach an LLM or TTS service, and read a fixed day of NASA conditions
   // (the daily update rewrites the live file)
   env: { ...process.env, PORT, EDEN_OFFICER_STORE: STORE, CATTLE_STORE_PATH: CATTLE_STORE, SEED_DEMO_DATA: 'false', LLM_BASE_URL: '', TTS_BASE_URL: '', GOOGLE_TTS_CREDENTIALS: '', SMS_LIVE: '0', SMS_API_KEY: '', AWAJ_VOICE_SOURCE: '',
-    API_WRITE_TOKEN: '', AWAJ_LIVE: '0', EDEN_LIVE_FILE: path.resolve('tests/fixtures/live_conditions_2026-10-01.json'), EDEN_FLOOD_FILE: path.resolve('tests/fixtures/no_flood_file.json'), EDEN_CROP_LOSS_FILE: path.resolve('tests/fixtures/crop_loss_fixture.json') },
+    API_WRITE_TOKEN: '', AWAJ_LIVE: '0', EDEN_LIVE_FILE: path.resolve('tests/fixtures/live_conditions_2026-10-01.json'), EDEN_FLOOD_FILE: path.resolve('tests/fixtures/no_flood_file.json'), EDEN_CROP_LOSS_FILE: path.resolve('tests/fixtures/crop_loss_fixture.json'),
+    EDEN_NISAR_FILE: NISAR },
 });
 
 serverProc.stdout.on('data', (d) => process.stdout.write(d));
@@ -117,9 +125,14 @@ async function run() {
   check(['high', 'watch', 'clear', 'none'].includes(mapRows.upazilas.ADM3_Tanore.amanDryStatus) && typeof mapRows.upazilas.ADM3_Tanore.paddyWaterMm === 'number'
     && mapRows.upazilas.ADM3_Abhaynagar.amanDryStatus === null, 'the map carries this week\'s field alerts where the daily file has field water');
   const floodList = await (await fetch(`${BASE}/api/v1/flood/upazilas`)).json();
-  check(floodList.status === null && floodList.cropLoss?.year === 2026 && floodList.upazilas.map(u => u.id).join() === 'ADM3_Barhatta,ADM3_Atpara'
-    && floodList.upazilas[0].amanNotGreenPct === 45 && floodList.upazilas[0].floodSharePct === null && mapRows.upazilas.ADM3_Tanore.floodSharePct === null,
-    'the check list ranks Aman land not green (NASA HLS), most first, and leaves out places below 20%; no flood share without OPERA');
+  check(floodList.status?.window === undefined && floodList.status?.radar?.summary?.upazilas === 1 && floodList.cropLoss?.year === 2026
+    && floodList.upazilas.map(u => u.id).join() === 'ADM3_Barhatta,ADM3_Atpara' && floodList.upazilas[0].amanNotGreenPct === 45
+    && floodList.upazilas[1].floodSharePct === null && mapRows.upazilas.ADM3_Tanore.floodSharePct === null,
+    'the check list ranks Aman land not green (NASA HLS), most first, and leaves out places below 20%; no flood share where no satellite read one');
+  const barhatta = floodList.upazilas[0];
+  check(barhatta.floodSharePct === 30 && barhatta.sensor === 'nisar' && barhatta.drainPerWeekPct === 6 && barhatta.freeBy === daysAgo(-30)
+    && mapRows.upazilas.ADM3_Barhatta.floodSharePct === 30,
+    "with no OPERA reading, NISAR radar gives the flood share and this season's drain pace and free-by date");
   check(mapRows.upazilas.ADM3_Barhatta.amanNotGreenPct === 45 && mapRows.upazilas.ADM3_Tanore.amanNotGreenPct === 0 && mapRows.upazilas.ADM3_Abhaynagar.amanNotGreenPct === null,
     'the map carries the share of last year\'s Aman land not green this year');
   const outlines = await fetch(`${BASE}/data/bd_upazilas.geojson`, { headers: { 'Accept-Encoding': 'gzip' } });
@@ -455,6 +468,7 @@ function finish(code) {
   serverProc.kill();
   fs.rmSync(STORE, { force: true });
   fs.rmSync(CATTLE_STORE, { force: true });
+  fs.rmSync(NISAR, { force: true });
   process.exit(code);
 }
 

@@ -5,6 +5,7 @@ import { DualGateNarrationValidator, type ILocalLLMClient } from './packages/nar
 import { TemplateNarrator } from './packages/narration-core/src/template_narrator.ts';
 import { understandRequest } from './packages/rotation-engine/src/understand.ts';
 import { placeFor } from './packages/rotation-engine/src/data/location.ts';
+import { drainText } from './packages/rotation-engine/src/field_alerts.ts';
 
 const BN = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
 const bn = (v: unknown) => String(v).replace(/\d/g, d => BN[Number(d)]);
@@ -479,6 +480,31 @@ async function runTests() {
   if (softened?.level !== 'watch' || !softened.textEnglish.includes('irrigate only the higher fields')) {
     throw new Error('Where OPERA sees flood water the dry-spell alert drops to a watch for the higher fields');
   }
+  // NASA-ISRO NISAR radar: the alert names the satellite, and October's winter-crop advice gives this year's drain pace
+  const drain = { from: { date: '2026-09-28', floodShare: 0.77, sensor: 'opera' }, to: { date: '2026-10-18', floodShare: 0.47, sensor: 'nisar' }, perWeek: 0.105, freeBy: '2027-01-14' };
+  const radarFlood = at('ADM3_Tanore', { today: '2026-10-20', currentConditions: { date: '2026-10-20', soilStatus: 'normal', source: 'test',
+    flood: { date: '2026-10-18', seenShare: 0.9, floodShare: 0.47, waterNow: 0.6, waterDry: 0.1, sensor: 'nisar', drain } } }).local_context!;
+  const radarAlert = radarFlood.fieldAlerts!.alerts.find(x => x.id === 'flood_now');
+  if (!radarAlert?.textEnglish.startsWith('NASA-ISRO NISAR radar (18 Oct)') || !radarAlert.textBangla.startsWith('নাসা-ইসরোর NISAR রাডারে')
+    || !radarAlert.textEnglish.includes('about 11 points a week; at that pace the land is free around 14 Jan') || radarFlood.fieldAlerts!.floodSensor !== 'nisar') {
+    throw new Error(`A NISAR flood reading is named as radar and carries this year's drain pace (got: ${radarAlert?.textEnglish})`);
+  }
+  // November on Khaliajuri's low land: the flood alert is over, and the plan's ready date (2025 drainage) meets this
+  // year's, a month later, so the Boro seedbed is timed to it
+  const haorNov = at('ADM3_Khaliajuri', { landType: 'low', today: '2026-11-10', currentConditions: { date: '2026-11-10', soilStatus: 'normal', source: 'test',
+    flood: { date: '2026-11-08', seenShare: 0.95, floodShare: 0.6, waterNow: 0.7, waterDry: 0.15, sensor: 'nisar', drain: { ...drain, to: { date: '2026-11-08', floodShare: 0.6, sensor: 'nisar' } } } } }).local_context!;
+  const haorNote = haorNov.notesEnglish.find(n => n.startsWith('This year (NASA OPERA and NISAR) the water has fallen'));
+  if (!haorNote || !/about \d+ days after the date this plan assumes/.test(haorNote) || haorNov.fieldAlerts!.alerts.some(x => x.id === 'flood_now')) {
+    throw new Error(`In November low land gets this year's drainage against the plan's ready date (got: ${haorNote})`);
+  }
+  // Haor water leaving slowly in October has a pace but no date yet; land already free says so
+  const slow = drainText({ ...drain, from: { date: '2026-09-27', floodShare: 0.8, sensor: 'nisar' }, to: { date: '2026-10-18', floodShare: 0.74, sensor: 'nisar' }, perWeek: 0.02, freeBy: null });
+  const free = drainText({ ...drain, to: { date: '2026-10-18', floodShare: 0.03, sensor: 'nisar' }, perWeek: null, freeBy: '2026-10-18' });
+  if (!slow?.en.includes('about 2 points a week, too slowly yet to say when the land will be free') || !slow.en.startsWith('This year (NASA-ISRO NISAR radar)')
+    || !free?.en.includes('the extra water had left the land by 18 Oct')) {
+    throw new Error(`A slow fall gives a pace without a date, and drained land says so (got: ${slow?.en} / ${free?.en})`);
+  }
+  console.log(`NISAR: ${radarAlert.textEnglish.slice(0, 60)}...; Khaliajuri in November: ${haorNote.slice(-120)}`);
   console.log(`Field alerts: Aman dry spell ${dryAlert.level}, Boro seedbed cold ${cold[0].level}, Boro flowering heat ${hotBoro[0].level}, AWD "${awd[0].titleEnglish}"`);
   // Groundwater budget (NASA GRACE via GLDAS, BBS Boro area): Rajshahi needs a few percent of its Boro moved to stop the
   // fall; Sylhet's Boro is watered mostly from rivers and beels, so the budget is not given there

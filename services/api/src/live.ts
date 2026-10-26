@@ -12,6 +12,8 @@ const FILE = process.env.EDEN_LIVE_FILE || path.resolve(__dirname, '../data/live
 const SMAP_FILE = process.env.EDEN_SMAP_FILE || path.resolve(__dirname, '../data/live/smap_upazila.json');
 /** Flood water now per upazila from NASA OPERA DSWx-HLS, written by research/live/flood_now.py. */
 const FLOOD_FILE = process.env.EDEN_FLOOD_FILE || path.resolve(__dirname, '../data/live/flood_now.json');
+/** Flood water now from NASA-ISRO NISAR radar, with this season's drainage, written by research/live/nisar_water.py. */
+const NISAR_FILE = process.env.EDEN_NISAR_FILE || path.resolve(__dirname, '../data/live/nisar_water.json');
 /** Where last year's Aman land is not green this year, from NASA HLS (research/live/crop_loss.py). */
 const CROP_LOSS_FILE = process.env.EDEN_CROP_LOSS_FILE || path.resolve(__dirname, '../data/live/crop_loss.json');
 /** A flood reading older than this is not used for advice. */
@@ -64,12 +66,31 @@ function flood() {
     return null;
   }
 }
-/** One upazila's OPERA flood reading (date, seen share, flood share), or null when there is none or it is old. */
+let nisarCache: { mtime: number; data: Record<string, any> } | null = null;
+function nisar() {
+  try {
+    const mtime = fs.statSync(NISAR_FILE).mtimeMs;
+    if (!nisarCache || nisarCache.mtime !== mtime) nisarCache = { mtime, data: JSON.parse(fs.readFileSync(NISAR_FILE, 'utf8')) };
+    return nisarCache.data;
+  } catch {
+    return null;
+  }
+}
+/**
+ * One upazila's flood reading from whichever is newer, NASA OPERA (Landsat and Sentinel-2, blind under cloud) or
+ * NASA-ISRO NISAR (radar), with this season's drainage from both; null when neither is recent.
+ */
 export function floodFor(id: string) {
-  const d = flood();
-  const r = d?.upazilas?.[id];
-  if (!r || (daysSince(r.date) ?? 99) > FLOOD_MAX_AGE_DAYS) return null;
-  return { date: r.date, seenShare: r.seenShare, floodShare: r.floodShare, waterNow: r.waterNow, waterDry: r.waterDry, lastYearRadar: r.lastYearRadar ?? null };
+  const fresh = (r: any) => (r && (daysSince(r.date) ?? 99) <= FLOOD_MAX_AGE_DAYS ? r : null);
+  const opera = fresh(flood()?.upazilas?.[id]);
+  const radar = fresh(nisar()?.upazilas?.[id]);
+  const r = opera && radar ? (radar.date >= opera.date ? radar : opera) : opera ?? radar;
+  if (!r) return null;
+  return {
+    date: r.date, seenShare: r.seenShare, floodShare: r.floodShare, waterNow: r.waterNow, waterDry: r.waterDry, lastYearRadar: r.lastYearRadar ?? null,
+    sensor: r === radar ? 'nisar' as const : 'opera' as const,
+    drain: nisar()?.upazilas?.[id]?.drain ?? null,
+  };
 }
 let lossCache: { mtime: number; data: Record<string, any> } | null = null;
 function cropLoss() {
@@ -92,10 +113,14 @@ export function cropLossStatus() {
   return d ? { source: d.source, made: d.made, year: d.year, windows: d.windows, thresholds: d.thresholds, summary: d.summary } : null;
 }
 
-/** When the flood file was made, its window and how many upazilas it saw. */
+/** When the flood files were made (OPERA, and NISAR as `radar`), their windows and how many upazilas they saw. */
 export function floodStatus() {
-  const d = flood();
-  return d ? { source: d.source, made: d.made, window: d.window, baseline: d.baseline, passes: d.passes, summary: d.summary } : null;
+  const d = flood(), n = nisar();
+  if (!d && !n) return null;
+  return {
+    ...(d ? { source: d.source, made: d.made, window: d.window, baseline: d.baseline, passes: d.passes, summary: d.summary } : {}),
+    radar: n ? { source: n.source, made: n.made, window: n.window, passes: n.passes, thresholds: n.thresholds, summary: n.summary } : null,
+  };
 }
 
 const daysSince = (iso: string | null | undefined) =>
@@ -111,6 +136,7 @@ export function liveStatus() {
       ...d.summary.sources.map((s: any) => ({ ...s, ageDays: daysSince(s.latestDate) })),
       ...(smap() ? [{ name: 'NASA SMAP L4 root-zone soil moisture', latestDate: smap()!.date, ageDays: daysSince(smap()!.date), note: smap()!.source }] : []),
       ...(flood() ? [{ id: 'opera_flood', name: 'NASA OPERA DSWx-HLS flood water', latestDate: flood()!.window?.[1] ?? null, ageDays: daysSince(flood()!.window?.[1]), note: flood()!.source }] : []),
+      ...(nisar() ? [{ id: 'nisar_flood', name: 'NASA-ISRO NISAR radar flood water', latestDate: nisar()!.latestPass ?? null, ageDays: daysSince(nisar()!.latestPass), note: nisar()!.source }] : []),
     ],
   };
 }

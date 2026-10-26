@@ -70,7 +70,7 @@ function staticRows() {
       water: 'NASA POWER + GPM IMERG 25-season replay at the district point (FAO-56); GLDAS-2.2 GRACE-assimilated groundwater, 2003-2025',
       pesticide: `${pest.source.name}, ${pest.source.year}: ${pest.source.units}. ${pest.source.caution}`,
       cropLoss: "NASA HLS (Landsat and Sentinel-2): the share of last year's Aman land not green this year in the same weeks",
-      flood: 'NASA OPERA DSWx-HLS (Landsat and Sentinel-2): water now on land normally dry in winter (not water in both December 2025 and February 2026), of the land seen clear',
+      flood: 'NASA OPERA DSWx-HLS (Landsat and Sentinel-2) or NASA-ISRO NISAR radar, whichever is newer: water now on land normally dry in winter (not water in both December 2025 and February 2026), of the land seen',
       field: "Paddy water from NASA GPM IMERG rain and POWER evapotranspiration (the replay's water balance); heat and cold from NASA POWER and Open-Meteo's 7-day forecast (a weather model, not NASA)",
       soil: atlas.source,
     },
@@ -131,8 +131,10 @@ export function floodCheckList(minShare = 0.10, minLoss = 0.10) {
     const p = profile.upazilas[id] ?? {};
     const hls = p.hls ? p.hls[Object.keys(p.hls).sort().reverse()[0]] : null;
     out.push({
-      id, name: r.name, district: r.district, date: fl?.date ?? null,
+      id, name: r.name, district: r.district, date: fl?.date ?? null, sensor: fl?.sensor ?? null,
       floodSharePct: fl && typeof fl.floodShare === 'number' ? Math.round(fl.floodShare * 100) : null,
+      drainPerWeekPct: typeof fl?.drain?.perWeek === 'number' ? Math.round(fl.drain.perWeek * 100) : null,
+      freeBy: fl?.drain?.freeBy ?? null,
       seenSharePct: fl ? Math.round(fl.seenShare * 100) : null,
       lastYearRadarPct: typeof fl?.lastYearRadar === 'number' ? Math.round(fl.lastYearRadar * 100) : null,
       amanNotGreenPct: typeof loss?.notGreenShare === 'number' ? Math.round(loss.notGreenShare * 100) : null,

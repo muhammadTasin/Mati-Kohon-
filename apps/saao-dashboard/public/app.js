@@ -197,7 +197,8 @@ async function loadOverview() {
 
 /**
  * Where to check first for flood damage: upazilas with water now on land normally dry in winter (NASA OPERA
- * DSWx-HLS), with last year's radar reading for the same weeks and the share of the land that grew Aman (NASA HLS).
+ * DSWx-HLS, or NASA-ISRO NISAR radar where it is newer), with last year's radar reading for the same weeks, this
+ * season's drainage and the share of the land that grew Aman (NASA HLS).
  * A list for sending field checks, not a loss estimate.
  */
 let floodCheck; // undefined until loaded, null when the API has none
@@ -215,7 +216,7 @@ function renderFloodCheck() {
   if (f === undefined) return;
   if (!f?.status && !f?.cropLoss) {
     if (badge) badge.textContent = '—';
-    setHtml('floodCheckList', `<li>${tr('নাসার OPERA বন্যার তথ্য এখনো আসেনি।', 'No NASA OPERA flood reading yet.')}</li>`);
+    setHtml('floodCheckList', `<li>${tr('নাসার বন্যার তথ্য এখনো আসেনি।', 'No NASA flood reading yet.')}</li>`);
     setText('floodCheckNote', '');
     return;
   }
@@ -226,7 +227,8 @@ function renderFloodCheck() {
   }
   const parts = u => [
     u.amanNotGreenPct != null ? tr(`গত বছরের আমনের জমির ${num(u.amanNotGreenPct)}% এ বছর সবুজ নয়${u.amanUnderWaterPct ? ` (${num(u.amanUnderWaterPct)}% পানির নিচে)` : ''}`, `${u.amanNotGreenPct}% of last year's Aman land not green${u.amanUnderWaterPct ? ` (${u.amanUnderWaterPct}% under water)` : ''}`) : '',
-    u.floodSharePct != null ? tr(`দেখা জমির ${num(u.floodSharePct)}% পানির নিচে${u.lastYearRadarPct != null ? `, গত বছর এই সময়ে রাডারে ${num(u.lastYearRadarPct)}%` : ''}`, `${u.floodSharePct}% of the land seen under water${u.lastYearRadarPct != null ? `, ${u.lastYearRadarPct}% by radar this time last year` : ''}`) : '',
+    u.floodSharePct != null ? tr(`দেখা জমির ${num(u.floodSharePct)}% পানির নিচে (${u.sensor === 'nisar' ? 'NISAR রাডার' : 'OPERA'})${u.lastYearRadarPct != null ? `, গত বছর এই সময়ে রাডারে ${num(u.lastYearRadarPct)}%` : ''}`, `${u.floodSharePct}% of the land seen under water (${u.sensor === 'nisar' ? 'NISAR radar' : 'OPERA'})${u.lastYearRadarPct != null ? `, ${u.lastYearRadarPct}% by radar this time last year` : ''}`) : '',
+    u.drainPerWeekPct && u.freeBy ? tr(`সপ্তাহে ~${num(u.drainPerWeekPct)} ভাগ নামছে, খালি ~${isoDate(u.freeBy)}`, `falling ~${u.drainPerWeekPct} points a week, free ~${u.freeBy}`) : '',
     u.amanLandSharePct != null ? tr(`আমনের জমি ${num(u.amanLandSharePct)}%`, `Aman land ${u.amanLandSharePct}%`) : '',
   ].filter(Boolean).join('; ');
   const headline = u => (u.amanNotGreenPct != null ? u.amanNotGreenPct : u.floodSharePct);
@@ -234,8 +236,8 @@ function renderFloodCheck() {
     : `<li>${tr('কোনো উপজেলায় বড় ক্ষতির চিহ্ন নেই।', 'No upazila shows large damage.')}</li>`);
   const w = f.cropLoss?.windows?.now;
   setText('floodCheckNote', tr(
-    `নাসার HLS ও OPERA (ল্যান্ডস্যাট ও সেন্টিনেল-২)${w ? `, ${isoDate(w[0])} থেকে ${isoDate(w[1])}` : ''}: গত বছরের আমনের জমি এ বছর একই সপ্তাহে সবুজ কি না, আর শীতে সাধারণত শুকনো জমিতে এখন পানি। সবুজ নয় মানে ফসল নষ্ট, দেরিতে রোপণ বা জমি খালি; মেঘে ঢাকা জমি গোনা হয়নি। এটি মাঠ যাচাইয়ের তালিকা, ফলনের হিসাব নয়।`,
-    `NASA HLS and OPERA (Landsat and Sentinel-2)${w ? `, ${w[0]} to ${w[1]}` : ''}: whether last year's Aman land is green in the same weeks this year, and water now on land normally dry in winter. Not green means lost, replanted late or left fallow; land under cloud is not counted. A list for field checks, not a yield estimate.`));
+    `নাসার HLS ও OPERA (ল্যান্ডস্যাট ও সেন্টিনেল-২)${w ? `, ${isoDate(w[0])} থেকে ${isoDate(w[1])}` : ''}: গত বছরের আমনের জমি এ বছর একই সপ্তাহে সবুজ কি না, আর শীতে সাধারণত শুকনো জমিতে এখন পানি; মেঘে ঢাকা জমির পানি নাসা-ইসরোর NISAR রাডার দেখে, যেটি নতুন সেটি ধরা হয়। সবুজ নয় মানে ফসল নষ্ট, দেরিতে রোপণ বা জমি খালি। এটি মাঠ যাচাইয়ের তালিকা, ফলনের হিসাব নয়।`,
+    `NASA HLS and OPERA (Landsat and Sentinel-2)${w ? `, ${w[0]} to ${w[1]}` : ''}: whether last year's Aman land is green in the same weeks this year, and water now on land normally dry in winter; NASA-ISRO NISAR radar sees the water under cloud, and the newer reading is used. Not green means lost, replanted late or left fallow. A list for field checks, not a yield estimate.`));
 }
 
 function renderOverview(o) {

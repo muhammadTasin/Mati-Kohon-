@@ -87,6 +87,19 @@ class Reader:
         path = self.dir / f"labels_{tile}.npz"
         return np.load(path)["labels"] if path.exists() else None
 
+    def grid(self, tile: str, g) -> tuple[int, tuple]:
+        """A tile's overview grid (EPSG, affine transform as a 6-tuple), read once from one pass's header."""
+        path = self.dir / f"grid_{tile}.json"
+        if path.exists():
+            d = json.loads(path.read_text())
+            return d["epsg"], tuple(d["transform"])
+        href = next(l for l in g.data_links() if l.endswith("_B02_BWTR.tif"))
+        with rasterio.open(href, opener=self.fs.open) as src:
+            t = src.transform * src.transform.scale(DECIMATION, DECIMATION)
+            epsg = src.crs.to_epsg()
+        path.write_text(json.dumps({"epsg": epsg, "transform": [t.a, t.b, t.c, t.d, t.e, t.f]}))
+        return epsg, (t.a, t.b, t.c, t.d, t.e, t.f)
+
     def read(self, g) -> tuple[str, str, np.ndarray] | None:
         tile, day = tile_day(g)
         path = self.dir / "g" / f"{g['umm']['GranuleUR']}.npz"
@@ -123,6 +136,41 @@ def read_all(reader: Reader, gs: list, workers: int, what: str) -> dict[str, lis
             if k % 100 == 0:
                 print(f"  {what}: {k}/{len(gs)} passes", flush=True)
     return {t: sorted(v, key=lambda x: x[0]) for t, v in by_tile.items()}
+
+
+def lasting(passes: list[tuple[str, np.ndarray]], shape) -> tuple[np.ndarray, np.ndarray]:
+    """(seen clear, lasting water) on a tile: water in at least half of a pixel's clear looks."""
+    water = np.zeros(shape, np.uint16)
+    clear = np.zeros(shape, np.uint16)
+    for _, a in passes:
+        if a.shape != shape:
+            continue
+        water += a == 1
+        clear += a <= 1
+    return clear > 0, (clear > 0) & (2 * water >= clear)
+
+
+def dry_season(reader: Reader, baseline: list[str], baseline2: list[str], workers: int) -> dict[str, dict]:
+    """Per tile, the pixels seen clear in both winter months, those that were lasting water in both, and the tile's
+    overview grid, for readings made on another grid (research/live/nisar_water.py). Reads only uncached passes."""
+    feb_gs = search(date.fromisoformat(baseline[0]), date.fromisoformat(baseline[1]), BASE_CLOUD)
+    dec_gs = search(date.fromisoformat(baseline2[0]), date.fromisoformat(baseline2[1]), BASE_CLOUD)
+    feb = read_all(reader, feb_gs, workers, "February")
+    dec = read_all(reader, dec_gs, workers, "December")
+    first: dict[str, object] = {}
+    for g in feb_gs + dec_gs:
+        first.setdefault(tile_day(g)[0], g)
+    tiles = [t for t in sorted(set(feb) & set(dec)) if (lab := reader.labels_of(t)) is not None and lab.any()]
+    with ThreadPoolExecutor(workers) as pool:
+        grids = dict(zip(tiles, pool.map(lambda t: reader.grid(t, first[t]), tiles)))
+    out = {}
+    for tile in tiles:
+        shape = reader.labels_of(tile).shape
+        feb_clear, feb_water = lasting(feb[tile], shape)
+        dec_clear, dec_water = lasting(dec[tile], shape)
+        clear = feb_clear & dec_clear
+        out[tile] = {"clear": clear, "water": clear & feb_water & dec_water, "epsg": grids[tile][0], "transform": grids[tile][1]}
+    return out
 
 
 def last_year(on: date) -> dict[str, float]:
@@ -171,17 +219,8 @@ def main() -> None:
         if lab is None or not lab.any() or tile not in now:
             continue
         shape = lab.shape
-        def lasting(passes):
-            water = np.zeros(shape, np.uint16)
-            clear = np.zeros(shape, np.uint16)
-            for _, a in passes:
-                if a.shape != shape:
-                    continue
-                water += a == 1
-                clear += a <= 1
-            return clear > 0, (clear > 0) & (2 * water >= clear)
-        feb_clear, feb_water = lasting(base.get(tile, []))
-        dec_clear, dec_water = lasting(base2.get(tile, []))
+        feb_clear, feb_water = lasting(base.get(tile, []), shape)
+        dec_clear, dec_water = lasting(base2.get(tile, []), shape)
         dry_clear = feb_clear & dec_clear
         dry_water = dry_clear & feb_water & dec_water
         latest = np.full(shape, 255, np.uint8)

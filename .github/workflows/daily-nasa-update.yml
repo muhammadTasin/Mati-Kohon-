@@ -69,11 +69,28 @@ jobs:
           if [ -z "$EARTHDATA_USERNAME" ]; then echo "No Earthdata secrets; OPERA flood skipped"; exit 0; fi
           python research/live/flood_now.py
 
+      - name: Keep the NASA-ISRO NISAR frames already read
+        uses: actions/cache@v4
+        with:
+          path: research/data/nisar_water
+          key: nisar-water-${{ github.run_id }}
+          restore-keys: nisar-water-
+
+      - name: NASA-ISRO NISAR radar flood water and drainage for every upazila (needs Earthdata secrets)
+        continue-on-error: true
+        env:
+          EARTHDATA_USERNAME: ${{ secrets.EARTHDATA_USERNAME }}
+          EARTHDATA_PASSWORD: ${{ secrets.EARTHDATA_PASSWORD }}
+        run: |
+          if [ -z "$EARTHDATA_USERNAME" ]; then echo "No Earthdata secrets; NISAR skipped"; exit 0; fi
+          python research/live/nisar_water.py
+
       - name: Commit the update
         run: |
           git config user.name "eden-daily-update"
           git config user.email "eden-daily-update@users.noreply.github.com"
-          git add services/api/data/live/upazila_conditions.json services/api/data/live/smap_upazila.json services/api/data/live/flood_now.json
+          git add services/api/data/live/upazila_conditions.json services/api/data/live/smap_upazila.json services/api/data/live/flood_now.json \
+            services/api/data/live/nisar_water.json services/api/data/live/water_history.json
           if git diff --cached --quiet; then echo "No change"; exit 0; fi
           git commit -m "Daily NASA update $(date -u +%F)"
           git push

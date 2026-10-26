@@ -187,7 +187,15 @@ export interface LocalContext {
     observedTo: string | null;
     forecastFrom: string | null;
     rainSource: string | null;
-    floodDate?: string | null; // the NASA OPERA flood reading's date, when there is one
+    floodDate?: string | null; // the flood reading's date, when there is one
+    floodSensor?: 'opera' | 'nisar' | null; // NASA OPERA (optical) or NASA-ISRO NISAR (radar), whichever is newer
+    /** This season's drainage since the peak (research/live/nisar_water.py): points lost a week and the free-by date. */
+    drain?: {
+      from: { date: string; floodShare: number; sensor: 'opera' | 'nisar' };
+      to: { date: string; floodShare: number; sensor: 'opera' | 'nisar' };
+      perWeek: number | null;
+      freeBy: string | null;
+    } | null;
     alerts: Array<{ id: string; level: 'high' | 'watch' | 'advice' | 'clear'; crop: string; titleBangla: string; titleEnglish: string; textBangla: string; textEnglish: string; smsBangla: string; numbers: Record<string, number | string | null> }>;
     method: Record<string, string>;
   } | null;

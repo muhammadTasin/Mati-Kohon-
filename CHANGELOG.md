@@ -2,6 +2,15 @@
 
 What changed in Project EDEN, newest first, with who made each change and the branch it came from. Every branch below was merged into `main` on 1 October 2026.
 
+## 27 October 2026 · Flood water under cloud and how fast it drains: NASA-ISRO NISAR radar (Tasrif, `feature/nisar`)
+
+- **NISAR water:** `research/live/nisar_water.py` reads NASA-ISRO NISAR L-band radar (GCOV, PROVISIONAL, ASF DAAC), which sees through monsoon cloud. Only Bangladesh's rows of the 80 m HH layer are fetched from each 2-8 GB file (about 25 MB a frame; 0.6 GB for the first national cycle). The flood share uses the OPERA definition (water now on land not water in both December 2025 and February 2026, via `flood_now.py`'s new `dry_season()`).
+- **Calibration:** `research/explore/nisar_calibration.py` sets HH below -9 dB as open water against OPERA DSWx-HLS on 18 pairs within 2 days at 5 upazilas: 83% pixel agreement (kappa 0.67), within 2 points on haor water, about 13 points low on the coast (ponds and water under rice). Results in `research/floods/nisar_calibration.csv`.
+- **Drainage:** every reading goes into `water_history.json`; from October an upazila gets its fall in points a week since the season's peak and, within 45 days, the date its land is free at that pace. October's winter-crop alert carries it; from November, low and very low land get it against the plan's ready date, with Boro seedbed timing when this year's water is 10 or more days late.
+- **App:** the API uses whichever of OPERA and NISAR is newer (`sensor`, `drain` in the reading and in `local_context.fieldAlerts`), the alert names the satellite, and the officers' check list shows the sensor, pace and free-by date. The daily workflow reads new frames (needs the Earthdata secrets).
+- **On 2026-10-27:** 115 upazilas had 10% or more of their land under flood water, 39 had 25% or more, mostly haor (Itna 78%, Khaliajuri 76%, Sulla 72%); 76 were draining.
+- **Tests:** a NISAR reading is named as radar and carries the pace; Khaliajuri in November gets this year's drainage against the plan; a slow fall gives a pace but no date; the API uses NISAR when OPERA is missing.
+
 ## 8 October 2026 · Where this year's Aman is missing: NASA HLS crop loss (Tasrif, `feature/crop-loss`)
 
 - **Crop loss:** `research/live/crop_loss.py` sets last year's Aman land (NASA HLS, green in September to early October 2025 and bare after the harvest) against this year's greenest clear look in the same weeks. It reads the share not green, under water and weaker per upazila, with each tile's composites cached.
