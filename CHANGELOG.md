@@ -8,7 +8,8 @@ What changed in Project EDEN, newest first, with who made each change and the br
 - **Navigation by task:** the 12 numbered tabs become a side rail grouped by what each role does (officer: Work, Plan, Field, Data and evidence) with plain names and icons ("Farmer cases", "Calls and SMS", "Compare options"); on phones it is a scrolling bar.
 - **Overview in order:** the plan and the place first, then "What needs attention now" (today's alert, this week in the field, where to check for flood damage), then the map beside the place's soil, water and crops, then the officer's follow-ups. Before, everything after the first cards sat in the narrow right column and the left half of the page was empty.
 - **Product name:** EDEN becomes মাটি কহন / Mati Kohon in the header, title, role picker, keypad text and data policy. Emoji icons became Material Symbols; rotation names show a real arrow (→); small Bangla text is at least 12.5px.
-- **Tests:** every new label has its English text (400 of 400).
+- **Lighter cards:** card headlines are larger and bold with a leaf mark and a divider. Long texts fold: each score's explanation in the comparison sits under "Why this score", each field alert shows its first sentence with "Read more", the planner shows three notes about the place and folds the rest, and source notes sit under "Source and method". The flood check list shows labelled numbers (Aman not green 45%, under water 9%...) instead of a sentence per upazila; text has more line spacing and shorter lines.
+- **Tests:** every new label has its English text (401 of 401).
 
 ## 27 October 2026 · Calls in our own voice through SysTech (Tasrif, `feature/nisar`)
 

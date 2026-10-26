@@ -15,6 +15,7 @@ export const EN = {
   'overview.mapSection': 'The map and this place',
   'overview.mapSectionSub': 'NASA data for 544 upazilas; pick an upazila on the map and the whole page follows it',
   'overview.placeTitle': 'Soil, water and crops here',
+  'common.sourceMethod': 'Source and method',
   'brand.title': 'Mati Kohon',
   'brand.subtitle': 'Field advice from NASA data',
   'geo.district': 'Rajshahi',

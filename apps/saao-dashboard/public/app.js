@@ -40,6 +40,16 @@ const bnDateOf = (text) => (text.endsWith('ি') || text.endsWith('ে') ? `${te
 // The engine names rotations "BRRI dhan71 -> BARI Masur-8" (the Android seed matches that text); show a real arrow
 const arrows = (text) => String(text ?? '').replace(/ -> /g, ' → ');
 const escapeHtml = (text) => arrows(text).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+// Long texts show their first sentence and fold the rest under a "more" toggle (Bangla ends sentences with ।)
+const firstSentence = (text) => {
+  const s = arrows(text);
+  const at = s.slice(40).search(/[।.!?](\s|$)/);
+  return at < 0 ? [s, ''] : [s.slice(0, 41 + at).trim(), s.slice(41 + at).trim()];
+};
+const fold = (text, more) => {
+  const [head, rest] = firstSentence(text);
+  return rest ? `${escapeHtml(head)}<details class="fold"><summary>${more}</summary>${escapeHtml(rest)}</details>` : escapeHtml(head);
+};
 const $ = (id) => document.getElementById(id);
 const setText = (id, text) => {
   const el = $(id);
@@ -172,7 +182,7 @@ function renderFieldWeek(fa) {
   if (badge) { badge.className = `badge ${top ? cls : 'badge-neutral'}`; badge.textContent = top ? tr(bn, en) : tr('এখন কোনো সতর্কতা নেই', 'No alerts now'); }
   setHtml('fieldWeekList', fa.alerts.length ? fa.alerts.map(a => {
     const [c, b, e] = chip[a.level] || chip.advice;
-    return `<li><span><strong>${escapeHtml(tr(a.titleBangla, a.titleEnglish))}</strong><br><small>${escapeHtml(tr(a.textBangla, a.textEnglish))}</small></span><span class="badge ${c}">${tr(b, e)}</span></li>`;
+    return `<li><span><strong>${escapeHtml(tr(a.titleBangla, a.titleEnglish))}</strong><small>${fold(tr(a.textBangla, a.textEnglish), tr('আরও পড়ুন', 'Read more'))}</small></span><span class="badge ${c}">${tr(b, e)}</span></li>`;
   }).join('') : `<li>${tr('এই সপ্তাহে প্রথম পছন্দের ফসলগুলোর কোনোটি খরা, গরম বা শীতে সংবেদনশীল পর্যায়ে নেই।', "None of the first option's crops is at a stage that dry spells, heat or cold harm this week.")}</li>`);
   setText('fieldWeekNote', tr(
     `নাসা POWER ${isoDate(fa.observedTo)} পর্যন্ত, বৃষ্টি ${fa.rainSource || '—'}; পূর্বাভাস Open-Meteo (আবহাওয়া মডেল, নাসা নয়)${fa.forecastFrom ? `, ${isoDate(fa.forecastFrom)} থেকে ৭ দিন` : ''}। তাপমাত্রা গ্রিডের মান; খেতে ১–২° কমবেশি হতে পারে।`,
@@ -227,14 +237,18 @@ function renderFloodCheck() {
     badge.className = `badge ${top.some(u => (u.amanNotGreenPct ?? 0) >= 40 || (u.floodSharePct ?? 0) >= 25) ? 'badge-warning' : 'badge-neutral'}`;
     badge.textContent = tr(`${num(f.upazilas.length)} উপজেলা`, `${f.upazilas.length} upazilas`);
   }
-  const parts = u => [
-    u.amanNotGreenPct != null ? tr(`গত বছরের আমনের জমির ${num(u.amanNotGreenPct)}% এ বছর সবুজ নয়${u.amanUnderWaterPct ? ` (${num(u.amanUnderWaterPct)}% পানির নিচে)` : ''}`, `${u.amanNotGreenPct}% of last year's Aman land not green${u.amanUnderWaterPct ? ` (${u.amanUnderWaterPct}% under water)` : ''}`) : '',
-    u.floodSharePct != null ? tr(`দেখা জমির ${num(u.floodSharePct)}% পানির নিচে (${u.sensor === 'nisar' ? 'NISAR রাডার' : 'OPERA'})${u.lastYearRadarPct != null ? `, গত বছর এই সময়ে রাডারে ${num(u.lastYearRadarPct)}%` : ''}`, `${u.floodSharePct}% of the land seen under water (${u.sensor === 'nisar' ? 'NISAR radar' : 'OPERA'})${u.lastYearRadarPct != null ? `, ${u.lastYearRadarPct}% by radar this time last year` : ''}`) : '',
-    u.drainPerWeekPct && u.freeBy ? tr(`সপ্তাহে ~${num(u.drainPerWeekPct)} ভাগ নামছে, খালি ~${isoDate(u.freeBy)}`, `falling ~${u.drainPerWeekPct} points a week, free ~${u.freeBy}`) : '',
-    u.amanLandSharePct != null ? tr(`আমনের জমি ${num(u.amanLandSharePct)}%`, `Aman land ${u.amanLandSharePct}%`) : '',
-  ].filter(Boolean).join('; ');
+  // short labelled numbers instead of a long sentence per upazila
+  const metric = (label, value, kind = '') => `<span class="metric ${kind}"><span>${label}</span> <b>${value}</b></span>`;
+  const parts = u => `<span class="metrics">${[
+    u.amanNotGreenPct != null ? metric(tr('আমন সবুজ নয়', 'Aman not green'), `${num(u.amanNotGreenPct)}%`, 'is-warn') : '',
+    u.amanUnderWaterPct ? metric(tr('আমন পানির নিচে', 'Aman under water'), `${num(u.amanUnderWaterPct)}%`, 'is-water') : '',
+    u.floodSharePct != null ? metric(tr(`পানির নিচে (${u.sensor === 'nisar' ? 'NISAR' : 'OPERA'})`, `Under water (${u.sensor === 'nisar' ? 'NISAR' : 'OPERA'})`), `${num(u.floodSharePct)}%`, 'is-water') : '',
+    u.lastYearRadarPct != null ? metric(tr('গত বছর এই সময়ে', 'This time last year'), `${num(u.lastYearRadarPct)}%`) : '',
+    u.drainPerWeekPct && u.freeBy ? metric(tr('খালি হবে', 'Free by'), `~${isoDate(u.freeBy)}`) : '',
+    u.amanLandSharePct != null ? metric(tr('আমনের জমি', 'Aman land'), `${num(u.amanLandSharePct)}%`) : '',
+  ].filter(Boolean).join('')}</span>`;
   const headline = u => (u.amanNotGreenPct != null ? u.amanNotGreenPct : u.floodSharePct);
-  setHtml('floodCheckList', top.length ? top.map(u => `<li><span><strong>${escapeHtml(u.name)}</strong>, ${escapeHtml(u.district)}<br><small>${parts(u)}</small></span><span class="badge ${(u.amanNotGreenPct ?? 0) >= 40 || (u.floodSharePct ?? 0) >= 25 ? 'badge-warning' : 'badge-neutral'}">${num(headline(u))}%</span></li>`).join('')
+  setHtml('floodCheckList', top.length ? top.map(u => `<li><span><strong>${escapeHtml(u.name)}</strong><span class="kv-sub">${escapeHtml(u.district)}</span>${parts(u)}</span><span class="badge ${(u.amanNotGreenPct ?? 0) >= 40 || (u.floodSharePct ?? 0) >= 25 ? 'badge-warning' : 'badge-neutral'}">${num(headline(u))}%</span></li>`).join('')
     : `<li>${tr('কোনো উপজেলায় বড় ক্ষতির চিহ্ন নেই।', 'No upazila shows large damage.')}</li>`);
   const w = f.cropLoss?.windows?.now;
   setText('floodCheckNote', tr(
@@ -556,7 +570,10 @@ function renderPlannerResults(advice) {
   const localNote = $('localContextNote');
   if (localNote) {
     localNote.hidden = !local;
-    setHtml('localContextNote', local ? `<strong>${tr('এই জায়গার কথা', 'About this place')}</strong><ul>${tr(local.notesBangla, local.notesEnglish).map(n => `<li>${escapeHtml(n)}</li>`).join('')}</ul>` : '');
+    const notes = local ? tr(local.notesBangla, local.notesEnglish) : [];
+    const li = n => `<li>${escapeHtml(n)}</li>`;
+    setHtml('localContextNote', local ? `<strong>${tr('এই জায়গার কথা', 'About this place')}</strong><ul>${notes.slice(0, 3).map(li).join('')}</ul>${notes.length > 3
+      ? `<details class="fold"><summary>${tr(`আরও ${num(notes.length - 3)}টি কথা`, `${notes.length - 3} more notes`)}</summary><ul>${notes.slice(3).map(li).join('')}</ul></details>` : ''}` : '');
   }
   if (local) showPlanLandNote(local.landTypeAssumed ? local.landType : undefined);
   renderCropChoice(advice);
@@ -598,7 +615,7 @@ function renderComparisonGrid(advice) {
     return `
       <div class="comp-card ${isRec ? 'recommended' : ''}">
         <div class="comp-card-badge">
-          ${isRec ? `<span class="badge badge-success">${tr('⭐ সর্বোচ্চ সুপারিশকৃত (Rank #১)', '⭐ Top recommendation (rank #1)')}</span>` : `<span class="badge badge-neutral">${tr(`বিকল্প #${num(opt.rank)}`, `Option #${opt.rank}`)}</span>`}
+          ${isRec ? `<span class="badge badge-success">${tr('সর্বোচ্চ সুপারিশ (১ নম্বর)', 'Top recommendation (rank 1)')}</span>` : `<span class="badge badge-neutral">${tr(`বিকল্প #${num(opt.rank)}`, `Option #${opt.rank}`)}</span>`}
           ${opt.isBaseline ? `<span class="badge badge-warning">${tr('বর্তমান প্রচলিত', 'Current practice')}</span>` : ''}
         </div>
         <h3 class="comp-card-title">${escapeHtml(tr(opt.nameBangla, opt.nameEnglish))}</h3>
@@ -614,7 +631,7 @@ function renderComparisonGrid(advice) {
                   <span>${num(pct)}/${num(100)}</span>
                 </div>
                 <div class="dim-bar-wrap"><div class="dim-bar-fill ${dimId}" style="width: ${pct}%"></div></div>
-                <span class="dim-note">${escapeHtml(tr(detail?.summaryBangla, detail?.summaryEnglish))}</span>
+                <details class="fold dim-why"><summary>${tr('কেন এই নম্বর', 'Why this score')}</summary><span class="dim-note">${escapeHtml(tr(detail?.summaryBangla, detail?.summaryEnglish))}</span></details>
               </div>`;
           }).join('')}
         </div>

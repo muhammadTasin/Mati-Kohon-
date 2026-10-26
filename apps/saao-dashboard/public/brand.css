@@ -309,6 +309,54 @@ input[type="range"], input[type="checkbox"], input[type="radio"] { accent-color:
 .tag-open { background: var(--lime-soft); color: var(--forest); }
 .tag-demo { background: var(--sky-soft); color: var(--sky-ink); }
 
+/* ---------- headlines: each card says what it is at a glance ---------- */
+.card-header { padding-bottom: 12px; border-bottom: 1px solid var(--line); margin-bottom: 16px; align-items: flex-start; }
+.card-header h2, .card-header h3 {
+  display: flex; align-items: center; gap: 10px;
+  font-size: 18.5px; font-weight: 700; color: var(--deep); letter-spacing: -.005em;
+}
+.card-header h2::before, .card-header h3::before { content: ""; flex: 0 0 4px; height: 20px; background: var(--leaf); }
+.kv-sub { display: block; font-size: 12.5px; color: var(--muted-ink); }
+.flood-check-card .card-header h3::before { background: var(--sky); }
+.alert-content h3, .alert-content h4 { font-size: 18px; font-weight: 700; margin-bottom: 8px; }
+.comp-card-title { font-size: 17.5px; font-weight: 700; color: var(--deep); line-height: 1.35; margin: 6px 0 14px; padding-bottom: 12px; border-bottom: 1px solid var(--line); }
+.kv-list li > span > strong { display: block; font-size: 15px; font-weight: 700; color: var(--deep); margin-bottom: 3px; }
+.today-title { font-weight: 700; }
+
+/* ---------- less dense: room to breathe, shorter lines, the rest folded ---------- */
+.card p, .card li { line-height: 1.7; }
+.card p, .card li, .banner-card p { max-width: 78ch; }
+.card ul li + li { margin-top: 7px; }
+.kv-list li { padding: 12px 0; gap: 14px; align-items: flex-start; max-width: none; }
+.kv-list li small { display: block; color: var(--muted-ink); line-height: 1.6; }
+.kv-list li .badge { flex: 0 0 auto; }
+.metrics { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.metric { display: inline-flex; align-items: baseline; gap: 5px; padding: 3px 8px; font-size: 12.5px; color: var(--muted-ink); background: var(--sunk); }
+.metric b { color: var(--ink); font-weight: 700; }
+.metric.is-warn { background: var(--amber-soft); }
+.metric.is-warn b { color: var(--amber-deep); }
+.metric.is-water { background: var(--sky-soft); }
+.metric.is-water b { color: var(--sky-ink); }
+
+details.fold, details.card-source { margin-top: 6px; }
+details.fold > summary, details.card-source > summary {
+  display: inline-flex; align-items: center; gap: 4px;
+  cursor: pointer; list-style: none; user-select: none;
+  font-size: 12.5px; font-weight: 600; color: var(--sky-ink);
+}
+details.fold > summary::-webkit-details-marker, details.card-source > summary::-webkit-details-marker { display: none; }
+details.fold > summary::before, details.card-source > summary::before { content: "+"; font-weight: 700; width: 12px; }
+details.fold[open] > summary::before, details.card-source[open] > summary::before { content: "−"; }
+details.fold > summary:hover, details.card-source > summary:hover { color: var(--deep); }
+details.fold[open] { color: var(--text); }
+details.card-source { padding-top: 10px; border-top: 1px dashed var(--line); margin-top: 14px; }
+details.card-source .warning-note { margin: 8px 0 0; color: var(--muted-ink); }
+.dim-item { padding: 8px 0; }
+.dim-item + .dim-item { border-top: 1px solid var(--line); }
+.dim-why { margin-top: 4px; }
+.dim-why .dim-note { display: block; margin-top: 6px; line-height: 1.6; }
+.local-context-note ul, #localContextNote ul { margin-top: 6px; }
+
 /* ---------- smaller screens ---------- */
 @media (max-width: 1280px) {
   .release-status, .role-chip-action { display: none; }
