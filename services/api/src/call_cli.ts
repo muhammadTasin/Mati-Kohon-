@@ -8,6 +8,10 @@
  *   add --live (with AWAJ_API_TOKEN, AWAJ_SENDER and AWAJ_LIVE=1 in .env) to place the real call; otherwise it is
  *   a dry run that prints the script and the exact request.
  *
+ *   npm run call:test -- --to 01XXXXXXXXX --via voiceblast     the same advice in our Google voice through SysTech's
+ *   npm run call:test -- --to 01XXXXXXXXX --via broadcast      VoiceBlast portal or Voice Broadcast API; a real call
+ *                                                    needs --live and VOICEBLAST_LIVE=1 (or BROADCAST_LIVE=1)
+ *   npm run call:test -- --balance                   the Awaj, VoiceBlast and Broadcast balances (dials nothing)
  *   npm run call:test -- --upload-menu menu.m4a      upload the recorded crop menu as the voice "mather-kotha-menu"
  *   npm run call:test -- --voices                    list the account's voices and their approval
  *   npm run call:test -- --keypad --to 01XXXXXXXXX   call with the keypad menu (needs the approved menu voice)
@@ -17,6 +21,8 @@ import { placeFor } from '../../../packages/rotation-engine/src/data/location.ts
 import { replyFor, requestFromWords, understand } from './voice.ts';
 import { awajConfig, balance, bdMobile, broadcastResult, listVoices, sendKeypadSurvey, sendTemplateSurvey, sendTtsCall, ttsStatus, uploadVoice } from './awaj.ts';
 import { keypadMenu } from './voice.ts';
+import { broadcastBalance, broadcastReport, sendSystechCall, systechConfig, voiceblastAccount, voiceblastHistory, type CallRoute } from './systech.ts';
+import { synthesizeSpeech, ttsStatus as voiceStatus } from './providers/tts.ts';
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -27,7 +33,21 @@ const sleep = (ms: number) => new Promise(r => setTimeout(r, ms));
 
 async function main() {
   const live = process.argv.includes('--live');
-  if (live && !awajConfig().live) throw new Error('--live needs AWAJ_API_TOKEN, AWAJ_SENDER and AWAJ_LIVE=1 (in .env or the environment)');
+  const via = arg('via') as CallRoute | undefined;
+  if (via && via !== 'voiceblast' && via !== 'broadcast') throw new Error('--via is voiceblast or broadcast');
+  if (process.argv.includes('--balance')) {
+    const st = systechConfig();
+    const show = async (name: string, ok: boolean, get: () => Promise<unknown>) => {
+      if (!ok) return console.log(`${name}: not configured`);
+      try { console.log(`${name}:`, JSON.stringify(await get())); } catch (err: any) { console.log(`${name}: ${err.message ?? err}`); }
+    };
+    await show('Awaj', awajConfig().tokenSet, async () => (await balance()).data);
+    await show('VoiceBlast', st.voiceblast.signInSet, voiceblastAccount);
+    await show('Broadcast', st.broadcast.signInSet, async () => (await broadcastBalance()).data);
+    return;
+  }
+  if (live && via && !systechConfig()[via].live) throw new Error(`--live --via ${via} needs the ${via === 'voiceblast' ? 'VOICEBLAST' : 'BROADCAST'}_* sign-in, caller id and ${via === 'voiceblast' ? 'VOICEBLAST' : 'BROADCAST'}_LIVE=1`);
+  if (live && !via && !awajConfig().live) throw new Error('--live needs AWAJ_API_TOKEN, AWAJ_SENDER and AWAJ_LIVE=1 (in .env or the environment)');
   if (process.argv.includes('--voices')) {
     console.log(JSON.stringify((await listVoices()).data, null, 2));
     return;
@@ -82,6 +102,30 @@ async function main() {
   if (heard) console.log('Heard:', JSON.stringify({ crops: heard.crops, hero: heard.hero, excluded: heard.excluded, notModelled: heard.notModelled, land: heard.landType }));
   console.log(`\nCall script (~${reply.durationSecondsEstimate} s):\n${reply.speechBangla}\n\nSMS (${reply.smsSegments} part${reply.smsSegments > 1 ? 's' : ''}):\n${reply.smsBangla}\n`);
 
+  if (via) {
+    const audio = voiceStatus().provider === 'google' ? (await synthesizeSpeech(reply.speechBangla, 'bn', process.env, 'wav8k')).audio : null;
+    if (!audio) console.log('No Google voice (GOOGLE_TTS_CREDENTIALS); a real SysTech call needs it.');
+    const sent: any = await sendSystechCall(via, { phone, audio, script: reply.speechBangla, dryRun: !live });
+    if (sent.dryRun) {
+      console.log(`Dry run, nothing dialled (add --live with ${via === 'voiceblast' ? 'VOICEBLAST' : 'BROADCAST'}_LIVE=1). Request that would go to SysTech:`);
+      return console.log(JSON.stringify({ ...sent.request, audioBytes: sent.audioBytes }, null, 2));
+    }
+    console.log(sent.ok ? 'SysTech accepted the call.' : 'SysTech refused the call:', JSON.stringify(sent.response ?? sent.error));
+    if (!sent.ok) return;
+    for (let i = 0; i < 24; i++) {
+      await sleep(5000);
+      if (via === 'voiceblast') {
+        const last = (await voiceblastHistory(3)).find(h => h.phone.replace(/\D/g, '').endsWith(phone.slice(1)));
+        console.log('  call:', last ? `${last.status} ${last.cause} (${last.time})` : 'not in the history yet');
+        if (last && !/progress|ringing|queued|dialing/i.test(last.status)) return;
+      } else {
+        const r = (await broadcastReport(sent.blastId)).data as any;
+        console.log('  report:', JSON.stringify(r).slice(0, 200));
+        if (r?.success && JSON.stringify(r).match(/answer|fail|busy|complete/i)) return;
+      }
+    }
+    return console.log('Still running; check again with --balance or the SysTech portal.');
+  }
   if (live) console.log('Balance:', JSON.stringify((await balance()).data));
   const sent = await sendTtsCall({ phoneNumbers: [phone], texts: [reply.speechBangla], metadata: { channel: 'mather-kotha-test', place: place.id } });
   if (sent.dryRun) {

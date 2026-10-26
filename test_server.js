@@ -21,7 +21,7 @@ const serverProc = spawn('node', ['--experimental-strip-types', 'services/api/sr
   // tests never place a real call, never reach an LLM or TTS service, and read a fixed day of NASA conditions
   // (the daily update rewrites the live file)
   env: { ...process.env, PORT, EDEN_OFFICER_STORE: STORE, CATTLE_STORE_PATH: CATTLE_STORE, SEED_DEMO_DATA: 'false', LLM_BASE_URL: '', TTS_BASE_URL: '', GOOGLE_TTS_CREDENTIALS: '', SMS_LIVE: '0', SMS_API_KEY: '', AWAJ_VOICE_SOURCE: '',
-    API_WRITE_TOKEN: '', AWAJ_LIVE: '0', EDEN_LIVE_FILE: path.resolve('tests/fixtures/live_conditions_2026-10-01.json'), EDEN_FLOOD_FILE: path.resolve('tests/fixtures/no_flood_file.json'), EDEN_CROP_LOSS_FILE: path.resolve('tests/fixtures/crop_loss_fixture.json'),
+    API_WRITE_TOKEN: '', AWAJ_LIVE: '0', CALL_PROVIDER: '', VOICEBLAST_LIVE: '0', BROADCAST_LIVE: '0', EDEN_LIVE_FILE: path.resolve('tests/fixtures/live_conditions_2026-10-01.json'), EDEN_FLOOD_FILE: path.resolve('tests/fixtures/no_flood_file.json'), EDEN_CROP_LOSS_FILE: path.resolve('tests/fixtures/crop_loss_fixture.json'),
     EDEN_NISAR_FILE: NISAR },
 });
 
@@ -96,6 +96,13 @@ async function run() {
   const callRes = await fetch(`${BASE}/api/v1/calls/advice`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: '+8801700000000', unionId: 'ADM3_Godagari', preferredCrops: 'potato' }) });
   const call = await callRes.json();
   check(callRes.status === 200 && call.call.dryRun === true && call.call.request.language_code === 'bn-BD' && call.call.request.phone_numbers[0] === '01700000000', 'the Awaj call is a dry run with the bn-BD script');
+  const sysRes = await fetch(`${BASE}/api/v1/calls/advice`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: '01700000000', unionId: 'ADM3_Godagari', via: 'voiceblast' }) });
+  const sys = await sysRes.json();
+  const blastRes = await (await fetch(`${BASE}/api/v1/calls/advice`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ phone: '01700000000', unionId: 'ADM3_Godagari', via: 'broadcast' }) })).json();
+  const callStatus = await (await fetch(`${BASE}/api/v1/calls/status`)).json();
+  check(sysRes.status === 200 && sys.call.dryRun === true && sys.call.route === 'voiceblast' && sys.call.request.endpoint.endsWith('/customer/campaigns/demo-call') && sys.call.request.phone === '01700000000'
+    && blastRes.call.dryRun === true && blastRes.call.request.arr_dst[0] === '8801700000000' && callStatus.adviceCallsVia === 'awaj' && callStatus.systech.voiceblast.live === false,
+    'SysTech calls (VoiceBlast portal, Voice Broadcast API) are dry runs unless switched on, and Awaj stays the default');
   const hook = await (await fetch(`${BASE}/api/v1/calls/survey-webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ survey_id: 1, metadata: { unionId: 'talanda_tanore' }, results: [{ phone_number: '01700000000', status: 'answered', response: '6', responses: ['6', '1'] }, { phone_number: '01800000000', status: 'not_answered' }] }) })).json();
   check(hook.handled.length === 1 && hook.handled[0].crops.join() === 'sunflower,lentil' && hook.handled[0].callBack.dryRun === true, 'keypad answers (6 = sunflower, 1 = lentil) trigger a planned call-back');
   const landHook = await (await fetch(`${BASE}/api/v1/calls/survey-webhook`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ survey_id: 2, metadata: { unionId: 'ADM3_Khaliajuri', landQuestion: true }, results: [{ phone_number: '01700000000', status: 'answered', responses: ['8', '4'] }] }) })).json();

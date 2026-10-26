@@ -2,6 +2,13 @@
 
 What changed in Project EDEN, newest first, with who made each change and the branch it came from. Every branch below was merged into `main` on 1 October 2026.
 
+## 27 October 2026 · Calls in our own voice through SysTech (Tasrif, `feature/nisar`)
+
+- **SysTech calls:** `services/api/src/systech.ts` sends the advice call through SysTech's VoiceBlast portal or its Voice Broadcast REST API, playing our Google Cloud TTS recording converted to G.711 u-law (checked byte for byte against Python's `audioop`). Awaj still needs its support to enable Direct TTS; VoiceBlast works now.
+- **Choosing the route:** `CALL_PROVIDER` or `via` in `POST /api/v1/calls/advice`; `GET /api/v1/calls/status` reports each route without secrets. `npm run call:test -- --balance` reads all three accounts, and `--via voiceblast|broadcast` makes a dry run (a real call needs `--live` and the route's `*_LIVE=1`).
+- **Credentials:** in the git-ignored `.env` only, every live switch off; `.env.example` lists the names.
+- **Tests:** the u-law bytes match `audioop`; both SysTech routes are dry runs unless switched on, and Awaj stays the default.
+
 ## 27 October 2026 · Flood water under cloud and how fast it drains: NASA-ISRO NISAR radar (Tasrif, `feature/nisar`)
 
 - **NISAR water:** `research/live/nisar_water.py` reads NASA-ISRO NISAR L-band radar (GCOV, PROVISIONAL, ASF DAAC), which sees through monsoon cloud. Only Bangladesh's rows of the 80 m HH layer are fetched from each 2-8 GB file (about 25 MB a frame; 0.6 GB for the first national cycle). The flood share uses the OPERA definition (water now on land not water in both December 2025 and February 2026, via `flood_now.py`'s new `dry_season()`).

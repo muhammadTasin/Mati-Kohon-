@@ -29,6 +29,7 @@ import { askAiAssistant } from './ai_assistant.ts';
 import { cropMenu } from '../../../packages/rotation-engine/src/data/crop_choice.ts';
 import { cropsFromKeys, keypadMenu, landFromKey, replyFor, requestFromWords, understand } from './voice.ts';
 import { awajConfig, sendAudioCall, bdMobile, sendKeypadSurvey, sendTemplateSurvey, sendTtsCall } from './awaj.ts';
+import { sendSystechCall, systechConfig, type CallRoute } from './systech.ts';
 import { createFarmAoi } from './cattle/aoi.ts';
 import { cattleRepository } from './cattle/repository.ts';
 import { backgroundJobManager } from './cattle/jobs.ts';
@@ -680,9 +681,13 @@ const server = http.createServer(async (req, res) => {
     // API: phone calls through Awaj Digital (dry runs until AWAJ_API_TOKEN, AWAJ_SENDER and AWAJ_LIVE=1 are set)
     if (pathname === '/api/v1/calls/status' && req.method === 'GET') {
       const cfg = awajConfig();
+      const st = systechConfig();
+      const route = (r: typeof st.voiceblast) => ({ signInSet: r.signInSet, callerIdSet: Boolean(r.callerId), live: r.live });
       return sendJSON(res, 200, {
         provider: 'Awaj Digital', live: cfg.live, tokenSet: cfg.tokenSet, senderSet: Boolean(cfg.sender), voice: cfg.voice,
         keypadReady: Boolean(cfg.menuVoice || cfg.surveyTemplate), webhookSet: Boolean(cfg.webhookUrl), keypad: keypadMenu(),
+        adviceCallsVia: st.provider ?? 'awaj',
+        systech: { voiceblast: route(st.voiceblast), broadcast: route(st.broadcast), googleVoice: ttsStatus().provider === 'google' },
       });
     }
     if (pathname === '/api/v1/calls/advice' && req.method === 'POST') {
@@ -695,6 +700,29 @@ const server = http.createServer(async (req, res) => {
       if (!phone) return sendJSON(res, 400, { error: 'phone must be a Bangladeshi mobile number (01XXXXXXXXX)' });
       const answer = body.text ? voiceAnswer(body) : { reply: replyFor(adviseWithNarration(planRequest(body), body.farmerId)) };
       const metadata = { channel: 'mati-kohon', unionId: body.unionId ?? 'talanda_tanore', option: answer.reply.topOptionId };
+      // SysTech (VoiceBlast portal or the Voice Broadcast API) plays our Google recording; Awaj otherwise
+      const via: CallRoute | null = body.via === 'voiceblast' || body.via === 'broadcast' ? body.via : body.via === 'awaj' ? null : systechConfig().provider;
+      if (via) {
+        if (systechConfig()[via].live && !desk.officerForToken(req.headers.authorization)) {
+          return sendJSON(res, 401, { error: 'Officer sign-in required to place a real call' });
+        }
+        let audio: Buffer | null = null, voiceNote: string | null = null;
+        if (ttsStatus().provider === 'google') {
+          try {
+            audio = (await synthesizeSpeech(answer.reply.speechBangla, 'bn', process.env, 'wav8k')).audio;
+          } catch (err: any) {
+            voiceNote = `Google voice unavailable (${err?.details?.reason || err?.message || err})`;
+          }
+        }
+        let sent: any;
+        try {
+          sent = { ...(await sendSystechCall(via, { phone, audio, script: answer.reply.speechBangla })), voiceSource: 'google', ...(voiceNote ? { note: voiceNote } : {}) };
+        } catch (err: any) {
+          sent = { dryRun: false, route: via, error: String(err?.message || err) };
+        }
+        logCall({ kind: 'advice_call', phone: maskPhone(phone), crops: answer.reply.understoodCrops, dryRun: sent.dryRun, voice: `google via ${via}` });
+        return sendJSON(res, sent.error ? 502 : 200, { reply: answer.reply, call: sent });
+      }
       // Our own Bangla voice (Google Cloud TTS) when it is set up and Awaj can reach this server; else Awaj's voice
       let voiceNote: string | null = null;
       let sent: any = null;

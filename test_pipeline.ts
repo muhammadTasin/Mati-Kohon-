@@ -6,6 +6,7 @@ import { TemplateNarrator } from './packages/narration-core/src/template_narrato
 import { understandRequest } from './packages/rotation-engine/src/understand.ts';
 import { placeFor } from './packages/rotation-engine/src/data/location.ts';
 import { drainText } from './packages/rotation-engine/src/field_alerts.ts';
+import { ulawWav } from './services/api/src/systech.ts';
 
 const BN = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
 const bn = (v: unknown) => String(v).replace(/\d/g, d => BN[Number(d)]);
@@ -505,6 +506,17 @@ async function runTests() {
     throw new Error(`A slow fall gives a pace without a date, and drained land says so (got: ${slow?.en} / ${free?.en})`);
   }
   console.log(`NISAR: ${radarAlert.textEnglish.slice(0, 60)}...; Khaliajuri in November: ${haorNote.slice(-120)}`);
+  // SysTech calls want G.711 u-law: the 8 kHz 16-bit TTS audio converts byte for byte as Python's audioop.lin2ulaw
+  const samples = [0, 1, -1, 1000, -1000, 5000, -5000, 32767, -32768, 132, -133];
+  const wav16 = Buffer.alloc(44 + samples.length * 2);
+  wav16.write('RIFF', 0); wav16.writeUInt32LE(36 + samples.length * 2, 4); wav16.write('WAVEfmt ', 8); wav16.writeUInt32LE(16, 16);
+  wav16.writeUInt16LE(1, 20); wav16.writeUInt16LE(1, 22); wav16.writeUInt32LE(8000, 24); wav16.writeUInt32LE(16000, 28);
+  wav16.writeUInt16LE(2, 32); wav16.writeUInt16LE(16, 34); wav16.write('data', 36); wav16.writeUInt32LE(samples.length * 2, 40);
+  samples.forEach((s, i) => wav16.writeInt16LE(s, 44 + i * 2));
+  const ulaw = ulawWav(wav16);
+  if (ulaw.readUInt16LE(20) !== 7 || ulaw.readUInt32LE(24) !== 8000 || [...ulaw.subarray(46)].join() !== '255,255,126,206,78,171,43,128,0,239,111') {
+    throw new Error(`G.711 u-law WAV for SysTech calls matches audioop (got ${[...ulaw.subarray(46)].join()})`);
+  }
   console.log(`Field alerts: Aman dry spell ${dryAlert.level}, Boro seedbed cold ${cold[0].level}, Boro flowering heat ${hotBoro[0].level}, AWD "${awd[0].titleEnglish}"`);
   // Groundwater budget (NASA GRACE via GLDAS, BBS Boro area): Rajshahi needs a few percent of its Boro moved to stop the
   // fall; Sylhet's Boro is watered mostly from rivers and beels, so the budget is not given there

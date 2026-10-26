@@ -102,6 +102,15 @@ Calls stay dry runs (they return the exact request) until `.env` has `AWAJ_API_T
 
 The keypad call, step by step: record the menu text (`npm run call:test -- --upload-menu menu.m4a` prints it and uploads the recording as the voice `mather-kotha-menu`); wait for Awaj to approve it (`--voices`); set `AWAJ_MENU_VOICE` (or `AWAJ_SURVEY_TEMPLATE` for a two-question template made in the Awaj dashboard), `AWAJ_OFFICER_NUMBER` for key 9 and `PUBLIC_BASE_URL` so Awaj can reach `/api/v1/calls/survey-webhook`; then `npm run call:test -- --keypad --to 01XXXXXXXXX --live`, or the dashboard's "কিপ্যাড মেনু কল" button. The farmer presses keys, Awaj posts them, and the webhook calls back with the plan. `npm run call:test -- --to 01XXXXXXXXX --place ADM3_Godagari --text "আমি সূর্যমুখী আর মসুর করতে চাই"` prints the script and, with `--live`, places one call and prints Awaj's per-number result.
 
+**SysTech calls in our own voice (`services/api/src/systech.ts`).** The same advice can go out through SysTech, the voice platform behind the REVE SMS account, which plays our Google Cloud TTS recording instead of a machine voice. The 16-bit 8 kHz audio is converted to G.711 u-law (the telephone format, byte for byte as Python's `audioop`). Two routes: the VoiceBlast portal (`voice.smsvaults.work`; one number per call, the recording uploaded once per script and its id cached in `services/api/.data/`; the portal has no published API, so it signs in like a browser) and the Voice Broadcast REST API (many numbers in one request, a delivery report per blast). `CALL_PROVIDER` (`awaj`, `voiceblast` or `broadcast`) or `via` in `POST /api/v1/calls/advice` picks the route; `GET /api/v1/calls/status` shows which are set up and live. Calls are dry runs until `VOICEBLAST_LIVE=1` or `BROADCAST_LIVE=1`, and the test tool also needs `--live`:
+
+```bash
+npm run call:test -- --balance                                         # Awaj, VoiceBlast and Broadcast balances; dials nothing
+npm run call:test -- --to 01XXXXXXXXX --place ADM3_Tanore --via voiceblast   # dry run: the script, the recording size and the request
+```
+
+A value with `#` in `.env` (a password, say) must be quoted, or Node's `--env-file` cuts it at the `#`.
+
 ### What the fields grow: MODIS greenness for every upazila
 
 `python research/explore/national_greenness.py` reads the AppEEARS request `fieldshift_ndvi_national_20260927` (MODIS MOD13Q1 250 m NDVI at the 544 upazila centres, February 2000 to September 2026, plus VIIRS 500 m) and counts crops a year and the winter peak with the pilots' method (`field_cycles.py`). 530 upazilas have enough clear composites: Tanore went from 1.8 to 2.6 crops a year and its winter peak from 0.50 to 0.80 (the pilot's 9-pixel study read 0.81-0.83); parts of Bogura grow about 3. The overview shows it for any upazila (`greenness_upazila.json`). One pixel mixes fields, so it is context beside the replay, not a score input.
