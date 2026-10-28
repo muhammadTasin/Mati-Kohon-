@@ -81,7 +81,8 @@ export function cropsFromKeys(keys: string[]): { crops: string[]; officer: boole
 const andJoin = (names: string[]) => (names.length > 1 ? `${names.slice(0, -1).join(', ')} ও ${names[names.length - 1]}` : names[0] ?? '');
 
 /** Text-to-speech reads symbols aloud; give it words. */
-function speakable(text: string): string {
+/** Text the phone voice reads well: no symbols, units in words. */
+export function speakable(text: string): string {
   return text
     .replace(/~/g, '')
     .replace(/\s*–\s*/g, ' থেকে ')

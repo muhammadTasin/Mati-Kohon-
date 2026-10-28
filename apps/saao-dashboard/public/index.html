@@ -864,8 +864,8 @@
 
         <div class="card">
           <div class="card-header">
-            <h3 data-i18n="officer.registerTitle">কৃষক তালিকা (নমুনা)</h3>
-            <span class="badge badge-warning" data-i18n="overview.sampleBadge">নমুনা সারি: কৃষক সাক্ষাৎকার বাকি</span>
+            <h3 data-i18n="officer.registerTitle">কৃষক তালিকা</h3>
+            <button class="btn btn-sm btn-secondary" type="button" onclick="switchScreen('screen-delivery')" data-i18n="officer.registerCalls">নিবন্ধন ও কল</button>
           </div>
           <div class="table-responsive">
             <table class="data-table">
@@ -1133,6 +1133,101 @@
     <!-- SCREEN 8: ADVICE PREVIEW AND CALL DELIVERY -->
     <!-- ========================================== -->
     <section id="screen-delivery" class="screen-section">
+      <!-- THE DAILY ADVICE CALLS (calls.js): register -> the day's list -> the SAAO approves -> one-way call -> follow-up -->
+      <div class="card calls-gate" id="callsGate">
+        <div class="card-header"><h2 data-i18n="calls.title">কৃষকদের কাছে পরামর্শ কল</h2></div>
+        <p class="subtitle" data-i18n="calls.gate">প্রতিদিনের কলের তালিকা, কৃষকের প্রশ্ন ও নিবন্ধন দেখতে কর্মকর্তা হিসেবে প্রবেশ করুন।</p>
+        <button class="btn btn-primary" type="button" data-calls="go-sign-in" data-i18n="calls.goSignIn">কর্মকর্তা হিসেবে প্রবেশ</button>
+      </div>
+
+      <div id="callsWorkspace" hidden>
+        <div class="card calls-card">
+          <div class="card-header">
+            <h2 data-i18n="calls.listTitle">দিনের কল তালিকা</h2>
+            <span class="badge badge-neutral" id="callsMode"></span>
+          </div>
+          <p class="subtitle" data-i18n="calls.listSub">নাসার তথ্য আর কৃষকের জমি ও ফসল দেখে প্রতিদিন তালিকা হয়। প্রতিটি কল আপনি পড়ে অনুমোদন দিলে তবেই যায়। একজন কৃষক দিনে একটি, সপ্তাহে দুটির বেশি কল পান না (জরুরি সতর্কতা ও প্রশ্নের উত্তর ছাড়া)।</p>
+          <div class="calls-toolbar">
+            <label class="calls-date"><span data-i18n="calls.date">তারিখ</span> <input type="date" id="callsDate" class="form-control"></label>
+            <button class="btn btn-secondary btn-sm" type="button" data-calls="build" data-i18n="calls.build">তালিকা তৈরি করুন</button>
+            <button class="btn btn-primary btn-sm" type="button" data-calls="approve-all" data-i18n="calls.approveAll">সব অনুমোদন</button>
+            <button class="btn btn-success btn-sm" type="button" data-calls="send" data-i18n="calls.send">অনুমোদিত কল পাঠান</button>
+            <button class="btn btn-secondary btn-sm" type="button" data-calls="follow-up" data-i18n="calls.followUp">কে ধরেননি দেখুন</button>
+          </div>
+          <div id="callsCounts" class="calls-counts"></div>
+          <div id="callsList" class="calls-list"></div>
+          <p id="callsNote" class="calls-note" hidden></p>
+        </div>
+
+        <div class="calls-grid">
+          <div class="card">
+            <div class="card-header"><h3 data-i18n="calls.qTitle">কৃষকের প্রশ্ন</h3></div>
+            <p class="subtitle" data-i18n="calls.qSub">কলে কৃষক কথা বলতে পারেন না, তাই প্রশ্ন আসে আপনার কাছে: সামনাসামনি, ফোনে, মিসড কলে বা অ্যাপে। ফসলের প্রশ্নে ইঞ্জিন উত্তরের খসড়া দেয়; আপনি ঠিক করে দিলে উত্তরটি কল তালিকায় যায়।</p>
+            <form id="questionForm" class="calls-form">
+              <div class="form-group"><label for="qFarmer" data-i18n="calls.qFarmer">কৃষক</label><select id="qFarmer" class="form-control"></select></div>
+              <div class="form-group"><label for="qChannel" data-i18n="calls.qChannel">কীভাবে জানালেন</label>
+                <select id="qChannel" class="form-control">
+                  <option value="in_person" data-i18n="calls.ch.in_person">সামনাসামনি</option>
+                  <option value="phone" data-i18n="calls.ch.phone">ফোনে</option>
+                  <option value="app" data-i18n="calls.ch.app">অ্যাপে</option>
+                </select>
+              </div>
+              <div class="form-group calls-wide"><label for="qText" data-i18n="calls.qText">প্রশ্ন</label><textarea id="qText" class="form-control" rows="2" maxlength="300" lang="bn"></textarea></div>
+              <button class="btn btn-primary" type="submit" data-i18n="calls.qAdd">প্রশ্ন রাখুন ও খসড়া দেখুন</button>
+            </form>
+            <p id="questionMsg" class="calls-msg" hidden></p>
+            <div id="questionList" class="question-list"></div>
+          </div>
+
+          <div class="card">
+            <div class="card-header"><h3 data-i18n="calls.regTitle">কৃষক নিবন্ধন</h3><span class="badge badge-neutral" id="regCount"></span></div>
+            <p class="subtitle" data-i18n="calls.regSub">কৃষক রাজি হলে তবেই নিবন্ধন; কৃষক বললেই কল বন্ধ। ফোন নম্বর শুধু সার্ভারে থাকে, এখানে লুকানো দেখায়।</p>
+            <div id="registerList" class="register-list"></div>
+            <details class="fold register-fold" id="registerFold">
+              <summary data-i18n="calls.regAdd">নতুন কৃষক নিবন্ধন</summary>
+              <form id="registerForm" class="calls-form">
+                <div class="form-group"><label for="regName" data-i18n="calls.regName">নাম (বাংলায়)</label><input id="regName" class="form-control" maxlength="60" required lang="bn"></div>
+                <div class="form-group"><label for="regNameEn" data-i18n="calls.regNameEn">নাম (ইংরেজিতে, ঐচ্ছিক)</label><input id="regNameEn" class="form-control" maxlength="60"></div>
+                <div class="form-group"><label for="regPhone" data-i18n="calls.regPhone">মোবাইল নম্বর</label><input id="regPhone" class="form-control" inputmode="tel" autocomplete="off" placeholder="01XXXXXXXXX" required></div>
+                <div class="form-group"><label for="regDistrict" data-i18n="calls.regDistrict">জেলা</label><select id="regDistrict" class="form-control"></select></div>
+                <div class="form-group"><label for="regUpazila" data-i18n="calls.regUpazila">উপজেলা</label><select id="regUpazila" class="form-control"></select></div>
+                <div class="form-group"><label for="regUnion" data-i18n="calls.regUnion">ইউনিয়ন (বাংলায়)</label><input id="regUnion" class="form-control" maxlength="40" required lang="bn"></div>
+                <div class="form-group"><label for="regVillage" data-i18n="calls.regVillage">গ্রাম</label><input id="regVillage" class="form-control" maxlength="60" lang="bn"></div>
+                <div class="form-group"><label for="regLand" data-i18n="calls.regLand">জমির ধরন</label>
+                  <select id="regLand" class="form-control">
+                    <option value="high" data-i18n="land.high">উঁচু জমি</option>
+                    <option value="medium_high" data-i18n="land.medium_high" selected>মাঝারি উঁচু জমি</option>
+                    <option value="medium_low" data-i18n="land.medium_low">মাঝারি নিচু জমি</option>
+                    <option value="low" data-i18n="land.low">নিচু জমি</option>
+                    <option value="very_low" data-i18n="land.very_low">খুব নিচু জমি</option>
+                  </select>
+                </div>
+                <div class="form-group"><label for="regSlot" data-i18n="calls.regSlot">কখন ফোন করবেন</label>
+                  <select id="regSlot" class="form-control">
+                    <option value="morning" data-i18n="calls.slot.morning">সকাল ৯টা</option>
+                    <option value="afternoon" data-i18n="calls.slot.afternoon">বিকেল ৩টা</option>
+                    <option value="evening" data-i18n="calls.slot.evening" selected>সন্ধ্যা ৭টা</option>
+                  </select>
+                </div>
+                <fieldset class="form-group calls-wide reg-crops"><legend data-i18n="calls.regCrops">এ বছরের ফসল</legend><div id="regCrops" class="crop-checks"></div></fieldset>
+                <div class="calls-wide consent-box">
+                  <label class="obs-check"><input type="checkbox" id="regConsent"> <span data-i18n="calls.regConsent">কৃষক মাটি কহনের পরামর্শ কল পেতে রাজি হয়েছেন, এবং জানেন যে বললেই কল বন্ধ হবে।</span></label>
+                  <select id="regConsentHow" class="form-control" aria-label="consent">
+                    <option value="in_person" data-i18n="calls.ch.in_person">সামনাসামনি</option>
+                    <option value="phone" data-i18n="calls.ch.phone">ফোনে</option>
+                    <option value="app" data-i18n="calls.ch.app">অ্যাপে</option>
+                  </select>
+                </div>
+                <button class="btn btn-success" type="submit" data-i18n="calls.regSubmit">নিবন্ধন করুন</button>
+              </form>
+              <p id="registerMsg" class="calls-msg" hidden></p>
+            </details>
+            <p id="unknownCallers" class="calls-note" hidden></p>
+          </div>
+        </div>
+      </div>
+
+      <h3 class="calls-section-head" data-i18n="calls.testTitle">একটি পরামর্শ যাচাই ও পরীক্ষামূলক কল</h3>
       <div class="delivery-layout">
         <!-- LEFT: SAAO AUDIT & PREVIEW -->
         <div class="card delivery-preview-card">

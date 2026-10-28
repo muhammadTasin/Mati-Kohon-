@@ -328,6 +328,87 @@ export interface FarmerRecord {
   currentAmanCrop: string;
   irrigation: FieldObservation['irrigation'];
   sample: boolean;
+  /** Where the farm is: an upazila id (ADM3_...) or the pilot union; the pilot when not given. */
+  placeId?: string;
+  unionBangla?: string;
+  unionEnglish?: string;
+  /** This year's crops ('aman' and crop-menu ids such as 'boro', 'lentil', 'mustard'): who hears which reminder. */
+  crops?: string[];
+  callSlot?: CallSlot;
+  /** No consent, no calls. */
+  consent?: FarmerConsent | null;
+  optedOut?: { date: string; how: string } | null;
+  registeredAt?: string;
+  registeredBy?: string;
+}
+
+// ---------------------------------------------------------------------------
+// Farmer calls: the register's farmers get one-way advice calls; questions come back through the SAAO.
+// ---------------------------------------------------------------------------
+
+export type CallSlot = 'morning' | 'afternoon' | 'evening';
+
+export interface FarmerConsent {
+  date: string; // ISO timestamp
+  takenBy: string; // officer id
+  method: 'in_person' | 'phone' | 'app' | 'sample';
+}
+
+/** A farmer's question, brought by the SAAO (in person, by phone), a missed call or the app; answered by a call. */
+export interface FarmerQuestion {
+  id: string;
+  farmerId: string;
+  askedAt: string;
+  channel: 'in_person' | 'phone' | 'missed_call' | 'app';
+  textBangla: string;
+  /** The engine's draft when it understood the question (crops, land, priorities); empty when the officer must write it. */
+  draftBangla: string;
+  answerBangla: string | null;
+  status: 'open' | 'answered' | 'called';
+  takenBy: string | null;
+  callId: string | null;
+}
+
+export type PlannedCallKind = 'answer' | 'alert' | 'drain' | 'reminder';
+export type PlannedCallStatus = 'proposed' | 'approved' | 'removed' | 'sent' | 'retry' | 'unreached';
+
+export interface CallAttempt {
+  at: string;
+  route: string;
+  dryRun: boolean;
+  /** The provider's id for the call (VoiceBlast audio id, Broadcast blast id). */
+  ref: string | null;
+  outcome: 'answered' | 'unanswered' | 'failed' | 'dry_run' | 'pending';
+  note: string | null;
+}
+
+/** One call on a day's list: proposed by the planner, approved or removed by the SAAO, then sent and followed up. */
+export interface PlannedCall {
+  id: string;
+  date: string; // YYYY-MM-DD
+  farmerId: string;
+  kind: PlannedCallKind;
+  /** Never sent twice to one farmer (the rule, the reading or season, and the farmer's question). */
+  key: string;
+  /** At most one call on a topic a week, unless it is an emergency. */
+  topic: string;
+  level: 'high' | 'watch' | 'advice';
+  emergency: boolean;
+  titleBangla: string;
+  titleEnglish: string;
+  /** Why this farmer gets this call, for the officer. */
+  whyBangla: string;
+  whyEnglish: string;
+  scriptBangla: string;
+  smsBangla: string;
+  durationSeconds: number;
+  slot: CallSlot;
+  status: PlannedCallStatus;
+  edited: boolean;
+  approvedBy: string | null;
+  attempts: CallAttempt[];
+  sms: { at: string; dryRun: boolean; error: string | null } | null;
+  questionId: string | null;
 }
 
 export interface CallbackRequest {

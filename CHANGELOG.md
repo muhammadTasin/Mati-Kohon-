@@ -2,6 +2,17 @@
 
 What changed in Project EDEN, newest first, with who made each change and the branch it came from. Every branch below was merged into `main` on 1 October 2026.
 
+## 29 October 2026 · Daily advice calls to registered farmers (Tasrif, `feature/farmer-calls`)
+
+- **Register:** the officer registers a farmer with union, upazila, land, crops and call time, only with the farmer's recorded consent; numbers stay on the server (masked on screen) and a farmer's calls stop when they ask. Six sample farmers, two of them on low haor land in Bajitpur.
+- **The day's list (`services/api/src/farmer_calls.ts`):** each farmer's most important call. The candidates are an answer to their question, this week's field alert for their land and crops, the date their low land will be free at this year's NISAR and OPERA drainage pace (with the Boro seedbed date), or a sowing window opening or closing for one of their crops. One call a day, two a week (emergencies and answers excepted), one a topic a week, never the same message twice.
+- **One-way scripts:** where the call is for, one reason, the action said twice, then how to ask (the SAAO or the Krishi Call Centre, 16123) and how to stop; under a minute, with an SMS of the action.
+- **Approve, send, follow up:** the SAAO reads, edits, removes or approves every call on the Calls and SMS screen. Sends go through SysTech in our Google voice (dry runs unless live; sample farmers never dialled). An unanswered call is retried in the evening with an SMS, and a second miss is flagged for the officer.
+- **Questions back:** questions taken by the officer, from the app, or by missed call (`POST /api/v1/calls/missed`, with `MISSED_CALL_KEY`); the engine drafts crop answers and the officer's answer becomes a call.
+- **Daily job:** `npm run calls:daily` builds the list, `--send --due` sends by slot, `--follow-up` reads the reports.
+- **Shared advice:** the request and advice helpers moved from `server.ts` to `services/api/src/advice.ts` so the call planner and the command line use the same code; the officer desk now advises each farmer at their own place.
+- **Tests:** consent, masked numbers, the reminder script, approval, dry-run sends, retry with SMS, not reached, the daily and weekly limits, questions and drafts, the banned-word filter, app questions, missed calls and stopping the calls (440 of 440 texts translated).
+
 ## 27 October 2026 · A redesigned dashboard: Mati Kohon colours, a side rail, an overview in order (Tasrif, `feature/dashboard-redesign`)
 
 - **Palette, solid and calm:** `apps/saao-dashboard/public/brand.css`, loaded last, re-colours the whole dashboard with the leaf-and-sky palette (deep #054204, forest #1D6517, leaf #79B425, lime #C0DE7B, sky #55A6C3) in solid colours only: every gradient (57 rules in theme.css) is one flat colour. Large solid green surfaces tired the eye, so light surfaces carry the screen (white header and cards, a pale side rail, pale lime and sky panels for the banner and the evidence pages) and green is only an accent: the selected item's marker, icons, buttons and section marks. Every text on every screen for all three roles passes 4.5:1 contrast.

@@ -111,6 +111,32 @@ npm run call:test -- --to 01XXXXXXXXX --place ADM3_Tanore --via voiceblast   # d
 
 A value with `#` in `.env` (a password, say) must be quoted, or Node's `--env-file` cuts it at the `#`.
 
+### Daily advice calls to registered farmers
+
+The calls are one way: a recording plays and the farmer cannot answer back. So each call says one thing to do, and questions come back another way: through the farmer's SAAO, a missed call, or the app. `services/api/src/farmer_calls.ts` runs it, and the officer works it on the dashboard's Calls and SMS screen.
+
+1. **Register (`POST /api/v1/officer/farmers`).** The SAAO registers a farmer with their union, upazila, land type, this year's crops and the time to call (9:00, 15:00 or 19:00), only after the farmer agrees; the consent (date, officer, in person, by phone or in the app) is stored. The number stays on the server; screens get it masked. A farmer who asks is taken off at once (`POST /api/v1/officer/farmers/:id/calls`), and that day's waiting calls are dropped.
+2. **The day's list (`POST /api/v1/officer/calls/plan`, or `npm run calls:daily`).** For each farmer, the candidates are:
+   - an answer to their question;
+   - this week's field alert at their place for their land and crops (`field_alerts.ts`: flood water on medium-low land, a dry spell or heat at Aman flowering, cold on Boro seedbeds, heat in wheat, AWD in Boro);
+   - from October to January on low land, when this year's flood water will have left (NISAR and OPERA) and when to sow the Boro seedbed so the seedlings are 35-45 days old then;
+   - a reminder when one of their crops' sowing windows opens within a week or closes within 10 days.
+
+   The most important one goes (emergency, answer, alert, drain date, reminder). At most one call a day and two a week, except emergencies and answers; one call on a topic a week; never the same message twice.
+3. **The script.** It opens with "আসসালামু আলাইকুম। মাটি কহন থেকে বলছি, (union)-এর কৃষকদের জন্য।" Then the reason in one line (which satellite saw what), the action, "আবার বলছি:" and the action again, then how to ask: their SAAO or the Krishi Call Centre (16123, read digit by digit), and how to stop the calls. Under a minute; answers to questions are drafted to about a minute and flagged when longer. The SMS carries the action and 16123.
+4. **Approve.** The SAAO reads each call, edits the wording (the banned-word filter applies) or removes it, and approves. Nothing goes out without it.
+5. **Send and follow up.** `POST /api/v1/officer/calls/send` (or `npm run calls:daily -- --send --due` on a schedule) plays the Google bn-BD recording through `CALL_PROVIDER`'s SysTech route. `POST /api/v1/officer/calls/follow-up` reads the provider's report: an unanswered call is retried in the evening and its action goes by SMS; a second miss marks the farmer "not reached" for the SAAO to call. Dry runs have no report, so the officer can mark a call answered or not (`POST /api/v1/officer/calls/:id/outcome`).
+6. **Questions back.** The SAAO types a farmer's question (`POST /api/v1/officer/questions`); for crop questions the engine drafts the answer from the farmer's place and land; the officer corrects it and approves (`POST /api/v1/officer/questions/:id/answer`), and it goes on the day's list. A signed-in farmer can ask from the app (`/api/v1/farmer/questions`). A missed call to the project's number (`POST /api/v1/calls/missed?key=MISSED_CALL_KEY`, posted by a missed-call provider) puts that farmer's advice for the week on the list; an unknown number is kept masked for the officer.
+
+Everything is a dry run until the route's `*_LIVE=1` is set (and `SMS_LIVE=1` for the SMS), and sample farmers are never dialled. The stores are `services/api/.data/officer_store.json` (the register) and `farmer_calls.json` (git-ignored); "Restore sample farmers" on the officer desk resets both.
+
+```bash
+npm run calls:daily                          # build today's list for the SAAO to approve
+npm run calls:daily -- --date 2026-11-06     # what next week's list looks like
+npm run calls:daily -- --send --due          # send the approved calls whose slot has started (dry run without --live)
+npm run calls:daily -- --follow-up           # read the reports; retry and SMS the unanswered
+```
+
 ### What the fields grow: MODIS greenness for every upazila
 
 `python research/explore/national_greenness.py` reads the AppEEARS request `fieldshift_ndvi_national_20260927` (MODIS MOD13Q1 250 m NDVI at the 544 upazila centres, February 2000 to September 2026, plus VIIRS 500 m) and counts crops a year and the winter peak with the pilots' method (`field_cycles.py`). 530 upazilas have enough clear composites: Tanore went from 1.8 to 2.6 crops a year and its winter peak from 0.50 to 0.80 (the pilot's 9-pixel study read 0.81-0.83); parts of Bogura grow about 3. The overview shows it for any upazila (`greenness_upazila.json`). One pixel mixes fields, so it is context beside the replay, not a score input.
@@ -257,7 +283,16 @@ Do not commit secrets, local environment files, dependency folders, generated AP
 | POST | `/api/v1/officer/observations` | Saves a field observation and returns the farmer's updated advice |
 | POST | `/api/v1/officer/callbacks/:id/resolve` | Marks a call-back done |
 | GET | `/api/v1/officer/knowledge` | Officer reference pack |
-| POST | `/api/v1/officer/reset` | Restores the sample farmers (demo) |
+| POST | `/api/v1/officer/reset` | Restores the sample farmers and clears the call list (demo) |
+| POST | `/api/v1/officer/farmers` | Registers a farmer for the advice calls: name, phone, `placeId`, union, land, crops, call time; `consent: true` with how it was given is required |
+| POST | `/api/v1/officer/farmers/:id/calls` | `{ on: false, how }` stops a farmer's calls (today's waiting calls go too); `{ on: true }` starts them again with fresh consent |
+| GET/POST | `/api/v1/officer/calls/plan` | The day's call list (`?date=`); POST `{ date }` builds it: each farmer's most important call, after the limits |
+| POST | `/api/v1/officer/calls/:id/review` | `{ action: approve, remove, undo or edit, scriptBangla, smsBangla }` |
+| POST | `/api/v1/officer/calls/approve-all`, `/send`, `/follow-up` | Approves the day's proposals; sends the approved calls and retries (dry runs unless live); reads the providers' reports and retries or SMSes the unanswered |
+| POST | `/api/v1/officer/calls/:id/outcome` | `{ outcome: answered or unanswered }`, the officer's word on a call |
+| POST | `/api/v1/officer/questions`, `/questions/:id/answer` | A farmer's question with the engine's draft; the officer's answer goes on the day's list |
+| GET/POST | `/api/v1/farmer/questions` | A signed-in farmer's own questions from the app |
+| POST | `/api/v1/calls/missed?key=` | A missed-call provider's webhook (`MISSED_CALL_KEY`): a registered farmer's advice goes on the list |
 | GET | `/api/v1/map/upazilas` | One row per upazila for the map: MODIS crops a year and winter greenness, the district's Boro irrigation and GLDAS groundwater trend, PEST-CHEMGRIDS pesticide on rice and on pulses and oilseeds, SRDI organic matter and pH, and today's rain and soil status |
 
 ## Tests

@@ -7,6 +7,7 @@ const PORT = process.env.TEST_PORT || '4317';
 const BASE = `http://localhost:${PORT}`;
 // The officer desk writes to a throwaway store so tests never touch the demo data
 const STORE = path.join(os.tmpdir(), `eden-officer-test-${process.pid}.json`);
+const CALL_STORE = path.join(os.tmpdir(), `eden-calls-test-${process.pid}.json`);
 const CATTLE_STORE = path.join(os.tmpdir(), `eden-cattle-test-${process.pid}.json`);
 // A NISAR radar flood reading three days old, written fresh each run (readings older than 21 days are not used)
 const NISAR = path.join(os.tmpdir(), `eden-nisar-test-${process.pid}.json`);
@@ -22,7 +23,7 @@ const serverProc = spawn('node', ['--experimental-strip-types', 'services/api/sr
   // (the daily update rewrites the live file)
   env: { ...process.env, PORT, EDEN_OFFICER_STORE: STORE, CATTLE_STORE_PATH: CATTLE_STORE, SEED_DEMO_DATA: 'false', LLM_BASE_URL: '', TTS_BASE_URL: '', GOOGLE_TTS_CREDENTIALS: '', SMS_LIVE: '0', SMS_API_KEY: '', AWAJ_VOICE_SOURCE: '',
     API_WRITE_TOKEN: '', AWAJ_LIVE: '0', CALL_PROVIDER: '', VOICEBLAST_LIVE: '0', BROADCAST_LIVE: '0', EDEN_LIVE_FILE: path.resolve('tests/fixtures/live_conditions_2026-10-01.json'), EDEN_FLOOD_FILE: path.resolve('tests/fixtures/no_flood_file.json'), EDEN_CROP_LOSS_FILE: path.resolve('tests/fixtures/crop_loss_fixture.json'),
-    EDEN_NISAR_FILE: NISAR },
+    EDEN_NISAR_FILE: NISAR, EDEN_CALL_STORE: CALL_STORE, MISSED_CALL_KEY: 'test-missed-key', SMS_SECRET_KEY: '' },
 });
 
 serverProc.stdout.on('data', (d) => process.stdout.write(d));
@@ -234,6 +235,102 @@ async function run() {
   const knowledge = await (await fetch(`${BASE}/api/v1/officer/knowledge`, auth)).json();
   check(knowledge.srdi.rows.length >= 5 && knowledge.ipm.byRabi.length >= 4, 'officer knowledge pack has the full SRDI card and IPM steps');
   console.log('✓ Keypad 9 call-back queued; knowledge pack served to the signed-in officer');
+
+  // 11b. The farmer register and the daily advice calls (farmer_calls.ts): consent, the list, approval, dry-run sends,
+  // the retry and SMS, the limits, questions back through the officer, missed calls, and stopping the calls
+  console.log('Testing the farmer register and the daily advice calls ...');
+  const lockedPlan = await fetch(`${BASE}/api/v1/officer/calls/plan`);
+  check(lockedPlan.status === 401, 'the call list needs an officer');
+  const planView = await (await fetch(`${BASE}/api/v1/officer/calls/plan`, auth)).json();
+  check(planView.register.farmers === 6 && planView.register.callable === 6 && !planView.live, 'six sample farmers who agreed, and calls are dry runs');
+  const farmerBody = { nameBangla: 'পরীক্ষা কৃষক', phone: '01712345678', placeId: 'talanda_tanore', unionBangla: 'তালন্দ', landType: 'medium_high', crops: ['lentil', 'mustard', 'wheat'], callSlot: 'morning', consentMethod: 'in_person' };
+  check((await post('/api/v1/officer/farmers', farmerBody, session.token)).status === 400, 'no registration without the farmer agreeing');
+  check((await post('/api/v1/officer/farmers', { ...farmerBody, consent: true, phone: '12345' }, session.token)).status === 400, 'a phone must be a Bangladeshi mobile');
+  const reg = await (await post('/api/v1/officer/farmers', { ...farmerBody, consent: true }, session.token)).json();
+  check(reg.farmer?.id === 'F07' && reg.farmer.phoneMasked === '017XX-XXX678' && reg.farmer.consent.takenBy === 'saao_talanda_01', 'a registered farmer has a masked number and recorded consent');
+  check((await post('/api/v1/officer/farmers', { ...farmerBody, consent: true }, session.token)).status === 400, 'one registration per number');
+
+  // Season reminders on a fixed day: the lentil window closes 14 Nov, so on 6 Nov the lentil farmers hear it
+  const day1 = '2026-11-06', day2 = '2026-11-07', day3 = '2026-11-08';
+  const plan1 = await (await post('/api/v1/officer/calls/plan', { date: day1 }, session.token)).json();
+  const mine1 = plan1.calls.find(c => c.farmerId === 'F07');
+  check(mine1?.kind === 'reminder' && mine1.key.startsWith('reminder:lentil:close') && mine1.status === 'proposed', `the lentil farmer gets the closing-window reminder, got ${mine1?.key}`);
+  check(mine1.scriptBangla.startsWith('আসসালামু আলাইকুম। মাটি কহন থেকে বলছি, তালন্দ ইউনিয়নের কৃষকদের জন্য।') && mine1.scriptBangla.includes('আবার বলছি') && mine1.scriptBangla.includes('এক ছয় এক দুই তিন'), 'the script says where it is for, repeats the action and gives the helpline');
+  check(mine1.smsBangla.includes('১৬১২৩') && mine1.durationSeconds <= 60, 'the SMS names the helpline and the call stays under a minute');
+  check(!JSON.stringify(plan1).includes('01712345678'), 'phone numbers never leave the server');
+  check(plan1.calls.some(c => c.farmerId === 'F01' && c.kind === 'reminder'), 'the sample lentil farmer gets the reminder too');
+
+  const removeOne = plan1.calls.find(c => c.farmerId === 'F01');
+  await post(`/api/v1/officer/calls/${removeOne.id}/review`, { action: 'remove' }, session.token);
+  const edited = await post(`/api/v1/officer/calls/${mine1.id}/review`, { action: 'edit', scriptBangla: `${mine1.scriptBangla} ঋণ নিন।` }, session.token);
+  check(edited.status === 400, 'edited scripts go through the banned-word filter');
+  const approved = await (await post('/api/v1/officer/calls/approve-all', { date: day1 }, session.token)).json();
+  check(approved.approved >= 1 && approved.calls.find(c => c.id === removeOne.id).status === 'removed', 'approve-all skips the removed call');
+  const sent1 = await (await post('/api/v1/officer/calls/send', { date: day1 }, session.token)).json();
+  check(sent1.result.live === false && sent1.result.sent.every(s => s.outcome === 'dry_run'), 'with the switches off every call is a dry run');
+  check(sent1.result.sent.filter(s => s.farmerId.startsWith('F0') && Number(s.farmerId.slice(1)) <= 6).every(s => s.note === 'sample farmer: never dialled'), 'sample farmers are never dialled');
+  check((await post(`/api/v1/officer/calls/${mine1.id}/review`, { action: 'remove' }, session.token)).status === 400, 'a call that went out cannot be changed');
+
+  // Not answered: a retry in the evening and an SMS; a second miss is "not reached"
+  const missedOnce = await (await post(`/api/v1/officer/calls/${mine1.id}/outcome`, { outcome: 'unanswered' }, session.token)).json();
+  check(missedOnce.call.status === 'retry' && missedOnce.call.slot === 'evening' && missedOnce.call.sms?.dryRun === true, 'an unanswered call is retried in the evening with an SMS');
+  const sent2 = await (await post('/api/v1/officer/calls/send', { date: day1 }, session.token)).json();
+  check(sent2.result.sent.some(s => s.id === mine1.id), 'the retry goes out');
+  const missedTwice = await (await post(`/api/v1/officer/calls/${mine1.id}/outcome`, { outcome: 'unanswered' }, session.token)).json();
+  check(missedTwice.call.status === 'unreached' && missedTwice.call.attempts.length === 2, 'two misses: not reached, for the officer to follow up');
+
+  // Limits: one call a day; never the same message twice; at most two a week
+  const again = await (await post('/api/v1/officer/calls/plan', { date: day1 }, session.token)).json();
+  check(again.calls.filter(c => c.farmerId === 'F07').length === 1 && again.skipped.some(s => s.farmerId === 'F07' && s.reason === 'already has a call this day'), 'one call a farmer a day');
+  const plan2 = await (await post('/api/v1/officer/calls/plan', { date: day2 }, session.token)).json();
+  const mine2 = plan2.calls.find(c => c.farmerId === 'F07');
+  check(mine2 && mine2.key !== mine1.key && mine2.key.startsWith('reminder:mustard'), `the next day brings the next message, got ${mine2?.key}`);
+  await post('/api/v1/officer/calls/approve-all', { date: day2 }, session.token);
+  await post('/api/v1/officer/calls/send', { date: day2 }, session.token);
+  const plan3 = await (await post('/api/v1/officer/calls/plan', { date: day3 }, session.token)).json();
+  check(!plan3.calls.some(c => c.farmerId === 'F07') && plan3.skipped.some(s => s.farmerId === 'F07'), 'two calls this week: the wheat reminder waits');
+
+  // On low land after the flood (October to January), when the land will be free and when to sow the Boro seedbed
+  const todayMd = new Date(Date.now() + 6 * 3_600_000).toISOString().slice(5, 10);
+  const today = new Date(Date.now() + 6 * 3_600_000).toISOString().slice(0, 10);
+  // (registered now: on the test days above it would already have heard the same reading)
+  const haorFarmer = (await (await post('/api/v1/officer/farmers', { ...farmerBody, consent: true, phone: '01812345678', placeId: 'ADM3_Barhatta', unionBangla: 'নমুনা', landType: 'low', crops: ['boro'] }, session.token)).json()).farmer;
+  const planToday = await (await post('/api/v1/officer/calls/plan', {}, session.token)).json();
+  const haorCall = planToday.calls.find(c => c.farmerId === haorFarmer.id);
+  if (todayMd >= '10-01' || todayMd <= '01-31') {
+    check(haorCall?.kind === 'drain' && haorCall.scriptBangla.includes('NISAR') && haorCall.scriptBangla.includes('বোরোর বীজতলা'), `the low-land farmer hears when the water will have left, got ${haorCall?.key}`);
+  }
+
+  // Questions come back through the officer; crop questions get the engine's draft
+  const q1 = (await (await post('/api/v1/officer/questions', { farmerId: 'F07', textBangla: 'আমি সরিষা আর মসুর করতে চাই, কোনটা ভালো?', channel: 'phone' }, session.token)).json()).question;
+  check(q1.status === 'open' && q1.draftBangla.includes('মসুর') && !q1.draftBangla.startsWith('আসসালামু'), "the engine drafts an answer to a crop question");
+  const q2 = (await (await post('/api/v1/officer/questions', { farmerId: 'F07', textBangla: 'আমার গাভীর দুধ কমে গেছে কেন?' }, session.token)).json()).question;
+  check(q2.draftBangla === '', 'no draft when the engine does not understand: the officer writes it');
+  check((await post(`/api/v1/officer/questions/${q1.id}/answer`, { answerBangla: 'সুদ ছাড়া ঋণ নিন।' }, session.token)).status === 400, 'answers go through the banned-word filter');
+  const answered = await (await post(`/api/v1/officer/questions/${q1.id}/answer`, { answerBangla: q1.draftBangla }, session.token)).json();
+  check(answered.call?.kind === 'answer' && answered.call.date === today && answered.call.durationSeconds <= 75 && answered.question.status === 'answered', 'the approved answer goes on today\'s list');
+
+  // A farmer's own question from the app
+  const farmerSignIn = await (await post('/api/v1/auth/login', { role: 'farmer', farmerId: 'F01', pin: '1234' })).json();
+  const appQ = await post('/api/v1/farmer/questions', { textBangla: 'গম কবে বুনব?' }, farmerSignIn.token);
+  check(appQ.status === 200 && (await appQ.json()).question.channel === 'app', 'a farmer can ask from the app');
+  check((await post('/api/v1/farmer/questions', { textBangla: 'x' }, session.token)).status === 401, 'only a farmer session asks as a farmer');
+
+  // Missed calls: a key is required; a known number gets this week's advice on the list, an unknown one is kept masked
+  check((await post('/api/v1/calls/missed', { phone: '01812345678' })).status === 401, 'missed calls need the webhook key');
+  const missedKnown = await (await post('/api/v1/calls/missed?key=test-missed-key', { phone: '01812345678' })).json();
+  check(missedKnown.registered && missedKnown.queued, 'a registered farmer\'s missed call puts their advice on the list');
+  const missedUnknown = await (await post('/api/v1/calls/missed?key=test-missed-key', { phone: '01999999999' })).json();
+  check(!missedUnknown.registered, 'an unknown number is not answered');
+  const withUnknown = await (await fetch(`${BASE}/api/v1/officer/calls/plan`, auth)).json();
+  check(withUnknown.unknownCallers[0]?.phoneMasked === '019XXXX9999', 'the officer sees the unknown caller, masked');
+
+  // Stopping the calls: today's waiting calls go, and no more are planned
+  const stopped = await (await post(`/api/v1/officer/farmers/${haorFarmer.id}/calls`, { on: false, how: 'farmer asked' }, session.token)).json();
+  check(stopped.farmer.optedOut?.how === 'farmer asked', 'the officer records that the farmer stopped the calls');
+  const afterStop = await (await post('/api/v1/officer/calls/plan', {}, session.token)).json();
+  check(!afterStop.calls.some(c => c.farmerId === haorFarmer.id && c.status !== 'removed') && afterStop.skipped.some(s => s.farmerId === haorFarmer.id && s.reason === 'stopped the calls'), 'no calls after a farmer stops them');
+  console.log(`✓ Farmer calls: consent, ${plan1.calls.length} calls on ${day1}, dry-run sends, retry + SMS, limits, questions, missed calls and stop`);
 
   // 12. Every dashboard text has an English translation
   const html = fs.readFileSync('apps/saao-dashboard/public/index.html', 'utf8').replace(/<!--[\s\S]*?-->/g, '');
@@ -474,6 +571,7 @@ async function run() {
 function finish(code) {
   serverProc.kill();
   fs.rmSync(STORE, { force: true });
+  fs.rmSync(CALL_STORE, { force: true });
   fs.rmSync(CATTLE_STORE, { force: true });
   fs.rmSync(NISAR, { force: true });
   process.exit(code);

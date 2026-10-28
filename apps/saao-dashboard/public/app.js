@@ -8,6 +8,7 @@
 import { EN } from './i18n.js';
 import { initBdMap } from './bd-map.js';
 import { initPortals } from './portals.js';
+import { initCalls } from './calls.js';
 
 let lang = 'bn';
 let currentAdvice = null;
@@ -126,6 +127,7 @@ function renderAll() {
   if (currentDataRelease) renderQuality(currentDataRelease);
   renderProfile();
   renderOfficer();
+  callsUi?.render();
   renderAudioButton();
   window.updateWeights();
   window.updateObsWeights();
@@ -910,6 +912,7 @@ window.officerSignOut = function() {
   }
   renderOfficer();
   renderProfile();
+  callsUi?.refresh();
 };
 
 async function loadOfficerDesk() {
@@ -923,6 +926,7 @@ async function loadOfficerDesk() {
   }
   renderOfficer();
   renderProfile();
+  callsUi?.refresh();
   if (!$('obsFarmer').dataset.chosen) window.prefillObservation(officerDesk.queue[0]?.farmerId);
 }
 
@@ -992,7 +996,7 @@ function renderFarmerOptions() {
 }
 
 function renderRegister() {
-  setHtml('officerFarmers', officerDesk.farmers.map(({ farmer, observation, queue, advice }) => {
+  setHtml('officerFarmers', officerDesk.farmers.map(({ farmer, place, observation, queue, advice }) => {
     const current = observation?.currentAmanCrop ?? farmer.currentAmanCrop;
     const landType = observation?.landType ?? farmer.landType;
     const status = observation
@@ -1001,7 +1005,7 @@ function renderRegister() {
     const callback = queue?.openCallbackId ? ` <span class="badge badge-warning">${tr('কল-ব্যাক', 'Call-back')}</span>` : '';
     return `
       <tr>
-        <td><strong>${escapeHtml(tr(farmer.nameBangla, farmer.nameEnglish))}</strong> <span class="tag tag-yellow">${tr('নমুনা', 'sample')}</span><br><small>${escapeHtml(farmer.phoneMasked)}</small></td>
+        <td><strong>${escapeHtml(tr(farmer.nameBangla, farmer.nameEnglish))}</strong>${farmer.sample ? ` <span class="tag tag-yellow">${tr('নমুনা', 'sample')}</span>` : ''}<br><small>${escapeHtml(farmer.phoneMasked)}${place?.upazila ? ` · ${escapeHtml(place.unionBangla ? tr(`${place.unionBangla} ইউনিয়ন, ${place.upazilaBangla}`, `${place.unionEnglish || place.unionBangla} union, ${place.upazila}`) : tr(place.upazilaBangla, place.upazila))}` : ''}</small></td>
         <td>${escapeHtml(land(landType))}<br><small>${escapeHtml(amanName(current))}</small></td>
         <td>${advice.thisSeasonOptionBangla && advice.thisSeasonOptionBangla !== advice.topOptionBangla
           ? `<small>${tr('এ মৌসুম', 'This season')}:</small> ${escapeHtml(tr(advice.thisSeasonOptionBangla, advice.thisSeasonOptionEnglish))}<br><small>${tr('আগামী মৌসুম', 'Next season')}: ${escapeHtml(tr(advice.topOptionBangla, advice.topOptionEnglish))}</small>`
@@ -1322,6 +1326,7 @@ function renderQuality(data) {
 
 // Role picker, web farmer portal, weather and cattle screens (portals.js): set up first, so the picker works at once
 let portals = null;
+let callsUi = null; // the daily advice calls on Calls and SMS (calls.js)
 function startPortals() {
   portals = initPortals({
     tr, num, isoDate, escapeHtml, $, setText, setHtml,
@@ -1372,6 +1377,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   applyStaticText();
   startPortals();
+  callsUi = initCalls({
+    tr, num, isoDate, escapeHtml, $, setHtml, land, officerFetch,
+    signedIn: () => Boolean(officerSession),
+  });
+  callsUi.render();
   await loadOverview();
   await window.runPlannerCalculation({ switchScreenAfter: false });
   await loadDataQualityTable();
