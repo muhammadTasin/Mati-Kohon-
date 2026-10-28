@@ -551,7 +551,7 @@ window.runPlannerCalculation = async function(options = {}) {
     renderEvidence(data);
     renderCompanion(data);
     renderIpm(data);
-    await loadNarration(selectedOption());
+    loadNarration(selectedOption()); // the spoken script arrives later (an LLM wording can take seconds)
     if (options.switchScreenAfter !== false) window.switchScreen('screen-comparison');
   } catch (err) {
     console.error('Failed to calculate advice:', err);
@@ -663,7 +663,7 @@ window.selectCandidateOption = async function(optionId) {
   selectedOptionId = optionId;
   renderTimeline(selectedOption());
   renderStewardship(selectedOption());
-  await loadNarration(selectedOption());
+  loadNarration(selectedOption());
   window.switchScreen('screen-delivery');
 };
 
@@ -853,8 +853,13 @@ function renderIpm(advice) {
 // ---------------------------------------------------------------------------
 
 async function loadOfficers() {
-  officers = await (await fetch('/api/v1/officers')).json();
+  try {
+    officers = await (await fetch('/api/v1/officers')).json();
+  } catch {
+    return; // the sign-in form asks again when it is used
+  }
   renderOfficerSelect();
+  portals?.fillOfficers();
 }
 
 function renderOfficerSelect() {
@@ -1141,13 +1146,17 @@ window.officerReset = async function() {
 
 async function loadNarration(opt) {
   if (!opt || !currentAdvice) return;
+  const advice = currentAdvice;
   try {
     const res = await fetch('/api/v1/narrate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ advice: currentAdvice, selectedOptionId: opt.id }),
+      body: JSON.stringify({ advice, selectedOptionId: opt.id }),
     });
-    currentNarration = await res.json();
+    const narration = await res.json();
+    // A newer plan or option was chosen while this one was being worded: keep the newer one
+    if (advice !== currentAdvice || selectedOptionId !== opt.id) return;
+    currentNarration = narration;
     renderNarration();
   } catch (err) {
     console.error('Narration failed:', err);
@@ -1377,6 +1386,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
   applyStaticText();
   startPortals();
+  const officersReady = loadOfficers();
   callsUi = initCalls({
     tr, num, isoDate, escapeHtml, $, setHtml, land, officerFetch,
     signedIn: () => Boolean(officerSession),
@@ -1385,7 +1395,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   await loadOverview();
   await window.runPlannerCalculation({ switchScreenAfter: false });
   await loadDataQualityTable();
-  await loadOfficers();
+  await officersReady;
   if (officerSession) await loadOfficerDesk();
   renderAll();
   await portals.restoreSession();

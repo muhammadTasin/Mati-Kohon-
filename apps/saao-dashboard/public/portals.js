@@ -1099,5 +1099,7 @@ export function initPortals(ctx) {
       renderFarm();
       fillOfficerSelect();
     },
+    /** The officer list arrived: fill the sign-in list. */
+    fillOfficers: fillOfficerSelect,
   };
 }
