@@ -1,0 +1,70 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 360" role="img" aria-labelledby="t">
+  <title id="t">A NASA satellite over Bangladeshi paddy fields, a river and a homestead</title>
+  <defs>
+    <clipPath id="frame"><rect width="800" height="360"/></clipPath>
+  </defs>
+  <g clip-path="url(#frame)">
+    <!-- sky -->
+    <rect width="800" height="360" fill="#E8F3F7"/>
+    <rect y="150" width="800" height="70" fill="#F1F7F2"/>
+    <!-- sun -->
+    <circle cx="640" cy="96" r="34" fill="#F4D98B"/>
+    <circle cx="640" cy="96" r="22" fill="#EFC55E"/>
+    <!-- satellite orbit and the satellite -->
+    <path d="M40 120 Q 400 -40 780 70" fill="none" stroke="#55A6C3" stroke-width="2" stroke-dasharray="4 8" opacity=".8"/>
+    <g transform="translate(250 38) rotate(-12)">
+      <rect x="-46" y="-9" width="34" height="18" fill="#2A6E88"/>
+      <rect x="12" y="-9" width="34" height="18" fill="#2A6E88"/>
+      <path d="M-46 0 H-12 M12 0 H46 M-29 -9 V9 M29 -9 V9" stroke="#8CC8DC" stroke-width="1.5"/>
+      <rect x="-12" y="-13" width="24" height="26" fill="#FFFFFF" stroke="#2A6E88" stroke-width="2"/>
+      <circle cx="0" cy="0" r="5" fill="#C0DE7B"/>
+      <!-- the swath it sees -->
+      <path d="M-6 13 L-60 150 L70 150 L6 13 Z" fill="#55A6C3" opacity=".10"/>
+    </g>
+    <!-- far hills -->
+    <path d="M0 190 Q 90 150 190 178 T 380 170 T 590 168 T 800 160 V230 H0 Z" fill="#C0DE7B" opacity=".55"/>
+    <!-- tree line -->
+    <g fill="#1D6517" opacity=".75">
+      <circle cx="70" cy="196" r="13"/><circle cx="88" cy="190" r="16"/><circle cx="108" cy="198" r="12"/>
+      <circle cx="470" cy="190" r="12"/><circle cx="488" cy="184" r="15"/><circle cx="506" cy="192" r="11"/>
+      <circle cx="720" cy="186" r="14"/><circle cx="742" cy="181" r="17"/><circle cx="762" cy="190" r="12"/>
+    </g>
+    <!-- homestead: a tin-roof house among trees -->
+    <g transform="translate(560 168)">
+      <rect x="0" y="20" width="58" height="30" fill="#F7F1E3"/>
+      <path d="M-6 22 L29 2 L64 22 Z" fill="#7E8C99"/>
+      <rect x="22" y="32" width="14" height="18" fill="#8A6A3F"/>
+      <circle cx="-14" cy="22" r="16" fill="#1D6517"/>
+      <circle cx="78" cy="20" r="14" fill="#2F7A23"/>
+      <rect x="-15" y="34" width="3" height="16" fill="#6B4E2E"/>
+    </g>
+    <!-- paddy terraces -->
+    <path d="M0 222 Q 200 206 420 216 T 800 210 V262 H0 Z" fill="#79B425"/>
+    <path d="M0 252 Q 230 236 470 246 T 800 240 V300 H0 Z" fill="#5E9A1F"/>
+    <path d="M0 290 Q 260 274 520 284 T 800 276 V360 H0 Z" fill="#1D6517"/>
+    <!-- rice rows -->
+    <g stroke="#C0DE7B" stroke-width="2" opacity=".55" fill="none">
+      <path d="M20 240 Q 220 226 420 234"/><path d="M60 270 Q 260 256 470 264"/><path d="M30 312 Q 280 298 520 306"/>
+      <path d="M500 230 Q 650 222 790 226"/><path d="M540 262 Q 680 254 790 256"/>
+    </g>
+    <!-- the river -->
+    <path d="M330 360 C 360 320, 300 296, 360 268 S 470 236, 520 222 L 560 222 C 520 238, 430 262, 420 288 S 470 340, 440 360 Z" fill="#55A6C3"/>
+    <path d="M372 330 C 386 312 360 300 392 286" stroke="#E8F3F7" stroke-width="2" fill="none" opacity=".7"/>
+    <!-- a farmer at work -->
+    <g transform="translate(170 250)">
+      <path d="M-14 6 L0 -10 L14 6 Z" fill="#E9C46A"/>
+      <circle cx="0" cy="10" r="6" fill="#8A5A3C"/>
+      <rect x="-6" y="16" width="12" height="20" fill="#F7F1E3"/>
+      <rect x="-5" y="36" width="10" height="10" fill="#2A6E88"/>
+      <path d="M6 22 L20 34" stroke="#8A5A3C" stroke-width="3"/>
+    </g>
+    <!-- seedlings in front -->
+    <g stroke="#C0DE7B" stroke-width="2.5" stroke-linecap="round">
+      <path d="M90 344 l-4 -12 M90 344 l0 -14 M90 344 l4 -12"/>
+      <path d="M130 340 l-4 -12 M130 340 l0 -14 M130 340 l4 -12"/>
+      <path d="M640 338 l-4 -12 M640 338 l0 -14 M640 338 l4 -12"/>
+      <path d="M690 344 l-4 -12 M690 344 l0 -14 M690 344 l4 -12"/>
+      <path d="M740 336 l-4 -12 M740 336 l0 -14 M740 336 l4 -12"/>
+    </g>
+  </g>
+</svg>
