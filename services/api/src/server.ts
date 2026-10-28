@@ -7,12 +7,17 @@ import type { AdviceJSON, CandidateRotation } from '@project-eden/contracts';
 import type { PlanOptionsRequest } from '../../../packages/rotation-engine/src/engine.ts';
 import { UnsupportedUnionError, SUPPORTED_UNIONS } from '../../../packages/rotation-engine/src/engine.ts';
 import { HAOR_FLASH_FLOOD, RELEASE, TANORE_ADVISORIES, TANORE_SOIL_CARBON } from '../../../packages/rotation-engine/src/data/tanore_replay_data.ts';
-import { LOC, listPlaces, placeFor, withPlace } from '../../../packages/rotation-engine/src/data/location.ts';
+import { LOC, NO_SOIL_CARD, listPlaces, placeFor, withPlace } from '../../../packages/rotation-engine/src/data/location.ts';
 import { AMAN_CATALOG, RABI_CATALOG } from '../../../packages/rotation-engine/src/data/crop_catalog.ts';
 import { IPM_AMAN, IPM_BY_RABI, IPM_GENERAL } from '../../../packages/rotation-engine/src/data/ipm_catalog.ts';
-import { LAND_TYPE_BANGLA, bnDate, bnDateOf, bnDigits, bnOf, enDate, patternBangla } from '../../../packages/rotation-engine/src/bn.ts';
+import { bnDate, bnDateOf, bnDigits, bnOf, enDate, patternBangla } from '../../../packages/rotation-engine/src/bn.ts';
 import * as desk from './officer_desk.ts';
 import * as calls from './farmer_calls.ts';
+import { authConfig, requireManager } from './auth.ts';
+import { nasaConfigStatus } from './config.ts';
+import { integrationStatuses } from './integrations.ts';
+import { managerArea, managerClimate } from './manager_climate.ts';
+import { normalizeSite } from './sites.ts';
 import { DualGateNarrationValidator } from '../../../packages/narration-core/src/dual_gate_validator.ts';
 import { getNasaWeather, lastNasaSuccessAt } from './weather.ts';
 import { getOpenMeteoForecast, lastOpenMeteoSuccessAt } from './open_meteo_weather.ts';
@@ -28,7 +33,7 @@ import { askAiAssistant } from './ai_assistant.ts';
 import { cropMenu } from '../../../packages/rotation-engine/src/data/crop_choice.ts';
 import { cropsFromKeys, keypadMenu, landFromKey, replyFor, understand } from './voice.ts';
 import { adviseWithNarration, planRequest, rotationEngine, voiceAnswer } from './advice.ts';
-import { awajConfig, sendAudioCall, bdMobile, sendKeypadSurvey, sendTemplateSurvey, sendTtsCall } from './awaj.ts';
+import { awajConfig, awajPublicStatus, sendAudioCall, bdMobile, sendKeypadSurvey, sendTemplateSurvey, sendTtsCall } from './awaj.ts';
 import { sendSystechCall, systechConfig, type CallRoute } from './systech.ts';
 import { createFarmAoi } from './cattle/aoi.ts';
 import { cattleRepository } from './cattle/repository.ts';
@@ -40,6 +45,7 @@ const __filename = fileURLToPath(import.meta.url);
 const gzipCache = new Map<string, { mtime: number; body: Buffer }>();
 const __dirname = path.dirname(__filename);
 const PUBLIC_DIR = path.resolve(__dirname, '../../../apps/saao-dashboard/public');
+const SUPABASE_BROWSER_BUNDLE = path.resolve(__dirname, '../../../node_modules/@supabase/supabase-js/dist/umd/supabase.js');
 
 // Optional server-side LLM (OpenAI-compatible endpoint). Undefined when not configured: the deterministic template narrator is used.
 const dualGateValidator = new DualGateNarrationValidator(createLlmClient() ?? undefined, { timeoutMs: Number(process.env.LLM_TIMEOUT_MS) || 15000 });
@@ -123,7 +129,8 @@ const AUDIO_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..
 /** Recent phone-channel events (Awaj survey answers and the call-backs they triggered), newest first. */
 const CALL_LOG: Array<Record<string, unknown>> = [];
 function logCall(event: Record<string, unknown>) {
-  CALL_LOG.unshift({ at: new Date().toISOString(), ...event });
+  // every phone channel today serves the Talanda pilot, so its events belong to the 'talanda' site
+  CALL_LOG.unshift({ at: new Date().toISOString(), site: 'talanda', ...event });
   CALL_LOG.length = Math.min(CALL_LOG.length, 50);
 }
 const maskPhone = (phone: string | null) => (phone ? `${phone.slice(0, 3)}XXXX${phone.slice(-4)}` : null);
@@ -241,8 +248,9 @@ function overviewHere(placeId: string) {
     context: {
       soilTypeBangla: LOC.kind === 'pilot' ? LOC.srdi.soilTypeBangla : null,
       soilTypeEnglish: LOC.kind === 'pilot' ? 'Kharia soil (Barind)' : null,
-      landTypeBangla: LOC.kind === 'pilot' ? LOC.srdi.landTypeBangla : `${LAND_TYPE_BANGLA[advice.scope.land_type] ?? ''} জমি`,
-      landTypeEnglish: `${advice.scope.land_type.replace('_', '-')} land`,
+      // the SRDI card's land class: only the pilot has a card (the upazila default land type is in local_context)
+      landTypeBangla: LOC.kind === 'pilot' ? LOC.srdi.landTypeBangla : null,
+      landTypeEnglish: LOC.kind === 'pilot' ? 'medium-high land' : null,
       bmdStation: LOC.conditions.bmdStation,
       bmdStationBangla: BMD_STATION_BANGLA[LOC.conditions.bmdStation] ?? LOC.conditions.bmdStation,
       bmdStationKm: LOC.conditions.bmdStationKm,
@@ -251,10 +259,11 @@ function overviewHere(placeId: string) {
       rootZoneGldasMm: LOC.conditions.rootZoneGldasMm,
       cattlePerKm2: LOC.conditions.cattlePerKm2,
     },
-    early_warnings: earlyWarnings(),
-    soil_carbon: TANORE_SOIL_CARBON,
-    recent_farmer_contacts: farmerRows(),
-    pest_reports: pestReports(),
+    // These four describe the Tanore pilot (its heat and cattle trends, SMAP carbon, sample farmers and field reports): another place never gets them
+    early_warnings: LOC.kind === 'pilot' ? earlyWarnings() : null,
+    soil_carbon: LOC.kind === 'pilot' ? TANORE_SOIL_CARBON : null,
+    recent_farmer_contacts: LOC.kind === 'pilot' ? farmerRows() : [],
+    pest_reports: LOC.kind === 'pilot' ? pestReports() : [],
   };
 }
 
@@ -308,10 +317,13 @@ function earlyWarnings() {
   };
 }
 
+/** The overview describes the Tanore pilot, so its sample farmers and field reports are the pilot site's (other sites' desks are not shown on it). */
+const PILOT_SITE = 'talanda';
+
 /** Union-level pest sightings from officers' latest field observations (farmer details stay officer-only). */
 function pestReports() {
   const counts = new Map<string, { pest: string; bn: string; en: string; fields: number; highSeverity: number }>();
-  for (const f of desk.farmers()) {
+  for (const f of desk.farmers(PILOT_SITE)) {
     const obs = desk.latestObservation(f.id);
     if (!obs || obs.pestSeen === 'none') continue;
     const entry = counts.get(obs.pestSeen) ?? { pest: obs.pestSeen, ...desk.PEST_NAMES[obs.pestSeen], fields: 0, highSeverity: 0 };
@@ -324,12 +336,12 @@ function pestReports() {
 
 /** Sample farmer rows for the overview, each with its own officer-aware top rotation. */
 function farmerRows() {
-  const openCallbacks = new Set(desk.callbacks().filter(c => c.status === 'open').map(c => c.farmerId));
+  const openCallbacks = new Set(desk.callbacks(PILOT_SITE).filter(c => c.status === 'open').map(c => c.farmerId));
   const short = (o: CandidateRotation) => ({
     bn: `${(o.cropSequence[0].varietyBangla ?? o.cropSequence[0].variety).replace('ব্রি ', '')} → ${o.cropSequence[1].cropBangla ?? o.cropSequence[1].crop}`,
     en: `${o.cropSequence[0].variety.replace('BRRI ', '')} → ${o.cropSequence[1].crop}`,
   });
-  return desk.farmers().map(f => {
+  return desk.farmers(PILOT_SITE).map(f => {
     const advice = adviseWithNarration(planRequest({ unionId: f.placeId }), f.id);
     const next = short(advice.options[0]);
     const nowOption = advice.options.find(o => o.id === advice.this_season_option_id);
@@ -352,17 +364,20 @@ function farmerRows() {
   });
 }
 
-/** Officer-only reference: the full SRDI card, replay details, IPM steps and data caveats. */
+/**
+ * Officer-only reference for the pilot site: the full SRDI card, replay details, IPM steps and data caveats. All of it is Talanda/Tanore data,
+ * so only a manager whose site is the pilot gets it (see noKnowledgePack for everyone else).
+ */
 function knowledgePack() {
   const advice = adviseWithNarration(planRequest({}));
   const rabiKeys = Object.keys(LOC.rabi).filter(k => k !== 'BARI Gom 33 (Late)');
   return {
     srdi: {
-      soilTypeBangla: LOC.srdi.soilTypeBangla,
-      landTypeBangla: LOC.srdi.landTypeBangla,
-      source: LOC.srdi.source,
+      soilTypeBangla: LOC.srdi!.soilTypeBangla,
+      landTypeBangla: LOC.srdi!.landTypeBangla,
+      source: LOC.srdi!.source,
       rows: [
-        { cropBangla: 'আমন ধান', cropEnglish: 'Aman rice', dose: LOC.srdi.aman },
+        { cropBangla: 'আমন ধান', cropEnglish: 'Aman rice', dose: LOC.srdi!.aman },
         ...rabiKeys.map(k => ({ cropBangla: RABI_CATALOG[k].cropBangla, cropEnglish: RABI_CATALOG[k].crop, dose: LOC.rabi[k].fertilizer })),
       ],
     },
@@ -418,25 +433,28 @@ function registerPlace(f: ReturnType<typeof desk.farmers>[number]) {
   };
 }
 
-/** The Calls and SMS screen: the day's list with each farmer's register row (masked numbers only). */
-function callScreen(date?: string | null) {
+/** The Calls and SMS screen for one site: the day's list with each farmer's register row (masked numbers only). */
+function callScreen(date: string | null | undefined, site: string | null) {
   const day = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : calls.dhakaToday();
+  const farmers = desk.farmers(site);
   return {
-    ...calls.callDesk(day),
-    farmers: desk.farmers().map(f => ({ farmer: f, place: registerPlace(f), callable: desk.callable(f) })),
+    ...calls.callDesk(day, farmers),
+    farmers: farmers.map(f => ({ farmer: f, place: registerPlace(f), callable: desk.callable(f) })),
     crops: desk.REGISTER_CROPS,
   };
 }
 
 /** Everything the officer desk screen shows in one call. */
-function deskView(officer: (typeof desk.OFFICERS)[number]) {
-  const queue = desk.queue();
+function deskView(officer: desk.Officer) {
+  // the desk shows only the farmers and call-backs of the manager's own site (app_metadata.site); no site, nothing
+  const site = officer.site ?? null;
+  const queue = desk.queue(site);
   return {
     officer,
     pestNames: desk.PEST_NAMES,
     queue,
-    callbacks: desk.callbacks(),
-    farmers: desk.farmers().map(f => {
+    callbacks: desk.callbacks(site),
+    farmers: desk.farmers(site).map(f => {
       const advice = adviseWithNarration(planRequest({ unionId: f.placeId }), f.id);
       const top = advice.options[0];
       return {
@@ -458,6 +476,11 @@ function deskView(officer: (typeof desk.OFFICERS)[number]) {
       };
     }),
   };
+}
+
+/** What a manager of any other site gets instead: no soil card, and none of the pilot's replay, IPM, caveats or haor and cattle tables. */
+function noKnowledgePack() {
+  return { srdi: null, noSoilCard: NO_SOIL_CARD };
 }
 
 function dataRelease() {
@@ -555,6 +578,11 @@ const server = http.createServer(async (req, res) => {
   }
 
   try {
+    // ---- Sign-in configuration for the website (public: the Supabase URL and anon key are public by design) ----
+    if (pathname === '/api/v1/auth/config' && req.method === 'GET') {
+      return sendJSON(res, 200, authConfig());
+    }
+
     // ---- Capability / status ------------------------------------------------------------------
     if (pathname === '/api/v1/config' && req.method === 'GET') {
       return sendJSON(res, 200, await capabilities());
@@ -610,9 +638,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/v1/calls/advice' && req.method === 'POST') {
       const body = await parseBody(req);
       // A real, billed call needs a signed-in officer; a dry run shows what would be sent
-      if (awajConfig().live && !desk.officerForToken(req.headers.authorization)) {
-        return sendJSON(res, 401, { error: 'Officer sign-in required to place a real call' });
-      }
+      if (awajConfig().live) await requireManager(req);
       const phone = bdMobile(String(body.phone ?? ''));
       if (!phone) return sendJSON(res, 400, { error: 'phone must be a Bangladeshi mobile number (01XXXXXXXXX)' });
       const answer = body.text ? voiceAnswer(body) : { reply: replyFor(adviseWithNarration(planRequest(body), body.farmerId)) };
@@ -620,9 +646,7 @@ const server = http.createServer(async (req, res) => {
       // SysTech (VoiceBlast portal or the Voice Broadcast API) plays our Google recording; Awaj otherwise
       const via: CallRoute | null = body.via === 'voiceblast' || body.via === 'broadcast' ? body.via : body.via === 'awaj' ? null : systechConfig().provider;
       if (via) {
-        if (systechConfig()[via].live && !desk.officerForToken(req.headers.authorization)) {
-          return sendJSON(res, 401, { error: 'Officer sign-in required to place a real call' });
-        }
+        if (systechConfig()[via].live) await requireManager(req);
         let audio: Buffer | null = null, voiceNote: string | null = null;
         if (ttsStatus().provider === 'google') {
           try {
@@ -662,9 +686,7 @@ const server = http.createServer(async (req, res) => {
     // The advice as a Bangla SMS through the REVE gateway (a dry run until SMS_LIVE=1)
     if (pathname === '/api/v1/sms/advice' && req.method === 'POST') {
       const body = await parseBody(req);
-      if (smsConfig().live && !desk.officerForToken(req.headers.authorization)) {
-        return sendJSON(res, 401, { error: 'Officer sign-in required to send a real SMS' });
-      }
+      if (smsConfig().live) await requireManager(req);
       const phone = bdMobile(String(body.phone ?? ''));
       if (!phone) return sendJSON(res, 400, { error: 'phone must be a Bangladeshi mobile number (01XXXXXXXXX)' });
       const answer = body.text ? voiceAnswer(body) : { reply: replyFor(adviseWithNarration(planRequest(body), body.farmerId)) };
@@ -682,9 +704,7 @@ const server = http.createServer(async (req, res) => {
     // The keypad call: the farmer hears the recorded crop menu and presses keys; Awaj posts them to the webhook
     if (pathname === '/api/v1/calls/keypad' && req.method === 'POST') {
       const body = await parseBody(req);
-      if (awajConfig().live && !desk.officerForToken(req.headers.authorization)) {
-        return sendJSON(res, 401, { error: 'Officer sign-in required to place a real call' });
-      }
+      if (awajConfig().live) await requireManager(req);
       const phones = (Array.isArray(body.phones) ? body.phones : [body.phone]).map((p: unknown) => bdMobile(String(p ?? ''))).filter(Boolean) as string[];
       if (!phones.length) return sendJSON(res, 400, { error: 'phone must be a Bangladeshi mobile number (01XXXXXXXXX)' });
       const cfg = awajConfig();
@@ -966,56 +986,79 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(res, 200, { ok: desk.logout(req.headers.authorization) });
     }
 
+    // ---- Which NASA data sources the server can use (manager only; set/unset flags, never a key, token or password) ----
+    if (pathname === '/api/v1/manager/data-sources' && req.method === 'GET') {
+      await requireManager(req);
+      // the NASA flags as before, plus every integration with one of four labels (live, saved, demo, notset): names and sentences, never a value
+      return sendJSON(res, 200, { ...nasaConfigStatus(), integrations: integrationStatuses() });
+    }
+    if (pathname === '/api/v1/manager/climate' && req.method === 'GET') {
+      return sendJSON(res, 200, await managerClimate(req));
+    }
+    if (pathname === '/api/v1/manager/area' && req.method === 'GET') {
+      return sendJSON(res, 200, await managerArea(req));
+    }
+
     // ---- Krishi officer desk -----------------------------------------------------------------------
     if (pathname === '/api/v1/officers' && req.method === 'GET') {
-      return sendJSON(res, 200, desk.OFFICERS);
+      // the demo officer list; empty unless DEMO_MODE=true
+      return sendJSON(res, 200, desk.demoEnabled() ? desk.OFFICERS : []);
     }
     if (pathname === '/api/v1/officer/login' && req.method === 'POST') {
+      // the demo login: desk.login() refuses everything unless DEMO_MODE=true (real sign-in is Supabase, see auth.ts)
       const body = await parseBody(req);
       const session = desk.login(String(body.officerId ?? ''), String(body.accessCode ?? ''));
       if (!session) throw new ApiError('unauthorized', 'Wrong officer ID or access code');
       return sendJSON(res, 200, session);
     }
     if (pathname.startsWith('/api/v1/officer/')) {
-      const officer = desk.officerForToken(req.headers.authorization);
-      if (!officer) throw new ApiError('unauthorized', 'Officer sign-in required');
+      const officer = await requireManager(req);
       if (pathname === '/api/v1/officer/desk' && req.method === 'GET') {
         return sendJSON(res, 200, deskView(officer));
       }
       if (pathname === '/api/v1/officer/observations' && req.method === 'POST') {
         const body = await parseBody(req);
-        const result = desk.addObservation(officer.id, body);
+        const result = desk.addObservation(officer.id, body, officer.site ?? null);
         if (result.error) throw new ApiError('invalid_input', result.error);
         return sendJSON(res, 200, { observation: result.observation, advice: adviseWithNarration(planRequest({}), body.farmerId) });
       }
       const resolve = /^\/api\/v1\/officer\/callbacks\/([^/]+)\/resolve$/.exec(pathname);
       if (resolve && req.method === 'POST') {
-        const request = desk.resolveCallback(decodeURIComponent(resolve[1]));
+        const request = desk.resolveCallback(decodeURIComponent(resolve[1]), officer.site ?? null);
         if (!request) throw new ApiError('not_found', 'Unknown call-back request');
         return sendJSON(res, 200, request);
       }
       if (pathname === '/api/v1/officer/calls' && req.method === 'GET') {
-        return sendJSON(res, 200, { calls: CALL_LOG, provider: awajConfig() });
+        return sendJSON(res, 200, { calls: CALL_LOG.filter(c => c.site === normalizeSite(officer.site)), provider: awajPublicStatus() });
       }
       if (pathname === '/api/v1/officer/knowledge' && req.method === 'GET') {
-        return sendJSON(res, 200, knowledgePack());
+        return sendJSON(res, 200, normalizeSite(officer.site) === PILOT_SITE ? knowledgePack() : noKnowledgePack());
       }
       if (pathname === '/api/v1/officer/reset' && req.method === 'POST') {
-        desk.resetDesk();
-        calls.resetCalls();
+        const site = normalizeSite(officer.site);
+        if (!site) throw new ApiError('site_required', 'This manager account has no site in app_metadata');
+        calls.resetCalls(desk.farmers(site).map(f => f.id)); // the site's calls and questions, before its farmers are re-seeded
+        desk.resetDesk(site); // only this manager's own site
         return sendJSON(res, 200, { ok: true });
       }
 
-      // ---- The farmer register and the daily advice calls (farmer_calls.ts) --------------------------
+      // ---- The farmer register and the daily advice calls (farmer_calls.ts), for the officer's own site ----
+      // (a manager account without a site sees no farmers, as on the desk)
+      const site = officer.site ?? null;
+      const mine = () => desk.farmers(site).map(f => f.id);
+      const ownCall = (id: string) => {
+        const call = calls.callById(id);
+        if (!call || !mine().includes(call.farmerId)) throw new ApiError('not_found', 'Unknown call');
+      };
       if (pathname === '/api/v1/officer/farmers' && req.method === 'POST') {
-        const got = desk.registerFarmer(officer.id, await parseBody(req));
+        const got = desk.registerFarmer(officer.id, await parseBody(req), site);
         if (got.error) throw new ApiError('invalid_input', got.error);
         return sendJSON(res, 200, { farmer: got.farmer });
       }
       const farmerCalls = /^\/api\/v1\/officer\/farmers\/([^/]+)\/calls$/.exec(pathname);
       if (farmerCalls && req.method === 'POST') {
         const body = await parseBody(req);
-        const farmer = desk.setCalls(officer.id, decodeURIComponent(farmerCalls[1]), body.on === true, String(body.how ?? ''));
+        const farmer = desk.setCalls(officer.id, decodeURIComponent(farmerCalls[1]), body.on === true, String(body.how ?? ''), site);
         if (!farmer) throw new ApiError('not_found', 'Unknown farmer');
         if (!body.on) {
           // Calls still waiting for this farmer are dropped at once
@@ -1026,51 +1069,56 @@ const server = http.createServer(async (req, res) => {
         return sendJSON(res, 200, { farmer });
       }
       if (pathname === '/api/v1/officer/calls/plan' && req.method === 'GET') {
-        return sendJSON(res, 200, callScreen(url.searchParams.get('date')));
+        return sendJSON(res, 200, callScreen(url.searchParams.get('date'), site));
       }
       if (pathname === '/api/v1/officer/calls/plan' && req.method === 'POST') {
         const body = await parseBody(req);
         const day = typeof body.date === 'string' && body.date ? body.date : calls.dhakaToday();
         if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new ApiError('invalid_input', 'date must be YYYY-MM-DD');
-        const built = calls.buildPlan(day);
-        return sendJSON(res, 200, { ...callScreen(day), skipped: built.skipped });
+        const built = calls.buildPlan(day, mine());
+        return sendJSON(res, 200, { ...callScreen(day, site), skipped: built.skipped });
       }
       if (pathname === '/api/v1/officer/calls/approve-all' && req.method === 'POST') {
         const body = await parseBody(req);
         const day = typeof body.date === 'string' && body.date ? body.date : calls.dhakaToday();
-        return sendJSON(res, 200, { approved: calls.approveAll(officer.id, day), ...callScreen(day) });
+        return sendJSON(res, 200, { approved: calls.approveAll(officer.id, day, mine()), ...callScreen(day, site) });
       }
       if (pathname === '/api/v1/officer/calls/send' && req.method === 'POST') {
         const body = await parseBody(req);
         const day = typeof body.date === 'string' && body.date ? body.date : calls.dhakaToday();
         // A signed-in officer may place real calls; they are real only when the provider's *_LIVE switch is on too
-        const sent = await calls.sendApproved({ date: day, allowLive: true });
+        const sent = await calls.sendApproved({ date: day, allowLive: true, farmerIds: mine() });
         logCall({ kind: 'call_list', date: day, calls: sent.sent.length, live: sent.live });
-        return sendJSON(res, 200, { result: sent, ...callScreen(day) });
+        return sendJSON(res, 200, { result: sent, ...callScreen(day, site) });
       }
       if (pathname === '/api/v1/officer/calls/follow-up' && req.method === 'POST') {
         const body = await parseBody(req);
-        const result = await calls.followUp({ allowLive: true });
-        return sendJSON(res, 200, { result, ...callScreen(typeof body.date === 'string' ? body.date : null) });
+        const result = await calls.followUp({ allowLive: true, farmerIds: mine() });
+        return sendJSON(res, 200, { result, ...callScreen(typeof body.date === 'string' ? body.date : null, site) });
       }
       const callReview = /^\/api\/v1\/officer\/calls\/([^/]+)\/(review|outcome)$/.exec(pathname);
       if (callReview && req.method === 'POST') {
         const body = await parseBody(req);
         const id = decodeURIComponent(callReview[1]);
+        ownCall(id);
         const got = callReview[2] === 'review' ? calls.reviewCall(officer.id, id, body) : await calls.markOutcome(id, String(body.outcome ?? ''), true);
         if (got.error) throw new ApiError('invalid_input', got.error);
-        return sendJSON(res, 200, { call: got.call, ...callScreen(got.call!.date) });
+        return sendJSON(res, 200, { call: got.call, ...callScreen(got.call!.date, site) });
       }
       if (pathname === '/api/v1/officer/questions' && req.method === 'POST') {
-        const got = calls.addQuestion(officer.id, await parseBody(req));
+        const body = await parseBody(req);
+        if (!mine().includes(String(body.farmerId ?? ''))) throw new ApiError('invalid_input', 'Unknown farmer');
+        const got = calls.addQuestion(officer.id, body);
         if (got.error) throw new ApiError('invalid_input', got.error);
         return sendJSON(res, 200, { question: got.question });
       }
       const answerMatch = /^\/api\/v1\/officer\/questions\/([^/]+)\/answer$/.exec(pathname);
       if (answerMatch && req.method === 'POST') {
-        const got = calls.answerQuestion(officer.id, decodeURIComponent(answerMatch[1]), await parseBody(req));
+        const q = calls.questions().find(x => x.id === decodeURIComponent(answerMatch[1]));
+        if (!q || !mine().includes(q.farmerId)) throw new ApiError('not_found', 'Unknown question');
+        const got = calls.answerQuestion(officer.id, q.id, await parseBody(req));
         if (got.error) throw new ApiError('invalid_input', got.error);
-        return sendJSON(res, 200, { question: got.question, call: got.call, ...callScreen(null) });
+        return sendJSON(res, 200, { question: got.question, call: got.call, ...callScreen(null, site) });
       }
       throw new ApiError('not_found', 'Unknown officer endpoint');
     }
@@ -1088,6 +1136,8 @@ const server = http.createServer(async (req, res) => {
     const requested = path.resolve(PUBLIC_DIR, '.' + (pathname === '/' ? '/index.html' : pathname));
     const inside = requested === PUBLIC_DIR || requested.startsWith(PUBLIC_DIR + path.sep);
     let filePath = inside ? requested : path.join(PUBLIC_DIR, 'index.html');
+    // the Supabase browser client, served from node_modules so the site needs no CDN (this one file only)
+    if (pathname === '/vendor/supabase.js') filePath = SUPABASE_BROWSER_BUNDLE;
     if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
       filePath = path.join(PUBLIC_DIR, 'index.html');
     }

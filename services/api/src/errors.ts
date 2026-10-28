@@ -9,6 +9,8 @@ export type ApiErrorCode =
   | 'configuration_required'
   | 'no_data'
   | 'unauthorized'
+  | 'forbidden'
+  | 'site_required' // a signed-in manager whose account has no usable site: refused, but the session is fine
   | 'internal';
 
 const STATUS_BY_CODE: Record<ApiErrorCode, number> = {
@@ -18,6 +20,8 @@ const STATUS_BY_CODE: Record<ApiErrorCode, number> = {
   configuration_required: 503,
   no_data: 404,
   unauthorized: 401,
+  forbidden: 403,
+  site_required: 403,
   internal: 500,
 };
 

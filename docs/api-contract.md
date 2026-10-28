@@ -24,6 +24,8 @@ Every `/api/*` error has the same envelope:
 | `no_data` | 404 | request was valid but there is nothing to show yet (e.g. no advisory produced) |
 | `provider_unavailable` | 502 | an upstream provider (Open-Meteo, NASA POWER, TTS, LLM) failed: offer retry |
 | `configuration_required` | 503 | feature needs server configuration (Earth Engine, TTS): show "unavailable" |
+| `forbidden` | 403 | signed in, but not allowed (e.g. `app_metadata.role` is not `manager`): clients sign the user out |
+| `site_required` | 403 | a signed-in manager whose account has no usable `app_metadata.site`: refused, but the session is fine (clients show the message and stay signed in) |
 | `internal` | 500 | unexpected |
 
 Network failure (no response at all) is a client-side `offline`/`timeout` state.
@@ -150,10 +152,32 @@ Bangladeshi cattle. There is no milk-loss, disease or water-volume prediction.
 `POST /auth/logout`, officer desk `GET /officers`, `POST /officer/login`, `GET /officer/desk`, `POST /officer/observations`,
 `POST /officer/callbacks/:id/resolve`, `GET /officer/knowledge`, `POST /officer/reset`. These describe one pilot union, not nationwide data.
 
+### Places without an SRDI soil card
+Only the Talanda pilot has an SRDI soil card. For every other place (`unionId` an upazila id) the crop calendar and rotation replay are unchanged, but no fertilizer amount is given, so these fields can be `null`:
+
+- `options[].ledger.ureaKgHa` (`number | null`);
+- `options[].dimensionDetails.soil.metrics.{srdiSoilType, rabiUreaKgHa, rabiTspKgHa, rabiMopKgHa, rotationUreaKgHa}` and `options[].dimensionDetails.pest.metrics.rotationUreaKgHa`.
+
+Instead the text says "এই এলাকার মাটির কার্ড (SRDI) যোগ করা হয়নি, সার-পরামর্শ দেওয়া যাচ্ছে না" / "This area's soil card (SRDI) has not been added, so fertilizer advice cannot be given": in `farmer_card.season2.fertilizerBangla` (plus `farmer_card.season2.fertilizerEnglish`, present only in this case), in the soil dimension summary and in the fertilizer `stewardship` tip. The pest score has no nitrogen term there, so it is **partial**: `dimensionDetails.pest.metrics.partial === true`, its summary says "আংশিক হিসাব, মাটির কার্ড ছাড়া", and `stale_or_missing_inputs` lists it. A partial score is only ever compared with the other options of the same place, never with the pilot's full score. Tips that cite the SRDI card are left out where there is no card (they carry an internal `needsSoilCard` flag in the catalog; it is not part of the response). The overview of such a place has `context.landTypeBangla`/`landTypeEnglish` and `soilTypeBangla`/`soilTypeEnglish` set to `null`, and `early_warnings`, `soil_carbon`, `recent_farmer_contacts` and `pest_reports` are `null` or empty (they describe the Tanore pilot). Clients must treat these numbers as nullable.
+
+`GET /officer/knowledge` is the pilot's reference (SRDI card, Talanda-point replay, IPM, caveats, haor and cattle tables) and is returned only to a manager whose site is the pilot site; any other manager gets `{ "srdi": null, "noSoilCard": { "bn": "...", "en": "..." } }`.
+
 ## Authentication status and planned SMS sign-in contract
 
-**Today (demo only):** `POST /auth/login` accepts demo farmer IDs with PIN `1234`/`0000` (an unknown phone falls back to farmer F01) and the
-officer demo code (`EDEN_OFFICER_CODE`, default `talanda-demo`). Tokens are random UUIDs in server memory, never expire and vanish on restart.
+**Managers (real):** Supabase Auth. The website signs in with `signInWithPassword` (`<userId>@<AUTH_EMAIL_DOMAIN>` and the password; `GET /auth/config`
+returns the public project URL, anon key and email domain) and sends the access token as `Authorization: Bearer ...`. Every `/officer/*` route (and the
+real-call routes `/calls/advice`, `/calls/keypad` when `AWAJ_LIVE=1`) verifies it with `supabase.auth.getUser(token)`: **401** for no or an
+invalid token, **403** when `app_metadata.role` is not `manager`. Role and `site` come from `app_metadata` only. With `DEMO_MODE=true` the
+old demo officer login (`POST /officer/login`, `POST /auth/login` with an access code from `EDEN_OFFICER_CODE`) also works; otherwise it is refused.
+
+`GET /manager/data-sources` (manager token) returns only configuration flags (`earthdataLogin`, `earthdataToken`, `firmsMapKey`, `nasaApiKey`, `adsApiToken`: `set` / `unset`; `offline`: boolean). It never contains a key, token, username or password.
+
+`GET /manager/climate` requires a verified Supabase manager JWT and returns climate indicators only for the site's `app_metadata.site`; `?area=<ADM3 id>` asks for another place's public NASA weather as a comparison (only ids on the server's upazila list, or `talanda_tanore`; anything else is **422**; coordinates always come from the server's data, never the request) and `?refresh=1` downloads again instead of using today's saved copy (at most once a minute per area). The response carries `area { id, nameBangla, nameEnglish, district, isHome }`, `fetchedAt`, `offline` and `liveFetchFailed`. `GET /manager/area` returns the verified `app_metadata.site` as `{ siteId, placeId, nameBangla, nameEnglish, district }`. A site is compared after trimming, lower-casing and resolving its aliases (`Talanda`, ` tanore `, `RAJ_TANORE` are the same site); an unknown site is refused. Configured site ids and aliases map to the five pilot coordinates in `research/sites/pilot_sites.csv`; `talanda` maps to the Tanore point also present in `TANORE_CONDITIONS`. It requests NASA POWER daily `community=AG`, `format=JSON` data for `T2M`, `T2M_MAX`, `T2M_MIN`, `PRECTOTCORR`, `RH2M`, `WS2M`, `ALLSKY_SFC_SW_DWN` and `GWETROOT`. `-999` is treated as missing. The response carries each indicator's unit, observation dates, coverage and source (`NASA POWER`), the available data range, and `dataSource` (`live`, `cache` or `fixture`). Rainfall totals require complete 30-day coverage, and the ten-year normal requires all ten complete comparison windows.
+
+The climate endpoint caches provider responses on disk under the ignored `services/api/.data/power-climate-cache/` directory. `OFFLINE=1` makes this endpoint use only a compatible cache or the optional `services/api/fixtures/power-climate-fixture.json`; with neither available it returns `no_data` and explains that an online request is needed to populate the cache. Provider failure without fallback returns `provider_unavailable`. No NASA credentials are required, and no credentials or provider request URLs are returned.
+
+**Farmers (demo only):** `POST /auth/login` accepts demo farmer IDs with PIN `1234`/`0000` (an unknown phone falls back to farmer F01).
+Demo tokens are random UUIDs in server memory, never expire and vanish on restart.
 **No SMS is sent anywhere and no phone number is verified.** The website's "OTP" step is labelled as a demo sign-in; the Android dialog
 pre-fills demo credentials in debug builds only. This is not production authentication; do not host it publicly as is.
 

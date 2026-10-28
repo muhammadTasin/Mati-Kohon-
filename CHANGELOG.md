@@ -114,6 +114,33 @@ What changed in Project EDEN, newest first, with who made each change and the br
 - **Pest-control steps:** IRRI's "no early spray" is added for Aman: no insecticide in the first 40 days after transplanting, which spares the natural enemies of planthoppers.
 - **HLS:** `research/acquire/hls_winter.py` is committed. Its first full run is still going, and its results will follow.
 
+## 6 October 2026 · OFFLINE=1 works on any computer
+
+- Server: `OFFLINE=1` now serves the newest cache entry for the site whatever day it was fetched, then the committed `services/api/fixtures/power-climate-fixture.json` (about 11 years of real POWER daily data for all five pilot sites, 8 parameters, 2 decimals, -999 = missing, under 1 MB), then a clear `no_data` error. It never calls the network. The response says whether `cache` or `fixture` served it, when it was downloaded (`fetchedAt`) and the real date range.
+- Dashboard: the climate card says "Sample data from NASA POWER, <date range>" (Bangla and English) when the data is not live.
+- Rebuild the fixture (online, no key): `node --experimental-strip-types services/api/scripts/build_power_fixture.ts`.
+
+## 6 October 2026 · Field Shift climate trend for managers
+
+- NASA POWER daily point data now powers a site-scoped climate summary: 30-day rainfall vs the same window's prior-ten-year normal, days above 35°C, longest below-1-mm dry spell and 14-day mean root-zone wetness. POWER fill values (`-999`) are excluded; rainfall comparisons require complete windows.
+- API: `GET /api/v1/manager/climate` uses only the verified manager's `app_metadata.site`, with the five pilot-site coordinates already in the repository. Responses include units, indicator date ranges, source, available data dates and `live` / `cache` / `fixture` provenance.
+- Server: POWER uses the configured NASA daily point URL, a bounded request with one retry, an ignored disk cache, and a no-network `OFFLINE=1` path. No API key or Earthdata login is needed.
+- Dashboard: mobile-first Bangla/English climate-trend card in the existing Data quality screen with text status, loading, retry/error and source/date/provenance lines.
+- Tests: hand-built indicator data including `-999`, manager API 401/403/200 and site scope, mocked POWER fetch/retry, cache reuse and offline no-network behavior.
+
+## 6 October 2026 · NASA data-sources card for managers
+
+- API: `GET /api/v1/manager/data-sources` (manager token: 401 without one, 403 for a non-manager) returns only the `set` / `unset` flags from `nasaConfigStatus()` and the offline flag; never a value.
+- Dashboard: a small read-only "NASA data sources" card at the top of the Data quality tab: NASA POWER (no key), Earthdata Login, NASA API key, ADS and FIRMS, each with an icon and a text badge, a help line plus sign-up link for what is not set up (the admin adds keys to the server's `.env`; nothing can be typed or stored in the browser), an offline badge, a loading skeleton, a retry on error and a return to sign-in on 401/403.
+- Tests: HTTP checks with a fake Supabase auth server (401 / 403 / 200) and an assertion that no fake secret value appears in the response.
+
+## 6 October 2026 · Real officer sign-in with Supabase Auth
+
+- Manager entry: the demo access code is replaced by Supabase Auth (User ID + `@` + `AUTH_EMAIL_DOMAIN`, password; the User ID is trimmed and lowercased). Wrong credentials, empty fields and network errors each get a clear Bangla/English message that never says which of the two was wrong. The session survives a refresh and the role chip and desk button sign out.
+- API: `requireManager` (`services/api/src/auth.ts`) guards every `/api/v1/officer/*` route and the real-call routes: 401 without or with an invalid token, 403 unless `app_metadata.role` is `manager`. The manager's `app_metadata.site` is exposed to routes (no location filtering yet). New `GET /api/v1/auth/config`; the browser client is served from `/vendor/supabase.js`.
+- Demo login: works only with `DEMO_MODE=true` and an `EDEN_OFFICER_CODE` you set; the built-in default password and its README mention are gone. The Android officer login follows the same rule.
+- Tests: `test_auth.ts` (role and site from `app_metadata` only, 401/403) and no-demo-mode checks in `test_server.js`.
+
 ## 6 October 2026 · NASA SMAP today, OPERA drain dates and the app for any upazila (Tasrif, `feature/smap-opera-hls-android`)
 
 - **SMAP:** `research/live/smap_now.py` reads Bangladesh's rows of the newest NASA SMAP L4 file (SPL4SMGP v8, 9 km) and writes each upazila's root-zone soil moisture and its percentile to `services/api/data/live/smap_upazila.json`. It takes about a minute; the national AppEEARS request sat in NASA's queue for more than four hours.

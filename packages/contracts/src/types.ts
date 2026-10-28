@@ -115,7 +115,8 @@ export interface StewardshipTip {
 export interface EnvironmentLedger {
   groundwaterPumpedM3PerHa: number;
   floodedRiceDays: number; // transplanting to two weeks before harvest: a methane proxy, not a measurement
-  ureaKgHa: number;
+  /** Urea for the whole rotation; null where the place has no SRDI soil card (no fertilizer amount is given there). */
+  ureaKgHa: number | null;
   legume: boolean;
   bareDays: number; // days in the year with no crop in the field
 }
@@ -125,6 +126,8 @@ export interface IpmTip {
   bn: string;
   en: string;
   source: string;
+  /** The tip cites or depends on the SRDI soil card, so it is not given at a place that has none. */
+  needsSoilCard?: boolean;
 }
 
 export interface AdviceJSON {
@@ -252,7 +255,7 @@ export interface FarmerCard {
   rotationTitleBangla: string;
   rotationSubtitleBangla: string;
   season1: { name: string; variety: string; windowBangla: string; stageBangla: string; irrigationBangla: string };
-  season2: { name: string; variety: string; windowBangla: string; notesBangla: string; fertilizerBangla: string };
+  season2: { name: string; variety: string; windowBangla: string; notesBangla: string; fertilizerBangla: string; fertilizerEnglish?: string };
   alternative: { name: string; categoryBangla: string; sowingBangla: string; yieldBangla: string; noteBangla: string; marketPriceBangla: string };
   narrativeBangla: string;
   provenanceBangla: string;
@@ -340,6 +343,8 @@ export interface FarmerRecord {
   optedOut?: { date: string; how: string } | null;
   registeredAt?: string;
   registeredBy?: string;
+  /** The manager site (app_metadata.site) this farmer belongs to; records written before sites existed count as 'talanda'. */
+  site?: string;
 }
 
 // ---------------------------------------------------------------------------

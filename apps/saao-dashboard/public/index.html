@@ -41,6 +41,7 @@
           <span class="sep">›</span>
           <span class="union active" data-i18n="geo.union">তালন্দ ইউনিয়ন</span>
         </div>
+        <span class="geo-home" id="geoHome" hidden></span>
       </div>
     </div>
 
@@ -102,14 +103,14 @@
           </button>
           <button class="role-card" type="button" onclick="chooseRole('officer')">
             <span class="role-icon"><span class="material-symbols-outlined" aria-hidden="true">shield_person</span></span>
-            <span class="role-name" data-i18n="entry.officer.name">কৃষি কর্মকর্তা / SAAO</span>
-            <span class="role-desc" data-i18n="entry.officer.desc">কর্মকর্তা ডেস্ক, কৃষকের কেস, তুলনা, কল, গবাদিপশু ও ডেটার মান।</span>
-            <span class="role-tag tag-demo" data-i18n="entry.officer.tag">ডেমো প্রবেশ</span>
+            <span class="role-name" data-i18n="entry.officer.name">ম্যানেজার</span>
+            <span class="role-desc" data-i18n="entry.officer.desc">ম্যানেজার ডেস্ক: কৃষকের কেস, তুলনা, কল, গবাদিপশু ও ডেটার মান।</span>
+            <span class="role-tag tag-open" data-i18n="entry.officer.tag">লগইন লাগবে</span>
           </button>
         </div>
         <p class="entry-foot">
           <span class="material-symbols-outlined" aria-hidden="true">info</span>
-          <span data-i18n="entry.foot">এটি ডেমো সংস্করণ। কৃষক ও কর্মকর্তার প্রবেশ নিরাপদ বা যাচাই করা লগইন নয়।</span>
+          <span data-i18n="entry.foot">কৃষকের প্রবেশ এখানে ডেমো, নিরাপদ বা যাচাই করা লগইন নয়। ম্যানেজাররা নিজের অ্যাকাউন্টে প্রবেশ করেন।</span>
         </p>
       </div>
 
@@ -125,7 +126,7 @@
             <span class="role-tag tag-demo" data-i18n="entry.demoOnly">শুধু ডেমো</span>
           </div>
         </div>
-        <p class="entry-notice" data-i18n="entry.farmer.notice">এসএমএস যুক্ত নেই; কোনো কোড পাঠানো হয়নি এবং কোনো মোবাইল নম্বর যাচাই হয়নি।</p>
+        <p class="entry-notice" data-i18n="entry.farmer.notice">ডেমো, সিমুলেটেড: এসএমএস যুক্ত নেই; কোনো কোড পাঠানো হয়নি এবং কোনো মোবাইল নম্বর যাচাই হয়নি।</p>
         <p class="entry-explain" data-i18n="entry.farmer.explain">এই ডেমোতে আপনি নমুনা কৃষক (F01) হিসেবে প্রবেশ করবেন। ফোন নম্বর বা ওটিপি লাগে না।</p>
         <button class="btn btn-primary btn-block" type="button" id="entryFarmerBtn" onclick="farmerDemoSignIn()">
           <span class="material-symbols-outlined" aria-hidden="true">login</span>
@@ -142,27 +143,54 @@
         <div class="entry-form-head">
           <span class="role-icon"><span class="material-symbols-outlined" aria-hidden="true">shield_person</span></span>
           <div>
-            <h2 id="entryOfficerTitle" data-i18n="entry.officer.formTitle">কর্মকর্তা ডেমো প্রবেশ</h2>
-            <span class="role-tag tag-demo" data-i18n="entry.demoOnly">শুধু ডেমো</span>
+            <h2 id="entryOfficerTitle" data-i18n="entry.officer.formTitle">ম্যানেজার প্রবেশ</h2>
           </div>
         </div>
-        <p class="entry-notice" data-i18n="entry.officer.notice">শুধু ডেমো প্রবেশ: এটি আসল বা নিরাপদ লগইন নয়।</p>
-        <form class="entry-form" onsubmit="entryOfficerSignIn(event)">
+        <p class="entry-explain" data-i18n="entry.officer.help">আপনার অফিস থেকে পাওয়া ইউজার আইডি ও পাসওয়ার্ড দিন।</p>
+        <form class="entry-form" onsubmit="entryOfficerSignIn(event)" novalidate>
           <div class="form-group">
-            <label for="entryOfficerSelect" data-i18n="officer.idLabel">কর্মকর্তা</label>
-            <select id="entryOfficerSelect" class="form-control" required></select>
+            <label for="entryOfficerUserId" data-i18n="entry.officer.userIdLabel">ইউজার আইডি</label>
+            <input id="entryOfficerUserId" type="text" class="form-control" autocomplete="username" autocapitalize="none" spellcheck="false" aria-describedby="entryOfficerUserIdHint">
+            <small class="entry-hint" id="entryOfficerUserIdHint" data-i18n="entry.officer.userIdHint">শুধু ইউজার আইডি লিখুন, ইমেইল নয়</small>
           </div>
           <div class="form-group">
-            <label for="entryOfficerCode" data-i18n="officer.codeLabel">প্রবেশ কোড</label>
-            <input id="entryOfficerCode" type="password" class="form-control" autocomplete="off" required>
+            <label for="entryOfficerPassword" data-i18n="entry.officer.passwordLabel">পাসওয়ার্ড</label>
+            <input id="entryOfficerPassword" type="password" class="form-control" autocomplete="current-password">
           </div>
           <button class="btn btn-primary btn-block" type="submit" id="entryOfficerBtn">
             <span class="material-symbols-outlined" aria-hidden="true">login</span>
             <span data-i18n="officer.signIn">প্রবেশ করুন</span>
           </button>
-          <p class="officer-hint" data-i18n="officer.codeHint">ডেমো কোড README-তে আছে। এটি ডেমোর জন্য, আসল লগইন নয়।</p>
           <p class="entry-error" id="entryOfficerError" role="alert" hidden></p>
         </form>
+
+        <!-- The old demo login: shown only when the server runs with DEMO_MODE=true -->
+        <div id="entryOfficerDemo" hidden>
+          <hr>
+          <div class="entry-form-head">
+            <div>
+              <h3 data-i18n="entry.officer.demoTitle">ম্যানেজার ডেমো প্রবেশ</h3>
+              <span class="role-tag tag-demo" data-i18n="entry.demoOnly">শুধু ডেমো</span>
+            </div>
+          </div>
+          <p class="entry-notice" data-i18n="entry.officer.notice">শুধু ডেমো প্রবেশ: এটি আসল বা নিরাপদ লগইন নয়।</p>
+          <form class="entry-form" onsubmit="entryOfficerDemoSignIn(event)">
+            <div class="form-group">
+              <label for="entryDemoUserId" data-i18n="entry.officer.userIdLabel">ইউজার আইডি</label>
+              <input id="entryDemoUserId" type="text" class="form-control" autocomplete="off" required>
+            </div>
+            <div class="form-group">
+              <label for="entryDemoPassword" data-i18n="entry.officer.passwordLabel">পাসওয়ার্ড</label>
+              <input id="entryDemoPassword" type="password" class="form-control" autocomplete="off" required>
+            </div>
+            <button class="btn btn-secondary btn-block" type="submit" id="entryDemoBtn">
+              <span class="material-symbols-outlined" aria-hidden="true">login</span>
+              <span data-i18n="officer.signIn">প্রবেশ করুন</span>
+            </button>
+            <p class="officer-hint" data-i18n="entry.officer.passwordHint">ডেমো ইউজার আইডি ও পাসওয়ার্ড সার্ভার যিনি চালান তিনি ঠিক করেন। এটি ডেমোর জন্য, আসল লগইন নয়।</p>
+            <p class="entry-error" id="entryDemoError" role="alert" hidden></p>
+          </form>
+        </div>
       </div>
     </div>
   </section>
@@ -195,6 +223,12 @@
     <!-- SCREEN 1: SAAO OVERVIEW DASHBOARD          -->
     <!-- ========================================== -->
     <section id="screen-overview" class="screen-section active">
+      <!-- HOW FRESH THE NUMBERS ARE: live downloads and the dated release snapshot, kept apart -->
+      <div class="freshness-strip" id="freshnessStrip" role="region" aria-labelledby="freshTitle">
+        <strong id="freshTitle" data-i18n="fresh.title">ডেটা কতটা নতুন</strong>
+        <span class="fresh-item" id="freshPower"></span>
+        <span class="fresh-item" id="freshSnapshot"></span>
+      </div>
       <div class="ov-hero">
         <div class="card banner-card">
             <div class="banner-content">
@@ -205,6 +239,10 @@
                 <select id="placeDistrict" aria-label="District"></select>
                 <select id="placeUpazila" aria-label="Upazila"></select>
                 <span class="badge badge-info" id="placeKind"></span>
+              </div>
+              <div class="area-banner" id="areaBanner" role="status" hidden>
+                <span id="areaBannerText"></span>
+                <button class="btn btn-sm btn-primary" type="button" onclick="returnToMyArea()" data-i18n="area.back">আমার এলাকায় ফিরুন</button>
               </div>
               <p data-i18n="overview.lead">বরেন্দ্র অঞ্চলের মাঝারি উঁচু জমিতে ভূগর্ভস্থ পানির চাপ কমাতে, মাটি ভালো রাখতে ও কীটনাশক কমাতে ২৫ মৌসুমের নাসা ডেটার ভিত্তিতে ফসল চক্র বাছাই।</p>
               <div class="banner-actions" data-roles="officer">
@@ -226,9 +264,10 @@
             <div class="stat-card">
               <div class="stat-icon water"><span class="material-symbols-outlined" aria-hidden="true">water_drop</span></div>
               <div class="stat-body">
-                <span class="stat-title" data-i18n="overview.rainTitle">বৃষ্টি, শেষ ৩০ দিন (NASA IMERG)</span>
+                <span class="stat-title"><span data-i18n="overview.rainTitle">বৃষ্টি, শেষ ৩০ দিন</span> · <span data-area-name></span></span>
                 <span class="stat-value" id="statRainValue">…</span>
                 <span class="stat-sub" id="statRainSub"></span>
+                <span class="stat-sub stat-sub-note" id="statRainSub2"></span>
               </div>
             </div>
 
@@ -258,7 +297,7 @@
       </div>
       <div class="ov-attention">
         <div class="ov-attention-stack">
-          <div class="card alert-card">
+          <div class="card alert-card private-block" id="ovAlertCard">
             <div class="alert-icon"><span class="material-symbols-outlined" aria-hidden="true">warning</span></div>
             <div class="alert-content">
               <h4 id="alertTitle">…</h4>
@@ -324,7 +363,7 @@
                   <span class="label" data-i18n="overview.spec.grid">নাসা গ্রিড:</span>
                   <span class="val" data-i18n="overview.spec.gridValue">IMERG ০.১° (~১০ কিমি), SMAP L4 ৯ কিমি</span>
                 </div>
-                <div class="spec-item">
+                <div class="spec-item private-block">
                   <span class="label" data-i18n="overview.spec.soil">মাটি ও জমি (SRDI):</span>
                   <span class="val" id="specSoil">…</span>
                 </div>
@@ -342,7 +381,7 @@
                 </div>
               </div>
             </div>
-          <div class="card">
+          <div class="card private-block" id="ovPestCard">
             <div class="card-header">
               <h3 data-i18n="overview.pestTitle">মাঠের বালাই খবর (কর্মকর্তার পর্যবেক্ষণ)</h3>
               <button class="btn btn-sm btn-secondary" onclick="switchScreen('screen-ipm')" data-i18n="overview.pestMore">কম কীটনাশকের উপায়</button>
@@ -352,8 +391,48 @@
         </div>
       </div>
 
+      <!-- CLIMATE TREND: the last 30 days against normal for the chosen area (NASA POWER) -->
+      <div class="card climate-card" id="climateTrendCard" aria-labelledby="climateTitle" hidden>
+        <div class="card-header">
+          <h2 id="climateTitle"><span data-i18n="climate.title">জলবায়ুর ধারা (গত ৩০ দিন বনাম স্বাভাবিক)</span> · <span data-area-name></span></h2>
+          <button class="btn btn-sm btn-secondary" type="button" id="climateRefresh" onclick="refreshClimate()"><span class="material-symbols-outlined" aria-hidden="true">refresh</span> <span data-i18n="climate.refresh">রিফ্রেশ</span></button>
+        </div>
+        <p class="subtitle" data-i18n="climate.subtitle">নির্বাচিত এলাকার NASA POWER তথ্য থেকে সাম্প্রতিক বৃষ্টি, গরম, শুকনো সময় ও শিকড়ের মাটির আর্দ্রতা।</p>
+
+        <div class="climate-loading" id="climateLoading" role="status" aria-live="polite">
+          <span data-i18n="climate.loading">জলবায়ুর তথ্য আসছে…</span>
+          <div class="climate-skel-row" aria-hidden="true"></div>
+        </div>
+
+        <div class="climate-error" id="climateError" role="alert" hidden>
+          <p id="climateErrorText"></p>
+          <button class="btn btn-sm btn-secondary" type="button" onclick="loadClimateTrend()" data-i18n="climate.retry">আবার চেষ্টা করুন</button>
+        </div>
+
+        <dl class="climate-indicators" id="climateIndicators" hidden>
+          <div class="climate-indicator">
+            <dt data-i18n="climate.rain">বৃষ্টি বনাম ১০ বছরের স্বাভাবিক</dt>
+            <dd id="climateRainStatus"></dd>
+          </div>
+          <div class="climate-indicator">
+            <dt data-i18n="climate.heat">৩৫°C-এর বেশি গরমের দিন</dt>
+            <dd id="climateHeatStatus"></dd>
+          </div>
+          <div class="climate-indicator">
+            <dt data-i18n="climate.dry">সবচেয়ে দীর্ঘ শুকনো সময়</dt>
+            <dd id="climateDryStatus"></dd>
+          </div>
+          <div class="climate-indicator">
+            <dt data-i18n="climate.soil">শিকড়ের মাটির আর্দ্রতা</dt>
+            <dd id="climateSoilStatus"></dd>
+          </div>
+        </dl>
+        <p class="climate-source" id="climateSourceLine" hidden></p>
+        <p class="climate-source" id="climateRefreshNote" role="status" aria-live="polite" hidden></p>
+      </div>
+
       <!-- OFFICER FOLLOW-UPS -->
-      <div class="card" data-roles="officer">
+      <div class="card private-block" id="ovFarmersCard" data-roles="officer">
             <div class="card-header">
               <h3 data-i18n="overview.farmersTitle">সাম্প্রতিক সুপারিশ ও কৃষক ফলো-আপ (তালন্দ ব্লক)</h3>
               <span class="badge badge-warning" data-i18n="overview.sampleBadge">নমুনা সারি: কৃষক সাক্ষাৎকার বাকি</span>
@@ -388,13 +467,13 @@
           <select id="liveUpazila" aria-label="Upazila"></select>
         </div>
         <ul class="warning-list" id="liveFacts"></ul>
-        <details class="card-source"><summary data-i18n="common.sourceMethod">উৎস ও পদ্ধতি</summary><p class="warning-note" data-i18n="live.note">উৎস: নাসা POWER (প্রতিদিন, ৫০ কিমি গ্রিড, ~৩ দিন পিছিয়ে) ও GPM IMERG (১০ কিমি, ১–২ দিন পিছিয়ে)। শুকনো/ভেজা তুলনা ২০১৬–২০২৫ সালের একই সময়ের সাথে; SMAP দিয়ে যাচাইয়ের আগ পর্যন্ত এটি অস্থায়ী।</p></details>
+        <details class="card-source"><summary data-i18n="common.sourceMethod">উৎস ও পদ্ধতি</summary><p class="warning-note" data-i18n="live.note">উৎস: নাসা POWER (প্রতিদিন, ৫০ কিমি গ্রিড, ~৩ দিন পিছিয়ে) ও GPM IMERG (১০ কিমি, ১–২ দিন পিছিয়ে)। শুকনো/ভেজা তুলনা ২০১৬–২০২৫ সালের একই সময়ের সাথে; SMAP দিয়ে যাচাইয়ের আগ পর্যন্ত এটি অস্থায়ী। সংরক্ষিত কপি: প্রতি সকালে একটি GitHub কাজ ফাইলটি বানিয়ে commit করে; সার্ভার এর জন্য NASA-কে ডাকে না।</p></details>
       </div>
-      <div class="warnings-heading">
+      <div class="warnings-heading" id="warningsHeading">
         <h2 data-i18n="warnings.title">আগাম সতর্কতা: নাসার তথ্যে মাঠ ও খামারের ঝুঁকি</h2>
         <p class="subtitle" data-i18n="warnings.subtitle">ফসল চক্রের বাইরেও একই উপগ্রহ তথ্য কৃষককে আগে থেকে সাবধান করে।</p>
       </div>
-      <div class="warnings-row">
+      <div class="warnings-row" id="warningsRow">
         <div class="card warning-card">
           <div class="card-header">
             <h3 data-i18n="warnings.haorTitle">হাওরে আকস্মিক বন্যা (ধর্মপাশা পাইলট)</h3>
@@ -755,11 +834,16 @@
       <div class="card">
         <div class="card-header">
           <h2 data-i18n="officer.title">কৃষি কর্মকর্তা ডেস্ক</h2>
-          <span class="badge badge-warning" id="officerStateBadge" data-i18n="officer.lockedBadge">শুধু কর্মকর্তাদের জন্য</span>
+          <span class="badge badge-warning" id="officerStateBadge" data-i18n="officer.lockedBadge">শুধু ম্যানেজারদের জন্য</span>
         </div>
         <p class="subtitle" data-i18n="officer.intro">কৃষক কিপ্যাডে ৯ চাপলে বা মাঠে সমস্যা হলে সেটি এখানে আসে। কর্মকর্তা জমি দেখে যা লেখেন, সেই তথ্য কৃষকের পরামর্শে অগ্রাধিকার পায়। কর্মকর্তারা বাড়তি তথ্যও দেখেন: পুরো SRDI কার্ড, ২৫ মৌসুমের বিস্তারিত ও বালাই ব্যবস্থাপনা।</p>
 
-        <form id="officerLogin" class="officer-login" onsubmit="officerSignIn(event)">
+        <div id="officerSignedOut" hidden>
+          <p class="officer-hint" data-i18n="officer.signedOut">আপনি এখন প্রবেশ করা নেই। ম্যানেজার ডেস্ক দেখতে আবার প্রবেশ করুন।</p>
+          <button class="btn btn-primary" type="button" onclick="signOutRole()" data-i18n="officer.signInAgain">প্রবেশ পাতায় যান</button>
+        </div>
+
+        <form id="officerLogin" class="officer-login" onsubmit="officerSignIn(event)" hidden>
           <div class="form-group">
             <label for="officerSelect" data-i18n="officer.idLabel">কর্মকর্তা</label>
             <select id="officerSelect" class="form-control"></select>
@@ -996,6 +1080,7 @@
         <div class="card">
           <div class="card-header">
             <h3><span class="material-symbols-outlined" aria-hidden="true">waves</span> <span data-i18n="erosion.title">নদীভাঙন ও নদীর পানির উচ্চতা (BWDB, CEGIS)</span></h3>
+            <p class="muted small" data-i18n="erosion.savedNote">সংরক্ষিত কপি: BWDB/FFWC বার্ষিক প্রতিবেদন (২০১০–২০২১) ও CEGIS সূচক থেকে কোডে বসানো সংখ্যা। এটি সরাসরি বা আজকের জলস্তর নয়, এবং কোনো সরাসরি BWDB সংযোগ নেই।</p>
             <select id="erosionRiverSelect" class="form-control erosion-select" onchange="fetchRiverErosion(this.value)" aria-label="River">
               <option value="jamuna" data-i18n="erosion.jamuna">যমুনা নদী</option>
               <option value="padma" data-i18n="erosion.padma">পদ্মা নদী</option>
@@ -1254,6 +1339,7 @@
             <div class="audio-progress-bar">
               <div id="audioProgress" class="audio-progress-fill"></div>
             </div>
+            <p class="muted small" data-i18n="delivery.audioNote">ভয়েস ব্রাউজারের নিজের বাংলা কণ্ঠ (থাকলে), সার্ভারের কণ্ঠ নয়। না থাকলে শুধু দণ্ডটি চলে, কোনো শব্দ নেই (ডেমো, সিমুলেটেড)।</p>
             <span class="audio-time" id="audioTime">…</span>
           </div>
 
@@ -1311,7 +1397,7 @@
           </div>
 
           <div class="ivr-simulator-box">
-            <h4 data-i18n="delivery.keypadTitle">লাইভ কিপ্যাড রেসপন্স টেস্ট (Simulate Farmer Keypad)</h4>
+            <h4 data-i18n="delivery.keypadTitle">কিপ্যাড রেসপন্স টেস্ট (ডেমো, সিমুলেটেড: কৃষকের বোতাম অনুকরণ করা হয়)</h4>
             <div class="keypad-buttons">
               <button class="btn btn-key" onclick="simulateFarmerKeypad('1')" data-i18n="delivery.key1">১ (পানি)</button>
               <button class="btn btn-key" onclick="simulateFarmerKeypad('2')" data-i18n="delivery.key2">২ (আয়)</button>
@@ -1325,7 +1411,7 @@
           </div>
 
           <button class="btn btn-success btn-block" onclick="dispatchAdviceCall()" data-i18n="delivery.dispatch">
-            কৃষকের কাছে পরামর্শ পাঠিয়ে দিন (Dispatch Now)
+            কৃষকের কাছে পরামর্শ পাঠানো অনুকরণ করুন (ডেমো: কিছুই পাঠানো হয় না)
           </button>
         </div>
       </div>
@@ -1351,6 +1437,7 @@
           <button class="btn btn-success" onclick="callVoiceReply()" data-i18n="voice.call">Awaj দিয়ে কল</button>
           <button class="btn btn-secondary" onclick="callKeypadMenu()" data-i18n="voice.keypad">কিপ্যাড মেনু কল</button>
         </div>
+        <p class="muted small" data-i18n="voice.callNote">কল ডেমো, সিমুলেটেড ড্রাই রান, যদি না সার্ভার আসল কলের জন্য সেট করা থাকে (ডেটা সোর্স কার্ড দেখুন): কাউকে ডাকা হয় না, কোনো SMS যায় না।</p>
         <div id="voiceCallStatus" class="call-log-box"></div>
       </div>
     </section>
@@ -1362,6 +1449,7 @@
       <div class="companion-wrapper">
         <div class="companion-intro card">
           <h2 data-i18n="companion.title">ঐচ্ছিক কৃষক স্মার্টফোন সাথী (Companion App)</h2>
+          <span class="tag tag-yellow" data-i18n="demo.badge">ডেমো, সিমুলেটেড</span>
           <p data-i18n="companion.intro">এটি কৃষকের জন্য বাধ্যতামূলক নয়; যাদের স্মার্টফোন আছে তারা অফলাইনেও সর্বশেষ অনুমোদিত পরামর্শ ও পরবর্তী করণীয় দেখতে পারেন। অ্যান্ড্রয়েড অ্যাপ এই সার্ভারের একই পরামর্শ দেখায়।</p>
           <div class="offline-badge">
             <span class="status-dot"></span> <span data-i18n="companion.offline">সর্বশেষ সিঙ্কের ক্যাশ থেকে অফলাইনে চলে</span>
@@ -1437,6 +1525,37 @@
     <!-- SCREEN 10: DATA QUALITY AND COVERAGE       -->
     <!-- ========================================== -->
     <section id="screen-quality" class="screen-section">
+
+      <!-- NASA data sources the server can use: read-only (GET /api/v1/manager/data-sources, set/unset flags only; no key is ever shown or entered here) -->
+      <div class="card ds-card" id="dataSourcesCard" aria-labelledby="dsTitle">
+        <div class="card-header">
+          <h2 id="dsTitle" data-i18n="ds.title">ডেটা সোর্স ও সংযোগ: কোনটা আসল, কোনটা সংরক্ষিত, কোনটা ডেমো</h2>
+          <span class="badge badge-warning ds-badge" id="dsOfflineBadge" hidden>
+            <span class="material-symbols-outlined" aria-hidden="true">cloud_off</span>
+            <span data-i18n="ds.offline">অফলাইন মোড চালু: NASA POWER জলবায়ু সংরক্ষিত তথ্য থেকে; পূর্বাভাস ও মানচিত্রে এখনো ইন্টারনেট লাগে</span>
+          </span>
+        </div>
+        <p class="subtitle" data-i18n="ds.subtitle">প্রতিটি সেবা বা তথ্যের পাশে চারটির একটি চিহ্ন আছে। শুধু দেখার জন্য: এখানে কোনো চাবি বা পাসওয়ার্ড দেওয়া যায় না।</p>
+        <ul class="ds-legend" aria-label="Legend">
+          <li><span class="badge badge-success ds-badge"><span class="material-symbols-outlined" aria-hidden="true">sensors</span><span data-i18n="ds.label.live">সরাসরি</span></span> <span class="muted small" data-i18n="ds.legend.live">আসল তথ্য, চাওয়ার সময় আনা হয়</span></li>
+          <li><span class="badge badge-info ds-badge"><span class="material-symbols-outlined" aria-hidden="true">history</span><span data-i18n="ds.label.saved">সংরক্ষিত কপি</span></span> <span class="muted small" data-i18n="ds.legend.saved">আসল তথ্য, কিন্তু আগে সংরক্ষিত বা বসানো (তারিখসহ)</span></li>
+          <li><span class="badge badge-warning ds-badge"><span class="material-symbols-outlined" aria-hidden="true">science</span><span data-i18n="ds.label.demo">ডেমো, সিমুলেটেড</span></span> <span class="muted small" data-i18n="ds.legend.demo">আসলে কিছু ঘটে না: নমুনা বা অনুকরণ</span></li>
+          <li><span class="badge badge-neutral ds-badge"><span class="material-symbols-outlined" aria-hidden="true">link_off</span><span data-i18n="ds.label.notset">সেট করা নেই</span></span> <span class="muted small" data-i18n="ds.legend.notset">এই সার্ভারে চালু করা হয়নি</span></li>
+        </ul>
+
+        <div class="ds-skeleton" id="dsSkeleton" role="status" aria-live="polite">
+          <span class="visually-hidden" data-i18n="ds.loading">লোড হচ্ছে…</span>
+          <div class="ds-skel-row"></div><div class="ds-skel-row"></div><div class="ds-skel-row"></div><div class="ds-skel-row"></div><div class="ds-skel-row"></div>
+        </div>
+
+        <div class="ds-error" id="dsError" role="alert" hidden>
+          <p id="dsErrorText"></p>
+          <button class="btn btn-sm btn-secondary" type="button" onclick="loadDataSources()" data-i18n="ds.retry">আবার চেষ্টা করুন</button>
+        </div>
+
+        <ul class="ds-list" id="dsRows" hidden></ul>
+      </div>
+
       <div class="card quality-hero">
         <div class="card-header">
           <h2 data-i18n="quality.title">ডেটা মান, ফ্রেশনেস ও কভারেজ ড্যাশবোর্ড (Data Quality & Transparency)</h2>
@@ -1666,6 +1785,7 @@
   </div>
 
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script defer src="/vendor/supabase.js"></script>
   <script type="module" src="app.js"></script>
 </body>
 </html>

@@ -88,7 +88,7 @@ export class FloodDimensionPlugin implements IEvidenceDimensionPlugin {
       },
       provenance: {
         source: [
-          LOC.kind === 'pilot'
+          LOC.srdi
             ? 'Land-type class from the SRDI Talanda union card'
             : "Land-type class: the farmer's, or the upazila default from NASA NASADEM, Landsat surface water and BRRI's 2014-15 survey",
           k2 ? 'NASA POWER topsoil wetness (MERRA-2) and GPM IMERG rain in the replayed seasons of the crop (waterlogging, not a river-flood model)' : '',

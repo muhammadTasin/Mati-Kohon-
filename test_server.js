@@ -1,4 +1,6 @@
 import { spawn } from 'node:child_process';
+import crypto from 'node:crypto';
+import http from 'node:http';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -16,12 +18,39 @@ fs.writeFileSync(NISAR, JSON.stringify({ source: 'test', made: new Date().toISOS
   thresholds: { hhWaterDb: -10 }, summary: { upazilas: 1, withFloodShare: 1, floodAtLeast10pct: 1, floodAtLeast25pct: 1, draining: 1 },
   upazilas: { ADM3_Barhatta: { date: daysAgo(3), seenShare: 0.9, floodShare: 0.3, waterNow: 0.45, waterDry: 0.2, lastYearRadar: 0.01, sensor: 'nisar',
     drain: { from: { date: daysAgo(20), floodShare: 0.45, sensor: 'opera' }, to: { date: daysAgo(3), floodShare: 0.3, sensor: 'nisar' }, perWeek: 0.062, freeBy: daysAgo(-30) } } } }));
-const OFFICER_CODE = process.env.EDEN_OFFICER_CODE || 'talanda-demo';
+// The demo officer login exists only with DEMO_MODE=true and a code; the tests make up a fresh code every run
+const OFFICER_CODE = crypto.randomBytes(12).toString('hex');
+// A stand-in for the Supabase Auth server (GET /auth/v1/user), so the manager routes can be tested over HTTP without a project:
+// 'mgr-token' is a manager, 'viewer-token' a signed-in user whose app_metadata.role is not manager, anything else is invalid.
+const FAKE_USERS = {
+  'mgr-token': { id: 'u-manager', email: 'sentry@example.test', app_metadata: { role: 'manager', site: 'talanda' }, user_metadata: {} },
+  // JWT-shaped tokens (three parts) for the site-scoped routes: a manager of talanda, a manager of another site, a manager with no site
+  'h.talanda.s': { id: 'u-talanda', email: 'sentry@example.test', app_metadata: { role: 'manager', site: 'talanda' }, user_metadata: {} },
+  'h.other.s': { id: 'u-other', email: 'other@example.test', app_metadata: { role: 'manager', site: 'sun_dharmapasha' }, user_metadata: { site: 'talanda' } },
+  'h.upper.s': { id: 'u-upper', email: 'upper@example.test', app_metadata: { role: 'manager', site: 'Talanda' }, user_metadata: {} },
+  'h.alias.s': { id: 'u-alias', email: 'alias@example.test', app_metadata: { role: 'manager', site: ' tanore ' }, user_metadata: {} },
+  'h.viewer.s': { id: 'u-viewer2', email: 'viewer2@example.test', app_metadata: { role: 'viewer', site: 'talanda' }, user_metadata: { role: 'manager' } },
+  'h.nosite.s': { id: 'u-nosite', email: 'nosite@example.test', app_metadata: { role: 'manager' }, user_metadata: { site: 'talanda' } },
+  'viewer-token': { id: 'u-viewer', email: 'viewer@example.test', app_metadata: { role: 'viewer' }, user_metadata: { role: 'manager' } },
+};
+const fakeSupabase = http.createServer((req, res) => {
+  const user = FAKE_USERS[(req.headers.authorization || '').replace(/^Bearer\s+/i, '')];
+  res.writeHead(user ? 200 : 401, { 'Content-Type': 'application/json' });
+  res.end(JSON.stringify(user ?? { code: 401, error_code: 'bad_jwt', msg: 'invalid JWT' }));
+});
+await new Promise((resolve) => fakeSupabase.listen(0, '127.0.0.1', resolve));
+const FAKE_SUPABASE_URL = `http://127.0.0.1:${fakeSupabase.address().port}`;
+// Made-up credentials for the data-sources test: none of these strings may ever appear in an API response
+const FAKE_SECRETS = {
+  EARTHDATA_USERNAME: 'fake-edl-user-7q1', EARTHDATA_PASSWORD: 'fake-edl-pass-7q2', EARTHDATA_TOKEN: 'fake-edl-token-7q3',
+  NASA_API_KEY: 'fake-nasa-key-7q4', ADS_API_TOKEN: 'fake-ads-token-7q5', FIRMS_MAP_KEY: 'fake-firms-key-7q6',
+};
 const serverProc = spawn('node', ['--experimental-strip-types', 'services/api/src/server.ts'], {
   stdio: ['inherit', 'pipe', 'pipe'],
   // tests never place a real call, never reach an LLM or TTS service, and read a fixed day of NASA conditions
   // (the daily update rewrites the live file)
-  env: { ...process.env, PORT, EDEN_OFFICER_STORE: STORE, CATTLE_STORE_PATH: CATTLE_STORE, SEED_DEMO_DATA: 'false', LLM_BASE_URL: '', TTS_BASE_URL: '', GOOGLE_TTS_CREDENTIALS: '', SMS_LIVE: '0', SMS_API_KEY: '', AWAJ_VOICE_SOURCE: '',
+  env: { ...process.env, PORT, DEMO_MODE: 'true', EDEN_OFFICER_CODE: OFFICER_CODE, SUPABASE_URL: FAKE_SUPABASE_URL, SUPABASE_ANON_KEY: 'fake-anon-key', ...FAKE_SECRETS, OFFLINE: '1',
+    EDEN_OFFICER_STORE: STORE, CATTLE_STORE_PATH: CATTLE_STORE, SEED_DEMO_DATA: 'false', LLM_BASE_URL: '', TTS_BASE_URL: '', GOOGLE_TTS_CREDENTIALS: '', SMS_LIVE: '0', SMS_API_KEY: '', AWAJ_VOICE_SOURCE: '',
     API_WRITE_TOKEN: '', AWAJ_LIVE: '0', CALL_PROVIDER: '', VOICEBLAST_LIVE: '0', BROADCAST_LIVE: '0', EDEN_LIVE_FILE: path.resolve('tests/fixtures/live_conditions_2026-10-01.json'), EDEN_FLOOD_FILE: path.resolve('tests/fixtures/no_flood_file.json'), EDEN_CROP_LOSS_FILE: path.resolve('tests/fixtures/crop_loss_fixture.json'),
     EDEN_NISAR_FILE: NISAR, EDEN_CALL_STORE: CALL_STORE, MISSED_CALL_KEY: 'test-missed-key', SMS_SECRET_KEY: '' },
 });
@@ -82,6 +111,13 @@ async function run() {
   check(godagari.local_context?.landTypeAssumed === true && godagari.scope.land_type === godagari.local_context.landType
     && (godagari.options.some(o => o.currentPractice) || !godagari.local_context.patterns.some(p => p.pctOfCroppedLand >= 20)),
     'upazila advice carries its land type, its evidence and what farmers there grow now');
+  // no SRDI soil card outside the pilot: the calendar stays, but no fertilizer amount and the plain message instead
+  const NO_CARD_BN = 'এই এলাকার মাটির কার্ড (SRDI) যোগ করা হয়নি, সার-পরামর্শ দেওয়া যাচ্ছে না';
+  check(godagari.farmer_card.season2.fertilizerBangla === NO_CARD_BN, 'the farmer card carries the no-soil-card message instead of doses');
+  check(godagari.options.every(o => o.ledger.ureaKgHa === null && o.dimensionDetails.soil.metrics.rotationUreaKgHa === null && o.timeline.length > 0), 'no urea numbers outside the pilot, calendar kept');
+  check(!/ureaKgHa":\s*[0-9]|tspKgHa":\s*[0-9]|mopKgHa":\s*[0-9]/.test(JSON.stringify(godagari)), 'no fertilizer dose number anywhere in the advice JSON');
+  const talandaAdvice = await (await fetch(`${BASE}/api/v1/advice`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ unionId: 'talanda_tanore' }) })).json();
+  check(talandaAdvice.options.every(o => typeof o.ledger.ureaKgHa === 'number') && !talandaAdvice.farmer_card.season2.fertilizerBangla.includes(NO_CARD_BN), 'the pilot still has its fertilizer numbers');
   const sylhetId = places.upazilas.find(u => u.district === 'Sylhet').id;
   const sylhet = await (await fetch(`${BASE}/api/v1/overview?place=${sylhetId}`)).json();
   check(sylhet.scope.district === 'Sylhet' && sylhet.aman_replay.length >= 5, 'the overview follows the chosen place');
@@ -563,13 +599,205 @@ async function run() {
   check(delRes.status === 200, 'delete AOI status');
   console.log('✓ Cattle AOI & Advisory Pipeline verified: create -> job enqueue -> advisory -> delete');
 
+  // Officer routes without a token or with a token that is not valid
+  console.log('Testing officer route protection ...');
+  for (const [method, route] of [['GET', '/api/v1/officer/desk'], ['GET', '/api/v1/officer/knowledge'], ['GET', '/api/v1/officer/calls'],
+    ['POST', '/api/v1/officer/observations'], ['POST', '/api/v1/officer/reset']]) {
+    const noToken = await fetch(`${BASE}${route}`, { method });
+    check(noToken.status === 401, `${method} ${route} without a token must be 401, got ${noToken.status}`);
+    const junk = await fetch(`${BASE}${route}`, { method, headers: { Authorization: 'Bearer not-a-real-token' } });
+    check(junk.status === 401 || junk.status === 503, `${method} ${route} with an unknown token must be refused, got ${junk.status}`);
+  }
+  const demoConfig = await (await fetch(`${BASE}/api/v1/auth/config`)).json();
+  check(demoConfig.demoMode === true, 'auth config reports demo mode when DEMO_MODE=true');
+  console.log('✓ Officer routes refuse missing and unknown tokens');
+
+  // Manager data-sources status: 401 / 403 / 200 over HTTP, and never a secret value
+  console.log('Testing GET /api/v1/manager/data-sources ...');
+  const sources = '/api/v1/manager/data-sources';
+  check((await fetch(`${BASE}${sources}`)).status === 401, 'data sources without a token must be 401');
+  check((await fetch(`${BASE}${sources}`, { headers: { Authorization: 'Bearer nope' } })).status === 401, 'data sources with an unknown token must be 401');
+  const asViewer = await fetch(`${BASE}${sources}`, { headers: { Authorization: 'Bearer viewer-token' } });
+  check(asViewer.status === 403, `a signed-in non-manager must get 403, got ${asViewer.status}`);
+  check(!(await asViewer.text()).includes('earthdataLogin'), 'the 403 body carries no status');
+  const asManager = await fetch(`${BASE}${sources}`, { headers: { Authorization: 'Bearer mgr-token' } });
+  check(asManager.status === 200, `a manager must get 200, got ${asManager.status}`);
+  const managerText = await asManager.text();
+  const sourcesBody = JSON.parse(managerText);
+  const { integrations, ...flags } = sourcesBody;
+  check(JSON.stringify(flags) === JSON.stringify({ earthdataLogin: 'set', earthdataToken: 'set', firmsMapKey: 'set', nasaApiKey: 'set', adsApiToken: 'set', offline: true }), `unexpected data-sources flags: ${JSON.stringify(flags)}`);
+  // every integration, with one of four labels and plain sentences in both languages; offline mode makes NASA POWER a saved copy
+  check(Array.isArray(integrations) && integrations.length >= 15, 'the data-sources response lists every integration');
+  check(integrations.every((i) => ['live', 'saved', 'demo', 'notset'].includes(i.label) && i.name.bn && i.name.en && i.reason.bn && i.reason.en && i.usedBy.en && i.reality.bn), 'each integration has a label and bilingual text');
+  check(integrations.find((i) => i.id === 'nasa-power').label === 'saved', 'with OFFLINE=1 NASA POWER is a saved copy, not live');
+  check(integrations.find((i) => i.id === 'awaj').label === 'notset' && integrations.find((i) => i.id === 'demo-features').label === 'demo', 'unset Awaj is "notset" and the demo features say demo');
+  check(!/[A-Z][A-Z0-9]+_[A-Z0-9_]{2,}/.test(JSON.stringify(integrations).replace(/OFFLINE|AWAJ_LIVE|DEMO_MODE|NOT_NEEDED|NOT_APPLICABLE/g, '')), 'the integrations list names no environment variable');
+  for (const value of Object.values(FAKE_SECRETS)) check(!managerText.includes(value), 'the data-sources response must never contain a secret value');
+  const demoSources = await fetch(`${BASE}${sources}`, { headers: { Authorization: `Bearer ${session.token}` } });
+  check(demoSources.status === 200, 'the demo desk session may read the data-sources status in DEMO_MODE');
+  const demoText = await demoSources.text();
+  for (const value of Object.values(FAKE_SECRETS)) check(!demoText.includes(value), 'the demo response must never contain a secret value');
+  console.log('✓ Data sources: 401 without a token, 403 for a non-manager, 200 for a manager, flags only (no secret)');
+
+  // Everything a farmer hears or is sent (narration, audio script, voice reply, SMS, call script, keypad call, keypad-9 survey
+  // answers, channel acknowledgements, the assistant): outside the pilot it carries no fertilizer amount and nothing from the Talanda SRDI card
+  console.log('Testing spoken and delivered text outside the pilot ...');
+  const postJson = async (route, body) => (await fetch(`${BASE}${route}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json();
+  const phone = '01712345678';
+  const NO_CARD = 'এই এলাকার মাটির কার্ড (SRDI) যোগ করা হয়নি, সার-পরামর্শ দেওয়া যাচ্ছে না';
+  const FERT_AMOUNT = /(urea|tsp|mop|potash|gypsum|zinc|ইউরিয়া|টিএসপি|এমওপি|পটাশ|জিপসাম|জিংক)[^.।]*[0-9০-৯]|[0-9০-৯][^.।]*(kg|কেজি)[^.।]*(urea|tsp|mop|ইউরিয়া|টিএসপি|এমওপি)/i;
+  const SOIL_CARD_TEXT = /SRDI|Kharia|খিয়ার|এসআরডিআই|Talanda card|তালন্দ কার্ড/;
+  const TALANDA_WORDS = /তালন্দ|Talanda|তানোর|Tanore/;
+  const deliveredTexts = async (place, near) => {
+    const texts = [];
+    const add = (name, value) => { if (typeof value === 'string' && value) texts.push({ name, value }); };
+    const advice = await postJson('/api/v1/advice', { unionId: place });
+    const card = advice.farmer_card;
+    for (const k of ['audioScriptBangla', 'narrativeBangla', 'provenanceBangla']) add(`farmer_card.${k}`, card[k]);
+    add('farmer_card.season2.fertilizerBangla', card.season2.fertilizerBangla);
+    add('farmer_card.season2.notesBangla', card.season2.notesBangla);
+    const narration = await postJson('/api/v1/narrate', { advice, selectedOptionId: advice.options[0].id });
+    for (const k of ['banglaSpeechText', 'englishGloss', 'banglaKeypadPrompt']) add(`narrate.${k}`, narration[k]);
+    for (const text of ['আমি মসুর ও সরিষা করতে চাই', 'আলু করতে চাই, সার কত দেব', 'বোরো ধান করব']) {
+      const v = await postJson('/api/v1/voice/answer', { unionId: place, text });
+      add(`voice[${text}].speech`, v.reply.speechBangla); add(`voice[${text}].sms`, v.reply.smsBangla);
+    }
+    const call = await postJson('/api/v1/calls/advice', { unionId: place, phone, text: 'গম করতে চাই' });
+    call.call.request.texts.forEach((t, i) => add(`calls/advice.texts[${i}]`, t));
+    add('calls/advice.sms', call.reply.smsBangla);
+    const keypad = await postJson('/api/v1/calls/keypad', { unionId: place, phone });
+    add('calls/keypad.menu', keypad.menu); add('calls/keypad.request', JSON.stringify(keypad.call.request ?? keypad.call));
+    for (const key of ['1', '2', '3', '4', '5', '9']) {
+      const c = await postJson('/api/v1/channel-events', { keypad: key, farmerId: 'F01', unionId: place });
+      add(`channel-events[${key}].bn`, c.acknowledgementBangla); add(`channel-events[${key}].en`, c.acknowledgementEnglish);
+    }
+    const assistant = await postJson('/api/v1/ai/ask', { query: 'এই এলাকায় সারের সুপারিশ কী?', ...near });
+    return { texts, assistant };
+  };
+  const away = await deliveredTexts('ADM3_Godagari', { lat: 24.4, lon: 88.3 });
+  check(away.texts.length >= 30, `the check really covers the delivered texts (${away.texts.length} texts)`);
+  for (const { name, value } of away.texts) {
+    const text = value.replace(NO_CARD, '');
+    check(!FERT_AMOUNT.test(text), `Godagari ${name} carries a fertilizer amount: ${text.slice(0, 120)}`);
+    check(!SOIL_CARD_TEXT.test(text), `Godagari ${name} carries Talanda SRDI card text: ${text.slice(0, 120)}`);
+    check(!TALANDA_WORDS.test(text), `Godagari ${name} names Talanda or Tanore: ${text.slice(0, 120)}`);
+  }
+  check(away.assistant.evidenceLevel === 'insufficient_evidence' && !FERT_AMOUNT.test(away.assistant.answer) && !/[0-9০-৯]+ কেজি/.test(away.assistant.answer), 'the assistant gives no fertilizer amount away from Talanda');
+  const home = await deliveredTexts('talanda_tanore', { lat: 24.62, lon: 88.56 });
+  check(home.texts.some(({ name, value }) => name === 'farmer_card.season2.fertilizerBangla' && /ইউরিয়া.*টিএসপি.*এমওপি/.test(value)), 'the pilot\'s farmer card keeps its fertilizer line');
+  check(home.assistant.evidenceLevel === 'reference_card' && /ইউরিয়া/.test(home.assistant.answer), 'the assistant still reads the Talanda card at Talanda');
+  check(home.texts.every(({ value }) => !value.includes(NO_CARD)), 'the no-soil-card message never reaches a pilot text');
+  check(home.texts.some(({ name }) => name.startsWith('calls/advice')) && home.texts.some(({ name }) => name.startsWith('channel-events')), 'the pilot\'s call and acknowledgement texts are still produced');
+  console.log(`✓ Delivered text: ${away.texts.length} Godagari texts (narration, audio script, voice, SMS, call script, keypad menu, acknowledgements) carry no fertilizer amount, Talanda soil card text or Talanda name; the pilot is unchanged`);
+
+  // Site scope over HTTP: a manager sees and changes only their own site's desk; the area parameter accepts known ids only
+  console.log('Testing manager site scope ...');
+  const as = (token) => ({ headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } });
+  const deskOf = async (token) => (await fetch(`${BASE}/api/v1/officer/desk`, as(token))).json();
+  const ownDesk = await deskOf('h.talanda.s');
+  // the six sample farmers and the ones the farmer-call test registered for the demo officer's site (talanda)
+  const talandaCount = ownDesk.farmers.length;
+  check(talandaCount >= 6 && ownDesk.farmers.some((f) => f.farmer.id === 'F06') && ownDesk.callbacks.some((c) => c.id === 'cb_seed_04'), 'the talanda manager sees the talanda desk');
+  for (const token of ['h.other.s', 'h.nosite.s']) {
+    const other = await deskOf(token);
+    check(other.farmers.length === 0 && other.callbacks.length === 0 && other.queue.length === 0, `${token}: no farmers, call-backs or queue of another site`);
+    const resolve = await fetch(`${BASE}/api/v1/officer/callbacks/cb_seed_04/resolve`, { method: 'POST', ...as(token) });
+    check(resolve.status === 404, `${token}: another site's call-back is not found, got ${resolve.status}`);
+    const observe = await fetch(`${BASE}/api/v1/officer/observations`, { method: 'POST', ...as(token), body: JSON.stringify({ farmerId: 'F01', landType: 'medium_high', currentAmanCrop: 'BRRI dhan71', irrigation: 'rainfed' }) });
+    check(observe.status === 400, `${token}: cannot write an observation for another site's farmer, got ${observe.status}`);
+    const calls = await (await fetch(`${BASE}/api/v1/officer/calls`, as(token))).json();
+    check(calls.calls.length === 0, `${token}: the phone log of another site is not shown`);
+  }
+  const noSiteReset = await fetch(`${BASE}/api/v1/officer/reset`, { method: 'POST', ...as('h.nosite.s') });
+  check(noSiteReset.status === 403 && (await noSiteReset.json()).error.code === 'site_required', 'a manager without a site cannot reset: 403 site_required (the dashboard shows the message and stays signed in)');
+  // the same site written another way is the same site: the desk, the climate card and the area
+  for (const token of ['h.upper.s', 'h.alias.s']) {
+    const desk = await deskOf(token);
+    check(desk.farmers.length === talandaCount && desk.callbacks.some((c) => c.id === 'cb_seed_04'), `${token}: a differently written talanda site sees the talanda desk`);
+    const climate = await fetch(`${BASE}/api/v1/manager/climate`, as(token));
+    const climateBody = await climate.json();
+    check(climate.status === 200 && climateBody.area.id === 'talanda' && climateBody.area.isHome === true, `${token}: and the talanda climate card (status ${climate.status})`);
+    const area = await (await fetch(`${BASE}/api/v1/manager/area`, as(token))).json();
+    check(area.siteId === 'talanda' && area.placeId === 'talanda_tanore', `${token}: and the talanda home area`);
+    const pack = await (await fetch(`${BASE}/api/v1/officer/knowledge`, as(token))).json();
+    check(pack.srdi && pack.srdi.rows.length >= 4 && Array.isArray(pack.amanReplay), `${token}: and the talanda knowledge pack`);
+  }
+  // the knowledge pack is the pilot's: any other site gets only the no-soil-card message
+  for (const token of ['h.other.s', 'h.nosite.s']) {
+    const pack = await (await fetch(`${BASE}/api/v1/officer/knowledge`, as(token))).json();
+    check(pack.srdi === null && pack.noSoilCard.bn === NO_CARD_BN && pack.noSoilCard.en.includes('soil card'), `${token}: the knowledge pack is the no-soil-card message`);
+    for (const key of ['amanReplay', 'rabiReplay', 'ipm', 'caveats', 'saaoNotes', 'cattleHeat', 'haorSkill', 'haorEscape']) check(!(key in pack), `${token}: no ${key} (it is Tanore-point data)`);
+  }
+  await fetch(`${BASE}/api/v1/officer/reset`, { method: 'POST', ...as('h.other.s') });
+  const afterReset = await deskOf('h.talanda.s');
+  check(afterReset.farmers.length === talandaCount && afterReset.callbacks.some((c) => c.id === 'cb_seed_04' && c.status === 'open'), 'another site\'s reset leaves the talanda desk alone');
+  const areaOf = async (token) => (await fetch(`${BASE}/api/v1/manager/area`, as(token))).json();
+  const homeArea = await areaOf('h.talanda.s');
+  check(homeArea.siteId === 'talanda' && homeArea.placeId === 'talanda_tanore' && homeArea.nameEnglish === 'Talanda, Tanore', 'the home area comes from app_metadata.site (not user_metadata)');
+  check((await areaOf('h.other.s')).siteId === 'SUN_DHARMAPASHA', 'another manager has another home area, whatever user_metadata says');
+  check((await fetch(`${BASE}/api/v1/manager/area`)).status === 401, 'the home area needs a token');
+  check((await fetch(`${BASE}/api/v1/manager/area`, as('h.viewer.s'))).status === 403, 'the home area is for managers only');
+  for (const area of ['nowhere', 'ADM3_Atlantis', '24.6,88.5', 'ADM3_']) {
+    const bad = await fetch(`${BASE}/api/v1/manager/climate?area=${encodeURIComponent(area)}`, as('h.talanda.s'));
+    check(bad.status === 422, `an unknown area (${area}) must be refused with 422, got ${bad.status}`);
+  }
+  check((await fetch(`${BASE}/api/v1/manager/climate?area=ADM3_ChuadangaSadar`)).status === 401, 'area climate needs a token');
+  const sylhetOverview = await (await fetch(`${BASE}/api/v1/overview?place=ADM3_Godagari`)).json();
+  check(sylhetOverview.early_warnings === null && sylhetOverview.soil_carbon === null && sylhetOverview.recent_farmer_contacts.length === 0 && sylhetOverview.pest_reports.length === 0 && sylhetOverview.context.landTypeBangla === null,
+    'another place never receives the Tanore pilot\'s warnings, carbon, sample farmers or field reports');
+  console.log('✓ Site scope: own desk only, another site cannot read, resolve, write or reset; area ids validated; pilot-only overview parts stay with the pilot');
+
+  await checkDemoModeOff();
+
   console.log('\n===========================================');
   console.log('  ALL ENDPOINTS TESTED & VERIFIED!          ');
   console.log('===========================================');
 }
 
+/** A second server without DEMO_MODE: the demo officer credentials must not work at all. */
+async function checkDemoModeOff() {
+  console.log('Testing that the demo login is closed without DEMO_MODE ...');
+  const port = String(Number(PORT) + 1);
+  const base = `http://localhost:${port}`;
+  const store = path.join(os.tmpdir(), `eden-officer-test-nodemo-${process.pid}.json`);
+  const env = { ...process.env, PORT: port, EDEN_OFFICER_CODE: OFFICER_CODE, SUPABASE_URL: FAKE_SUPABASE_URL, SUPABASE_ANON_KEY: 'fake-anon-key', EDEN_OFFICER_STORE: store,
+    CATTLE_STORE_PATH: CATTLE_STORE, LLM_BASE_URL: '', TTS_BASE_URL: '', API_WRITE_TOKEN: '', AWAJ_LIVE: '0',
+    EDEN_LIVE_FILE: path.resolve('tests/fixtures/live_conditions_2026-10-01.json') };
+  delete env.DEMO_MODE;
+  const proc = spawn('node', ['--experimental-strip-types', 'services/api/src/server.ts'], { stdio: 'ignore', env });
+  try {
+    let up = false;
+    for (let i = 0; i < 50 && !up; i++) {
+      try { up = (await fetch(`${base}/api/v1/overview`)).ok; } catch { await new Promise((r) => setTimeout(r, 100)); }
+    }
+    check(up, 'the no-demo server did not start');
+    const json = { 'Content-Type': 'application/json' };
+    const login = await fetch(`${base}/api/v1/officer/login`, { method: 'POST', headers: json, body: JSON.stringify({ officerId: 'saao_talanda_01', accessCode: OFFICER_CODE }) });
+    check(login.status === 401, `demo officer login must be refused without DEMO_MODE, got ${login.status}`);
+    const unified = await fetch(`${base}/api/v1/auth/login`, { method: 'POST', headers: json, body: JSON.stringify({ role: 'officer', officerId: 'saao_talanda_01', accessCode: OFFICER_CODE }) });
+    check(unified.status === 401, `unified officer login must be refused without DEMO_MODE, got ${unified.status}`);
+    const officers = await (await fetch(`${base}/api/v1/officers`)).json();
+    check(Array.isArray(officers) && officers.length === 0, 'the demo officer list is empty without DEMO_MODE');
+    const desk = await fetch(`${base}/api/v1/officer/desk`);
+    check(desk.status === 401, 'officer desk needs a token');
+    const config = await (await fetch(`${base}/api/v1/auth/config`)).json();
+    check(config.demoMode === false && Object.keys(config).sort().join() === 'demoMode,emailDomain,supabaseAnonKey,supabaseUrl', 'auth config exposes only the URL, the anon key, the email domain and the demo flag');
+    // nothing configured: the manager sees "unset" and the demo NASA key
+    const unset = await (await fetch(`${base}/api/v1/manager/data-sources`, { headers: { Authorization: 'Bearer mgr-token' } })).json();
+    const { integrations: unsetIntegrations, ...unsetFlags } = unset;
+    check(JSON.stringify(unsetFlags) === JSON.stringify({ earthdataLogin: 'unset', earthdataToken: 'unset', firmsMapKey: 'unset', nasaApiKey: 'unset', adsApiToken: 'unset', offline: false }), `unexpected unset data-sources flags: ${JSON.stringify(unsetFlags)}`);
+    const unsetLabel = (id) => unsetIntegrations.find((i) => i.id === id).label;
+    check(unsetLabel('nasa-power') === 'live' && unsetLabel('awaj') === 'notset' && unsetLabel('tts') === 'notset' && unsetLabel('llm') === 'notset', 'online and unset: POWER is live; Awaj, TTS and the LLM are not set up');
+    console.log('✓ Without DEMO_MODE the demo officer credentials do not work at all');
+  } finally {
+    proc.kill();
+    fs.rmSync(store, { force: true });
+  }
+}
+
 function finish(code) {
   serverProc.kill();
+  fakeSupabase.close();
   fs.rmSync(STORE, { force: true });
   fs.rmSync(CALL_STORE, { force: true });
   fs.rmSync(CATTLE_STORE, { force: true });

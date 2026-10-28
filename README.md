@@ -13,7 +13,7 @@ EDEN is a Bangla-first crop-rotation decision-support system for Bangladesh. Its
 | Research and data | `research/` | NASA and local datasets with their checks, the 25-season replay for the Tanore pilot, signals for five pilots, and the generator for the app's data release |
 | Rotation engine | `packages/rotation-engine/` | 7 scores over replayed seasons. The Talanda pilot keeps its 5 researched rotations (data release `tanore-2026.09.30`, research commit `0469020`); every other upazila is planned from 17 crops (`crop_choice_replay.json`) on its district's replay (`national_replay.json`), its land type, what its farmers grow now and its district's yields (`upazila_profile.json`). With the farmer's crops named, it plans the whole year around them |
 | API | `services/api/` | One server for the website and the Android app ([API contract](docs/api-contract.md)): advice, crop choice, Bangla request reading, soil-and-water tips, Awaj calls, the weather forecast for 500 upazilas, NASA POWER observations and the cattle farm-outline (AOI) pipeline |
-| SAAO dashboard | `apps/saao-dashboard/` | A role picker first (visitor, farmer, officer; each sees its own tabs); the web farmer portal with the Android app's five tabs (today, weather, river erosion, assistant, my farm); the weather tab (Open-Meteo forecast, NASA POWER, hourly cattle THI); the cattle tab (farm outlines on a map, background jobs, THI advice); any of the 544 upazilas, picked from a list or on a map of Bangladesh coloured by NASA layers; Bangla and English, the farmer's crops and main crop (with a no-rice switch), officer desk, soil-and-water tips, early warnings, environment ledger, daily NASA conditions and voice-to-plan flow |
+| SAAO dashboard | `apps/saao-dashboard/` | A role picker first (visitor, farmer, manager; each sees its own tabs); the web farmer portal with the Android app's five tabs (today, weather, river erosion, assistant, my farm); the weather tab (Open-Meteo forecast, NASA POWER, hourly cattle THI); the cattle tab (farm outlines on a map, background jobs, THI advice); any of the 544 upazilas, picked from a list or on a map of Bangladesh coloured by NASA layers; Bangla and English, the farmer's crops and main crop (with a no-rice switch), officer desk, soil-and-water tips, early warnings, environment ledger, daily NASA conditions and voice-to-plan flow |
 | Android app | `apps/farmer-mobile/` | Farmer card, weather and cattle advisories through the configured Edith API, river erosion, Bangla voice assistant and crop planning when the configured API supports `/api/v1/voice/answer`, sign-in, farm profile editing; the story site's colours, sharp corners and fonts (Anek Bangla and Hind Siliguri, bundled for offline use) |
 | Screen designs | `design/` | Six SAAO desktop screens and the portrait mobile companion |
 | Daily NASA update | `research/live/` | NASA POWER every day for all 544 upazilas (64 districts), GPM IMERG rain at 10 km with an Earthdata Login, and the live haor flash-flood check with the MODIS flood map |
@@ -26,14 +26,15 @@ The dashboard advises any of the 544 upazilas (pick the district and upazila at 
 npm install
 npm test          # 16 engine tests, 7 cattle tests and every API check
 npm start         # API and SAAO dashboard on http://localhost:4000
+npm run check:integrations   # which outside services are set up and answer (SET/UNSET, PASS/FAIL/SKIPPED; never prints a value); see docs/integrations.md
 npm run call:test -- --to 01XXXXXXXXX --crops sunflower,lentil   # the Bangla call script; a dry run until Awaj is set up
 ```
 
 - **Place:** pick a district and upazila at the top of the overview; the advice, replay, alerts and rain follow it, and the browser remembers it. Rajshahi → Tanore is the detailed Talanda pilot.
 
 - **Language:** the বাংলা / EN buttons in the dashboard header switch every text; the browser remembers the choice.
-- **Krishi officer desk:** tab ৬ / 6, demo access code `talanda-demo` (set `EDEN_OFFICER_CODE` to change it). **Restore sample data** resets the sample farmers before a recording.
-- **Farmer sign-in (app):** a farmer ID or phone number with the demo PIN `1234`. Both sign-ins are demo gates, not real authentication.
+- **Krishi officer desk:** tab ৬ / 6. Managers sign in with a Supabase account (see [Manager sign-in](#manager-sign-in-supabase)). **Restore sample data** resets the sample farmers before a recording. For a local demo without Supabase, set `DEMO_MODE=true` and an `EDEN_OFFICER_CODE` in `.env`: the officer list and the shared code then work as before.
+- **Farmer sign-in (app):** a farmer ID or phone number with the demo PIN `1234`. This is a demo gate, not real authentication.
 - **Outside services (keys in the git-ignored `.env`; see `.env.example`):**
   - **Gemini** rewords the advice through its OpenAI-compatible endpoint. Every number is checked against the advice, and the fixed template takes over on any doubt.
   - **Google Cloud Text-to-Speech** (bn-BD) is the Bangla voice for the dashboard, the web farmer portal and, with `AWAJ_VOICE_SOURCE=google` and a public `PUBLIC_BASE_URL`, phone calls.
@@ -60,7 +61,7 @@ Every advice carries `local_context` (land type and evidence, the patterns, haza
 
 `python research/explore/national_replay.py` runs the Tanore replay's method (FAO-56 water balance, BRRI and BARI calendars, heat at flowering and grain filling) at each of the 64 districts' NASA POWER and GPM IMERG point for 2001–2025, with temperatures corrected against the nearest BMD station within 100 km, and writes `packages/rotation-engine/src/data/national_replay.json`. `packages/rotation-engine/src/data/location.ts` points the engine at the chosen place: the Talanda pilot, or an upazila using its district's replay. At Rajshahi district it reproduces Tanore's research figures closely (BRRI dhan71: 7 of 25 rescue seasons; Boro 790 mm against 797 mm).
 
-Where a place has no data yet, the dashboard says so instead of borrowing Tanore's: SMAP soil moisture, MODIS greenness and land use are pilot-only so far; fertilizer doses use the SRDI Talanda card until each upazila's card is added; upazila names are in English. `GET /api/v1/places` lists the places, `GET /api/v1/overview?place=<id>` and `POST /api/v1/advice` with `unionId: <id>` follow the choice.
+Where a place has no data yet, the dashboard says so instead of borrowing Tanore's: SMAP soil moisture, MODIS greenness and land use are pilot-only so far; there is no SRDI soil card outside the pilot, so those places get the crop calendar and rotation replay but no fertilizer amounts (the advice says "this area's soil card (SRDI) has not been added, so fertilizer advice cannot be given"); upazila names are in English. `GET /api/v1/places` lists the places, `GET /api/v1/overview?place=<id>` and `POST /api/v1/advice` with `unionId: <id>` follow the choice.
 
 ### The farmer's own crops
 
@@ -98,7 +99,7 @@ The pesticide tip carries numbers from NASA SEDAC's Global Pesticide Grids, PEST
 2. **Speech to text, then the same engine.** Any speech-to-text that handles Bangla gives a sentence; `POST /api/v1/voice/answer` reads the crops, exclusions ("বোরো করব না"), land type and priorities from it (`packages/rotation-engine/src/understand.ts`, rule-based so an officer can see why) and returns the call script and SMS. The dashboard's delivery screen does this with the browser's microphone (Chrome's Bangla speech recognition). For phone calls, the speech must be recorded first: officer calls through Awaj's call-centre widget come with a recording URL, or a provider whose IVR records a spoken answer, and the recording goes to a speech-to-text service.
 3. **A conversational AI voice line, later.** Real-time speech needs a telephony provider that streams call audio (a SIP line with Asterisk or FreeSWITCH, or a cloud provider with media streams), streaming Bangla speech-to-text and text-to-speech; the engine still decides, and any model wording passes the narration gates.
 
-Calls stay dry runs (they return the exact request) until `.env` has `AWAJ_API_TOKEN`, `AWAJ_SENDER` and `AWAJ_LIVE=1` (see `.env.example`); with live calls on, the call routes need an officer sign-in.
+Calls stay dry runs (they return the exact request) until `.env` has `AWAJ_API_TOKEN`, `AWAJ_SENDER` and `AWAJ_LIVE=1` (see `.env.example`); with live calls on, the call routes need a manager sign-in.
 
 The keypad call, step by step: record the menu text (`npm run call:test -- --upload-menu menu.m4a` prints it and uploads the recording as the voice `mather-kotha-menu`); wait for Awaj to approve it (`--voices`); set `AWAJ_MENU_VOICE` (or `AWAJ_SURVEY_TEMPLATE` for a two-question template made in the Awaj dashboard), `AWAJ_OFFICER_NUMBER` for key 9 and `PUBLIC_BASE_URL` so Awaj can reach `/api/v1/calls/survey-webhook`; then `npm run call:test -- --keypad --to 01XXXXXXXXX --live`, or the dashboard's "কিপ্যাড মেনু কল" button. The farmer presses keys, Awaj posts them, and the webhook calls back with the plan. `npm run call:test -- --to 01XXXXXXXXX --place ADM3_Godagari --text "আমি সূর্যমুখী আর মসুর করতে চাই"` prints the script and, with `--live`, places one call and prints Awaj's per-number result.
 
@@ -262,7 +263,8 @@ Do not commit secrets, local environment files, dependency folders, generated AP
 | GET/POST | `/api/v1/cattle/jobs` (`/:id`, `/:id/retry`), `/api/v1/cattle/readiness`, `/api/v1/cattle/models/train` | Background jobs (forecast, NASA POWER, Earth Engine when set up), readiness, and the training gate that refuses to train without labelled data |
 | GET | `/api/v1/erosion` | Riverbank erosion risk for the Jamuna corridor from BWDB/FFWC station records and IMERG basin rain |
 | POST | `/api/v1/ai/ask` | Bangla assistant that answers only from the project's evidence and refuses out-of-scope questions such as loans or pesticide brands; rules-based, with no outside AI service |
-| POST | `/api/v1/auth/login` | Officer (access code) or farmer (ID or phone and PIN) sign-in, returns a session token |
+| GET | `/api/v1/auth/config` | What the website needs to sign managers in: `supabaseUrl`, `supabaseAnonKey` (public by design) and `demoMode` |
+| POST | `/api/v1/auth/login` | Farmer (ID or phone and PIN) demo sign-in, returns a session token; the demo desk login only in `DEMO_MODE` |
 | GET | `/api/v1/auth/session` | The signed-in user for a Bearer token |
 | POST | `/api/v1/auth/logout` | Ends the session |
 | GET | `/api/v1/live/status` | The daily NASA update: when it ran, each source's latest date and age, and the method |
@@ -274,12 +276,14 @@ Do not commit secrets, local environment files, dependency folders, generated AP
 | POST | `/api/v1/voice/answer` | `{ text, unionId }`: the plan for that sentence, with the Bangla call script and SMS |
 | GET | `/api/v1/calls/status` | Whether Awaj calls are live or dry runs, whether the keypad menu and webhook are set, and the menu |
 | POST | `/api/v1/calls/keypad` | `{ phone or phones, unionId }`: a keypad survey call with the recorded crop menu; the pressed keys come back to the webhook |
-| POST | `/api/v1/calls/advice` | `{ phone, unionId, text or preferredCrops }`: reads the advice to a phone through Awaj (officer sign-in when live) |
+| POST | `/api/v1/calls/advice` | `{ phone, unionId, text or preferredCrops }`: reads the advice to a phone through Awaj (manager sign-in when live) |
 | POST | `/api/v1/calls/survey-webhook` | Awaj keypad-survey results: keys to crops (and, with `AWAJ_LAND_QUESTION=1` and a template that asks it last, the land type), then a call-back with the plan; optional `?key=` secret |
-| GET | `/api/v1/officer/calls` | Recent phone-channel events, numbers masked (Bearer token) |
-| GET | `/api/v1/officers` | Officers who can sign in to the desk (no secrets) |
-| POST | `/api/v1/officer/login` | `{ officerId, accessCode }`, returns a desk session token |
-| GET | `/api/v1/officer/desk` | Queue, farmer register, observations and call-backs (Bearer token) |
+| GET | `/api/v1/manager/data-sources` | Which NASA data sources the server can use: `set` / `unset` flags for Earthdata Login, the NASA API key, ADS and the offline flag. Never a key, token or password (manager Bearer token) |
+| GET | `/api/v1/manager/climate` | Site-scoped NASA POWER climate summary: 30-day rainfall against the previous-ten-year normal, heat-stress days, longest dry spell and 14-day root-zone wetness. Site comes only from a verified manager's `app_metadata.site` (Supabase Bearer token); includes data dates and `live` / `cache` / `fixture` provenance |
+| GET | `/api/v1/officer/calls` | Recent phone-channel events, numbers masked (manager Bearer token) |
+| GET | `/api/v1/officers` | The demo officers; empty unless `DEMO_MODE=true` |
+| POST | `/api/v1/officer/login` | Demo login `{ officerId, accessCode }`; refused (401) unless `DEMO_MODE=true` |
+| GET | `/api/v1/officer/desk` | Queue, farmer register, observations and call-backs (manager Bearer token; every `/officer/*` route needs one) |
 | POST | `/api/v1/officer/observations` | Saves a field observation and returns the farmer's updated advice |
 | POST | `/api/v1/officer/callbacks/:id/resolve` | Marks a call-back done |
 | GET | `/api/v1/officer/knowledge` | Officer reference pack |
@@ -304,7 +308,7 @@ Do not commit secrets, local environment files, dependency folders, generated AP
 - that the Android offline seed matches the engine, and that the environment ledger matches the research ledger;
 - the pest score and the English fields;
 - the early warnings and the 25-season haor hindcast;
-- officer sign-in, queue order, observation priority, the note filter, keypad-9 call-backs and the reference pack;
+- manager sign-in, queue order, observation priority, the note filter, keypad-9 call-backs and the reference pack;
 - that every dashboard text has an English translation;
 - NASA POWER weather, river erosion, the farmer sign-in lifecycle and the assistant's grounded answers and refusals;
 - plans built around named crops (every option holds them, the calendar fits, a summer crop alone follows the best winter crop, the default five rotations are unchanged), the Bangla request reader, the crop menu, a spoken request answered, and Awaj calls and keypad answers as dry runs (the test server forces `AWAJ_LIVE=0`);
@@ -319,7 +323,38 @@ Online, the weather check reads NASA POWER live; offline, the API serves a fixed
 - **Add or change a dashboard text:** write the Bangla in `index.html` with a new `data-i18n="section.key"`, then add the English under the same key in `i18n.js`. The test lists anything missing.
 - **Update the numbers:** re-run the generator (next section), then `npm test`. If TEST 9 fails, refresh the Android seed (`AdviceModels.kt`) from the engine's `farmer_card`.
 - **Add a scoring dimension:** write a plugin in `packages/rotation-engine/src/plugins/`, register it in `registry.ts`, add its name to `DIMENSIONS` in `app.js`, and add a bar colour in `styles.css`.
-- **Change the officer access code:** set `EDEN_OFFICER_CODE` before `npm start`.
+- **Demo desk login (recordings only):** set `DEMO_MODE=true` and your own `EDEN_OFFICER_CODE` in `.env`; the demo user ID is `saao_talanda_01`. Without `DEMO_MODE=true` the demo login does not work at all.
+
+## Manager sign-in (Supabase)
+
+Managers sign in with a real account (Supabase Auth). The website signs in with `signInWithPassword` and sends the access token to the API; every desk route (`/api/v1/officer/*`, and the real-call routes) checks it with `supabase.auth.getUser(token)` and answers **401** for no or an invalid token and **403** when the account is not a manager (`app_metadata.role` must be `manager`). The role and the site are read from `app_metadata` only; `user_metadata` can be edited by the user and is never trusted.
+
+**Environment** (copy `.env.example` to `.env`; `.env` is git-ignored, never commit it):
+
+| Variable | Meaning |
+|---|---|
+| `SUPABASE_URL` | Project URL, Supabase dashboard → Project Settings → API |
+| `SUPABASE_ANON_KEY` | The `anon` / publishable key. It is public by design and is handed to the browser by `GET /api/v1/auth/config` |
+| `AUTH_EMAIL_DOMAIN` | The domain a User ID is combined with, e.g. `marvel.com`. The manager User ID maps to the Supabase account email `<userId>@<AUTH_EMAIL_DOMAIN>` (the User ID is trimmed and lowercased first). Not set: sign-in is reported as not configured |
+| `DEMO_MODE` | `true` re-enables the old demo desk login for recordings. Unset or `false`: the demo credentials do not work at all |
+| `EDEN_OFFICER_CODE` | The demo login's password; read only when `DEMO_MODE=true`; no built-in default |
+
+Never put the privileged Supabase server key anywhere in this project, and never in `apps/saao-dashboard/public/`.
+
+**Create a manager** (the sign-in form takes a User ID and builds `<userId>@<AUTH_EMAIL_DOMAIN>`; e.g. with `AUTH_EMAIL_DOMAIN=marvel.com`, User ID `saao_talanda_01` is the account `saao_talanda_01@marvel.com`):
+
+1. Supabase dashboard → Authentication → Users → *Add user* → *Create new user*: email `<userId>@<AUTH_EMAIL_DOMAIN>` (lowercase), a strong password, *Auto Confirm User* ticked.
+2. SQL editor, give the account its role and site (`app_metadata`, which users cannot edit):
+
+   ```sql
+   update auth.users
+   set raw_app_meta_data = coalesce(raw_app_meta_data, '{}'::jsonb) || '{"role":"manager","site":"talanda"}'::jsonb
+   where email = '<userId>@<AUTH_EMAIL_DOMAIN>';
+   ```
+
+3. Authentication → Providers → Email: turn off *Allow new users to sign up*, so only accounts you create exist.
+
+**Run locally:** `npm install`, fill `SUPABASE_URL`, `SUPABASE_ANON_KEY` and the manager account settings in `.env`, then run `npm start` and open http://localhost:4000. Choose *Manager* and sign in with the account. The first request to `/api/v1/manager/climate` fetches daily NASA POWER data without an API key and saves it under the ignored `services/api/.data/power-climate-cache/` folder. With `OFFLINE=1`, the endpoint reads that cache (or a compatible fixture) only; if neither exists, run once online first. The supported manager sites are Talanda/Tanore, Dharmapasha, Batiaghata, Ullahpara and Mithapukur, using the checked-in coordinates from `research/sites/pilot_sites.csv`; add verified coordinates to `services/api/src/sites.ts` before assigning any other site id.
 
 ## Research
 
@@ -403,7 +438,7 @@ The yield model (`research/explore/yield_model.py`) still uses MODIS: HLS greenn
 
 ## Known limits
 
-- Upazilas outside the Talanda pilot use their district's NASA point (about 50 km grid) for weather and water, the SRDI Talanda fertilizer card as a stand-in, district (not upazila) yields, BRRI's 2014-15 cropping survey and an upazila-level land type that a given field may not share. Unknown places get HTTP 422.
+- Upazilas outside the Talanda pilot use their district's NASA point (about 50 km grid) for weather and water, no SRDI soil card (so no fertilizer amounts; the Talanda card is never used as a stand-in), district (not upazila) yields, BRRI's 2014-15 cropping survey and an upazila-level land type that a given field may not share. Unknown places get HTTP 422.
 - Income is a team estimate or a BBS price-and-yield estimate until farmer cost interviews are in; soybean, sunflower and barley (no BBS harvest price) take a lower-quartile winter crop's return. Price risk is the worst of four years of BBS harvest prices, not a price model.
 - Soil salinity comes from SRDI's May 2009 survey by upazila, not the farmer's field, and four crops' salt tolerance is assumed. Rain-only yields leave out water a shallow water table feeds up to the roots, so they are a lower bound (lentil about a third of a watered crop's yield); the irrigation figures still count the replay's 50 mm of stored soil water.
 - Kharif-1 irrigation assumes no soil water left by the winter crop, so it is an upper estimate; heat limits for crops outside `crop_parameters.csv` are literature values marked as assumed. Onion, garlic, groundnut and vegetables are not replayed yet.
@@ -417,7 +452,7 @@ The yield model (`research/explore/yield_model.py`) still uses MODIS: HLS greenn
 - Flooded-rice days stand in for methane; they are not a methane measurement.
 - The OPERA flood reading is optical: cloud hides the monsoon, so July-September readings are patchy, and OPERA's radar maps over Bangladesh stop on 16 July 2026. NISAR radar fills the gap from 17 June 2026, but its calibration is still PROVISIONAL, its water threshold rests on 18 pairs at 5 upazilas, it counts about 13 points less water than OPERA on the coast, and only one repeat cycle has been read so far (a season's history would be about 7 GB). The drain pace is a straight line from the season's peak and is dated only within 45 days. Water on land normally dry in winter includes the usual monsoon water; last year's radar figure reads higher than the optical one. The HLS crop-loss map compares greenness, not yield, for one year against one year, and cloud leaves some upazilas with too little land seen.
 - NASA POWER weather arrives 2–3 days late and is not a forecast; the field alerts take their forecast from Open-Meteo's weather model. Their temperatures are grid values (a field can be 1-2 °C off), the paddy water balance assumes a bunded rainfed field with 2 mm/day seepage, and the crop stage comes from the plan's calendar, not the farmer's own transplanting date. River-erosion risk comes from station records and needs checking on the ground.
-- Sign-in uses a shared officer code, a demo farmer PIN, in-memory sessions and a JSON file store; a real deployment needs proper accounts and a database. The role picker only decides what the screen shows; the API checks its own tokens.
+- Sign-in for the demo mode uses a shared code, a demo farmer PIN, in-memory sessions and a JSON file store; a real deployment needs proper accounts and a database. The role picker only decides what the screen shows; the API checks its own tokens.
 - The cattle module keeps farm outlines and jobs in a local JSON file (not production-durable), and its Earth Engine worker has not been run against a real Earth Engine account; until it is set up, satellite inputs are reported as unavailable and jobs end as partial.
 - Two upazila lists live side by side for now: the 544 geoBoundaries units the advice and the map use, and the 500 Open Admin Data units the weather pickers use.
 - The Android app's API address works in the emulator only. The app advises the upazila nearest the location saved on its weather screen, or the Tanore pilot when none is saved.

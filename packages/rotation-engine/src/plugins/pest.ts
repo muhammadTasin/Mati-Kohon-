@@ -1,5 +1,5 @@
 import type { IEvidenceDimensionPlugin, EvaluationContext, DimensionScoreResult } from '@project-eden/contracts';
-import { amanOrNull, rabiOf, kharif1Of, kharif2Of, clampScore } from '../data/lookup.ts';
+import { amanOrNull, rabiOf, kharif1Of, kharif2Of, clampScore, rotationDose } from '../data/lookup.ts';
 import { LOC } from '../data/location.ts';
 import { RESISTANT_VARIETIES } from '../data/ipm_catalog.ts';
 import { choiceIdOf } from '../data/crop_choice.ts';
@@ -19,6 +19,10 @@ import { planDiseaseDays } from '../data/disease.ts';
  * (research/explore/disease_climatology.py): each such day more than Aman-Boro takes 0.003 off.
  * These are IPM rules and a model estimate, not field pest counts, so confidence is low until SAAOs log pest sightings.
  */
+/** Said wherever this score is shown when the place has no SRDI soil card: the nitrogen term is left out. */
+export const PARTIAL_BN = 'আংশিক হিসাব, মাটির কার্ড ছাড়া (নাইট্রোজেনের অংশ বাদ; পাইলটের পূর্ণ স্কোরের সাথে তুলনীয় নয়)।';
+export const PARTIAL_EN = 'Partial score, no soil card (the nitrogen term is left out; not comparable with the pilot’s full score).';
+
 export class PestDimensionPlugin implements IEvidenceDimensionPlugin {
   readonly id = 'pest';
   readonly displayNameBangla = 'বালাই চাপ ও কীটনাশক কমানো';
@@ -36,15 +40,16 @@ export class PestDimensionPlugin implements IEvidenceDimensionPlugin {
     // each extra rice crop keeps them fed.
     const riceCrops = (amanSlot ? 1 : 0) + (rabiName.hostGroup === 'rice' ? 1 : 0) + (k1?.catalog.hostGroup === 'rice' ? 1 : 0);
     const hostBreak = riceCrops <= 1;
-    const rotationUrea = Math.round((amanSlot ? LOC.srdi.aman.ureaKgHa : 0) + (k2?.record.fertilizer.ureaKgHa ?? 0)
-      + rabi.fertilizer.ureaKgHa + (k1?.record.fertilizer.ureaKgHa ?? 0));
+    // null where the place has no SRDI soil card: then there is no nitrogen term in the score and no urea number in the text
+    const ureaExact = rotationDose([amanSlot ? (LOC.srdi?.aman ?? null) : undefined, k2?.record.fertilizer, rabi.fertilizer, k1?.record.fertilizer], 'ureaKgHa');
+    const rotationUrea = ureaExact === null ? null : Math.round(ureaExact);
     const resistance = RESISTANT_VARIETIES[crop.variety];
     const deadline = rabi.sowingWindow?.[1];
     const sownOnTime = !deadline || seasonDay(rabi.sowing) <= seasonDay(deadline);
 
     let score = riceCrops === 0 ? 0.9 : hostBreak ? 0.85 : riceCrops === 2 ? 0.4 : 0.3;
     if (rabiName.isLegume || k1?.catalog.isLegume || k2?.catalog.isLegume) score += 0.05;
-    score -= (Math.max(0, rotationUrea - 300) / 1000) * 0.3;
+    if (rotationUrea !== null) score -= (Math.max(0, rotationUrea - 300) / 1000) * 0.3;
     if (resistance) score += 0.05;
     if (!sownOnTime) score -= 0.15;
     // NASA SEDAC PEST-CHEMGRIDS: each tenth of the Aman-Boro load more (or less) moves the score 0.025 down (or up)
@@ -71,7 +76,7 @@ export class PestDimensionPlugin implements IEvidenceDimensionPlugin {
           : hostBreak
             ? 'বছরে একবারই ধান: ধানের পোকার চক্র ভাঙে।'
             : 'ধানের পর আবার ধান: মাজরা পোকা ও বাদামি গাছফড়িং সারা বছর খাবার পায়।',
-      `পুরো চক্রে ইউরিয়া ${bnDigits(rotationUrea)} কেজি/হেক্টর (SRDI)।`,
+      rotationUrea === null ? PARTIAL_BN : `পুরো চক্রে ইউরিয়া ${bnDigits(rotationUrea)} কেজি/হেক্টর (SRDI)।`,
       `নাসার PEST-CHEMGRIDS অনুমানে এই ফসলগুলোতে বছরে হেক্টরে প্রায় ${bnDecimal(loadKgHa, 2)} কেজি কীটনাশক (সক্রিয় উপাদান), আমন–বোরোতে ${bnDecimal(usualKgHa, 2)}।`,
       resistance ? `${rabiName.varietyBangla} ${resistance.bn}।` : '',
       sownOnTime ? '' : 'দেরিতে বোনায় পোকা ও রোগের চাপ বাড়ে।',
@@ -83,7 +88,7 @@ export class PestDimensionPlugin implements IEvidenceDimensionPlugin {
       riceCrops === 0
         ? 'No rice in the year: stem borers and planthoppers find no host.'
         : hostBreak ? `${rabiName.crop} after ${amanSlot ? 'Aman' : 'rice'} breaks the rice-pest cycle.` : 'Rice after rice keeps stem borers and planthoppers fed all year.',
-      `Rotation urea ${rotationUrea} kg/ha (SRDI).`,
+      rotationUrea === null ? PARTIAL_EN : `Rotation urea ${rotationUrea} kg/ha (SRDI).`,
       `NASA SEDAC PEST-CHEMGRIDS: about ${loadKgHa.toFixed(2)} kg/ha of pesticide active ingredient a year on these crops here, against ${usualKgHa.toFixed(2)} on Aman-Boro.`,
       resistance ? `${crop.variety} is ${resistance.en}.` : '',
       sownOnTime ? '' : 'Late sowing raises pest and disease pressure.',
@@ -107,13 +112,15 @@ export class PestDimensionPlugin implements IEvidenceDimensionPlugin {
         pesticideKgHa: Math.round(loadKgHa * 1000) / 1000,
         pesticideAmanBoroKgHa: Math.round(usualKgHa * 1000) / 1000,
         ...(planDays !== null ? { diseaseWeatherDays: planDays, diseaseWeatherAmanBoroDays: usualDays } : {}),
+        // no soil card: the nitrogen term is left out, so this score is partial and is never compared with the pilot's full score
+        ...(rotationUrea === null ? { partial: true } : {}),
       },
       provenance: {
-        source: 'Rotation IPM rules (team) from BRRI/BARI IPM guidance, SRDI Talanda card, BWMRI/BRRI variety pages; NASA SEDAC PEST-CHEMGRIDS v1.01 (2020) pesticide estimate for the upazila; NASA POWER disease-weather days 2001-2025 (BLASTAM-style wet hours, Hutton criteria); no field pest counts yet',
+        source: `Rotation IPM rules (team) from BRRI/BARI IPM guidance, ${LOC.srdi ? 'SRDI Talanda card, ' : ''}BWMRI/BRRI variety pages; NASA SEDAC PEST-CHEMGRIDS v1.01 (2020) pesticide estimate for the upazila; NASA POWER disease-weather days 2001-2025 (BLASTAM-style wet hours, Hutton criteria); no field pest counts yet`,
         timePeriod: 'rules; pest sightings come from SAAO field observations',
         spatialResolution: 'Rotation level',
         measuredOrModeled: 'assumed',
-        notesBangla: 'মাঠে পোকা গোনার তথ্য এলে (কর্মকর্তার পর্যবেক্ষণ) এই স্কোর আরও নির্ভুল হবে।',
+        notesBangla: (rotationUrea === null ? `${PARTIAL_BN} ` : '') + 'মাঠে পোকা গোনার তথ্য এলে (কর্মকর্তার পর্যবেক্ষণ) এই স্কোর আরও নির্ভুল হবে।',
       },
     };
   }
@@ -122,10 +129,12 @@ export class PestDimensionPlugin implements IEvidenceDimensionPlugin {
     const m = result.metrics;
     return {
       banglaBullets: [
+        ...(m.partial ? [PARTIAL_BN] : []),
         m.breaksRicePestCycle ? 'রবিতে ধান নয়, তাই ধানের পোকার চক্র ভাঙে।' : 'বছরে দুবার ধান: পোকার চক্র চলতেই থাকে।',
       ],
       englishBullets: [
         m.breaksRicePestCycle ? 'No rice in Rabi, so the rice-pest cycle breaks.' : 'Two rice crops a year keep the pest cycle going.',
+        ...(m.partial ? [PARTIAL_EN] : []),
       ],
     };
   }

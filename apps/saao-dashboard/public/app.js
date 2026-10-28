@@ -9,6 +9,7 @@ import { EN } from './i18n.js';
 import { initBdMap } from './bd-map.js';
 import { initPortals } from './portals.js';
 import { initCalls } from './calls.js';
+import { accessToken, authConfig, supabaseSignOut } from './auth-client.js';
 
 let lang = 'bn';
 let currentAdvice = null;
@@ -17,7 +18,10 @@ let currentNarration = null;
 let currentDataRelease = null;
 let selectedOptionId = null;
 let officers = [];
-let officerSession = null; // { token, officer }
+let officerSession = null; // { source: 'supabase' | 'demo', officer, token (demo only) }
+let homeArea = null; // the manager's own area from the verified token site: { siteId, placeId, nameBangla, nameEnglish, district }
+let homeAreaApplied = false; // the page switched to the manager's own area once after sign-in
+let demoMode = false; // the server runs with DEMO_MODE=true: the demo officer login is offered
 let officerDesk = null;
 let officerKnowledge = null;
 let officerNotice = null; // result of the last saved observation
@@ -29,6 +33,11 @@ const BN_MONTHS = ['জানুয়ারি', 'ফেব্রুয়া�
 const EN_MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
 const tr = (bn, en) => (lang === 'en' ? en : bn);
+// Shown instead of fertilizer amounts at a place with no SRDI soil card (the same words as the server's NO_SOIL_CARD)
+const noSoilCard = () => tr('এই এলাকার মাটির কার্ড (SRDI) যোগ করা হয়নি, সার-পরামর্শ দেওয়া যাচ্ছে না', 'This area’s soil card (SRDI) has not been added, so fertilizer advice cannot be given');
+// The pest score has no nitrogen term where there is no soil card: it is shown with this tag and is never compared with the pilot's full score
+const partialTag = (detail) => (detail?.metrics?.partial ? `<span class="tag tag-yellow">${tr('আংশিক, মাটির কার্ড ছাড়া', 'partial, no soil card')}</span>` : '');
+const partialNote = () => tr('আংশিক হিসাব, মাটির কার্ড ছাড়া: পাইলটের পূর্ণ স্কোরের সাথে তুলনীয় নয়।', 'Partial score, no soil card: not comparable with the pilot’s full score.');
 const bnDigits = (value) => String(value).replace(/\d/g, d => BN_DIGITS[Number(d)]);
 // Digits in the current language; a leading minus becomes '−' but ranges like 2003-07 keep their hyphen
 const num = (value) => (lang === 'en' ? String(value) : bnDigits(value)).replace(/(^|[\s(:])-(?=[0-9০-৯])/g, '$1−');
@@ -125,6 +134,8 @@ function renderAll() {
   }
   renderNarration();
   if (currentDataRelease) renderQuality(currentDataRelease);
+  renderDataSources();
+  renderClimateTrend();
   renderProfile();
   renderOfficer();
   callsUi?.render();
@@ -261,22 +272,7 @@ function renderFloodCheck() {
 function renderOverview(o) {
   setText('releaseTag', `${tr('রিলিজ', 'Release')}: ${o.data_release.version}`);
 
-  const rain = o.local_satellite_conditions.rain_last_30_days;
-  if (rain) {
-    const pct = rain.pctOfNormal;
-    setText('statRainValue', `${num(Math.round(rain.imergLateMm))} ${tr('মিমি', 'mm')}`);
-    setText('statRainSub', tr(
-      `${rain.verdictBangla}: স্বাভাবিকের ${num(pct.imergLate)}% (IMERG Late), ${num(pct.imergAdjusted)}% (সমন্বিত), ${num(pct.merra2)}% (MERRA-2); ${isoDate(rain.to)} পর্যন্ত`,
-      `${rain.verdict.charAt(0).toUpperCase()}${rain.verdict.slice(1)}: ${pct.imergLate}% of normal (IMERG Late), ${pct.imergAdjusted}% (corrected), ${pct.merra2}% (MERRA-2); to ${isoDate(rain.to)}`,
-    ));
-  } else if (currentPlaceLive) {
-    const p = currentPlaceLive.power;
-    setText('statRainValue', `${num(Math.round(p.rain30))} ${tr('মিমি', 'mm')}`);
-    setText('statRainSub', tr(`দৈনিক নাসা POWER: স্বাভাবিকের ${num(p.rain30PctOfNormal ?? '—')}%; ${isoDate(p.date)} পর্যন্ত`, `Daily NASA POWER: ${p.rain30PctOfNormal ?? '—'}% of normal; to ${isoDate(p.date)}`));
-  } else {
-    setText('statRainValue', '—');
-    setText('statRainSub', tr('দৈনিক নাসা হালনাগাদ এখনো চলেনি', 'The daily NASA update has not run yet'));
-  }
+  renderRainStat(o);
 
   const smap = o.local_satellite_conditions.smap;
   if (!smap) {
@@ -333,7 +329,7 @@ function renderOverview(o) {
     verified: ['badge-success', 'কর্মকর্তা যাচাইকৃত', 'Officer-verified'],
     pending: ['badge-neutral', 'মাঠ যাচাই বাকি', 'Field check pending'],
   };
-  setHtml('recentFarmersTable', o.recent_farmer_contacts.map(f => {
+  setHtml('recentFarmersTable', (o.recent_farmer_contacts || []).map(f => {
     const [cls, bn, en] = status[f.status] || status.pending;
     return `
     <tr>
@@ -350,7 +346,182 @@ function renderOverview(o) {
   setHtml('ipmField', reports);
   setText('policyRelease', o.data_release.version);
   if (o.early_warnings) renderWarnings(o.early_warnings, o.aman_replay);
+  applyAreaScope();
 }
+
+// ---------------------------------------------------------------------------
+// Which area the page describes, and which parts belong only to the manager's own area
+// ---------------------------------------------------------------------------
+
+/** The dashboard names the Tanore pilot 'talanda_tanore' and its upazila row 'ADM3_Tanore': one place. */
+const samePlace = (a, b) => (a === 'ADM3_Tanore' ? PILOT_PLACE : a) === (b === 'ADM3_Tanore' ? PILOT_PLACE : b);
+
+/** The place the numbers on the page describe, as "Upazila, District" (the overview scope the server answered with). */
+function placeLabel() {
+  const scope = currentOverview?.scope;
+  if (!scope || scope.place_kind !== 'upazila') return tr('তানোর, রাজশাহী', 'Tanore, Rajshahi');
+  return `${scope.upazila}, ${scope.district}`;
+}
+
+function homeAreaLabel() {
+  if (!homeArea) return '';
+  if (samePlace(homeArea.placeId, PILOT_PLACE)) return tr('তানোর, রাজশাহী', 'Tanore, Rajshahi');
+  return tr(`${homeArea.nameBangla}${homeArea.district ? `, ${homeArea.district}` : ''}`, `${homeArea.nameEnglish}`);
+}
+
+/** A signed-in manager looking at an area other than their own (their own = the site in their verified token). */
+function isAwayFromHome() {
+  return Boolean(officerSession && homeArea && !samePlace(currentPlace, homeArea.placeId));
+}
+
+/** The climate answer, only when it was fetched for the place now on screen. */
+function climateForThisPlace() {
+  return climateTrend.state === 'ok' && climateTrend.place === currentPlace ? climateTrend.data : null;
+}
+
+const dateTime = (iso) => new Date(iso).toLocaleString(lang === 'en' ? 'en-GB' : 'bn-BD', { dateStyle: 'medium', timeStyle: 'short' });
+const dateRangeText = (from, to) => `${isoDate(from)} – ${isoDate(to)}`;
+
+/** One primary 30-day rainfall figure (NASA POWER, with its source and dates); the release snapshot is a labelled second line. */
+function renderRainStat(o) {
+  const snap = o.local_satellite_conditions.rain_last_30_days; // exists for the Tanore pilot only
+  const power = climateForThisPlace()?.indicators?.rainfall;
+  const area = placeLabel();
+  const snapLine = snap ? tr(
+    `স্ন্যাপশট, লাইভ নয় (${dateRangeText(snap.from, snap.to)}): ${num(Math.round(snap.imergLateMm))} মিমি, স্বাভাবিকের ${num(snap.pctOfNormal.imergLate)}% (IMERG Late), ${num(snap.pctOfNormal.imergAdjusted)}% (সমন্বিত), ${num(snap.pctOfNormal.merra2)}% (MERRA-2); ${snap.verdictBangla}`,
+    `Snapshot, not live (${dateRangeText(snap.from, snap.to)}): ${Math.round(snap.imergLateMm)} mm, ${snap.pctOfNormal.imergLate}% of normal (IMERG Late), ${snap.pctOfNormal.imergAdjusted}% (corrected), ${snap.pctOfNormal.merra2}% (MERRA-2); ${snap.verdict}`,
+  ) : '';
+  if (power && power.totalMm !== null && power.totalMm !== undefined) {
+    const pct = power.anomalyPercent === null || power.anomalyPercent === undefined ? null : Math.round(100 + power.anomalyPercent);
+    setText('statRainValue', `${num(Math.round(power.totalMm))} ${tr('মিমি', 'mm')}`);
+    setText('statRainSub', tr(
+      `NASA POWER, ${area}, ${dateRangeText(power.dateRange.from, power.dateRange.to)}${pct === null ? '' : `: ১০ বছরের স্বাভাবিক ${num(Math.round(power.normalMm))} মিমির ${num(pct)}%`}`,
+      `NASA POWER, ${area}, ${dateRangeText(power.dateRange.from, power.dateRange.to)}${pct === null ? '' : `: ${pct}% of the 10-year normal of ${Math.round(power.normalMm)} mm`}`,
+    ));
+    setText('statRainSub2', snapLine);
+  } else if (snap) {
+    setText('statRainValue', `${num(Math.round(snap.imergLateMm))} ${tr('মিমি', 'mm')}`);
+    setText('statRainSub', snapLine);
+    setText('statRainSub2', '');
+  } else if (currentPlaceLive) {
+    const p = currentPlaceLive.power;
+    setText('statRainValue', `${num(Math.round(p.rain30))} ${tr('মিমি', 'mm')}`);
+    setText('statRainSub', tr(
+      `দৈনিক হালনাগাদ ফাইল (NASA POWER), ${area}: স্বাভাবিকের ${num(p.rain30PctOfNormal ?? '—')}%; ${isoDate(p.date)} পর্যন্ত`,
+      `Daily update file (NASA POWER), ${area}: ${p.rain30PctOfNormal ?? '—'}% of normal; to ${isoDate(p.date)}`));
+    setText('statRainSub2', '');
+  } else {
+    setText('statRainValue', '—');
+    setText('statRainSub', tr('দৈনিক নাসা হালনাগাদ এখনো চলেনি', 'The daily NASA update has not run yet'));
+    setText('statRainSub2', '');
+  }
+}
+
+/** "How fresh is this data": the live NASA POWER download and the dated release snapshot, never mixed up. */
+function renderFreshness() {
+  const o = currentOverview;
+  if (!o) return;
+  const area = placeLabel();
+  let power;
+  if (!officerSession) {
+    power = tr('NASA POWER আবহাওয়া: ম্যানেজার হিসেবে প্রবেশ করলে দেখা যাবে', 'NASA POWER weather: shown after a manager signs in');
+  } else if (climateTrend.state === 'error') {
+    power = tr(`NASA POWER আবহাওয়া (${area}): এখন পাওয়া যায়নি`, `NASA POWER weather (${area}): not available now`);
+  } else if (!climateForThisPlace()) {
+    power = tr(`NASA POWER আবহাওয়া (${area}): আসছে…`, `NASA POWER weather (${area}): loading…`);
+  } else {
+    const c = climateForThisPlace();
+    const source = c.dataSource === 'live' ? tr('সরাসরি ডাউনলোড', 'live download')
+      : c.dataSource === 'fixture' ? tr('নমুনা ফাইল', 'sample file') : tr('সংরক্ষিত কপি', 'saved copy');
+    power = tr(
+      `NASA POWER আবহাওয়া (${area}): ${isoDate(c.dataDateRange.to)} পর্যন্ত · ${source} · ডাউনলোড ${dateTime(c.fetchedAt)}`,
+      `NASA POWER weather (${area}): to ${isoDate(c.dataDateRange.to)} · ${source} · downloaded ${dateTime(c.fetchedAt)}`);
+  }
+  const smap = o.local_satellite_conditions.smap;
+  const rain = o.local_satellite_conditions.rain_last_30_days;
+  const snapshot = o.scope.place_kind === 'upazila' || !smap
+    ? tr('স্যাটেলাইট রিলিজ স্ন্যাপশট: শুধু তানোর পাইলটের জন্য; এই এলাকায় আছে ২০০১–২০২৫ সালের জেলা রিপ্লে (ইতিহাস, লাইভ নয়)',
+      'Satellite release snapshot: for the Tanore pilot only; this area has the 2001–2025 district replay (history, not live)')
+    : tr(
+      `স্যাটেলাইট রিলিজ স্ন্যাপশট ${o.data_release.version} (লাইভ নয়): SMAP ${isoDate(smap.date)}${rain ? `, বৃষ্টি ${isoDate(rain.to)}` : ''} পর্যন্ত`,
+      `Satellite release snapshot ${o.data_release.version} (not live): SMAP to ${isoDate(smap.date)}${rain ? `, rain to ${isoDate(rain.to)}` : ''}`);
+  setText('freshPower', power);
+  setText('freshSnapshot', snapshot);
+}
+
+/**
+ * Applies "which area is this" to the page: area names on card titles, the manager's own area in the header, the comparison banner,
+ * and the parts that belong only to the manager's own area (farmers, call-backs, observations, SRDI card, alerts, officer notes),
+ * which are replaced by a plain note while another area is selected.
+ */
+function applyAreaScope() {
+  const away = isAwayFromHome();
+  const label = placeLabel();
+  document.querySelectorAll('[data-area-name]').forEach(el => { el.textContent = label; });
+
+  const geoHome = $('geoHome');
+  if (geoHome) {
+    geoHome.hidden = !(officerSession && homeArea);
+    geoHome.textContent = `${tr('আপনার এলাকা', 'Your area')}: ${homeAreaLabel()}`;
+  }
+  document.querySelector('.location-badge')?.classList.toggle('geo-away', away);
+  const banner = $('areaBanner');
+  if (banner) {
+    banner.hidden = !away;
+    setText('areaBannerText', tr(`তুলনা, আপনার এলাকা নয়: ${label}। আপনার এলাকা: ${homeAreaLabel()}। কৃষক, কল-ব্যাক, মাঠ পর্যবেক্ষণ, মাটির কার্ড ও সতর্কতা শুধু আপনার এলাকার জন্য।`,
+      `Comparison, not your area: ${label}. Your area: ${homeAreaLabel()}. Farmers, call-backs, field observations, the soil card and alerts are only for your own area.`));
+  }
+  for (const id of ['screen-officer', 'screen-delivery']) $(id)?.classList.add('private-block');
+  document.querySelectorAll('.private-block').forEach(block => {
+    block.classList.toggle('is-away', away);
+    let note = block.querySelector(':scope > .private-away-note');
+    if (away && !note) {
+      note = document.createElement('p');
+      note.className = 'private-away-note';
+      block.append(note);
+    }
+    if (note) {
+      note.hidden = !away;
+      note.textContent = tr('এই এলাকার জন্য কর্মকর্তার তথ্য নেই', 'No officer data for this area');
+    }
+  });
+  const hasWarnings = Boolean(currentOverview?.early_warnings);
+  if ($('warningsHeading')) $('warningsHeading').hidden = !hasWarnings;
+  if ($('warningsRow')) $('warningsRow').hidden = !hasWarnings;
+  renderFreshness();
+}
+
+/** The manager's own area comes from the verified token (GET /api/v1/manager/area); the demo officer is the Talanda site. */
+async function loadHomeArea() {
+  homeArea = null;
+  if (!officerSession) return;
+  if (officerSession.source === 'demo') {
+    if (officerSession.officer?.site === 'talanda') homeArea = { siteId: 'talanda', placeId: PILOT_PLACE, nameBangla: 'তালন্দ, তানোর', nameEnglish: 'Talanda, Tanore', district: 'Rajshahi' };
+  } else {
+    try {
+      const res = await fetch('/api/v1/manager/area', { headers: { Authorization: `Bearer ${await officerToken()}` } });
+      homeArea = res.ok ? await res.json() : null;
+    } catch {
+      homeArea = null;
+    }
+  }
+  // right after sign-in the page opens on the manager's own area, whatever area was picked before
+  if (homeArea && !homeAreaApplied) {
+    homeAreaApplied = true;
+    if (!samePlace(currentPlace, homeArea.placeId)) {
+      syncPlaceSelects(homeArea.placeId);
+      await choosePlace(homeArea.placeId, { skipClimate: true });
+    }
+  }
+  applyAreaScope();
+}
+
+window.returnToMyArea = async function() {
+  if (!homeArea) return;
+  syncPlaceSelects(homeArea.placeId);
+  await choosePlace(homeArea.placeId);
+};
+
 
 // "3 of 5" -> "৫টির ৩টি" in Bangla, unchanged in English
 const ofText = (s) => {
@@ -482,13 +653,13 @@ function renderLedger(advice) {
           <td>${escapeHtml(tr(o.nameBangla, o.nameEnglish))}${o.isBaseline ? ` <span class="tag tag-yellow">${tr('প্রচলিত', 'current practice')}</span>` : ''}</td>
           <td>${bigNum(o.ledger.groundwaterPumpedM3PerHa)}</td>
           <td>${num(o.ledger.floodedRiceDays)}</td>
-          <td>${num(o.ledger.ureaKgHa)}</td>
+          <td>${o.ledger.ureaKgHa === null ? '—' : num(o.ledger.ureaKgHa)}</td>
           <td>${yesNo(o.ledger.legume)}</td>
           <td>${num(o.ledger.bareDays)}</td>
-          <td>${num(Math.round((o.scores.pest ?? 0) * 100))}</td>
+          <td>${num(Math.round((o.scores.pest ?? 0) * 100))} ${partialTag(o.dimensionDetails.pest)}</td>
         </tr>`).join('')}
       </tbody>
-    </table>`);
+    </table>${rows.some(o => o.ledger.ureaKgHa === null) ? `<p class="muted small">${escapeHtml(noSoilCard())}</p>` : ''}${rows.some(o => o.dimensionDetails.pest?.metrics?.partial) ? `<p class="muted small">${escapeHtml(partialNote())}</p>` : ''}`);
 }
 
 function pestReportsHtml(reports) {
@@ -606,6 +777,7 @@ const DIMENSIONS = {
 };
 
 function dimensionTag(detail) {
+  if (detail?.metrics?.partial) return tr('আংশিক, মাটির কার্ড ছাড়া', 'partial, no soil card');
   if (detail?.staleOrMissing) return tr('নমুনা', 'sample');
   if (detail?.provenance?.measuredOrModeled === 'assumed') return tr('অনুমান', 'assumed');
   return '';
@@ -720,11 +892,11 @@ function renderEvidence(advice) {
       `<li><strong>GLDAS-2.2:</strong> ১০ থেকে ১৯ নভেম্বরে শিকড় অঞ্চল থেকে আরও ~${num(gldas.lostNov10To19)} মিমি পানি শুকায়; SMAP-এর সাথে মিল (Spearman ${num(gldas.smapSpearman)})।</li>`,
       `<li><strong>GLDAS-2.2:</strong> the root zone loses another ~${gldas.lostNov10To19} mm between 10 and 19 Nov; it agrees with SMAP (Spearman ${gldas.smapSpearman}).</li>`,
     ) : '',
-    tr(
+    soil.rotationUreaKgHa === null ? `<li>${escapeHtml(noSoilCard())}</li>` : tr(
       `<li><strong>SRDI তালন্দ কার্ড:</strong> ${escapeHtml(soil.srdiSoilType || '')}; ইউরিয়া ${num(soil.rabiUreaKgHa)} কেজি/হেক্টর (${rabi.cropBangla})।</li>`,
       `<li><strong>SRDI Talanda card:</strong> Kharia soil; urea ${soil.rabiUreaKgHa} kg/ha for ${rabi.crop.toLowerCase()}.</li>`,
     ),
-    boroSoil ? tr(
+    boroSoil && soil.rotationUreaKgHa !== null ? tr(
       `<li><strong>পুরো চক্রে ইউরিয়া:</strong> ${num(soil.rotationUreaKgHa)} কেজি/হেক্টর, বোরো চক্রে ${num(boroSoil.rotationUreaKgHa)} কেজি।</li>`,
       `<li><strong>Urea for the whole rotation:</strong> ${soil.rotationUreaKgHa} kg/ha, against ${boroSoil.rotationUreaKgHa} kg/ha with Boro.</li>`,
     ) : '',
@@ -799,10 +971,10 @@ function renderIpm(advice) {
     return `
       <div class="ipm-column ${opt.isBaseline ? 'baseline' : 'recommended'}">
         <h4>${escapeHtml(tr(opt.nameBangla, opt.nameEnglish))}</h4>
-        <div class="ipm-score">${num(Math.round((opt.scores.pest ?? 0) * 100))}<small>/${num(100)}</small></div>
+        <div class="ipm-score">${num(Math.round((opt.scores.pest ?? 0) * 100))}<small>/${num(100)}</small> ${partialTag(opt.dimensionDetails.pest)}</div>
         <ul class="kv-list">
           <li><span>${tr('ধানের পোকার চক্র ভাঙে', 'Breaks the rice-pest cycle')}</span><strong>${yesNo(m.breaksRicePestCycle)}</strong></li>
-          <li><span>${tr('পুরো চক্রে ইউরিয়া (SRDI)', 'Rotation urea (SRDI)')}</span><strong>${num(m.rotationUreaKgHa)} ${tr('কেজি/হেক্টর', 'kg/ha')}</strong></li>
+          ${m.rotationUreaKgHa === null || m.rotationUreaKgHa === undefined ? '' : `<li><span>${tr('পুরো চক্রে ইউরিয়া (SRDI)', 'Rotation urea (SRDI)')}</span><strong>${num(m.rotationUreaKgHa)} ${tr('কেজি/হেক্টর', 'kg/ha')}</strong></li>`}
           <li><span>${tr('রোগ প্রতিরোধী জাত', 'Disease-resistant variety')}</span><strong>${resistant}</strong></li>
           <li><span>${tr('সময়মতো বোনা', 'Sown on time')}</span><strong>${yesNo(m.sownOnTime)}</strong></li>
           ${m.pesticideKgHa != null ? `<li><span>${tr('কীটনাশক, বছরে (নাসা PEST-CHEMGRIDS)', 'Pesticide a year (NASA PEST-CHEMGRIDS)')}</span><strong>${num(m.pesticideKgHa)} ${tr('কেজি/হেক্টর', 'kg/ha')}</strong></li>` : ''}
@@ -810,12 +982,14 @@ function renderIpm(advice) {
         </ul>
       </div>`;
   };
+  const noCard = top.dimensionDetails.pest?.metrics.rotationUreaKgHa === null;
   const topUrea = top.dimensionDetails.pest?.metrics.rotationUreaKgHa;
   const boroUrea = boro?.dimensionDetails.pest?.metrics.rotationUreaKgHa;
   const less = topUrea && boroUrea ? Math.round((100 * (boroUrea - topUrea)) / boroUrea) : null;
   setHtml('ipmCompare', `
     ${column(top)}
     ${boro && boro.id !== top.id ? column(boro) : ''}
+    ${noCard ? `<p class="ipm-summary">${escapeHtml(noSoilCard())}</p>` : ''}
     ${less !== null && less > 0 ? `<p class="ipm-summary">${tr(`প্রস্তাবিত চক্রে বছরে ইউরিয়া ${num(less)}% কম, আর ধানের পোকার চক্র ভাঙে। কম নাইট্রোজেন আর খাবারের বিরতি মানে কম পোকা, তাই কম স্প্রে।`, `The recommended rotation uses ${less}% less urea a year and breaks the rice-pest cycle. Less nitrogen and a break in the food supply mean fewer pests, so fewer sprays.`)}</p>` : ''}
   `);
 
@@ -841,11 +1015,11 @@ function renderIpm(advice) {
     const pct = Math.round((opt.scores.pest ?? 0) * 100);
     return `
       <div class="dim-item">
-        <div class="dim-header"><span>${escapeHtml(tr(opt.nameBangla, opt.nameEnglish))}</span><span>${num(pct)}/${num(100)}</span></div>
+        <div class="dim-header"><span>${escapeHtml(tr(opt.nameBangla, opt.nameEnglish))} ${partialTag(opt.dimensionDetails.pest)}</span><span>${num(pct)}/${num(100)}</span></div>
         <div class="dim-bar-wrap"><div class="dim-bar-fill pest" style="width: ${pct}%"></div></div>
         <span class="dim-note">${escapeHtml(tr(opt.dimensionDetails.pest?.summaryBangla, opt.dimensionDetails.pest?.summaryEnglish))}</span>
       </div>`;
-  }).join(''));
+  }).join('') + (advice.options.some(o => o.dimensionDetails.pest?.metrics?.partial) ? `<p class="muted small">${escapeHtml(partialNote())}</p>` : ''));
 }
 
 // ---------------------------------------------------------------------------
@@ -869,16 +1043,33 @@ function renderOfficerSelect() {
   if (chosen) select.value = chosen;
 }
 
+/** The token for officer API calls: the demo token in a demo session, otherwise the Supabase access token (kept fresh by Supabase). */
+async function officerToken() {
+  if (officerSession?.source === 'demo') return officerSession.token;
+  return accessToken();
+}
+
 async function officerFetch(url, options = {}) {
   const res = await fetch(url, {
     ...options,
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${officerSession?.token}` },
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await officerToken()}` },
   });
-  if (res.status === 401) {
-    window.officerSignOut();
-    throw new Error('Officer session expired');
+  if (res.status === 403 && (await res.clone().json().catch(() => null))?.error?.code === 'site_required') {
+    return res; // a signed-in manager whose account has no site: refused, but still signed in; the caller shows the message
+  }
+  if (res.status === 401 || res.status === 403) {
+    await window.officerSignOut();
+    throw new OfficerAccessError(res.status);
   }
   return res;
+}
+
+/** The server refused the officer token: 401 (no or expired session) or 403 (signed in, but not an officer). */
+class OfficerAccessError extends Error {
+  constructor(status) {
+    super('Officer session refused');
+    this.status = status;
+  }
 }
 
 window.officerSignIn = async function(event) {
@@ -895,7 +1086,7 @@ window.officerSignIn = async function(event) {
     error.hidden = false;
     return;
   }
-  officerSession = await res.json();
+  officerSession = { ...(await res.json()), source: 'demo' };
   $('officerCode').value = '';
   try {
     sessionStorage.setItem('eden.officer', JSON.stringify(officerSession));
@@ -905,8 +1096,11 @@ window.officerSignIn = async function(event) {
   await loadOfficerDesk();
 };
 
-window.officerSignOut = function() {
+window.officerSignOut = async function() {
   officerSession = null;
+  homeArea = null;
+  homeAreaApplied = false;
+  climateTrend = { state: 'loading', data: null, error: null, place: null };
   officerDesk = null;
   officerKnowledge = null;
   officerNotice = null;
@@ -916,23 +1110,33 @@ window.officerSignOut = function() {
     // nothing stored
   }
   renderOfficer();
+  renderClimateTrend();
+  applyAreaScope();
   renderProfile();
   callsUi?.refresh();
+  await supabaseSignOut();
 };
 
+/** Loads the desk. Returns 'ok', 'denied' (no valid officer session: the session was cleared) or 'unavailable' (server or network problem). */
 async function loadOfficerDesk() {
-  if (!officerSession) return;
+  if (!officerSession) return 'denied';
   try {
     const [deskRes, knowledgeRes] = await Promise.all([officerFetch('/api/v1/officer/desk'), officerFetch('/api/v1/officer/knowledge')]);
+    if (!deskRes.ok || !knowledgeRes.ok) return 'unavailable';
     officerDesk = await deskRes.json();
     officerKnowledge = await knowledgeRes.json();
-  } catch {
-    return;
+  } catch (err) {
+    return err instanceof OfficerAccessError ? 'denied' : 'unavailable';
   }
+  if (officerDesk.officer) officerSession.officer = officerDesk.officer;
   renderOfficer();
   renderProfile();
   callsUi?.refresh();
   if (!$('obsFarmer').dataset.chosen) window.prefillObservation(officerDesk.queue[0]?.farmerId);
+  await loadHomeArea();
+  window.loadDataSources();
+  window.loadClimateTrend();
+  return 'ok';
 }
 
 function farmerEntry(farmerId) {
@@ -940,8 +1144,8 @@ function farmerEntry(farmerId) {
 }
 
 function renderProfile() {
-  if (officerSession) {
-    const o = officerSession.officer;
+  const o = officerSession?.officer;
+  if (o) {
     setText('saaoName', tr(o.nameBangla, o.nameEnglish));
     setText('saaoRole', tr(`SAAO, ${o.blockBangla} • প্রবেশ করেছেন`, `SAAO, ${o.blockEnglish} • signed in`));
   } else {
@@ -953,13 +1157,14 @@ function renderProfile() {
 function renderOfficer() {
   renderOfficerSelect();
   const signedIn = Boolean(officerSession && officerDesk);
-  $('officerLogin').hidden = signedIn;
+  $('officerLogin').hidden = signedIn || !demoMode;
+  $('officerSignedOut').hidden = signedIn || demoMode;
   $('officerWorkspace').hidden = !signedIn;
   const badge = $('officerStateBadge');
   badge.className = `badge ${signedIn ? 'badge-success' : 'badge-warning'}`;
   badge.textContent = signedIn
-    ? tr(`প্রবেশ করেছেন: ${officerSession.officer.nameBangla}`, `Signed in: ${officerSession.officer.nameEnglish}`)
-    : tr('শুধু কর্মকর্তাদের জন্য', 'Officers only');
+    ? tr(`প্রবেশ করেছেন: ${officerSession.officer?.nameBangla ?? ''}`, `Signed in: ${officerSession.officer?.nameEnglish ?? ''}`)
+    : tr('শুধু ম্যানেজারদের জন্য', 'Managers only');
   if (!signedIn) return;
   renderQueue();
   renderFarmerOptions();
@@ -1024,8 +1229,13 @@ function renderRegister() {
 function renderKnowledge() {
   const k = officerKnowledge;
   if (!k) return;
+  if (!k.amanReplay) {
+    // a manager of another site: no soil card, and none of the pilot's replay, IPM or caveats
+    setHtml('officerKnowledge', `<div class="knowledge-block"><p class="muted">${escapeHtml(noSoilCard())}</p></div>`);
+    return;
+  }
   const kg = (v) => num(Number.isInteger(v) ? v : v.toFixed(1));
-  setHtml('officerKnowledge', `
+  const srdiBlock = `
     <div class="knowledge-block">
       <h4>${tr('SRDI তালন্দ কার্ড (মাঝারি উঁচু জমি, কেজি/হেক্টর)', 'SRDI Talanda card (medium-high land, kg/ha)')}</h4>
       <p class="muted">${escapeHtml(tr(`${k.srdi.soilTypeBangla}; কৃষকের অ্যাপে শুধু ইউরিয়া, টিএসপি, এমওপি যায়।`, 'Kharia soil; the farmer app shows only urea, TSP and MoP.'))}</p>
@@ -1034,6 +1244,9 @@ function renderKnowledge() {
         <tbody>${k.srdi.rows.map(r => `<tr><td>${escapeHtml(tr(r.cropBangla, r.cropEnglish))}</td><td>${kg(r.dose.ureaKgHa)}</td><td>${kg(r.dose.tspKgHa)}</td><td>${kg(r.dose.mopKgHa)}</td><td>${kg(r.dose.gypsumKgHa)}</td><td>${kg(r.dose.zincSulphateKgHa)}</td><td>${kg(r.dose.boricAcidKgHa)}</td></tr>`).join('')}</tbody>
       </table></div>
     </div>
+  `;
+  setHtml('officerKnowledge', `
+    ${srdiBlock}
     <div class="knowledge-block">
       <h4>${tr('আমন রি-প্লে (২০০১–২০২৫)', 'Aman replay (2001–2025)')}</h4>
       <div class="table-responsive"><table class="data-table compact">
@@ -1134,7 +1347,14 @@ window.resolveCallback = async function(callbackId) {
 };
 
 window.officerReset = async function() {
-  await officerFetch('/api/v1/officer/reset', { method: 'POST', body: '{}' });
+  const res = await officerFetch('/api/v1/officer/reset', { method: 'POST', body: '{}' });
+  if (!res.ok) {
+    // e.g. 403 site_required: show the server's message and stay signed in
+    const body = await res.json().catch(() => null);
+    officerNotice = { error: body?.error?.message || tr('রিসেট করা যায়নি।', 'Could not reset.') };
+    renderObservationResult();
+    return;
+  }
   officerNotice = null;
   delete $('obsFarmer').dataset.chosen;
   await Promise.all([loadOfficerDesk(), loadOverview()]);
@@ -1179,7 +1399,7 @@ function renderAudioButton() {
     idle: tr('বাংলা ভয়েস শুনুন (Audio Preview)', 'Play the Bangla voice (audio preview)'),
     playing: tr('ভয়েস প্লে হচ্ছে...', 'Playing...'),
     done: tr('পুনরায় শুনুন (Replay)', 'Replay'),
-    novoice: tr('এই ব্রাউজারে বাংলা ভয়েস নেই', 'No Bangla voice in this browser'),
+    novoice: tr('এই ব্রাউজারে বাংলা ভয়েস নেই (ডেমো, সিমুলেটেড: শুধু দণ্ড চলছে, শব্দ নেই)', 'No Bangla voice in this browser (demo, simulated: only the bar moves, no sound)'),
   };
   setText('audioPlayText', labels[audioState]);
   setText('audioPlayIcon', audioState === 'playing' ? '⏸' : '▶');
@@ -1244,7 +1464,7 @@ window.toggleAudioPreview = async function() {
 // Dispatch Advice Call (simulation only, nothing is sent)
 window.dispatchAdviceCall = function() {
   const t = () => new Date().toLocaleTimeString(lang === 'en' ? 'en-GB' : 'bn-BD');
-  const sim = tr('[সিমুলেশন]', '[simulation]');
+  const sim = tr('[ডেমো, সিমুলেটেড]', '[demo, simulated]');
   setHtml('liveCallLog', `
     <span class="log-line">[${t()}] ${sim} ${tr('আউটগোয়িং IVR কল শুরু হচ্ছে', 'Outgoing IVR call starting')}: 01712-XXXXXX</span>
     <span class="log-line">[${t()}] ${sim} ${tr('টেলকো গেটওয়ে: কল রিং হচ্ছে...', 'Telco gateway: ringing...')}</span>
@@ -1290,7 +1510,7 @@ function renderCompanion(advice) {
   setText('compRotation', `${tr('ফসল চক্র', 'Rotation')}: ${tr(top.nameBangla, top.nameEnglish)}`);
   setText('compWater', `${num(water.rabiNetIrrigationMm)} ${tr('মিমি', 'mm')}`);
   setText('compHeat', `${num(heat.hotDays ?? 0)} ${tr('দিন', 'days')}`);
-  setText('compUrea', `${num(Math.round(soil.rotationUreaKgHa || 0))} ${tr('কেজি', 'kg')}`);
+  setText('compUrea', soil.rotationUreaKgHa === null || soil.rotationUreaKgHa === undefined ? '—' : `${num(Math.round(soil.rotationUreaKgHa))} ${tr('কেজি', 'kg')}`);
   setText('compFooter', `${tr('রিলিজ', 'Release')} ${advice.release.id} • ${tr('ক্যাশড ভার্সন', 'cached version')}`);
 }
 
@@ -1299,8 +1519,9 @@ function renderCompanion(advice) {
 // ---------------------------------------------------------------------------
 
 const STATUS = {
-  operational: ['সক্রিয়', 'Live', 'badge-success'],
-  'cross-checked': ['যাচাইসহ সক্রিয়', 'Live, cross-checked', 'badge-info'],
+  // these are dated research datasets built into the release, not live feeds
+  operational: ['সংরক্ষিত কপি (রিলিজে বসানো)', 'Saved copy (built into the release)', 'badge-info'],
+  'cross-checked': ['সংরক্ষিত কপি, যাচাইসহ', 'Saved copy, cross-checked', 'badge-info'],
   missing: ['বাকি', 'Pending', 'badge-warning'],
 };
 
@@ -1311,6 +1532,211 @@ async function loadDataQualityTable() {
   } catch (err) {
     console.error('Failed to load data quality:', err);
   }
+}
+
+// ---------------------------------------------------------------------------
+// Manager: site-scoped NASA POWER climate summary
+// ---------------------------------------------------------------------------
+
+let climateTrend = { state: 'loading', data: null, error: null, place: null, refreshed: false, busy: false };
+let climateRequest = 0;
+
+/**
+ * Loads the NASA POWER summary for the area on screen (the manager's own area by default; any other area is public NASA data,
+ * labelled as a comparison). { refresh: true } downloads again instead of using today's saved copy.
+ */
+window.loadClimateTrend = async function(options = {}) {
+  const refresh = options.refresh === true;
+  if (!officerSession) {
+    climateTrend = { state: 'loading', data: null, error: null, place: null, refreshed: false, busy: false };
+    renderClimateTrend();
+    return;
+  }
+  if (officerSession.source === 'demo') {
+    climateTrend = { state: 'error', data: null, error: 'supabase', place: currentPlace, refreshed: false, busy: false };
+    renderClimateTrend();
+    return;
+  }
+  const place = currentPlace;
+  const request = ++climateRequest;
+  const keep = refresh && climateForThisPlace(); // a refresh keeps the numbers on screen while it works
+  climateTrend = keep
+    ? { ...climateTrend, busy: true }
+    : { state: 'loading', data: null, error: null, place, refreshed: false, busy: false };
+  renderClimateTrend();
+  let next;
+  try {
+    const token = await officerToken();
+    const res = await fetch(`/api/v1/manager/climate?area=${encodeURIComponent(place)}${refresh ? '&refresh=1' : ''}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (res.ok) {
+      next = { state: 'ok', data: await res.json(), error: null, place, refreshed: refresh, busy: false };
+    } else {
+      const body = await res.json().catch(() => null);
+      const offlineNoData = res.status === 404 && /OFFLINE=1/.test(body?.error?.message ?? '');
+      next = { state: 'error', data: null, error: offlineNoData ? 'offline_area' : 'server', place, refreshed: false, busy: false };
+    }
+  } catch {
+    next = { state: 'error', data: null, error: 'server', place, refreshed: false, busy: false };
+  }
+  if (request !== climateRequest) return; // another area was picked meanwhile
+  climateTrend = next;
+  renderClimateTrend();
+  if (currentOverview) renderRainStat(currentOverview);
+  renderFreshness();
+};
+
+window.refreshClimate = () => window.loadClimateTrend({ refresh: true });
+
+function climateNumber(value, digits = 1) {
+  if (value === null || value === undefined || !Number.isFinite(Number(value))) return tr('পর্যাপ্ত তথ্য নেই', 'Not enough data');
+  return num(Number(value).toFixed(digits));
+}
+
+function climateDate(value) {
+  if (!value) return '';
+  const date = new Date(`${value}T00:00:00Z`);
+  return date.toLocaleDateString(lang === 'en' ? 'en-GB' : 'bn-BD', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
+}
+
+function renderClimateTrend() {
+  const card = $('climateTrendCard');
+  if (!card) return;
+  card.hidden = !officerSession;
+  if (!officerSession) return;
+  const { state, data, error } = climateTrend;
+  $('climateLoading').hidden = state !== 'loading';
+  $('climateError').hidden = state !== 'error';
+  $('climateIndicators').hidden = state !== 'ok';
+  $('climateSourceLine').hidden = state !== 'ok';
+  $('climateRefreshNote').hidden = state !== 'ok';
+  if ($('climateRefresh')) $('climateRefresh').disabled = climateTrend.busy || state === 'loading';
+  if (state === 'error') {
+    setText('climateErrorText', error === 'offline_area'
+      ? tr('এই এলাকার আবহাওয়ার তথ্য অফলাইনে পাওয়া যাচ্ছে না। অনলাইনে একবার দেখলে তথ্য সংরক্ষিত হবে।', 'This area’s weather is not available offline. View it once while online and it will be saved.')
+      : error === 'supabase'
+      ? tr('এই সাইটের জলবায়ুর তথ্য দেখতে আসল Supabase manager account দিয়ে প্রবেশ করুন।', 'Sign in with a real Supabase manager account to view this site’s climate data.')
+      : tr('জলবায়ুর তথ্য আনা যায়নি। সার্ভার ও নেটওয়ার্ক দেখুন; OFFLINE=1 হলে আগে একবার অনলাইনে POWER তথ্য ক্যাশ করুন।', 'Could not load climate data. Check the server and network; with OFFLINE=1, first fetch POWER data once while online to cache it.'));
+    return;
+  }
+  if (state !== 'ok' || !data?.indicators) return;
+
+  const { rainfall, heatStressDays, longestDrySpell, rootZoneWetness } = data.indicators;
+  if (rainfall.anomalyMm === null || rainfall.anomalyMm === undefined) {
+    setText('climateRainStatus', rainfall.totalMm === null
+      ? tr('গত ৩০ দিনের বৃষ্টির পূর্ণ তথ্য নেই; ১০ বছরের স্বাভাবিকের সঙ্গে তুলনা করা যায়নি।', 'The full 30-day rainfall record is unavailable, so it could not be compared with the 10-year normal.')
+      : tr(`বৃষ্টি ${climateNumber(rainfall.totalMm)} মিমি; স্বাভাবিকের সঙ্গে তুলনার জন্য যথেষ্ট তথ্য নেই।`, `${climateNumber(rainfall.totalMm)} mm of rain; not enough records to compare with normal.`));
+  } else {
+    const above = rainfall.anomalyMm >= 0;
+    const percent = rainfall.anomalyPercent === null || rainfall.anomalyPercent === undefined
+      ? '' : ` (${climateNumber(Math.abs(rainfall.anomalyPercent), 0)}%)`;
+    const baseline = climateNumber(rainfall.normalMm);
+    if (rainfall.anomalyMm === 0) {
+      setText('climateRainStatus', tr(
+        `গত ৩০ দিনে ${climateNumber(rainfall.totalMm)} মিমি বৃষ্টি; ১০ বছরের স্বাভাবিক ${baseline} মিমির সমান।`,
+        `${climateNumber(rainfall.totalMm)} mm in the last 30 days, matching the 10-year normal of ${baseline} mm.`));
+    } else {
+      const direction = above ? tr('বেশি', 'above') : tr('কম', 'below');
+      setText('climateRainStatus', tr(
+        `গত ৩০ দিনে ${climateNumber(rainfall.totalMm)} মিমি বৃষ্টি; ১০ বছরের স্বাভাবিক ${baseline} মিমির চেয়ে ${climateNumber(Math.abs(rainfall.anomalyMm))} মিমি${percent} ${direction}।`,
+        `${climateNumber(rainfall.totalMm)} mm in the last 30 days; ${climateNumber(Math.abs(rainfall.anomalyMm))} mm${percent} ${direction} the 10-year normal of ${baseline} mm.`));
+    }
+  }
+  setText('climateHeatStatus', heatStressDays.value === null
+    ? tr('তাপমাত্রার যথেষ্ট তথ্য নেই।', 'Not enough temperature records.')
+    : tr(`৩৫°C-এর বেশি সর্বোচ্চ তাপমাত্রা ছিল ${climateNumber(heatStressDays.value, 0)} দিন।`, `Maximum temperature exceeded 35°C on ${climateNumber(heatStressDays.value, 0)} days.`));
+  setText('climateDryStatus', longestDrySpell.value === null
+    ? tr('বৃষ্টির যথেষ্ট তথ্য নেই।', 'Not enough rainfall records.')
+    : tr(`দিনে ১ মিমির কম বৃষ্টি টানা সর্বোচ্চ ${climateNumber(longestDrySpell.value, 0)} দিন।`, `Rainfall stayed below 1 mm/day for up to ${climateNumber(longestDrySpell.value, 0)} consecutive days.`));
+  setText('climateSoilStatus', rootZoneWetness.value === null
+    ? tr('শিকড়ের মাটির যথেষ্ট তথ্য নেই।', 'Not enough root-zone soil records.')
+    : tr(`গত ১৪ দিনের গড় ${climateNumber(rootZoneWetness.value, 2)} (০ শুকনো, ১ সম্পৃক্ত)।`, `14-day average: ${climateNumber(rootZoneWetness.value, 2)} (0 dry, 1 saturated).`));
+  const range = dateRangeText(data.dataDateRange?.from, data.dataDateRange?.to);
+  const downloaded = dateTime(data.fetchedAt);
+  if (data.dataSource === 'live') {
+    setText('climateSourceLine', tr(
+      `তথ্যসূত্র: NASA POWER, ${data.area.nameEnglish}, ${range}, সরাসরি ডাউনলোড`,
+      `Data source: NASA POWER, ${data.area.nameEnglish}, ${range}, live download`));
+  } else if (data.dataSource === 'cache' && !data.offline && !data.liveFetchFailed) {
+    // today's copy, saved when it was downloaded: not sample data
+    setText('climateSourceLine', tr(
+      `NASA POWER-এর সংরক্ষিত কপি, ${data.area.nameEnglish}, ${range} (ডাউনলোড ${downloaded})`,
+      `Saved copy of NASA POWER, ${data.area.nameEnglish}, ${range} (downloaded ${downloaded})`));
+  } else {
+    // stored data served offline or after a failed download: say plainly that it is not live
+    setText('climateSourceLine', tr(`নমুনা তথ্য, NASA POWER, ${range}`, `Sample data from NASA POWER, ${range}`));
+  }
+  setText('climateRefreshNote', data.offline
+    ? tr(`অফলাইন মোড: সংরক্ষিত তথ্য ব্যবহার হচ্ছে, নতুন ডাউনলোড হয়নি (তথ্য ডাউনলোড হয়েছিল ${downloaded})।`, `Offline mode: using saved data, nothing was downloaded (data downloaded ${downloaded}).`)
+    : data.liveFetchFailed
+      ? tr(`রিফ্রেশ করা যায়নি; সংরক্ষিত তথ্য দেখানো হচ্ছে (ডাউনলোড ${downloaded})।`, `Could not refresh; showing saved data (downloaded ${downloaded}).`)
+      : climateTrend.refreshed
+        ? tr(`এইমাত্র হালনাগাদ: ${downloaded}`, `Just refreshed: ${downloaded}`)
+        : tr(`তথ্য ডাউনলোড: ${downloaded}`, `Data downloaded: ${downloaded}`));
+}
+
+// ---------------------------------------------------------------------------
+// Manager: which NASA data sources the server can use (read-only; the API returns set/unset flags, never a key)
+// ---------------------------------------------------------------------------
+
+let dataSources = { state: 'loading', data: null, error: null }; // state: 'loading' | 'ok' | 'error'
+
+window.loadDataSources = async function() {
+  if (!officerSession) return;
+  dataSources = { state: 'loading', data: null, error: null };
+  renderDataSources();
+  try {
+    const res = await officerFetch('/api/v1/manager/data-sources');
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    dataSources = { state: 'ok', data: await res.json(), error: null };
+  } catch (err) {
+    // officerFetch already ended the session on 401/403: go back to the sign-in picker
+    if (err instanceof OfficerAccessError) { window.signOutRole?.(); return; }
+    dataSources = { state: 'error', data: null, error: navigator.onLine === false ? 'offline' : 'server' };
+  }
+  renderDataSources();
+};
+
+/** The four labels: always an icon AND words, never colour alone. */
+const DS_LABELS = {
+  live: { icon: 'sensors', cls: 'badge-success', bn: 'সরাসরি', en: 'Live' },
+  saved: { icon: 'history', cls: 'badge-info', bn: 'সংরক্ষিত কপি', en: 'Saved copy' },
+  demo: { icon: 'science', cls: 'badge-warning', bn: 'ডেমো, সিমুলেটেড', en: 'Demo, simulated' },
+  notset: { icon: 'link_off', cls: 'badge-neutral', bn: 'সেট করা নেই', en: 'Not set up' },
+};
+
+/** Every integration with its label, what uses it and what is really behind it (the server's own words, in both languages). */
+function renderDataSources() {
+  if (!$('dataSourcesCard')) return;
+  const { state, data, error } = dataSources;
+  $('dsSkeleton').hidden = state !== 'loading';
+  $('dsError').hidden = state !== 'error';
+  $('dsRows').hidden = state !== 'ok';
+  $('dsOfflineBadge').hidden = !(state === 'ok' && data.offline === true);
+  if (state === 'error') {
+    setText('dsErrorText', error === 'offline'
+      ? tr('আপনি অফলাইনে আছেন। সংযোগ দেখে আবার চেষ্টা করুন।', 'You appear to be offline. Check the connection and try again.')
+      : tr('ডেটা সোর্সের অবস্থা আনা যায়নি। আবার চেষ্টা করুন।', 'Could not load the data source status. Try again.'));
+  }
+  if (state !== 'ok') return;
+  const say = (text) => escapeHtml(tr(text.bn, text.en));
+  setHtml('dsRows', (data.integrations || []).map(item => {
+    const label = DS_LABELS[item.label] || DS_LABELS.notset;
+    const link = item.label === 'notset' && item.signupUrl
+      ? ` <a class="ds-link" href="${escapeHtml(item.signupUrl)}" target="_blank" rel="noopener noreferrer">${tr('অ্যাকাউন্ট বা চাবি নিন', 'Get an account or key')}</a>`
+      : '';
+    const askAdmin = item.label === 'notset' && item.keyNeeded !== 'not_applicable' && item.keyNeeded !== 'none'
+      ? ` ${tr('অ্যাডমিন সার্ভারের .env ফাইলে বসিয়ে সার্ভার আবার চালু করবেন।', 'The admin adds it to the server’s .env file and restarts the server.')}` : '';
+    return `
+      <li class="ds-row" data-ds="${escapeHtml(item.id)}" data-label="${escapeHtml(item.label)}">
+        <div class="ds-main">
+          <strong>${say(item.name)}</strong>
+          <span class="muted small"><strong>${tr('কীসে লাগে', 'Used for')}:</strong> ${say(item.usedBy)}</span>
+          <span class="muted small"><strong>${tr('আসলে কী', 'What is real')}:</strong> ${say(item.reality)}</span>
+        </div>
+        <span class="badge ${label.cls} ds-badge"><span class="material-symbols-outlined" aria-hidden="true">${label.icon}</span><span>${escapeHtml(tr(label.bn, label.en))}</span></span>
+        <p class="ds-help">${say(item.reason)}${askAdmin}${link}</p>
+      </li>`;
+  }).join(''));
 }
 
 function renderQuality(data) {
@@ -1346,15 +1772,20 @@ function startPortals() {
     officers: () => officers,
     loadOfficers,
     officerSignedIn: () => Boolean(officerSession),
+    /** Starts an officer session ({ source: 'supabase' } or a demo { source: 'demo', token, officer }) and loads the desk: 'ok' | 'denied' | 'unavailable'. */
     async setOfficerSession(session) {
       officerSession = session;
-      try {
-        sessionStorage.setItem('eden.officer', JSON.stringify(session));
-      } catch {
-        // storage blocked: the session lasts until this page closes
+      if (session.source === 'demo') {
+        // only the demo token is kept here; a Supabase session is kept (and refreshed) by Supabase itself
+        try {
+          sessionStorage.setItem('eden.officer', JSON.stringify(session));
+        } catch {
+          // storage blocked: the session lasts until this page closes
+        }
       }
-      await loadOfficerDesk();
+      const status = await loadOfficerDesk();
       renderProfile();
+      return status;
     },
     signOutOfficer: () => window.officerSignOut(),
     // keypad 9 from the farmer portal: the call-back lands on the officer desk (demo; no call is placed)
@@ -1380,7 +1811,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const saved = localStorage.getItem('eden.lang');
     if (saved === 'en' || saved === 'bn') lang = saved;
     const session = sessionStorage.getItem('eden.officer');
-    if (session) officerSession = JSON.parse(session);
+    if (session) officerSession = { ...JSON.parse(session), source: 'demo' };
   } catch {
     // storage blocked: start in Bangla, signed out
   }
@@ -1396,6 +1827,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   await window.runPlannerCalculation({ switchScreenAfter: false });
   await loadDataQualityTable();
   await officersReady;
+  demoMode = Boolean((await authConfig())?.demoMode);
+  // a Supabase session left in this browser (refresh, or a later visit) is checked with the server before it is trusted
+  if (!officerSession && await accessToken()) officerSession = { source: 'supabase', officer: null };
   if (officerSession) await loadOfficerDesk();
   renderAll();
   await portals.restoreSession();
@@ -1528,16 +1962,22 @@ function fillPlaceUpazilas() {
     .map(u => `<option value="${escapeHtml(u.id === 'ADM3_Tanore' ? PILOT_PLACE : u.id)}">${escapeHtml(u.id === 'ADM3_Tanore' ? `${u.name} (Talanda pilot)` : u.name)}</option>`).join('');
 }
 
-async function choosePlace(id) {
+async function choosePlace(id, options = {}) {
   currentPlace = id;
   planLandTouched = false;
   try { localStorage.setItem('eden.place', id); } catch { /* the choice lasts for this page only */ }
-  bdMap?.setPlace(id);
+  try {
+    bdMap?.setPlace(id);
+  } catch {
+    // the map has no size while the role picker or another screen is showing; it centres on the place when it is shown
+  }
   await loadOverview();
   await loadCropMenu();
   if (typeof window.runPlannerCalculation === 'function') await window.runPlannerCalculation({ switchScreenAfter: false });
   renderAll();
   applyPlaceText();
+  applyAreaScope();
+  if (officerSession && !options.skipClimate) window.loadClimateTrend();
   portals?.refresh();
   if (liveRows && $('liveDistrict')) {
     const row = liveRows.find(r => r.id === (id === PILOT_PLACE ? 'ADM3_Tanore' : id));
@@ -1565,19 +2005,24 @@ async function loadPlaces() {
 const setLanguageBeforePlace = window.setLanguage;
 window.setLanguage = function(next) { setLanguageBeforePlace(next); applyPlaceText(); bdMap?.refreshLanguage(); portals?.refresh(); };
 
-// A click on the map picks an upazila the same way the place list does
-function chooseFromMap(id) {
-  const placeId = id === 'ADM3_Tanore' ? PILOT_PLACE : id;
-  const row = placeIndex?.find(u => u.id === id);
+// Keeps the two place lists in step with the place chosen elsewhere (the map, "back to my area")
+function syncPlaceSelects(placeId) {
+  const row = placeIndex?.find(u => u.id === (placeId === PILOT_PLACE ? 'ADM3_Tanore' : placeId));
   if (row && $('placeDistrict')) {
     $('placeDistrict').value = row.district;
     fillPlaceUpazilas();
     $('placeUpazila').value = placeId;
   }
+}
+
+// A click on the map picks an upazila the same way the place list does
+function chooseFromMap(id) {
+  const placeId = id === 'ADM3_Tanore' ? PILOT_PLACE : id;
+  syncPlaceSelects(placeId);
   choosePlace(placeId);
 }
 document.addEventListener('DOMContentLoaded', () => {
-  bdMap = initBdMap({ tr, num, escapeHtml, choose: chooseFromMap, currentId: () => currentPlace });
+  bdMap = initBdMap({ tr, num, isoDate, escapeHtml, choose: chooseFromMap, currentId: () => currentPlace });
 });
 document.addEventListener('DOMContentLoaded', loadPlaces);
 
@@ -1753,7 +2198,7 @@ window.callVoiceReply = async function() {
     if (!res.ok) throw new Error(data.error);
     const call = data.call;
     setHtml('voiceCallStatus', `<span class="log-line">${escapeHtml(call.dryRun
-      ? tr(`পরীক্ষামূলক (ড্রাই রান): ${call.request.phone_numbers[0]} নম্বরে Awaj-এ এই অনুরোধ যেত; আসল কলের জন্য সার্ভারে AWAJ_API_TOKEN, AWAJ_SENDER ও AWAJ_LIVE=1 দিন।`, `Dry run: this request would go to Awaj for ${call.request.phone_numbers[0]}; set AWAJ_API_TOKEN, AWAJ_SENDER and AWAJ_LIVE=1 on the server for a real call.`)
+      ? tr(`ডেমো, সিমুলেটেড (ড্রাই রান): ${call.request.phone_numbers[0]} নম্বরে Awaj-এ এই অনুরোধ যেত; আসল কলের জন্য সার্ভারে AWAJ_API_TOKEN, AWAJ_SENDER ও AWAJ_LIVE=1 দিন।`, `Demo, simulated (dry run): this request would go to Awaj for ${call.request.phone_numbers[0]}; set AWAJ_API_TOKEN, AWAJ_SENDER and AWAJ_LIVE=1 on the server for a real call.`)
       : tr(`Awaj কল পাঠানো হয়েছে (HTTP ${call.response.status})।`, `Sent to Awaj (HTTP ${call.response.status}).`))}</span>`);
   } catch (err) {
     setHtml('voiceCallStatus', `<span class="log-line">${escapeHtml(err.message || 'Error')}</span>`);
@@ -1772,7 +2217,7 @@ window.callKeypadMenu = async function() {
     if (!res.ok) throw new Error(data.error);
     const lines = [
       data.call.dryRun
-        ? tr(`পরীক্ষামূলক (ড্রাই রান): ${data.call.request.phone_numbers.join(', ')} নম্বরে কিপ্যাড মেনু কল যেত।`, `Dry run: a keypad menu call would go to ${data.call.request.phone_numbers.join(', ')}.`)
+        ? tr(`ডেমো, সিমুলেটেড (ড্রাই রান): ${data.call.request.phone_numbers.join(', ')} নম্বরে কিপ্যাড মেনু কল যেত।`, `Demo, simulated (dry run): a keypad menu call would go to ${data.call.request.phone_numbers.join(', ')}.`)
         : tr(`কিপ্যাড মেনু কল পাঠানো হয়েছে (HTTP ${data.call.response.status})।`, `Keypad menu call sent (HTTP ${data.call.response.status}).`),
       tr(`কৃষক শুনবেন: ${data.menu}`, `The farmer hears: ${data.menu}`),
       ...(data.needs || []).map(n => tr(`বাকি: ${n}`, `Still needed: ${n}`)),

@@ -83,11 +83,17 @@ function save(): void {
   fs.writeFileSync(STORE_FILE, JSON.stringify(store, null, 2), 'utf8');
 }
 
-/** Clears the plan, questions and missed calls (tests, and before a demo). */
-export function resetCalls(): void {
-  store.calls = [];
-  store.questions = [];
-  store.unknownCallers = [];
+/** Clears the plan and questions of these farmers (one site's reset), or everything with the missed calls. */
+export function resetCalls(farmerIds?: string[]): void {
+  if (farmerIds) {
+    const ids = new Set(farmerIds);
+    store.calls = store.calls.filter(c => !ids.has(c.farmerId));
+    store.questions = store.questions.filter(q => !ids.has(q.farmerId));
+  } else {
+    store.calls = [];
+    store.questions = [];
+    store.unknownCallers = [];
+  }
   save();
 }
 
@@ -419,11 +425,12 @@ export function reviewCall(officerId: string, id: string, body: any): { call?: P
   return { call };
 }
 
-/** Approves every proposed call on a day. */
-export function approveAll(officerId: string, date: string): number {
+/** Approves every proposed call on a day (of these farmers, when given). */
+export function approveAll(officerId: string, date: string, farmerIds?: string[]): number {
+  const only = farmerIds ? new Set(farmerIds) : null;
   let n = 0;
   for (const c of store.calls) {
-    if (c.date === date && c.status === 'proposed') { c.status = 'approved'; c.approvedBy = officerId; n++; }
+    if (c.date === date && c.status === 'proposed' && (!only || only.has(c.farmerId))) { c.status = 'approved'; c.approvedBy = officerId; n++; }
   }
   save();
   return n;
@@ -439,14 +446,16 @@ function callRoute(): CallRoute {
  * officer, or --live on the command line); the provider's own switch must be on as well. `dueOnly` sends only the
  * calls whose slot has started (the scheduled run).
  */
-export async function sendApproved(opts: { date?: string; allowLive: boolean; dueOnly?: boolean; now?: Date }) {
+export async function sendApproved(opts: { date?: string; allowLive: boolean; dueOnly?: boolean; now?: Date; farmerIds?: string[] }) {
   const now = opts.now ?? new Date();
   const date = opts.date ?? dhakaToday(now);
   const route = callRoute();
   const live = opts.allowLive && systechConfig()[route].live;
   const results: Array<{ id: string; farmerId: string; outcome: CallAttempt['outcome']; note: string | null }> = [];
   // The day's approved calls, and retries from that day or the day before
-  const due = store.calls.filter(c => (c.status === 'approved' && c.date === date) || (c.status === 'retry' && [0, 1].includes(daysBetween(c.date, date))));
+  const only = opts.farmerIds ? new Set(opts.farmerIds) : null;
+  const due = store.calls.filter(c => (!only || only.has(c.farmerId))
+    && ((c.status === 'approved' && c.date === date) || (c.status === 'retry' && [0, 1].includes(daysBetween(c.date, date)))));
   for (const call of due) {
     if (opts.dueOnly && SLOT_HOUR[call.slot] > dhakaHour(now)) continue;
     const farmer = desk.farmerById(call.farmerId);
@@ -527,9 +536,11 @@ export function outcomeFrom(text: string): CallAttempt['outcome'] {
  * Reads the provider's reports for calls still pending, then retries or gives up on the ones not answered.
  * Dry runs have no report: the officer can mark them (markOutcome) to try the follow-up.
  */
-export async function followUp(opts: { allowLive: boolean; now?: Date }) {
+export async function followUp(opts: { allowLive: boolean; now?: Date; farmerIds?: string[] }) {
   const now = opts.now ?? new Date();
-  const pending = store.calls.filter(c => c.status === 'sent' && c.attempts.at(-1)?.outcome === 'pending');
+  const only = opts.farmerIds ? new Set(opts.farmerIds) : null;
+  const mine = (c: PlannedCall) => !only || only.has(c.farmerId);
+  const pending = store.calls.filter(c => mine(c) && c.status === 'sent' && c.attempts.at(-1)?.outcome === 'pending');
   let history: Array<{ phone: string; status: string; cause: string; time: string }> | null = null;
   const checked: Array<{ id: string; outcome: CallAttempt['outcome'] }> = [];
   for (const call of pending) {
@@ -552,12 +563,12 @@ export async function followUp(opts: { allowLive: boolean; now?: Date }) {
     }
     checked.push({ id: call.id, outcome: attempt.outcome });
   }
-  for (const call of store.calls.filter(c => c.status === 'sent')) {
+  for (const call of store.calls.filter(c => mine(c) && c.status === 'sent')) {
     const last = call.attempts.at(-1)?.outcome;
     if (last === 'unanswered' || last === 'failed') await missed(call, opts.allowLive, now);
   }
   save();
-  return { checked, retries: store.calls.filter(c => c.status === 'retry').map(c => c.id), unreached: store.calls.filter(c => c.status === 'unreached').map(c => c.id) };
+  return { checked, retries: store.calls.filter(c => mine(c) && c.status === 'retry').map(c => c.id), unreached: store.calls.filter(c => mine(c) && c.status === 'unreached').map(c => c.id) };
 }
 
 /** The officer's word on a call's outcome (the farmer said they missed it, or a dry run in a demo). */
@@ -680,11 +691,11 @@ export function unknownCallers() {
   return store.unknownCallers;
 }
 
-/** The screen's summary: today's list by status, the week's calls and answers, who could not be reached. */
-export function callDesk(date = dhakaToday()) {
-  const calls = callsOn(date);
+/** The screen's summary for one site's farmers: the day's list by status, questions, who could not be reached. */
+export function callDesk(date = dhakaToday(), farmers = desk.farmers()) {
+  const ids = new Set(farmers.map(f => f.id));
+  const calls = callsOn(date).filter(c => ids.has(c.farmerId));
   const count = (s: string) => calls.filter(c => c.status === s).length;
-  const farmers = desk.farmers();
   return {
     date,
     route: callRoute(),
@@ -699,7 +710,7 @@ export function callDesk(date = dhakaToday()) {
       stopped: farmers.filter(f => f.optedOut).length,
     },
     calls,
-    questions: store.questions.slice(0, 30),
+    questions: store.questions.filter(q => ids.has(q.farmerId)).slice(0, 30),
     unknownCallers: store.unknownCallers.slice(0, 10),
   };
 }

@@ -88,7 +88,8 @@ export interface Place {
   district: string;
   aman: Record<string, any>;
   rabi: Record<string, any>;
-  srdi: Record<string, any>;
+  /** The SRDI soil card (fertilizer doses, soil and land type). Only the pilot has one; null elsewhere, and no fertilizer amount is then given. */
+  srdi: Record<string, any> | null;
   conditions: Record<string, any>;
   advisories: Record<string, any> | null;
   dataNote: string;
@@ -98,6 +99,12 @@ export interface Place {
 }
 
 export const PILOT_ID = 'talanda_tanore';
+
+/** Shown instead of fertilizer amounts wherever the place has no SRDI soil card. */
+export const NO_SOIL_CARD = {
+  bn: 'এই এলাকার মাটির কার্ড (SRDI) যোগ করা হয়নি, সার-পরামর্শ দেওয়া যাচ্ছে না',
+  en: 'This area’s soil card (SRDI) has not been added, so fertilizer advice cannot be given',
+} as const;
 
 const PILOT: Place = {
   id: PILOT_ID, kind: 'pilot', nameEnglish: 'Talanda union', nameBangla: 'তালন্দ ইউনিয়ন', upazila: 'Tanore', district: 'Rajshahi',
@@ -143,6 +150,11 @@ export function groundwaterDeclineRange(): { median: number; steepest: number } 
   return decline;
 }
 
+/** A replay's records with the fertilizer doses removed (they came from the Talanda card). */
+function withoutDoses(rabi: Record<string, any>): Record<string, any> {
+  return Object.fromEntries(Object.entries(rabi).map(([key, record]) => [key, { ...record, fertilizer: null }]));
+}
+
 /** Every upazila the engine can advise: id, name and district. */
 export function listPlaces(): Array<{ id: string; name: string; district: string }> {
   return nationalData().upazilas;
@@ -159,7 +171,8 @@ export function placeFor(id: string | undefined | null): Place | null {
   const top = local.patterns[0];
   return {
     id: u.id, kind: 'upazila', nameEnglish: `${u.name} upazila`, nameBangla: `${u.name} উপজেলা`, upazila: u.name, district: u.district,
-    aman: d.aman, rabi: d.rabi, srdi: TALANDA_SRDI,
+    // the district replay's doses are the Talanda card's numbers, so they are dropped here: no soil card, no fertilizer amount
+    aman: d.aman, rabi: withoutDoses(d.rabi), srdi: null,
     conditions: {
       lat: d.lat, lon: d.lon, groundwater: d.conditions.groundwater, cattlePerKm2: d.conditions.cattlePerKm2,
       bmdStation: d.station?.name ?? null, bmdStationKm: d.station?.km ?? null,
@@ -167,7 +180,7 @@ export function placeFor(id: string | undefined | null): Place | null {
       landUse: top ? { year: '2014-15', croppingIntensityPct: local.intensityPct, topPattern: top[0], topPatternPct: top[1] } : null,
     },
     advisories: null,
-    dataNote: `District replay for ${u.district} (NASA POWER + GPM IMERG at the district's point, 2001-2025); land type from NASA NASADEM and Landsat surface water with BRRI's 2014-15 cropping survey; BBS district yields; fertilizer from the SRDI Talanda card until this upazila's card is added.`,
+    dataNote: `District replay for ${u.district} (NASA POWER + GPM IMERG at the district's point, 2001-2025); land type from NASA NASADEM and Landsat surface water with BRRI's 2014-15 cropping survey; BBS district yields; no SRDI soil card for this upazila yet, so no fertilizer advice.`,
     local,
     defaultLandType: local.land?.type ?? 'medium_high',
   };

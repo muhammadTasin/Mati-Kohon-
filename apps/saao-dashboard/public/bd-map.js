@@ -88,7 +88,7 @@ const yesterday = () => new Date(Date.now() - 86_400_000).toISOString().slice(0,
 // the pilot (Talanda union) sits in Tanore upazila
 const norm = (id) => (id === 'talanda_tanore' ? 'ADM3_Tanore' : id);
 
-export function initBdMap({ tr, num, escapeHtml, choose, currentId }) {
+export function initBdMap({ tr, num, isoDate, escapeHtml, choose, currentId }) {
   const el = document.getElementById('bdMap');
   const select = document.getElementById('mapLayer');
   if (!el || !select) return null;
@@ -102,6 +102,7 @@ export function initBdMap({ tr, num, escapeHtml, choose, currentId }) {
   if (!LAYERS.some(l => l.id === layerId)) layerId = 'cropsNow';
   let rows = {};
   let sources = {};
+  let liveDate = null; // the day the daily-update file's rain figure runs to
   let selected = norm(currentId());
   let inspected = selected; // the upazila whose facts the panel shows
   const panel = document.getElementById('mapFacts');
@@ -228,7 +229,7 @@ export function initBdMap({ tr, num, escapeHtml, choose, currentId }) {
           ${row(tr('শীতের সবুজ (NDVI)', 'Winter greenness (NDVI)'), r.winterNdvi == null ? '—' : num(r.winterNdvi.toFixed(2)))}
           ${row(tr('বোরোর সেচ (জেলা)', 'Boro irrigation (district)'), r.boroIrrigationMm == null ? '—' : `${num(r.boroIrrigationMm)} ${tr('মিমি', 'mm')}`)}
           ${row(tr('ভূগর্ভস্থ পানি (জেলা)', 'Groundwater (district)'), r.groundwaterMmPerYear == null ? '—' : `${num(r.groundwaterMmPerYear)} ${tr('মিমি/বছর', 'mm/yr')}`)}
-          ${row(tr('৩০ দিনের বৃষ্টি', 'Rain, 30 days'), rain)}
+          ${row(tr(`৩০ দিনের বৃষ্টি (দৈনিক হালনাগাদ ফাইল${liveDate ? `, ${isoDate(liveDate)} পর্যন্ত` : ''})`, `Rain, 30 days (daily update file${liveDate ? `, to ${isoDate(liveDate)}` : ''})`), rain)}
           ${row(tr('ধানে কীটনাশক', 'Pesticide on rice'), rice)}
           ${row(tr('ডাল-তেলফসলে কীটনাশক', 'On pulses and oilseeds'), other)}
           ${row(tr('জৈব পদার্থ · মাটির pH', 'Organic matter · soil pH'), `${om} · ${ph}`)}
@@ -316,6 +317,7 @@ export function initBdMap({ tr, num, escapeHtml, choose, currentId }) {
   ]).then(([upazilas, districtShapes, values]) => {
     rows = values.upazilas;
     sources = values.sources ?? {};
+    liveDate = values.liveDate ?? null;
     districts.addData(districtShapes).addTo(map);
     upazilaLayer = L.geoJSON(upazilas, {
       renderer: canvas,
