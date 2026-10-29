@@ -28,7 +28,7 @@ import { synthesizeSpeech, ttsStatus } from './providers/tts.ts';
 import { sendSms, smsConfig } from './sms.ts';
 import { getRiverErosion } from './erosion.ts';
 import { cropLossStatus, floodStatus, liveHaor, liveStatus, liveUpazila, liveUpazilas } from './live.ts';
-import { floodCheckList, mapLayers } from './map_layers.ts';
+import { floodCheckList, mapLayers, mapYears } from './map_layers.ts';
 import { askAiAssistant } from './ai_assistant.ts';
 import { cropMenu } from '../../../packages/rotation-engine/src/data/crop_choice.ts';
 import { cropsFromKeys, keypadMenu, landFromKey, replyFor, understand } from './voice.ts';
@@ -849,6 +849,11 @@ const server = http.createServer(async (req, res) => {
     // API: one row per upazila for the dashboard's map (MODIS, NASA replay, GLDAS, PEST-CHEMGRIDS, SRDI, today's NASA update)
     if (pathname === '/api/v1/map/upazilas' && req.method === 'GET') {
       return sendJSON(res, 200, mapLayers());
+    }
+
+    // API: year-by-year values for the map's time slider (NASA POWER, GPM IMERG, GLDAS-2.2 groundwater, MODIS crops)
+    if (pathname === '/api/v1/map/years' && req.method === 'GET') {
+      return sendJSON(res, 200, mapYears());
     }
 
     if (pathname === '/api/v1/haor/flash-flood' && req.method === 'GET') {

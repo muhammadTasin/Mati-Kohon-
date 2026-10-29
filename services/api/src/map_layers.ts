@@ -171,6 +171,38 @@ export function floodCheckList(minShare = 0.10, minLoss = 0.10) {
   return out.sort((a, b) => (b.amanNotGreenPct ?? 0) - (a.amanNotGreenPct ?? 0) || excess(b) - excess(a));
 }
 
+let yearly: ReturnType<typeof buildYears> | null = null;
+
+function buildYears() {
+  const calendar = read('season_calendar.json');
+  const districts: Record<string, Record<string, Array<number | null>>> = {};
+  for (const [name, place] of Object.entries<any>(calendar.places)) {
+    if (name !== 'talanda_tanore') districts[name] = place.years;
+  }
+  const upazilas: Record<string, number[] | null> = {};
+  for (const [id, g] of Object.entries<any>(calendar.greenness.upazilas)) upazilas[id] = g.cropsByYear ?? null;
+  return {
+    years: calendar.years as number[],
+    districts,
+    upazilaCropsByYear: upazilas,
+    sources: {
+      climate: `${calendar.source}; one value a year at each district point`,
+      groundwater: calendar.groundwaterSource,
+      crops: `${calendar.greenness.product}; growth peaks of the smoothed NDVI per agricultural year (November-October), as research/explore/national_greenness.py`,
+    },
+  };
+}
+
+/**
+ * Year by year for the map's time slider (research/explore/season_calendar.py): at each district point the days of
+ * 36 C or more, the days of 44 mm or more of rain, the dry season's root-zone wetness and NASA GLDAS-2.2
+ * (GRACE-assimilated) groundwater against 2003-2007; at each upazila centre the crops a year MODIS counts.
+ */
+export function mapYears() {
+  yearly ??= buildYears();
+  return yearly;
+}
+
 /** Every upazila with its map values; `live` is today's NASA update (null before the first run). */
 export function mapLayers() {
   const { rows, sources } = staticRows();

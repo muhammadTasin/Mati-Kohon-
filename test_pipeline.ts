@@ -610,8 +610,34 @@ async function runTests() {
   console.log(`Farmer's Aman-Boro ranks ${mine18[0].rank} of ${fs18.options.length}; lentil saves ${Math.round((mine18[0].ledger!.groundwaterPumpedM3PerHa - lentil18.ledger!.groundwaterPumpedM3PerHa) / 100) * 100} m3/ha; Boro meets ${boroCrop.hotDays} hot days; 20% less rain and +2 C: Boro irrigation ${w18.options.find(x => x.id === mine18[0].id)!.irrigationMm} -> ${w18.options.find(x => x.id === mine18[0].id)!.irrigationMmScenario} mm`);
   console.log('✓ TEST 18 PASSED: The farmer\'s rotation, the five-part review, the season risk and the what-if follow the Field Shift statement.\n');
 
+  // TEST 19: Two winter crops (Mustard-Boro-T.Aman), and income moved by today's market prices
+  console.log('[TEST 19] Testing the late Boro after a winter crop and the market-price move in income...');
+  const mb19 = engine.generateAdvice({ ...TALANDA, farmerPriorities: priorities, currentAmanCrop: 'BRRI dhan71', currentRotation: { monsoon: 'aman', winter: 'mustard', summer: 'boro' } });
+  const mine19 = mb19.options.find(o => o.farmerCurrent);
+  if (!mine19 || mine19.cropIds?.join() !== 'aman,mustard,boro_late' || mine19.cropSequence[2]?.seasonType !== 'Rabi' || mb19.current_rotation_note) {
+    throw new Error(`The farmer's Aman-Mustard-Boro is modelled with a late Boro as the second winter crop (got ${mine19?.cropIds})`);
+  }
+  if (!(mine19.ledger!.groundwaterPumpedM3PerHa > 7000)) throw new Error(`Mustard then Boro pumps Boro's water (got ${mine19.ledger!.groundwaterPumpedM3PerHa} m3/ha)`);
+  // Where BRRI's survey makes Potato-Boro-T. Aman the usual pattern, it is the reference rotation
+  const bogra19 = at('ADM3_BograSadar');
+  const usual19 = bogra19.options.find(o => o.currentPractice);
+  if (!usual19 || usual19.cropIds?.join() !== 'aman,potato,boro_late' || bogra19.reference_option_id !== usual19.id) {
+    throw new Error(`Bogra Sadar's usual Potato-Boro-T. Aman must be the reference (got ${usual19?.cropIds})`);
+  }
+  // Market prices (DAM via WFP): lentil's fall against food prices since 2024-25 lowers its margin; rice moved with food
+  const lentil19 = fs18.options.find(o => o.id === 'rot_dhan71_lentil')!.dimensionDetails.income;
+  if (!((lentil19.metrics.marketAdjustmentBdtPerHa as number) < -5000) || !/Market prices now \(DAM via WFP/.test(lentil19.summaryEnglish) || !/DAM via WFP/.test(lentil19.provenance.source)) {
+    throw new Error(`Lentil's income carries the market move (got ${lentil19.metrics.marketAdjustmentBdtPerHa})`);
+  }
+  const boro19 = fs18.options.find(o => o.id === 'rot_dhan49_boro_conventional')!.dimensionDetails.income.metrics.marketAdjustmentBdtPerHa as number;
+  if (Math.abs(boro19) > 2000) throw new Error(`Rice moved with food prices since 2019, so little changes (got ${boro19})`);
+  const potato19 = bogra19.options.find(o => o.cropIds?.includes('potato'))!;
+  if (!potato19.review!.checks.some(l => /market price .* Tk\/kg in 2024-25/.test(l.en))) throw new Error('A crop whose price swung hard (potato) gets a market check');
+  console.log(`Farmer's Aman-Mustard-Boro ranks ${mine19.rank}; Bogra Sadar's usual ${usual19.nameEnglish}; lentil market move ${lentil19.metrics.marketAdjustmentBdtPerHa} Tk/ha, Boro ${boro19}`);
+  console.log('✓ TEST 19 PASSED: Mustard or potato then Boro is modelled, and income follows the market where the data allow.\n');
+
   console.log('========================================================');
-  console.log('  ALL 18 CORE TESTS PASSED SUCCESSFULLY!                ');
+  console.log('  ALL 19 CORE TESTS PASSED SUCCESSFULLY!                ');
   console.log('========================================================');
 }
 

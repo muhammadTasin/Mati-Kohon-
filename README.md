@@ -200,7 +200,13 @@ The full statement asks for things the product now answers directly. [docs/field
 - **Map:** a new group, "Field risks (NASA, 25 years)", with four layers: spring heat days, winter cold nights, soil-moving rain in the bare pre-monsoon months, and dry-season root-zone wetness.
 - **Plain words:** the evidence screen explains the terms (ET, soil moisture anomaly, NDVI, frost risk, water balance, GRACE, heavy rain) and how satellite and ground measurements differ. It also shows how each dataset is brought to the upazila and compares the methods: physics, statistics, signal processing, machine learning (tested, no skill yet) and the language model. A disclaimer says the tool supports and does not replace the farmer and the officer.
 - **ECOSTRESS, as a check:** `research/explore/ecostress_pilot.py` takes daily ET and the evaporative stress index at 70 m around the Talanda pilot (10 clear daytime passes, February-April 2019-2025) and shows them on the evidence screen. It is not a score input: the share at ESI 0.8 or more does not match Boro's share of the land.
-- **Not yet:** Mustard then Boro in one winter. A time slider on the map. ECOSTRESS as a scoring feature.
+- **Two winter crops:** Mustard-Boro-T.Aman and Potato-Boro-T.Aman are modelled. A late Boro (BRRI dhan28 transplanted 1 February-1 March, replayed at every place) follows the winter crop. Where BRRI's survey makes such a pattern the usual one (25 upazilas), it is the reference rotation.
+- **A year slider on the map:** the "Year by year" layers show 2001-2025 with play and pause, served by `GET /api/v1/map/years`. They cover groundwater storage (NASA GLDAS-2.2, GRACE-assimilated, against 2003-07), hot days, heavy-rain days and dry-season root-zone wetness by district, and MODIS crops per year by upazila.
+- **Income at today's prices, where the data allow:** `research/explore/market_prices.py` measures each crop's price move from DAM's market prices (via WFP, to July 2026) since the year its value is priced in, against food prices in general. The score counts half of it.
+  - Lentil is 17% below food prices since 2024-25; rice is in step with food since 2019.
+  - Potato fell 55% after its 2024-25 spike and gets a check line, since its 2019-priced value cannot be moved.
+  - Costs are still census and team estimates.
+- **Not yet:** farmer cost interviews (people, not data); ECOSTRESS as a scoring feature.
 
 ## Architecture
 

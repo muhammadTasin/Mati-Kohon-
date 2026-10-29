@@ -21,6 +21,7 @@ import { calendarFile, calendarHere, greennessHere } from './data/season_calenda
 import { CROP_TRAITS, DEEP_ROOT_M, LOW_WATER_MM, ROLE_TEXT, TRAITS_SOURCE } from './data/crop_traits.ts';
 import { CHOICE_BY_ID } from './data/crop_choice.ts';
 import { LOC } from './data/location.ts';
+import { marketFile, recentSwing } from './data/market_prices.ts';
 
 const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 const MONTH_START = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
@@ -295,7 +296,9 @@ function gapEnglish(d: string, metrics: Record<string, unknown>): string {
     case 'flood': return metrics.floodModelled ? 'flash-flood risk from upstream rain only; check it against FFWC river levels' : 'river floods are not modelled; only the land-type class is used';
     case 'fodder': return 'cattle density is measured (FAO GLW4, 2015); the residue classes are team estimates';
     case 'pest': return `${metrics.partial ? 'partial (no soil card, no nitrogen term); ' : ''}IPM rules, not pest counts: officers' field observations will replace them`;
-    case 'income': return 'prices and costs are estimates (BBS and team), not verified market prices; farmer cost interviews pending';
+    case 'income': return marketFile()
+      ? `prices moved by DAM's market prices (via WFP) where enough markets carry them, but costs are still census and team estimates; farmer cost interviews pending`
+      : 'prices and costs are estimates (BBS and team), not verified market prices; farmer cost interviews pending';
     case 'soil': return 'no SRDI soil card here, so no fertilizer amounts';
     default: return 'low confidence';
   }
@@ -340,6 +343,17 @@ function checkLines(o: CandidateRotation, ref: CandidateRotation | null, ctx: Re
       if (need) out.push(line(`${cropBn(id)}: ${need[0]}।`, `${cropEn(id)}: ${need[1]}.`, TRAITS_SOURCE));
     }
   }
+  // A price that swung hard since 2024-25 (DAM via WFP): the buyer's price decides more than the plan's estimate
+  for (const id of ids) {
+    const sw = recentSwing(id === 'boro_early' || id === 'boro_late' ? 'boro' : id);
+    if (!sw || Math.abs(sw.ratio - 1) < 0.25) continue;
+    const pct = Math.round((sw.ratio - 1) * 100);
+    out.unshift(line(
+      `${cropBn(id)}: বাজারদর ২০২৪-২৫-এর ${bnDigits(sw.refTk)} থেকে ${bnDigits(sw.nowTk)} টাকা/কেজি (${bnDigits(pct > 0 ? `+${pct}` : `−${-pct}`)}%, DAM-এর বাজারদর, WFP-র মাধ্যমে); বোনার আগে কাছের ক্রেতার দাম জেনে নিন।`,
+      `${cropEn(id)}: market price ${sw.refTk} Tk/kg in 2024-25, ${sw.nowTk} now (${pct > 0 ? '+' : ''}${pct}%, DAM via WFP, ${sw.markets} markets); ask a nearby buyer's price before sowing.`,
+      'DAM market prices via WFP (HDX)',
+    ));
+  }
   const risk = o.seasonRisk;
   for (const c of risk?.crops ?? []) {
     const hot = risk!.months.filter(mo => c.months.includes(mo.month) && mo.flags.includes('heat')).map(mo => mo.month);
@@ -357,7 +371,7 @@ function checkLines(o: CandidateRotation, ref: CandidateRotation | null, ctx: Re
   }
   if ((o.scores.heat ?? 1) < 0.5) out.push(line('ফুল আসার সময় গরমের ঝুঁকি: সময়মতো বোনা যাবে কি না কৃষি কর্মকর্তার সাথে দেখুন।', 'Heat risk at flowering: check with the officer that it can be sown on time.'));
   if ((o.scores.flood ?? 1) < 0.6) out.push(line('বন্যা বা জলাবদ্ধতার ঝুঁকি: জমির উচ্চতা ও পানি নামার পথ নিজে দেখুন।', 'Flood or waterlogging risk: check the field\'s height and drainage yourself.'));
-  if (ctx.groundwaterFalling && (o.cropIds ?? []).some(id => id === 'boro' || id === 'boro_early')) {
+  if (ctx.groundwaterFalling && (o.cropIds ?? []).some(id => id === 'boro' || id === 'boro_early' || id === 'boro_late')) {
     out.push(line('এখানে ভূগর্ভস্থ পানি নামছে (নাসা GRACE/GLDAS): নলকূপের নিয়ম ও সেচের খরচ যাচাই করুন।', 'Groundwater is falling here (NASA GRACE/GLDAS): check tube-well rules and irrigation costs.', 'NASA GLDAS-2.2 (GRACE-assimilated)'));
   }
   return out.slice(0, MAX_LINES);

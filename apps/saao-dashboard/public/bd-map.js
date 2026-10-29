@@ -25,6 +25,17 @@ const GROUPS = {
   now: ['এখনকার অবস্থা (দৈনিক নাসা হালনাগাদ)', 'Now (daily NASA update)'],
   soil: ['মাটি ও কীটনাশক', 'Soil and pesticide'],
   risk: ['মাঠের ঝুঁকি (নাসা, ২৫ বছর)', 'Field risks (NASA, 25 years)'],
+  years: ['বছরে বছরে বদল (নিচে বছর বাছুন)', 'Year by year (pick the year below)'],
+};
+
+// The time slider's layers read one year from GET /api/v1/map/years (research/explore/season_calendar.py)
+const YEARLY = { data: null, year: 2025 };
+const yearValue = (r, key) => {
+  const d = YEARLY.data;
+  if (!d || !r) return null;
+  const k = d.years.indexOf(YEARLY.year);
+  if (key === 'crops') return d.upazilaCropsByYear[r.id]?.[k] ?? null;
+  return d.districts[r.district]?.[key]?.[k] ?? null;
 };
 
 const LAYERS = [
@@ -85,6 +96,16 @@ const LAYERS = [
     value: r => r.preMonsoonErosiveDays, breaks: [7, 9, 11, 13, 16], colors: BLUE.slice(1), digits: 1, unit: ['দিন', 'days'], source: 'risk', district: true },
   { id: 'dryRoot', group: 'risk', name: ['শুকনো মৌসুমে মাটির রস (জানু–এপ্রিল)', 'Dry-season root-zone wetness (Jan-Apr)'], note: ['নাসা POWER GWETROOT (০ শুকনো – ১ ভেজা): কম মানে সেচ বেশি লাগে; জেলা', 'NASA POWER GWETROOT (0 dry to 1 wet): lower means more irrigation; district'],
     value: r => r.dryRootWet, breaks: [0.44, 0.46, 0.48, 0.5, 0.53, 0.56], colors: DRY_WET, digits: 2, source: 'risk', district: true },
+  { id: 'yearGroundwater', group: 'years', yearly: true, name: ['ভূগর্ভস্থ পানির মজুত', 'Groundwater storage'], note: ['২০০৩–০৭-এর গড়ের তুলনায় মিমি; নাসা GLDAS-2.2 (GRACE-যুক্ত), জেলা', 'mm against the 2003-07 mean; NASA GLDAS-2.2 (GRACE-assimilated), district'],
+    value: r => yearValue(r, 'groundwaterMm'), breaks: [-150, -90, -45, -15, 15, 45], colors: DRY_WET, digits: 0, signed: true, unit: ['মিমি', 'mm'], source: 'yearsGroundwater', district: true },
+  { id: 'yearHot', group: 'years', yearly: true, name: ['গরম দিন (৩৬°সে+)', 'Hot days (36 °C+)'], note: ['সেই বছরে; নাসা POWER (স্টেশনে মেলানো), জেলা', 'in that year; NASA POWER (station-corrected), district'],
+    value: r => yearValue(r, 'hotDays'), breaks: [5, 15, 25, 40, 60], colors: AMBER.slice(1), digits: 0, unit: ['দিন', 'days'], source: 'yearsClimate', district: true },
+  { id: 'yearHeavyRain', group: 'years', yearly: true, name: ['ভারী বৃষ্টির দিন (৪৪ মিমি+)', 'Heavy-rain days (44 mm+)'], note: ['সেই বছরে; নাসা GPM IMERG, জেলা', 'in that year; NASA GPM IMERG, district'],
+    value: r => yearValue(r, 'heavyRainDays'), breaks: [5, 8, 11, 14, 18], colors: BLUE.slice(1), digits: 0, unit: ['দিন', 'days'], source: 'yearsClimate', district: true },
+  { id: 'yearDryRoot', group: 'years', yearly: true, name: ['শুকনো মৌসুমে মাটির রস', 'Dry-season root-zone wetness'], note: ['জানু–এপ্রিল, সেই বছরে; নাসা POWER GWETROOT, জেলা', 'January-April of that year; NASA POWER GWETROOT, district'],
+    value: r => yearValue(r, 'dryRootWet'), breaks: [0.4, 0.44, 0.47, 0.5, 0.53, 0.57], colors: DRY_WET, digits: 2, source: 'yearsClimate', district: true },
+  { id: 'yearCrops', group: 'years', yearly: true, name: ['বছরে কয়টি ফসল', 'Crops in that year'], note: ['নভেম্বর–অক্টোবরের কৃষিবছর; নাসা MODIS NDVI-র চূড়া, উপজেলার কেন্দ্র', 'agricultural year November-October; NASA MODIS NDVI peaks, upazila centre'],
+    value: r => yearValue(r, 'crops'), breaks: [1, 2, 3, 4], colors: GREEN.slice(2), digits: 0, source: 'yearsCrops' },
 ];
 
 const PH = {
@@ -141,6 +162,59 @@ export function initBdMap({ tr, num, isoDate, escapeHtml, choose, currentId }) {
   const districts = L.geoJSON(null, { renderer: canvas, interactive: false, style: { color: '#1D2320', weight: 1.1, opacity: 0.65, fill: false } });
 
   const spec = () => LAYERS.find(l => l.id === layerId);
+
+  const yearBox = document.createElement('div');
+  yearBox.className = 'map-year';
+  yearBox.hidden = true;
+  yearBox.innerHTML = `<button type="button" class="btn btn-secondary btn-sm map-year-play"></button>
+    <input type="range" class="map-year-range" min="2001" max="2025" step="1" value="${YEARLY.year}">
+    <output class="map-year-val"></output>`;
+  select.insertAdjacentElement('afterend', yearBox);
+  const yearRange = yearBox.querySelector('.map-year-range');
+  const yearPlay = yearBox.querySelector('.map-year-play');
+  let playing = null;
+  const stopPlay = () => { clearInterval(playing); playing = null; };
+  function yearUi() {
+    const on = Boolean(spec().yearly);
+    yearBox.hidden = !on;
+    if (!on) stopPlay();
+    yearBox.querySelector('.map-year-val').textContent = num(YEARLY.year);
+    yearRange.setAttribute('aria-label', tr('বছর', 'Year'));
+    yearPlay.textContent = playing ? tr('থামুন', 'Pause') : tr('▶ বছরগুলো চালান', '▶ Play the years');
+  }
+  const yearSources = () => YEARLY.data && Object.assign(sources, {
+    yearsClimate: YEARLY.data.sources.climate, yearsGroundwater: YEARLY.data.sources.groundwater, yearsCrops: YEARLY.data.sources.crops,
+  });
+  async function loadYears() {
+    if (YEARLY.data) return;
+    try {
+      const res = await fetch('/api/v1/map/years');
+      if (!res.ok) return;
+      YEARLY.data = await res.json();
+      yearSources();
+      yearRange.min = String(YEARLY.data.years[0]);
+      yearRange.max = String(YEARLY.data.years[YEARLY.data.years.length - 1]);
+    } catch {
+      // without the yearly file the year layers say "no data"
+    }
+  }
+  yearRange.addEventListener('input', () => {
+    YEARLY.year = Number(yearRange.value);
+    paint();
+  });
+  yearPlay.addEventListener('click', () => {
+    if (playing) {
+      stopPlay();
+    } else {
+      playing = setInterval(() => {
+        const max = Number(yearRange.max);
+        YEARLY.year = YEARLY.year >= max ? Number(yearRange.min) : YEARLY.year + 1;
+        yearRange.value = String(YEARLY.year);
+        paint();
+      }, 900);
+    }
+    yearUi();
+  });
   const unit = (s) => (s.unit ? ` ${tr(s.unit[0], s.unit[1])}` : '');
   const fmt = (s, v) => `${s.signed && v > 0 ? '+' : ''}${num(Number(v).toFixed(s.digits))}`;
   const classOf = (s, v) => s.breaks.reduce((k, b) => (v >= b ? k + 1 : k), 0);
@@ -196,7 +270,7 @@ export function initBdMap({ tr, num, isoDate, escapeHtml, choose, currentId }) {
     const pestNote = s.source === 'pesticide' ? `<p class="map-caveat">${tr('মডেলের অনুমান (মাটি শোধনের ফিউমিগ্যান্ট বাদে), মাঠের মাপ নয়।', 'A model estimate (soil fumigants left out), not a farm measurement.')}</p>` : '';
     const cropNote = s.source === 'crops' ? `<p class="map-caveat">${tr('উপজেলার কেন্দ্রের একটি ২৫০ মি পিক্সেল: প্রসঙ্গ হিসেবে দেখুন।', 'One 250 m pixel at the upazila centre: read it as context.')}</p>` : '';
     document.getElementById('mapLegend').innerHTML = `
-      <div class="map-legend-title"><strong>${escapeHtml(tr(s.name[0], s.name[1]))}</strong> <span>${escapeHtml(tr(s.note[0], s.note[1]))}</span></div>
+      <div class="map-legend-title"><strong>${escapeHtml(tr(s.name[0], s.name[1]))}${s.yearly ? ` · ${num(YEARLY.year)}` : ''}</strong> <span>${escapeHtml(tr(s.note[0], s.note[1]))}</span></div>
       <ul class="map-legend-list">
         ${items.map(([c, label]) => `<li><span class="map-swatch" style="background:${c}"></span>${escapeHtml(label)} <small>(${num(counts.get(c) ?? 0)})</small></li>`).join('')}
         <li><span class="map-swatch map-swatch-none"></span>${tr('তথ্য নেই', 'No data')} <small>(${num(counts.get(NO_DATA) ?? 0)})</small></li>
@@ -250,6 +324,7 @@ export function initBdMap({ tr, num, isoDate, escapeHtml, choose, currentId }) {
   }
 
   function paint() {
+    yearUi();
     if (upazilaLayer) {
       upazilaLayer.setStyle(style);
       upazilaLayer.eachLayer(l => l.closeTooltip()); // an open tooltip would keep the old layer's text
@@ -270,10 +345,14 @@ export function initBdMap({ tr, num, isoDate, escapeHtml, choose, currentId }) {
       </optgroup>`).join('');
   }
 
-  select.addEventListener('change', () => {
+  select.addEventListener('change', async () => {
     layerId = select.value;
     try { localStorage.setItem('eden.mapLayer', layerId); } catch { /* remembered for this page only */ }
     paint();
+    if (spec().yearly && !YEARLY.data) {
+      await loadYears();
+      paint();
+    }
   });
 
   let layersControl = null;
@@ -325,7 +404,9 @@ export function initBdMap({ tr, num, isoDate, escapeHtml, choose, currentId }) {
     fetch('/api/v1/map/upazilas').then(r => (r.ok ? r.json() : { upazilas: {}, sources: {} })),
   ]).then(([upazilas, districtShapes, values]) => {
     rows = values.upazilas;
+    for (const [id, r] of Object.entries(rows)) r.id = id; // the year layers look rows up by id
     sources = values.sources ?? {};
+    yearSources();
     liveDate = values.liveDate ?? null;
     districts.addData(districtShapes).addTo(map);
     upazilaLayer = L.geoJSON(upazilas, {
@@ -350,6 +431,7 @@ export function initBdMap({ tr, num, isoDate, escapeHtml, choose, currentId }) {
     districts.bringToFront();
     controls();
     paint();
+    if (spec().yearly) loadYears().then(paint); // a year layer remembered from the last visit
     // the whole country first (the box may have changed size while the outlines loaded); a choice flies in
     fitCountry();
   }).catch(() => {

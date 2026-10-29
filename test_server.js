@@ -181,7 +181,12 @@ async function run() {
   const badRotation = await (await fetch(`${BASE}/api/v1/advice`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
     unionId: 'talanda_tanore', currentRotation: { winter: '<script>' } }) })).json();
   check(!badRotation.options.some(o => o.farmerCurrent) && !badRotation.what_if, 'a malformed rotation is ignored; no scenario, no what-if');
-  console.log('✓ Field Shift: the farmer\'s rotation ranks', fsMine[0].rank, 'of', fsAdvice.options.length, '; what-if clamped; season risks on the map');
+  const years = await (await fetch(`${BASE}/api/v1/map/years`)).json();
+  const raj = years.districts?.Rajshahi;
+  check(years.years?.length === 25 && raj?.groundwaterMm?.[0] === null && typeof raj?.groundwaterMm?.[24] === 'number' && raj.hotDays.length === 25
+    && years.upazilaCropsByYear?.ADM3_Tanore?.length === 25 && years.sources?.groundwater,
+    'the map\'s time slider gets 25 years: district heat, heavy rain, dry-season soil and GLDAS groundwater (from 2003), and MODIS crops per upazila');
+  console.log('✓ Field Shift: the farmer\'s rotation ranks', fsMine[0].rank, 'of', fsAdvice.options.length, '; what-if clamped; season risks on the map; 25 years for the slider');
   check(Object.values(mapRows.upazilas).filter(r => r.blastStatus && r.lateBlightStatus).length > 500, 'the map carries this week\'s disease weather');
   check(['high', 'watch', 'clear', 'none'].includes(mapRows.upazilas.ADM3_Tanore.amanDryStatus) && typeof mapRows.upazilas.ADM3_Tanore.paddyWaterMm === 'number'
     && mapRows.upazilas.ADM3_Abhaynagar.amanDryStatus === null, 'the map carries this week\'s field alerts where the daily file has field water');

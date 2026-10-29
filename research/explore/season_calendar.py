@@ -52,6 +52,7 @@ HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE))
 sys.path.insert(0, str(HERE.parents[0] / "acquire"))
 import national_replay as nr  # noqa: E402  (weather: POWER + BMD station correction + ET0 + IMERG rain)
+import national_greenness as ng  # noqa: E402  (crops a year from MODIS NDVI peaks)
 from _common import DATA, RESEARCH  # noqa: E402
 
 OUT = RESEARCH.parent / "packages" / "rotation-engine" / "src" / "data" / "season_calendar.json"
@@ -124,7 +125,22 @@ def place_calendar(p: pd.DataFrame) -> dict:
     dry = p[p.index.month.isin([1, 2, 3, 4])]
     yearly["dryRootWet"] = dry["GWETROOT"].groupby(dry.index.year).mean()
     trends = {k: trend(v, 2 if k in ("rootWet", "dryRootWet") else 0 if k in ("rainMm", "et0Mm") else 1) for k, v in yearly.items()}
-    return {"months": {k: v for k, v in months.items() if v is not None}, "warmer": warm, "erosiveRainScaled": rainier, "trend": trends}
+    # Year by year, for the map's time slider
+    by_year = {k: [None if pd.isna(v) else r(v, 2 if "Wet" in k else 0) for v in yearly[k].reindex(YEARS).values]
+               for k in ("hotDays", "heavyRainDays", "dryRootWet", "rainMm")}
+    return {"months": {k: v for k, v in months.items() if v is not None}, "warmer": warm, "erosiveRainScaled": rainier, "trend": trends,
+            "years": by_year}
+
+
+def groundwater_years(site: str, gws: pd.DataFrame) -> list[float | None]:
+    """NASA GLDAS-2.2 (GRACE-assimilated) groundwater storage by year, mm against the 2003-2007 mean (no data before 2003)."""
+    g = gws[gws["site_id"] == site]
+    if g.empty:
+        return [None] * len(YEARS)
+    annual = g.groupby(pd.to_datetime(g["date"]).dt.year)["gws_mm"].mean()
+    annual = annual[annual.index.isin(YEARS)]
+    base = annual.loc[2003:2007].mean()
+    return [None if y not in annual.index or pd.isna(annual[y]) else r(annual[y] - base, 0) for y in YEARS]
 
 
 def greenness() -> dict:
@@ -136,12 +152,17 @@ def greenness() -> dict:
     d["year"], d["month"] = d["date"].dt.year, d["date"].dt.month
     out = {}
     for uid, g in d.groupby("id"):
+        nd = g.set_index("date")["ndvi"].sort_index()
+        nd = nd[~nd.index.duplicated()]
+        # Crops a year (agricultural year November-October), as research/explore/national_greenness.py counts them
+        crops_by_year = [int(v) for v in ng.cycles_per_year(nd).reindex(YEARS).fillna(0).values] if len(nd) >= 300 else None
         recent = g[g["year"].between(2021, 2025)].groupby("month")["ndvi"].median().reindex(range(1, 13))
         early = g[g["year"].between(2001, 2005)].groupby("month")["ndvi"].median().reindex(range(1, 13))
         if recent.isna().sum() > 2:
             continue
         out[uid] = {"recent": [None if np.isnan(v) else r(v, 2) for v in recent.values],
-                    "early": [None if np.isnan(v) else r(v, 2) for v in early.values]}
+                    "early": [None if np.isnan(v) else r(v, 2) for v in early.values],
+                    "cropsByYear": crops_by_year}
     return out
 
 
@@ -181,10 +202,13 @@ def main() -> None:
         if (DATA / "power" / "daily" / f"{s['site_id']}.parquet").exists():
             places.append((str(s["name"]), s["site_id"], float(s["lat"]), float(s["lon"])))
 
+    gws_file = DATA / "gldas" / "gldas_da_sites.parquet"
+    gws = pd.read_parquet(gws_file) if gws_file.exists() else pd.DataFrame(columns=["site_id", "date", "gws_mm"])
     out_places = {}
     for key, site, lat, lon in places:
         p, station = weather(site, lat, lon, stations_for(lat, lon, st))
         cal = place_calendar(p)
+        cal["years"]["groundwaterMm"] = groundwater_years(site, gws)
         out_places[key] = {"station": station, **cal}
         m = cal["months"]
         print(f"{key:<16} hot Apr {m['hotDays'][3]:>4}  cold Jan {m['coldNights'][0]:>4}  heavy Jul {m['heavyRainDays'][6]:>3}  "
@@ -202,6 +226,8 @@ def main() -> None:
         "thresholds": {"hotC": HOT_C, "coldC": COLD_C, "nearFrostC": FROST_C, "heavyMm": HEAVY_MM, "erosiveMm": EROSIVE_MM,
                        "dryMm": DRY_MM, "lowNdvi": 0.35},
         "trendPeriods": {"early": f"{EARLY.start}-{EARLY.stop - 1}", "recent": f"{RECENT.start}-{RECENT.stop - 1}"},
+        "years": list(YEARS),
+        "groundwaterSource": "NASA GLDAS-2.2 (GRACE-assimilated) groundwater storage, yearly mean against 2003-2007, at the same points",
         "places": out_places,
         "greenness": {"product": "NASA MODIS MOD13Q1 v061 NDVI, 250 m, one pixel at the upazila centre; monthly median of good composites",
                       "recentYears": "2021-2025", "earlyYears": "2001-2005", "upazilas": green},

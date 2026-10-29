@@ -44,7 +44,7 @@ export const CHOICE_CROPS: ChoiceCrop[] = [
   release('lentil', 'BARI Masur-8', ['মসুর', 'মশুর', 'মুসুর', 'masur', 'mosur', 'moshur', 'lentil']),
   release('mustard', 'BARI Sarisha-14', ['সরিষা', 'সরষে', 'সর্ষে', 'সরিসা', 'shorisha', 'sorisha', 'sarisha', 'mustard']),
   release('wheat', 'BARI Gom 33 (Early)', ['গম', 'gom', 'wheat'], { releaseKeys: ['BARI Gom 33 (Early)', 'BARI Gom 33 (Late)'] }),
-  release('boro', 'BRRI dhan28', ['বোরো', 'boro'], { alsoCovers: ['boro_early'] }),
+  release('boro', 'BRRI dhan28', ['বোরো', 'boro'], { alsoCovers: ['boro_early', 'boro_late'] }),
   {
     id: 'potato', season: 'Rabi', crop: 'Potato', cropBangla: 'আলু', cropInBangla: 'আলুতে', varietyBangla: 'বারি আলু-২৫',
     isLegume: false, isRice: false, hostGroup: 'tuber', fodderValue: 'low', fodderNoteBangla: 'আলুর গাছ গোখাদ্য হিসেবে খুব কম কাজে লাগে।',
@@ -110,6 +110,13 @@ export const CHOICE_CROPS: ChoiceCrop[] = [
   {
     // BRRI dhan88 on the BRRI calendar: harvested in April, before the haor's flash floods; a request for Boro covers it
     id: 'boro_early', season: 'Rabi', crop: 'Boro rice', cropBangla: 'বোরো ধান', cropInBangla: 'বোরো ধানে', varietyBangla: 'ব্রি ধান৮৮',
+    isLegume: false, isRice: true, hostGroup: 'rice', fodderValue: 'high', fodderNoteBangla: 'বোরোর খড় প্রচুর শুকনা গোখাদ্য দেয়।',
+    illustrativeGrossMarginTkPerHa: 62000, incomeSource: 'team estimate (crop_catalog.ts), as for BRRI dhan28', aliases: [],
+  },
+  {
+    // BRRI dhan28 transplanted in February after a winter crop (Mustard-Boro-T.Aman, Potato-Boro-T.Aman in BRRI's survey):
+    // the slot after the winter crop, so it is the year's third crop; a request for Boro covers it
+    id: 'boro_late', season: 'Kharif-1', crop: 'Boro rice', cropBangla: 'বোরো ধান', cropInBangla: 'বোরো ধানে', varietyBangla: 'ব্রি ধান২৮ (নাবি বোরো)',
     isLegume: false, isRice: true, hostGroup: 'rice', fodderValue: 'high', fodderNoteBangla: 'বোরোর খড় প্রচুর শুকনা গোখাদ্য দেয়।',
     illustrativeGrossMarginTkPerHa: 62000, incomeSource: 'team estimate (crop_catalog.ts), as for BRRI dhan28', aliases: [],
   },

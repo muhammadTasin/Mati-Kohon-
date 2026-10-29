@@ -608,3 +608,7 @@ figure { margin: 0; }
   .glossary-list { grid-template-columns: minmax(0, 1fr); }
   .whatif-controls { grid-template-columns: minmax(0, 1fr); }
 }
+.map-year { display: flex; align-items: center; gap: 10px; margin: 8px 0 4px; flex-wrap: wrap; }
+.map-year[hidden] { display: none; }
+.map-year-range { flex: 1 1 220px; min-width: 160px; }
+.map-year-val { font-weight: 700; color: var(--deep); min-width: 3.5em; font-size: 15px; }

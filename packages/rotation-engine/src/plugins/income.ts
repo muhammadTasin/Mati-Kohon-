@@ -5,6 +5,7 @@ import { CHOICE_CROPS, choiceIdOf } from '../data/crop_choice.ts';
 import { LOC, profileData } from '../data/location.ts';
 import { salinityEffect } from '../data/salinity.ts';
 import { rainfedFacts } from '../data/rainfed.ts';
+import { marketFile, marketMove, type MarketMove } from '../data/market_prices.ts';
 import { bnDecimal, bnDigits, bnNumber, enNumber } from '../bn.ts';
 
 /** A district grows less than this of a crop: seed and buyers may be harder to find there. */
@@ -17,7 +18,7 @@ const quantile = (xs: number[], q: number) => {
   const lo = Math.floor(at);
   return s[lo] + (s[Math.min(lo + 1, s.length - 1)] - s[lo]) * (at - lo);
 };
-const yieldIdOf = (cropId: string) => cropId.replace(/_(k2|kharif|early)$/, '');
+const yieldIdOf = (cropId: string) => cropId.replace(/_(k2|kharif|early|late)$/, '');
 
 /**
  * What stands in for a winter crop without price data (soybean, sunflower, barley): the lower-quartile return of the
@@ -47,6 +48,8 @@ interface LocalReturn {
   areaHa: number;
   assumedLow: boolean; // the district grows too little to say: the lower tenth of district yields was taken
   standIn: boolean; // no price data: the median winter crop stands in
+  market: MarketMove | null; // the crop's market price since its value's year (DAM via WFP); applied when enough markets
+  marketAdjustment: number; // Tk/ha the market move adds to the margin (0 when not applied)
 }
 
 /**
@@ -77,21 +80,28 @@ export function localReturn(cropId: string, margin: number | null, salty = false
     const adjustment = Math.round(((ratio - 1) * s.value) / 100) * 100 - saltLoss(s.value * ratio);
     const standMargin = Math.round(s.margin / 100) * 100 + adjustment;
     return { id, saltYield, margin: standMargin, badYear: Math.round(standMargin - (1 - s.lowRatio) * s.value * ratio * saltFactor), adjustment,
-      districtYield: yieldHere, nationalYield: nat?.yield ?? null, areaHa, assumedLow: here?.[0] == null && yieldHere !== null, standIn: true };
+      districtYield: yieldHere, nationalYield: nat?.yield ?? null, areaHa, assumedLow: here?.[0] == null && yieldHere !== null, standIn: true,
+      market: null, marketAdjustment: 0 };
   }
   const lowRatio = nat?.priceLowRatio ?? standIn().lowRatio;
   const districtYield = here?.[0] ?? nat?.lowYield ?? null;
+  // How the crop's market price moved since the year its value is priced in: half the move against food prices in
+  // general (costs rise with them), where enough markets carry it (data/market_prices.ts)
+  const market = marketMove(id, nat?.valueSource);
+  const marketOn = (value: number) => (market?.applied ? Math.round(((market.factor - 1) * value) / 100) * 100 : 0);
   if (!nat?.value || districtYield === null) {
     const value = nat?.value ?? standIn().value;
-    const adjustment = -saltLoss(value);
+    const marketAdjustment = marketOn(value * saltFactor);
+    const adjustment = -saltLoss(value) + marketAdjustment;
     return { id, saltYield, margin: margin + adjustment, badYear: Math.round(margin + adjustment - (1 - lowRatio) * value * saltFactor), adjustment,
-      districtYield: null, nationalYield: nat?.yield ?? null, areaHa, assumedLow: false, standIn: false };
+      districtYield: null, nationalYield: nat?.yield ?? null, areaHa, assumedLow: false, standIn: false, market, marketAdjustment };
   }
   const ratio = Math.min(1.4, Math.max(0.6, districtYield / nat.yield));
-  const adjustment = Math.round(((ratio - 1) * nat.value) / 100) * 100 - saltLoss(nat.value * ratio);
+  const marketAdjustment = marketOn(nat.value * ratio * saltFactor);
+  const adjustment = Math.round(((ratio - 1) * nat.value) / 100) * 100 - saltLoss(nat.value * ratio) + marketAdjustment;
   const local = margin + adjustment;
   return { id, saltYield, margin: local, badYear: Math.round(local - (1 - lowRatio) * nat.value * ratio * saltFactor), adjustment, districtYield,
-    nationalYield: nat.yield, areaHa, assumedLow: here?.[0] == null, standIn: false };
+    nationalYield: nat.yield, areaHa, assumedLow: here?.[0] == null, standIn: false, market, marketAdjustment };
 }
 
 export class IncomeDimensionPlugin implements IEvidenceDimensionPlugin {
@@ -162,6 +172,17 @@ export class IncomeDimensionPlugin implements IEvidenceDimensionPlugin {
     const fewEnglish = few
       ? ` Few farms in ${LOC.district} grow ${rabiName.crop.toLowerCase()} (BBS 2024-25: ${enNumber(rabiLocal.areaHa)} ha): check seed and buyers with the SAAO.`
       : '';
+    // Moves under 1,000 Tk/ha (rice, in step with food prices since 2019) are counted but not spelt out
+    const moved = local.filter(r => r.market?.applied && Math.abs(r.marketAdjustment) >= 1000);
+    const pctOf = (x: number) => Math.round((x - 1) * 100);
+    const signed = (n: number) => `${n > 0 ? '+' : n < 0 ? '−' : ''}${Math.abs(n)}`;
+    const mk = marketFile();
+    const marketBangla = moved.length
+      ? ` এখনকার বাজারদর (DAM, WFP-র মাধ্যমে; ${moved[0].market!.from} থেকে ${moved[0].market!.to}): ${moved.map(r => `${names.get(r)!.bn} ${r.market!.base === 'bbs2025' ? '২০২৪-২৫' : '২০১৯'}-এর তুলনায় খাদ্যের গড়ের চেয়ে ${bnDigits(signed(pctOf(r.market!.relative)))}%, তার অর্ধেক ধরা (${r.marketAdjustment > 0 ? '+' : '−'}${bnNumber(Math.abs(r.marketAdjustment))} টাকা)`).join('; ')}।`
+      : '';
+    const marketEnglish = moved.length
+      ? ` Market prices now (DAM via WFP, ${moved[0].market!.from} to ${moved[0].market!.to}): ${moved.map(r => `${names.get(r)!.en} ${signed(pctOf(r.market!.relative))}% against food prices since ${r.market!.base === 'bbs2025' ? '2024-25' : '2019'}, half counted (${r.marketAdjustment > 0 ? '+' : '-'}${enNumber(Math.abs(r.marketAdjustment))} Tk)`).join('; ')}.`
+      : '';
     const badBangla = ` বাজারদর খারাপ বছরে (২০২১-২২ থেকে ২০২৪-২৫-এর সবচেয়ে কম দাম) প্রায় ${bnNumber(badYear)} টাকা।`;
     const badEnglish = ` In a bad price year (the lowest BBS harvest prices of 2021-22 to 2024-25) about ${enNumber(badYear)} Tk.`;
     const counted = [hasAman, Boolean(k2Local), true, Boolean(k1Local)].filter(Boolean).length;
@@ -176,8 +197,8 @@ export class IncomeDimensionPlugin implements IEvidenceDimensionPlugin {
       score: incomeScore,
       confidence: rabiLocal.standIn ? 'uncertain' : 'low',
       staleOrMissing: true,
-      summaryBangla: `নমুনা হিসাব: ${seasonsBangla} প্রায় ${bnNumber(total)} টাকা/হেক্টর নিট লাভ ধরা হয়েছে (দলের অনুমান ও BBS দর-ফলনের হিসাব; কৃষকের খরচ যাচাই বাকি)।${badBangla}${standBangla}${leftBangla}${localBangla}${saltBangla}${fewBangla}`,
-      summaryEnglish: `Illustrative: about ${enNumber(total)} BDT/ha over ${seasonsEnglish} (team estimates and BBS price-and-yield estimates; farmer costs not yet verified).${badEnglish}${standEnglish}${leftEnglish}${localEnglish}${saltEnglish}${fewEnglish}`,
+      summaryBangla: `নমুনা হিসাব: ${seasonsBangla} প্রায় ${bnNumber(total)} টাকা/হেক্টর নিট লাভ ধরা হয়েছে (দলের অনুমান ও BBS দর-ফলনের হিসাব; কৃষকের খরচ যাচাই বাকি)।${marketBangla}${badBangla}${standBangla}${leftBangla}${localBangla}${saltBangla}${fewBangla}`,
+      summaryEnglish: `Illustrative: about ${enNumber(total)} BDT/ha over ${seasonsEnglish} (team estimates and BBS price-and-yield estimates; farmer costs not yet verified).${marketEnglish}${badEnglish}${standEnglish}${leftEnglish}${localEnglish}${saltEnglish}${fewEnglish}`,
       metrics: {
         illustrativeTotalBdtPerHa: total,
         badPriceYearBdtPerHa: badYear,
@@ -186,16 +207,18 @@ export class IncomeDimensionPlugin implements IEvidenceDimensionPlugin {
         ...(k2 ? { illustrativeKharif2BdtPerHa: k2Local?.margin ?? 'n/a' } : {}),
         districtYieldTPerHa: rabiLocal.districtYield ?? 'n/a',
         nationalYieldTPerHa: rabiLocal.nationalYield ?? 'n/a',
-        districtYieldAdjustmentBdtPerHa: local.reduce((sum, r) => sum + r.adjustment, 0),
+        districtYieldAdjustmentBdtPerHa: local.reduce((sum, r) => sum + r.adjustment - r.marketAdjustment, 0),
+        marketAdjustmentBdtPerHa: local.reduce((sum, r) => sum + r.marketAdjustment, 0),
+        marketPricesTo: moved[0]?.market?.to ?? 'n/a',
         districtAreaHa: rabiLocal.areaHa,
         ...(rabiLocal.saltYield !== null ? { winterSaltYieldShare: rabiLocal.saltYield } : {}),
       },
       provenance: {
-        source: `Net return per hectare: ${sources.join('; ')}; moved by ${LOC.district}'s BBS 2022-25 yields against the national yields; a bad price year at each crop's lowest BBS harvest price of 2021-22 to 2024-25. Pending: farmer cost interviews`,
-        timePeriod: 'BBS yields 2022-23 to 2024-25; harvest prices 2021-22 to 2024-25',
+        source: `Net return per hectare: ${sources.join('; ')}; moved by ${LOC.district}'s BBS 2022-25 yields against the national yields; ${mk ? `and by half of each crop's market-price move against food prices since its value's year (DAM via WFP, ${mk.source.split(';')[0]}), where 10+ district or 5+ division markets carry it; ` : ''}a bad price year at each crop's lowest BBS harvest price of 2021-22 to 2024-25. Pending: farmer cost interviews`,
+        timePeriod: `BBS yields 2022-23 to 2024-25; harvest prices 2021-22 to 2024-25${mk ? '; market prices to the latest month WFP holds' : ''}`,
         spatialResolution: `District (${LOC.district})`,
         measuredOrModeled: 'assumed',
-        notesBangla: 'এই সংখ্যা যাচাই করা বাজারদর নয়; কৃষক সাক্ষাৎকার ও DAM দর পাওয়ার পর বদলাবে।',
+        notesBangla: 'দাম DAM-এর বাজারদরে (WFP-র মাধ্যমে) হালনাগাদ, কিন্তু খরচ এখনো আদমশুমারি ও দলের অনুমান; কৃষকের খরচের সাক্ষাৎকার বাকি।',
       },
     };
   }

@@ -44,6 +44,12 @@ export const CROP_TRAITS: Record<string, CropTraits> = {
     water: ['নিশ্চিত সেচ (নলকূপ বা পাম্প) ও সেচের খরচ', 'assured irrigation (tube well or pump) and its fees'],
     seed: ['ব্রি ধান৮৮-এর বীজ', 'seed of BRRI dhan88'],
   },
+  boro_late: {
+    rootDepthM: [0.5, 1.0],
+    water: ['নিশ্চিত সেচ (নলকূপ বা পাম্প) ও সেচের খরচ, সারা মৌসুম', 'assured irrigation (tube well or pump) and its fees all season'],
+    seed: ['ডিসেম্বরে বীজতলা, যাতে শীতের ফসল কাটার পরই ৪০ দিনের চারা রোপণ করা যায়', 'a seedbed in December, so 40-day seedlings go in right after the winter harvest'],
+    risk: ['দেরিতে রোপণে ফুল আসে মে মাসের গরমে; কাটাও দেরিতে, আমনের আগে', 'late transplanting puts flowering in May heat, and harvest close to Aman'],
+  },
   aus: { rootDepthM: [0.5, 1.0], coversPreMonsoon: true, water: ['শুরুতে বৃষ্টি না হলে একটি-দুটি সেচ', 'one or two irrigations if the early rain fails'] },
   lentil: { rootDepthM: [0.6, 0.8], seed: ['বারি মসুর-৮-এর বীজ (BADC বা কৃষি অফিস)', 'seed of BARI Masur-8 (BADC or the agriculture office)'] },
   mustard: { rootDepthM: [1.0, 2.0] },

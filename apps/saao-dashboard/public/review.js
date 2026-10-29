@@ -11,7 +11,7 @@ const MONTHS_EN = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep'
 
 export const CROP_NAMES = {
   aman: ['আমন ধান', 'Aman rice'], fallow: ['খালি', 'Fallow'], boro: ['বোরো ধান', 'Boro rice'], boro_early: ['আগাম বোরো', 'Early Boro'],
-  aus: ['আউশ ধান', 'Aus rice'], lentil: ['মসুর', 'Lentil'], mustard: ['সরিষা', 'Mustard'], wheat: ['গম', 'Wheat'], potato: ['আলু', 'Potato'],
+  boro_late: ['নাবি বোরো', 'Late Boro'], aus: ['আউশ ধান', 'Aus rice'], lentil: ['মসুর', 'Lentil'], mustard: ['সরিষা', 'Mustard'], wheat: ['গম', 'Wheat'], potato: ['আলু', 'Potato'],
   maize: ['ভুট্টা', 'Maize'], sunflower: ['সূর্যমুখী', 'Sunflower'], sunflower_kharif: ['সূর্যমুখী', 'Sunflower'], chickpea: ['ছোলা', 'Chickpea'],
   grasspea: ['খেসারি', 'Grass pea'], sweetpotato: ['মিষ্টি আলু', 'Sweet potato'], barley: ['যব', 'Barley'], soybean: ['সয়াবিন', 'Soybean'],
   soybean_k2: ['সয়াবিন', 'Soybean'], mungbean: ['মুগ', 'Mungbean'], mungbean_k2: ['মুগ', 'Mungbean'], sesame: ['তিল', 'Sesame'],
@@ -20,7 +20,7 @@ export const CROP_NAMES = {
 const ROTATION_CHOICES = {
   curMonsoon: ['aman', 'fallow', 'soybean', 'mungbean', 'sesame'],
   curWinter: ['', 'boro', 'lentil', 'mustard', 'wheat', 'potato', 'maize', 'sunflower', 'chickpea', 'grasspea', 'sweetpotato', 'barley'],
-  curSummer: ['', 'mungbean', 'sesame', 'jute', 'aus'],
+  curSummer: ['', 'boro_late', 'mungbean', 'sesame', 'jute', 'aus'],
 };
 const ROLES = {
   nitrogen: ['নাইট্রোজেন যোগ করে', 'Adds nitrogen', 'ডাল ফসলের শিকড়ের গুটি বাতাসের নাইট্রোজেন মাটিতে ধরে; পরের ফসলে ইউরিয়া কম লাগে।', 'Legume root nodules fix nitrogen from the air; the next crop needs less urea.'],

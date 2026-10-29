@@ -2,6 +2,23 @@
 
 What changed in Project EDEN, newest first, with who made each change and the branch it came from. Every branch below was merged into `main` on 1 October 2026.
 
+## 29 October 2026 · Two winter crops, a year slider, and income at market prices (Tasrif, `feature/field-shift-statement`)
+
+- **Mustard or potato, then Boro:** a late Boro is added to the crop replay with `--only`, which merges it and leaves other crops untouched.
+  - It is BRRI dhan28, transplanted 1 February-1 March, 40-day seedlings; the window is assumed from BRRI's patterns.
+  - The engine places it after the winter crop and labels it a winter crop.
+  - BRRI's Mustard- and Potato-Boro-T. Aman patterns now build: 147 upazilas grow them, and 25 grow them most.
+  - A farmer's "Boro" after their winter crop becomes the late Boro.
+- **A year slider on the map:** the "Year by year" group has five layers, 2001-2025, with play and pause, served by `GET /api/v1/map/years`.
+  - By district: groundwater storage against 2003-07 (NASA GLDAS-2.2), hot days, heavy-rain days and dry-season root-zone wetness.
+  - By upazila: MODIS crops per year.
+- **Income at market prices:** the WFP file (DAM's prices) was refreshed on 29 October, with data to July 2026.
+  - `research/explore/market_prices.py` measures each crop's price move since the year its value is priced in (2024-25 for BBS-priced crops, 2019 for census-priced ones), relative to the median food.
+  - The income score counts half of that move where 10 or more district markets (or 5 or more division series) carry it: lentil −17% and rice ±0.
+  - Potato fell 55% since 2024-25 and gets a check line.
+  - Costs are still estimates.
+- TEST 19 and the API check for the slider's data.
+
 ## 29 October 2026 · Field Shift's full statement, line by line (Tasrif, `feature/field-shift-statement`)
 
 - **The statement mapped:** `docs/field-shift-statement.md` maps every requirement and suggestion of the full statement (released 28 October) to the product, with status and honest gaps.

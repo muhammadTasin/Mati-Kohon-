@@ -43,7 +43,7 @@ function pesticideLoad() {
 
 /** PEST-CHEMGRIDS crop class of each crop the engine plans; pulses, oilseeds, jute and barley are its "other crops". */
 const PEST_CLASS: Record<string, string> = {
-  aman: 'rice', boro: 'rice', boro_early: 'rice', aus: 'rice', wheat: 'wheat', maize: 'maize', soybean: 'soybean', soybean_k2: 'soybean',
+  aman: 'rice', boro: 'rice', boro_early: 'rice', boro_late: 'rice', aus: 'rice', wheat: 'wheat', maize: 'maize', soybean: 'soybean', soybean_k2: 'soybean',
   potato: 'vegfruit', sweetpotato: 'vegfruit',
 };
 

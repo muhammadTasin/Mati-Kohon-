@@ -661,7 +661,7 @@ export class RotationEngine {
         cropBangla: k1Name.cropBangla,
         variety: varietyEnglish(spec.kharif1, k1),
         varietyBangla: k1Name.varietyBangla,
-        seasonType: k1Name.isRice ? 'Aus' : 'Pre-Kharif',
+        seasonType: choiceIdOf(spec.kharif1) === 'boro_late' ? 'Rabi' : k1Name.isRice ? 'Aus' : 'Pre-Kharif',
         sowingWindow: `${enDate(k1.sowingWindow![0])}-${enDate(k1.sowingWindow![1])} (${k1.sowingWindowSource}); replay ${k1Name.isRice ? 'transplants' : 'sows'} ${enDate(k1.sowing)}`,
         harvestWindow: `~${enDate(k1.harvest)}`,
         durationDays: k1.fieldDays,
@@ -959,9 +959,11 @@ export class RotationEngine {
     const kind = kindOf(catalog);
     const monsoonBn = mon.aman ? '' : k2 ? `; বর্ষায় ${k2.catalog.cropBangla}` : '; বর্ষায় ধান নেই';
     const monsoonEn = mon.aman ? '' : k2 ? `; monsoon ${k2.catalog.crop.toLowerCase()}` : '; no rice in the monsoon';
+    // A late Boro after the winter crop is a second winter crop, not a summer one
+    const lateBoro = k1Key ? choiceIdOf(k1Key) === 'boro_late' : false;
     return [
-      `${water[0]}, ${kind[0]}${monsoonBn}${k1 ? `; গ্রীষ্মে ${k1.catalog.cropBangla}` : ''}`,
-      `${water[1]}, ${kind[1]}${monsoonEn}${k1 ? `; ${k1.catalog.crop.toLowerCase()} before ${mon.aman ? 'Aman' : 'the monsoon'}` : ''}`,
+      `${water[0]}, ${kind[0]}${monsoonBn}${k1 ? lateBoro ? '; তারপর নাবি বোরো' : `; গ্রীষ্মে ${k1.catalog.cropBangla}` : ''}`,
+      `${water[1]}, ${kind[1]}${monsoonEn}${k1 ? lateBoro ? '; then a late Boro' : `; ${k1.catalog.crop.toLowerCase()} before ${mon.aman ? 'Aman' : 'the monsoon'}` : ''}`,
     ];
   }
 
@@ -1123,7 +1125,8 @@ export class RotationEngine {
   private patternSpec(pattern: string, landType: LandType, rules: LandRules): CandidateSpec | null {
     const [winterWord, summerWord, monsoonWord] = pattern.split('-').map(w => w.trim());
     const winter = CHOICE_BY_ID[PATTERN_CROP[winterWord] ?? ''];
-    const summer = summerWord === 'Fallow' ? null : CHOICE_BY_ID[PATTERN_CROP[summerWord] ?? ''];
+    // Boro after a winter crop (Mustard-Boro-T. Aman, Potato-Boro-T. Aman) is the late Boro transplanted in February
+    const summer = summerWord === 'Fallow' ? null : CHOICE_BY_ID[summerWord === 'Boro' ? 'boro_late' : PATTERN_CROP[summerWord] ?? ''];
     const withAman = monsoonWord === 'T. Aman';
     if (!winter || (summerWord !== 'Fallow' && summer?.season !== 'Kharif-1') || (!withAman && monsoonWord !== 'Fallow')) return null;
     if (withAman !== rules.aman) return null; // the farmer's land differs from the upazila's usual land
@@ -1221,7 +1224,8 @@ export class RotationEngine {
     let rabiKey = rabiKeys[0];
     let k1Key: string | undefined;
     let note: { bn: string; en: string } | null = null;
-    const summerId = cur.summer ? String(cur.summer).toLowerCase() : '';
+    const named = cur.summer ? String(cur.summer).toLowerCase() : '';
+    const summerId = named === 'boro' || named === 'boro_early' ? 'boro_late' : named;
     if (summerId && summerId !== 'fallow') {
       const summer = CHOICE_BY_ID[summerId];
       const nextStart = (key: string) => (amanRecord ? amanRecord.transplant : k2Record ? k2Record.sowing : recordFor(key)!.sowing);
