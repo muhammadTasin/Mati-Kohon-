@@ -16,6 +16,15 @@ export const EN = {
   'overview.mapSectionSub': 'NASA data for 544 upazilas; pick an upazila on the map and the whole page follows it',
   'overview.placeTitle': 'Soil, water and crops here',
   'common.sourceMethod': 'Source and method',
+  // photos (photos.js, img/credits.json) and the farmer's question to their officer (portals.js)
+  'photo.harvestHome': 'Carrying the Aman harvest home',
+  'photo.modis': "Bangladesh from NASA's MODIS satellite (true colour). Image: NASA, public domain.",
+  'credits.title': 'Photos and credits',
+  'credits.sub': "The photos of Bangladeshi fields and crops are openly licensed Wikimedia Commons pictures (resized and cropped); the satellite images are NASA's, public domain. The drawings are by the Mati Kohon team.",
+  'ask.title': 'Ask your agriculture officer',
+  'ask.sub': 'Type or say your question. Your Sub-Assistant Agriculture Officer checks the answer, and it comes to your phone as a call.',
+  'ask.send': 'Send to the officer',
+
   // the daily advice calls on Calls and SMS (calls.js)
   'calls.title': 'Advice calls to farmers',
   'calls.gate': "Sign in as an officer to see the day's call list, farmers' questions and the register.",

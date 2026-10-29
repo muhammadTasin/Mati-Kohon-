@@ -95,7 +95,7 @@ export function initCalls(ctx) {
     const removed = data.calls.filter(x => x.status === 'removed');
     ctx.setHtml('callsList', calls.length ? calls.map(callRow).join('') + (removed.length
       ? `<details class="fold"><summary>${tr(`বাদ দেওয়া ${num(removed.length)}টি কল`, `${removed.length} removed call(s)`)}</summary>${removed.map(callRow).join('')}</details>` : '')
-      : `<p class="calls-empty">${tr('এই দিনের তালিকায় কোনো কল নেই। "তালিকা তৈরি করুন" চাপলে নাসার আজকের তথ্য দেখে তালিকা হবে।', 'No calls on this day\'s list. "Build the list" checks today\'s NASA data for every farmer.')}</p>`);
+      : `<div class="calls-empty-art"><img src="img/farmer-call.svg" alt="" width="200" height="150"><p class="calls-empty">${tr('এই দিনের তালিকায় কোনো কল নেই। "তালিকা তৈরি করুন" চাপলে নাসার আজকের তথ্য দেখে তালিকা হবে।', 'No calls on this day\'s list. "Build the list" checks today\'s NASA data for every farmer.')}</p></div>`);
 
     const skipped = data.skipped || [];
     const lines = [];

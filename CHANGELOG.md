@@ -2,6 +2,14 @@
 
 What changed in Project EDEN, newest first, with who made each change and the branch it came from. Every branch below was merged into `main` on 1 October 2026.
 
+## 29 October 2026 · Real photos, a question box for farmers, and Tasin's work merged (Tasrif, `feature/latest`)
+
+- **Merged:** muhammadTasin's `integrations-audit` line (Supabase sign-in for managers, sites, the NASA POWER climate card, the data-sources card, no Talanda fertilizer doses outside the pilot, phone-app audit fixes) and `main` (the daily updates). The farmer calls follow the officer's site. A fresh daily NASA update was run with this branch's code.
+- **Photos:** openly licensed Wikimedia Commons photos of Bangladeshi fields and crops and NASA MODIS images (public domain), resized and cropped in `apps/saao-dashboard/public/img/`. The role picker opens with a harvest photo and a photo on each role; the overview shows the harvest beside a river; the evidence page shows Bangladesh from NASA MODIS; the farmer's Today shows a farmer in a BRRI Rajshahi paddy field; every rotation in Compare options and Today shows its crops as photos. Each photo's author, licence and source is in `img/credits.json`, on the data-quality screen and behind every credit link.
+- **Drawings:** a field with a NASA satellite and a farmer taking the advice call (`img/fields.svg`, `img/farmer-call.svg`), on the calls screen and the farmer's question card.
+- **Ask your officer:** the farmer's assistant tab has a question box; the question goes to the SAAO's list and the farmer sees its status (with the officer, answered, called) and the answer.
+- **Fixes:** the server sends photos as images (not text, not gzipped); the demo officer ID is shown as the sign-in hint.
+
 ## 29 October 2026 · Daily advice calls to registered farmers (Tasrif, `feature/farmer-calls`)
 
 - **Register:** the officer registers a farmer with union, upazila, land, crops and call time, only with the farmer's recorded consent; numbers stay on the server (masked on screen) and a farmer's calls stop when they ask. Six sample farmers, two of them on low haor land in Bajitpur.

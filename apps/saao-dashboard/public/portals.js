@@ -17,6 +17,7 @@
  */
 
 import { authConfig, normalizeUserId, resolveUserId, supabaseClient, toAuthEmail } from './auth-client.js';
+import { cropPhoto } from './photos.js';
 
 const ROLES = {
   visitor: { home: 'screen-overview', screens: ['screen-overview', 'screen-weather'] },
@@ -134,7 +135,14 @@ export function initPortals(ctx) {
     setEntryError('entryFarmerError', '');
     setEntryError('entryOfficerError', '');
     setEntryError('entryDemoError', '');
-    if (step === 'officer') authConfig().then(cfg => { if ($('entryOfficerDemo')) $('entryOfficerDemo').hidden = !cfg?.demoMode; });
+    if (step === 'officer') {
+      authConfig().then(cfg => {
+        if ($('entryOfficerDemo')) $('entryOfficerDemo').hidden = !cfg?.demoMode;
+        // the demo user ID is the sample officer's id: shown as the hint so a demo needs only the code
+        const demoOfficer = (ctx.officers() || [])[0];
+        if (cfg?.demoMode && demoOfficer && $('entryDemoUserId')) $('entryDemoUserId').placeholder = demoOfficer.id;
+      });
+    }
     if (step === 'farmer') $('entryFarmerBtn')?.focus();
     if (step === 'officer') $('entryOfficerUserId')?.focus();
   };
@@ -338,8 +346,74 @@ export function initPortals(ctx) {
     if (tab === 'weather') loadWeatherForecast();
     if (tab === 'erosion') window.fetchRiverErosion($('erosionRiverSelect')?.value || 'jamuna');
     if (tab === 'farm') renderFarm();
+    if (tab === 'ai') loadAsk();
   }
   window.switchFarmerTab = showFarmerTab;
+
+  // Ask your officer: the advice calls are one way, so the question goes to the farmer's SAAO
+  // (POST /api/v1/farmer/questions), who corrects the engine's draft; the answer then comes as a call
+  const ASK_STATUS = {
+    open: ['কর্মকর্তা দেখছেন', 'With your officer', 'badge-warning'],
+    answered: ['উত্তর তৈরি: কল আসবে', 'Answered: a call is coming', 'badge-primary'],
+    called: ['কলে উত্তর দেওয়া হয়েছে', 'Answered by phone call', 'badge-success'],
+  };
+  let askQuestions = null;
+  async function loadAsk() {
+    if (!farmerToken) { askQuestions = null; renderAsk(); return; }
+    try {
+      askQuestions = (await apiJson('/api/v1/farmer/questions', { headers: { Authorization: `Bearer ${farmerToken}` } })).questions;
+    } catch {
+      askQuestions = [];
+    }
+    renderAsk();
+  }
+  function renderAsk() {
+    const list = $('askList');
+    if (!list) return;
+    $('askText').placeholder = tr('যেমন: আমার জমিতে বোরোর বীজতলা কবে দেব?', 'e.g. "When should I sow my Boro seedbed?" (in Bangla)');
+    if (!farmerToken) {
+      list.innerHTML = `<p class="calls-empty">${escapeHtml(tr('প্রশ্ন পাঠাতে কৃষক হিসেবে প্রবেশ করুন।', 'Sign in as a farmer to send a question.'))}</p>`;
+      return;
+    }
+    list.innerHTML = askQuestions?.length
+      ? `<h4>${escapeHtml(tr('আপনার প্রশ্ন', 'Your questions'))}</h4>` + askQuestions.map(q => {
+        const [bn, en, cls] = ASK_STATUS[q.status] || ASK_STATUS.open;
+        return `<article class="question-row status-${escapeHtml(q.status)}">
+          <div class="call-top"><span class="tag">${escapeHtml(isoDate(q.askedAt))}</span><span class="badge ${cls} call-status">${escapeHtml(tr(bn, en))}</span></div>
+          <p class="q-text" lang="bn">${escapeHtml(q.textBangla)}</p>
+          ${q.answerBangla ? `<details class="fold"><summary>${escapeHtml(tr('উত্তর', 'Answer'))}</summary><p lang="bn">${escapeHtml(q.answerBangla)}</p></details>` : ''}
+        </article>`;
+      }).join('')
+      : `<p class="calls-empty">${escapeHtml(tr('এখনো কোনো প্রশ্ন পাঠাননি।', 'No questions sent yet.'))}</p>`;
+  }
+  $('askForm')?.addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const msg = $('askMsg');
+    const text = $('askText').value.trim();
+    msg.hidden = false;
+    if (!text) return;
+    if (!farmerToken) {
+      msg.className = 'calls-msg calls-error';
+      msg.textContent = tr('প্রশ্ন পাঠাতে কৃষক হিসেবে প্রবেশ করুন।', 'Sign in as a farmer to send a question.');
+      return;
+    }
+    $('askSend').disabled = true;
+    try {
+      await apiJson('/api/v1/farmer/questions', {
+        method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${farmerToken}` },
+        body: JSON.stringify({ textBangla: text }),
+      });
+      $('askText').value = '';
+      msg.className = 'calls-msg';
+      msg.textContent = tr('প্রশ্নটি আপনার কৃষি কর্মকর্তার কাছে গেছে। উত্তর ঠিক হলে ফোনে কল আসবে।', 'Your question went to your agriculture officer. When the answer is ready, it comes as a phone call.');
+      await loadAsk();
+    } catch (err) {
+      msg.className = 'calls-msg calls-error';
+      msg.textContent = `${tr('পাঠানো যায়নি।', 'Could not send it.')} ${failureText(err)}`;
+    } finally {
+      $('askSend').disabled = false;
+    }
+  });
 
   // Today: the same plan the phone call and the Android app give, for the farmer's place
   let todayRain = { key: null, text: '' };
@@ -356,6 +430,7 @@ export function initPortals(ctx) {
     const seq = top.cropSequence || [];
     setHtml('todaySeasons', seq.map((c, i) => `
       <div class="today-season${i === 0 ? ' is-now' : ''}">
+        ${cropPhoto(c) ? `<img class="today-season-photo" src="img/crops/${cropPhoto(c)}.jpg" alt="" width="96" height="96" loading="lazy">` : ''}
         <span class="today-season-label">${escapeHtml(tr(['মৌসুম ১', 'মৌসুম ২', 'মৌসুম ৩'][i] || `মৌসুম ${num(i + 1)}`, `Season ${i + 1}`))}${i === 0 ? ` · ${escapeHtml(tr('চলতি', 'now'))}` : ''}</span>
         <strong>${escapeHtml(tr(c.cropBangla || c.crop, c.crop))}</strong>
         <span>${escapeHtml(tr(c.varietyBangla || c.variety, c.variety))}</span>
@@ -1157,8 +1232,7 @@ export function initPortals(ctx) {
       todayRain.key = null;
       if (farmerTab === 'today') renderToday();
       renderFarm();
+      renderAsk();
     },
-    /** The officer list arrived: fill the sign-in list. */
-    fillOfficers: fillOfficerSelect,
   };
 }

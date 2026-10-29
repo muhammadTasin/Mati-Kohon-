@@ -9,6 +9,7 @@ import { EN } from './i18n.js';
 import { initBdMap } from './bd-map.js';
 import { initPortals } from './portals.js';
 import { initCalls } from './calls.js';
+import { cropStrip, renderCredits, showCreditsDialog } from './photos.js';
 import { accessToken, authConfig, supabaseSignOut } from './auth-client.js';
 
 let lang = 'bn';
@@ -122,6 +123,13 @@ window.setLanguage = function(next) {
   renderAll();
 };
 
+// "Photo by" links open the credits (author, licence and source of every photo)
+window.showPhotoCredits = function(event) {
+  event?.preventDefault();
+  event?.stopPropagation();
+  showCreditsDialog({ tr, escapeHtml });
+};
+
 function renderAll() {
   if (currentOverview) renderOverview(currentOverview);
   if (currentAdvice) {
@@ -139,6 +147,7 @@ function renderAll() {
   renderProfile();
   renderOfficer();
   callsUi?.render();
+  renderCredits($('photoCreditList'), { tr, escapeHtml });
   renderAudioButton();
   window.updateWeights();
   window.updateObsWeights();
@@ -793,6 +802,7 @@ function renderComparisonGrid(advice) {
           ${opt.isBaseline ? `<span class="badge badge-warning">${tr('বর্তমান প্রচলিত', 'Current practice')}</span>` : ''}
         </div>
         <h3 class="comp-card-title">${escapeHtml(tr(opt.nameBangla, opt.nameEnglish))}</h3>
+        ${cropStrip(opt.cropSequence, { tr, escapeHtml })}
         <div class="dimensions-breakdown">
           ${Object.entries(opt.scores).map(([dimId, score]) => {
             const pct = Math.round(score * 100);
@@ -1033,7 +1043,6 @@ async function loadOfficers() {
     return; // the sign-in form asks again when it is used
   }
   renderOfficerSelect();
-  portals?.fillOfficers();
 }
 
 function renderOfficerSelect() {

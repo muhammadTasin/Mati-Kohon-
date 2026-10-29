@@ -563,6 +563,9 @@ const MIME_TYPES: Record<string, string> = {
   '.json': 'application/json; charset=utf-8',
   '.geojson': 'application/geo+json; charset=utf-8',
   '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
   '.svg': 'image/svg+xml',
 };
 
@@ -1144,7 +1147,7 @@ const server = http.createServer(async (req, res) => {
     const contentType = MIME_TYPES[path.extname(filePath).toLowerCase()] || 'text/plain';
     const content = fs.readFileSync(filePath);
     // text files go out gzipped when the browser accepts it (the map's outlines are ~0.9 MB, ~0.25 MB gzipped)
-    if (content.length > 2048 && !contentType.startsWith('image/png') && /\bgzip\b/.test(String(req.headers['accept-encoding'] || ''))) {
+    if (content.length > 2048 && !/^image\/(png|jpeg|webp)/.test(contentType) && /\bgzip\b/.test(String(req.headers['accept-encoding'] || ''))) {
       const mtime = fs.statSync(filePath).mtimeMs;
       let hit = gzipCache.get(filePath);
       if (!hit || hit.mtime !== mtime) gzipCache.set(filePath, hit = { mtime, body: zlib.gzipSync(content) });
