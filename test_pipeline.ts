@@ -533,8 +533,80 @@ async function runTests() {
   console.log(`Groundwater budget: Rajshahi moves ${(moveRajshahi * 100).toFixed(1)}% of its Boro (${rajshahiBudget.groundwaterBudget!.moveHaToLentil} ha) to lentil`);
   console.log('✓ TEST 17 PASSED: Land type, current patterns, flash floods, district yields and today\'s soil shape each upazila\'s plan.\n');
 
+  // TEST 18: Field Shift's full statement (28 Oct 2026): at least three rotations with the farmer's own among them;
+  // for each, why it was suggested, its evidence, benefits, information gaps and the risks to check locally; the
+  // season calendar (bare months, vulnerable months); constraints; and a what-if for a drier, warmer year
+  console.log('[TEST 18] Testing the existing rotation, the five-part review, the season risk and the what-if...');
+  const priorities = { water: 0.5, income: 0.3, soil: 0.2 };
+  const fs18 = engine.generateAdvice({ ...TALANDA, farmerPriorities: priorities, currentAmanCrop: 'BRRI dhan49', currentRotation: { monsoon: 'aman', winter: 'boro' },
+    constraints: { machinery: 'hand', market: 'village' }, scenario: { rainPct: -20, warmingC: 2 } });
+  const mine18 = fs18.options.filter(o => o.farmerCurrent);
+  if (fs18.options.length < 3 || mine18.length !== 1 || mine18[0].id !== 'rot_dhan49_boro_conventional' || fs18.reference_option_id !== mine18[0].id) {
+    throw new Error(`The farmer's Aman-Boro must be one marked option and the reference among 3+ (got ${fs18.options.length}, ${mine18.map(o => o.id)}, ref ${fs18.reference_option_id})`);
+  }
+  for (const o of fs18.options) {
+    const r = o.review!;
+    if (!r || !r.why.length || !r.evidence.length || !r.benefits.length || !r.gaps.length || !r.checks.length || r.referenceId !== mine18[0].id) {
+      throw new Error(`${o.id}: every option needs why, evidence, benefits, gaps and checks against the farmer's rotation`);
+    }
+    if (r.evidence.some(l => !l.source) || [...r.why, ...r.evidence, ...r.benefits, ...r.gaps, ...r.checks].some(l => !l.bn || !l.en)) {
+      throw new Error(`${o.id}: every review line is in Bangla and English, and every evidence line names its source`);
+    }
+  }
+  const lentil18 = fs18.options.find(o => o.id === 'rot_dhan71_lentil')!;
+  if (!lentil18.review!.roles.some(x => x.id === 'nitrogen' && x.cropIds.includes('lentil'))
+    || !fs18.options.find(o => o.id === 'rot_dhan71_mustard')!.review!.roles.some(x => x.id === 'deep_root')) {
+    throw new Error('Lentil is nitrogen-fixing and mustard deep-rooted (FAO-56)');
+  }
+  if (!lentil18.review!.benefits.some(l => /less groundwater pumped/.test(l.en))) throw new Error('Lentil after Aman pumps less groundwater than the farmer\'s Boro');
+  const wheat18 = fs18.options.find(o => o.cropIds?.includes('wheat'))!;
+  if (!wheat18.review!.constraintFlags.some(l => /thresher/.test(l.en)) || lentil18.review!.constraintFlags.length) {
+    throw new Error('Without machines wheat (a thresher) is flagged and lentil is not');
+  }
+  if (!fs18.disclaimer?.en.includes('does not replace')) throw new Error('The advice says the tool supports and does not replace the farmer');
+  // The season risk: Boro meets the spring heat at Talanda; the bare days agree with the ledger
+  const boro18 = mine18[0].seasonRisk!;
+  const boroCrop = boro18.crops.find(c => c.id === 'boro')!;
+  if (!boroCrop.months.includes(3) || boroCrop.hotDays < 10) throw new Error(`Boro at Talanda meets April heat (got months ${boroCrop.months}, ${boroCrop.hotDays} hot days)`);
+  for (const o of fs18.options) {
+    if (o.seasonRisk!.months.length !== 12 || Math.abs(o.seasonRisk!.bareDays - o.ledger!.bareDays) > 3) {
+      throw new Error(`${o.id}: twelve months, and the calendar's bare days (${o.seasonRisk!.bareDays}) match the ledger's (${o.ledger!.bareDays})`);
+    }
+  }
+  if (!lentil18.seasonRisk!.months.some(m => m.flags.includes('bare_rain'))) throw new Error('Lentil leaves the field bare in the pre-monsoon storms');
+  // The what-if: less rain and more heat raise irrigation and hot days, and less rain lowers soil-moving rain
+  const w18 = fs18.what_if!;
+  if (!w18 || w18.rainPct !== -20 || w18.warmingC !== 2 || w18.options.length !== fs18.options.length
+    || w18.options.some(x => x.irrigationMmScenario < x.irrigationMm || x.hotDaysInFieldScenario < x.hotDaysInField || x.bareErosiveRainDaysScenario > x.bareErosiveRainDays)) {
+    throw new Error('A drier, warmer year needs more irrigation, has more hot days and less soil-moving rain');
+  }
+  // The season calendar and its trends: a trend is clear only at p < 0.05
+  const cal18 = fs18.season_calendar!;
+  if (!cal18 || cal18.months.hotDays.length !== 12 || !cal18.greenness || cal18.trends.some(t => t.clear !== (t.p < 0.05))) {
+    throw new Error('The season calendar has twelve months, the satellite\'s greenness and honest trends');
+  }
+  // A rotation the engine does not list (Aman, potato) is added, marked and ranked; a summer crop that does not fit is
+  // left out with a note; a year with no winter crop is explained
+  const potato18 = engine.generateAdvice({ ...TALANDA, farmerPriorities: priorities, currentRotation: { monsoon: 'aman', winter: 'potato' } });
+  if (!potato18.options.some(o => o.farmerCurrent && o.cropIds?.join() === 'aman,potato')) throw new Error('The farmer\'s Aman-potato is added to the options');
+  const mung18 = engine.generateAdvice({ ...TALANDA, farmerPriorities: priorities, currentAmanCrop: 'BRRI dhan71', currentRotation: { monsoon: 'aman', winter: 'boro', summer: 'mungbean' } });
+  if (!mung18.options.some(o => o.farmerCurrent && o.cropIds?.includes('boro')) || !/shown without it/.test(mung18.current_rotation_note?.en ?? '')) {
+    throw new Error('A summer crop that does not fit is left out of the farmer\'s rotation, with a note');
+  }
+  const none18 = engine.generateAdvice({ ...TALANDA, farmerPriorities: priorities, currentRotation: { monsoon: 'aman', winter: 'fallow' } });
+  if (none18.options.some(o => o.farmerCurrent) || !none18.current_rotation_note || none18.reference_option_id !== 'rot_dhan49_boro_conventional') {
+    throw new Error('A year with no winter crop is explained, and the usual Boro rotation becomes the reference');
+  }
+  // Outside the pilot: no soil card is a stated gap; a registered farmer's crops give their rotation
+  const godagari18 = at('ADM3_Godagari', { currentRotation: { monsoon: 'aman', winter: 'mustard' } });
+  if (godagari18.options.length < 3 || !godagari18.options.every(o => o.review!.gaps.some(l => /No SRDI soil card/.test(l.en)))) {
+    throw new Error('Outside the pilot every option states the missing soil card');
+  }
+  console.log(`Farmer's Aman-Boro ranks ${mine18[0].rank} of ${fs18.options.length}; lentil saves ${Math.round((mine18[0].ledger!.groundwaterPumpedM3PerHa - lentil18.ledger!.groundwaterPumpedM3PerHa) / 100) * 100} m3/ha; Boro meets ${boroCrop.hotDays} hot days; 20% less rain and +2 C: Boro irrigation ${w18.options.find(x => x.id === mine18[0].id)!.irrigationMm} -> ${w18.options.find(x => x.id === mine18[0].id)!.irrigationMmScenario} mm`);
+  console.log('✓ TEST 18 PASSED: The farmer\'s rotation, the five-part review, the season risk and the what-if follow the Field Shift statement.\n');
+
   console.log('========================================================');
-  console.log('  ALL 17 CORE TESTS PASSED SUCCESSFULLY!                ');
+  console.log('  ALL 18 CORE TESTS PASSED SUCCESSFULLY!                ');
   console.log('========================================================');
 }
 

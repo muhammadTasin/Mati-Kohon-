@@ -10,6 +10,7 @@ import { initBdMap } from './bd-map.js';
 import { initPortals } from './portals.js';
 import { initCalls } from './calls.js';
 import { cropStrip, renderCredits, showCreditsDialog } from './photos.js';
+import { calendarHtml, fillRotationSelects, reviewHtml, rotationFromSelects, seasonRiskHtml, whatIfHtml } from './review.js';
 import { accessToken, authConfig, supabaseSignOut } from './auth-client.js';
 
 let lang = 'bn';
@@ -18,6 +19,9 @@ let currentOverview = null;
 let currentNarration = null;
 let currentDataRelease = null;
 let selectedOptionId = null;
+let lastPlanBody = null; // the last plan's request, so the what-if sliders can ask for the same plan in another year
+let whatIfAdvice = null; // the advice for the what-if year, when a slider is off zero
+let whatIfTimer = null;
 let officers = [];
 let officerSession = null; // { source: 'supabase' | 'demo', officer, token (demo only) }
 let homeArea = null; // the manager's own area from the verified token site: { siteId, placeId, nameBangla, nameEnglish, district }
@@ -132,10 +136,12 @@ window.showPhotoCredits = function(event) {
 
 function renderAll() {
   if (currentOverview) renderOverview(currentOverview);
+  fillRotationSelects({ tr });
   if (currentAdvice) {
     renderPlannerResults(currentAdvice);
     renderComparisonGrid(currentAdvice);
     renderTimeline(selectedOption());
+    renderFieldShift(currentAdvice);
     renderEvidence(currentAdvice);
     renderCompanion(currentAdvice);
     renderIpm(currentAdvice);
@@ -171,8 +177,9 @@ document.querySelectorAll('.nav-tab').forEach(btn => {
 });
 
 window.updateWeights = function() {
-  for (const [slider, label] of [['weightWater', 'valWeightWater'], ['weightIncome', 'valWeightIncome'], ['weightSoil', 'valWeightSoil'], ['weightPest', 'valWeightPest']]) {
-    setText(label, `${num($(slider).value)}%`);
+  for (const [slider, label] of [['weightWater', 'valWeightWater'], ['weightIncome', 'valWeightIncome'], ['weightSoil', 'valWeightSoil'], ['weightPest', 'valWeightPest'],
+    ['weightFodder', 'valWeightFodder'], ['weightHeat', 'valWeightHeat'], ['weightFlood', 'valWeightFlood']]) {
+    if ($(slider)) setText(label, `${num($(slider).value)}%`);
   }
 };
 
@@ -702,21 +709,27 @@ function showPlanLandNote(landType) {
 
 window.runPlannerCalculation = async function(options = {}) {
   const weight = (id) => parseFloat($(id).value) / 100;
+  const extra = Object.fromEntries([['fodder', 'weightFodder'], ['heat', 'weightHeat'], ['flood', 'weightFlood']]
+    .filter(([, id]) => $(id) && Number($(id).value) > 0).map(([dim, id]) => [dim, weight(id)]));
+  const constraints = { machinery: $('planMachinery')?.value || undefined, market: $('planMarket')?.value || undefined };
   try {
+    lastPlanBody = {
+      unionId: currentPlace,
+      landType: planLandTouched ? $('planLandType').value : undefined,
+      irrigation: $('planIrrigation')?.value === 'none' ? 'none' : undefined,
+      currentAmanCrop: $('planAmanCrop').value,
+      preferredCrops: selectedCrops(),
+      heroCrop: $('planHeroCrop')?.value || undefined,
+      avoidCrops: $('planNoRice')?.checked ? ['rice'] : undefined,
+      season: '2026-aman',
+      farmerPriorities: { water: weight('weightWater'), income: weight('weightIncome'), soil: weight('weightSoil'), pest: weight('weightPest'), ...extra },
+      currentRotation: rotationFromSelects(),
+      constraints: constraints.machinery || constraints.market ? constraints : undefined,
+    };
     const res = await fetch('/api/v1/advice', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        unionId: currentPlace,
-        landType: planLandTouched ? $('planLandType').value : undefined,
-        irrigation: $('planIrrigation')?.value === 'none' ? 'none' : undefined,
-        currentAmanCrop: $('planAmanCrop').value,
-        preferredCrops: selectedCrops(),
-        heroCrop: $('planHeroCrop')?.value || undefined,
-        avoidCrops: $('planNoRice')?.checked ? ['rice'] : undefined,
-        season: '2026-aman',
-        farmerPriorities: { water: weight('weightWater'), income: weight('weightIncome'), soil: weight('weightSoil'), pest: weight('weightPest') },
-      }),
+      body: JSON.stringify(lastPlanBody),
     });
     const data = await res.json();
     if (!res.ok) {
@@ -725,9 +738,12 @@ window.runPlannerCalculation = async function(options = {}) {
     }
     currentAdvice = data;
     selectedOptionId = data.options[0].id;
+    whatIfAdvice = null;
+    resetWhatIf();
     renderPlannerResults(data);
     renderComparisonGrid(data);
     renderTimeline(selectedOption());
+    renderFieldShift(data);
     renderEvidence(data);
     renderCompanion(data);
     renderIpm(data);
@@ -768,7 +784,7 @@ function renderPlannerResults(advice) {
       </div>
       ${coverageTag(advice, opt.id)}
       <p class="candidate-meta">
-        ${tr('জমি খালি', 'Field free')}: <strong>${escapeHtml(tr(opt.fieldFreeDateBangla, opt.fieldFreeDateEnglish))}</strong>${opt.currentPractice ? ` <span class="tag tag-yellow">${tr('এখানে এখন যা চাষ হয় (BRRI)', 'what farmers here grow now (BRRI)')}</span>` : opt.isBaseline ? ` • ${tr('বর্তমান প্রচলিত চক্র', 'current practice')}` : ''}${opt.id === advice.this_season_option_id ? ` <span class="tag tag-green">${tr('এ মৌসুমে সম্ভব', 'possible this season')}</span>` : ''}
+        ${tr('জমি খালি', 'Field free')}: <strong>${escapeHtml(tr(opt.fieldFreeDateBangla, opt.fieldFreeDateEnglish))}</strong>${opt.farmerCurrent ? ` <span class="tag tag-yellow">${tr('কৃষকের এখনকার চক্র', "the farmer's rotation now")}</span>` : opt.currentPractice ? ` <span class="tag tag-yellow">${tr('এখানে এখন যা চাষ হয় (BRRI)', 'what farmers here grow now (BRRI)')}</span>` : opt.isBaseline ? ` • ${tr('বর্তমান প্রচলিত চক্র', 'current practice')}` : ''}${opt.id === advice.this_season_option_id ? ` <span class="tag tag-green">${tr('এ মৌসুমে সম্ভব', 'possible this season')}</span>` : ''}
       </p>
       <div class="candidate-action">${escapeHtml(tr(opt.approvedActionBangla[2] || '', (opt.approvedActionEnglish || [])[2] || ''))}</div>
     </div>
@@ -799,7 +815,8 @@ function renderComparisonGrid(advice) {
       <div class="comp-card ${isRec ? 'recommended' : ''}">
         <div class="comp-card-badge">
           ${isRec ? `<span class="badge badge-success">${tr('সর্বোচ্চ সুপারিশ (১ নম্বর)', 'Top recommendation (rank 1)')}</span>` : `<span class="badge badge-neutral">${tr(`বিকল্প #${num(opt.rank)}`, `Option #${opt.rank}`)}</span>`}
-          ${opt.isBaseline ? `<span class="badge badge-warning">${tr('বর্তমান প্রচলিত', 'Current practice')}</span>` : ''}
+          ${opt.farmerCurrent ? `<span class="badge badge-warning">${tr('কৃষকের এখনকার চক্র', "Farmer's rotation now")}</span>` : opt.currentPractice ? `<span class="badge badge-warning">${tr('এখানে প্রচলিত (BRRI)', 'Usual here (BRRI)')}</span>` : opt.isBaseline ? `<span class="badge badge-warning">${tr('বর্তমান প্রচলিত', 'Current practice')}</span>` : ''}
+          ${opt.id === advice.reference_option_id && !opt.farmerCurrent ? `<span class="badge badge-neutral">${tr('তুলনার ভিত্তি', 'Reference')}</span>` : ''}
         </div>
         <h3 class="comp-card-title">${escapeHtml(tr(opt.nameBangla, opt.nameEnglish))}</h3>
         ${cropStrip(opt.cropSequence, { tr, escapeHtml })}
@@ -819,6 +836,7 @@ function renderComparisonGrid(advice) {
               </div>`;
           }).join('')}
         </div>
+        ${reviewHtml(opt, { tr, escapeHtml })}
         <div class="field-free-indicator">
           <span>${tr('জমি খালি হওয়ার তারিখ:', 'Field free by:')}</span>
           <strong>${escapeHtml(tr(opt.fieldFreeDateBangla, opt.fieldFreeDateEnglish))}</strong>
@@ -832,12 +850,77 @@ function renderComparisonGrid(advice) {
 
 function renderTimeline(option) {
   if (!option) return;
+  setHtml('seasonRiskContainer', seasonRiskHtml(option, currentAdvice, { tr, escapeHtml, num }));
   setHtml('timelineContainer', option.timeline.map(slot => `
     <div class="timeline-month-col">
       <div class="month-label">${tr(slot.monthNameBangla, slot.monthNameEnglish)}</div>
       <div class="slot-indicator ${slot.status}">${escapeHtml(tr(slot.cropName, slot.cropNameEnglish))}</div>
     </div>
   `).join(''));
+}
+
+// ---------------------------------------------------------------------------
+// Field Shift: the disclaimer, the farmer's rotation note, the what-if and the place's season calendar
+// ---------------------------------------------------------------------------
+
+function resetWhatIf() {
+  if ($('whatIfRain')) $('whatIfRain').value = '0';
+  if ($('whatIfWarm')) $('whatIfWarm').value = '0';
+}
+
+function renderFieldShift(advice) {
+  const note = $('comparisonDisclaimer');
+  if (note) {
+    note.hidden = !advice.disclaimer;
+    note.textContent = advice.disclaimer ? tr(advice.disclaimer.bn, advice.disclaimer.en) : '';
+  }
+  const cur = $('currentRotationNote');
+  if (cur) {
+    cur.hidden = !advice.current_rotation_note;
+    cur.textContent = advice.current_rotation_note ? tr(advice.current_rotation_note.bn, advice.current_rotation_note.en) : '';
+  }
+  const rain = Number($('whatIfRain')?.value ?? 0);
+  const warm = Number($('whatIfWarm')?.value ?? 0);
+  setText('whatIfRainVal', `${rain > 0 ? '+' : ''}${num(rain)}%`);
+  setText('whatIfWarmVal', `+${num(warm)}°${tr('সে', 'C')}`);
+  const shown = whatIfAdvice ?? advice;
+  setHtml('whatIfResults', whatIfHtml(shown, { tr, escapeHtml, num }));
+  setText('whatIfMethod', shown.what_if ? tr('হিসাব: রিপ্লের সেচ + প্রতি ডিগ্রি গরমে ফসলের পানি খরচের ৩% − ফসল জমিতে থাকার সময়ের বৃষ্টির বদলের ৮০%; গরম দিন (৩৬°সে+) ও মাটি-ধোয়া বৃষ্টি (২৩ মিমি+) ক্যালেন্ডারের সরানো সীমায় গোনা। ২৫ মৌসুমের পুনর্হিসাব নয়; আমনের সম্পূরক সেচ এতে নেই।', shown.what_if.method) : '');
+  const cal = calendarHtml(advice.season_calendar, { tr, escapeHtml, num });
+  setText('calendarPlace', advice.season_calendar ? tr(advice.season_calendar.placeBangla, advice.season_calendar.place) : '');
+  setHtml('calendarChart', cal.chart);
+  setHtml('calendarTrends', cal.trends);
+}
+
+async function runWhatIf() {
+  if (!lastPlanBody || !currentAdvice) return;
+  const rainPct = Number($('whatIfRain').value);
+  const warmingC = Number($('whatIfWarm').value);
+  if (!rainPct && !warmingC) {
+    whatIfAdvice = null;
+    renderFieldShift(currentAdvice);
+    return;
+  }
+  try {
+    const res = await fetch('/api/v1/advice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...lastPlanBody, scenario: { rainPct, warmingC } }),
+    });
+    if (!res.ok) return;
+    whatIfAdvice = await res.json();
+    renderFieldShift(currentAdvice);
+  } catch (err) {
+    console.error('What-if failed:', err);
+  }
+}
+
+for (const id of ['whatIfRain', 'whatIfWarm']) {
+  $(id)?.addEventListener('input', () => {
+    renderFieldShift(currentAdvice ?? {});
+    clearTimeout(whatIfTimer);
+    whatIfTimer = setTimeout(runWhatIf, 250);
+  });
 }
 
 window.selectCandidateOption = async function(optionId) {

@@ -24,6 +24,7 @@ const GROUPS = {
   water: ['পানি (নাসা)', 'Water (NASA)'],
   now: ['এখনকার অবস্থা (দৈনিক নাসা হালনাগাদ)', 'Now (daily NASA update)'],
   soil: ['মাটি ও কীটনাশক', 'Soil and pesticide'],
+  risk: ['মাঠের ঝুঁকি (নাসা, ২৫ বছর)', 'Field risks (NASA, 25 years)'],
 };
 
 const LAYERS = [
@@ -76,6 +77,14 @@ const LAYERS = [
     value: r => r.organicMatter, source: 'soil',
     categories: [['Very Low', 'খুব কম', 'Very low', GREEN[1]], ['Low', 'কম', 'Low', GREEN[2]], ['Medium', 'মাঝারি', 'Medium', GREEN[3]],
       ['Optimum', 'উপযুক্ত', 'Optimum', GREEN[4]], ['High', 'বেশি', 'High', GREEN[5]], ['Very High', 'খুব বেশি', 'Very high', GREEN[6]]] },
+  { id: 'springHeat', group: 'risk', name: ['বসন্তে গরম দিন (মার্চ–মে)', 'Spring hot days (Mar-May)'], note: ['৩৬°সে বা বেশি, বছরে গড়ে; নাসা POWER (স্টেশনে মেলানো), জেলা', '36 °C or more, days a year; NASA POWER (station-corrected), district'],
+    value: r => r.springHotDays, breaks: [5, 10, 20, 30, 40], colors: AMBER.slice(1), digits: 0, unit: ['দিন', 'days'], source: 'risk', district: true },
+  { id: 'winterCold', group: 'risk', name: ['শীতের রাত (ডিসে–ফেব্রু)', 'Cold nights (Dec-Feb)'], note: ['১০°সে বা কম, বছরে গড়ে: বোরোর চারা ও আলুর ঝুঁকি; জেলা', '10 °C or less, nights a year: a risk to Boro seedlings and potato; district'],
+    value: r => r.winterColdNights, breaks: [1, 5, 10, 20, 30], colors: BLUE.slice(1), digits: 0, unit: ['রাত', 'nights'], source: 'risk', district: true },
+  { id: 'erosionRain', group: 'risk', name: ['খালি জমিতে মাটি-ধোয়া বৃষ্টি (এপ্রিল–জুন)', 'Soil-moving rain on bare fields (Apr-Jun)'], note: ['২৩ মিমি+ বৃষ্টির দিন, যখন বোরো বা রবির পরে জমি খালি থাকে; নাসা GPM IMERG, জেলা', 'days of 23 mm+ rain while fields stand bare after the winter crop; NASA GPM IMERG, district'],
+    value: r => r.preMonsoonErosiveDays, breaks: [7, 9, 11, 13, 16], colors: BLUE.slice(1), digits: 1, unit: ['দিন', 'days'], source: 'risk', district: true },
+  { id: 'dryRoot', group: 'risk', name: ['শুকনো মৌসুমে মাটির রস (জানু–এপ্রিল)', 'Dry-season root-zone wetness (Jan-Apr)'], note: ['নাসা POWER GWETROOT (০ শুকনো – ১ ভেজা): কম মানে সেচ বেশি লাগে; জেলা', 'NASA POWER GWETROOT (0 dry to 1 wet): lower means more irrigation; district'],
+    value: r => r.dryRootWet, breaks: [0.44, 0.46, 0.48, 0.5, 0.53, 0.56], colors: DRY_WET, digits: 2, source: 'risk', district: true },
 ];
 
 const PH = {

@@ -77,7 +77,36 @@ export function planRequest(body: any): PlanOptionsRequest {
     heroCrop: typeof body.heroCrop === 'string' && body.heroCrop.trim() ? body.heroCrop.trim().toLowerCase() : undefined,
     avoidCrops: cropList(body.avoidCrops),
     farmerPriorities: body.farmerPriorities || DEFAULT_PRIORITIES,
+    defaultPriorities: !body.farmerPriorities,
+    currentRotation: currentRotationOf(body.currentRotation),
+    constraints: constraintsOf(body.constraints),
+    scenario: scenarioOf(body.scenario),
   };
+}
+
+const CROP_ID = /^[a-z_]{2,20}$/;
+/** The farmer's rotation now ({ monsoon, winter, summer } crop ids), or undefined when it is missing or malformed. */
+function currentRotationOf(value: any): PlanOptionsRequest['currentRotation'] {
+  if (!value || typeof value !== 'object') return undefined;
+  const id = (v: unknown) => (typeof v === 'string' && CROP_ID.test(v.trim().toLowerCase()) ? v.trim().toLowerCase() : undefined);
+  const winter = id(value.winter);
+  return winter ? { monsoon: id(value.monsoon) ?? 'aman', winter, summer: id(value.summer) ?? null } : undefined;
+}
+
+function constraintsOf(value: any): PlanOptionsRequest['constraints'] {
+  if (!value || typeof value !== 'object') return undefined;
+  const machinery = ['hand', 'hire', 'own'].includes(value.machinery) ? value.machinery : undefined;
+  const market = ['village', 'town'].includes(value.market) ? value.market : undefined;
+  return machinery || market ? { machinery, market } : undefined;
+}
+
+/** A what-if year: rain -20..20 per cent, warming 0..3 C; numbers outside are clamped. */
+function scenarioOf(value: any): PlanOptionsRequest['scenario'] {
+  if (!value || typeof value !== 'object') return undefined;
+  const num = (v: unknown, lo: number, hi: number) => (Number.isFinite(Number(v)) ? Math.max(lo, Math.min(hi, Number(v))) : 0);
+  const rainPct = num(value.rainPct, -20, 20);
+  const warmingC = num(value.warmingC, 0, 3);
+  return rainPct || warmingC ? { rainPct, warmingC } : undefined;
 }
 
 /**

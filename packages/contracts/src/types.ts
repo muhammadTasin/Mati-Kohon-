@@ -101,6 +101,117 @@ export interface CandidateRotation {
   ipmActions?: IpmTip[];
   ledger?: EnvironmentLedger;
   stewardship?: StewardshipTip[]; // soil-and-water tips: what the rotation saves and what to watch for
+  /** The rotation the farmer said they grow now: always shown, so every other option is read against it. */
+  farmerCurrent?: boolean;
+  /** Crop ids in field order (data/crop_choice.ts ids, 'aman' for Aman rice). */
+  cropIds?: string[];
+  /** When the crops meet heat, cold and heavy rain, and when the soil lies bare, from the place's NASA calendar. */
+  seasonRisk?: SeasonRisk | null;
+  /** Why it was suggested, its evidence, benefits, information gaps and the risks to check locally. */
+  review?: OptionReview;
+}
+
+/** One line of text in both languages, with where it comes from when it carries a number. */
+export interface ReviewLine {
+  bn: string;
+  en: string;
+  source?: string;
+}
+
+/**
+ * Field Shift asks, for every rotation compared: why it was suggested, what evidence supports it, what benefits it
+ * may offer, where information gaps exist, and the risks that need local review by farmers or agricultural experts.
+ */
+export interface OptionReview {
+  /** The option it is compared with: the farmer's own rotation, else what most farmers grow here, else Boro. */
+  referenceId: string | null;
+  why: ReviewLine[];
+  evidence: ReviewLine[];
+  benefits: ReviewLine[];
+  gaps: ReviewLine[];
+  checks: ReviewLine[];
+  /** Crop roles in this rotation: nitrogen-fixing, deep-rooting, drought-tolerant, soil cover, fodder. */
+  roles: Array<{ id: CropRoleId; cropIds: string[] }>;
+  /** Clashes with what the farmer said they cannot do (machinery, market). */
+  constraintFlags: ReviewLine[];
+}
+
+export type CropRoleId = 'nitrogen' | 'deep_root' | 'drought' | 'cover' | 'fodder';
+
+/** One month of the crop year (July to June) at this place, for this rotation. */
+export interface SeasonRiskMonth {
+  month: number; // 0 = January
+  /** Share of the month the field holds a crop (0-1), and which crop holds most of it. */
+  cropShare: number;
+  cropId: string | null;
+  /** Average days a year in this month (NASA POWER with station correction, GPM IMERG; seasons 2001-2025). */
+  hotDays: number;
+  coldNights: number;
+  heavyRainDays: number;
+  erosiveRainDays: number;
+  dryDays: number;
+  rootWet: number;
+  /** The satellite's median greenness here (NASA MODIS NDVI, 2021-25), or null. */
+  ndvi: number | null;
+  /** The hazards that matter this month for what is in the field: 'heat', 'cold', 'heavy_rain', 'bare_rain', 'dry'. */
+  flags: string[];
+}
+
+export interface SeasonRisk {
+  months: SeasonRiskMonth[];
+  /** Days a year with no crop in the field, and the erosive (23 mm or more) and heavy (44 mm or more) rain days on them. */
+  bareDays: number;
+  bareErosiveRainDays: number;
+  bareHeavyRainDays: number;
+  /** Per crop: the hazard days it meets while in the field, on average. */
+  crops: Array<{
+    id: string;
+    cropBangla: string;
+    cropEnglish: string;
+    hotDays: number;
+    coldNights: number;
+    heavyRainDays: number;
+    /** Calendar months (0 = January) when this crop meets one of the month flags. */
+    months: number[];
+    /** The replay's net irrigation and crop water use for this crop here (mm), for the what-if. */
+    irrigationMm: number;
+    cropWaterUseMm: number | null;
+    /** Rain while the crop is in the field, on average (mm). */
+    rainMm: number;
+  }>;
+  source: string;
+}
+
+/** A rough what-if on the replay's numbers: the same rotations with a drier or wetter, and warmer, year. */
+export interface WhatIfResult {
+  rainPct: number;
+  warmingC: number;
+  method: string;
+  options: Array<{
+    id: string;
+    /** Net irrigation of the dry-season and summer crops, mm a year (Aman's rescue water needs the daily replay). */
+    irrigationMm: number;
+    irrigationMmScenario: number;
+    /** Days of 36 C or more while a crop is in the field. */
+    hotDaysInField: number;
+    hotDaysInFieldScenario: number;
+    bareErosiveRainDays: number;
+    bareErosiveRainDaysScenario: number;
+  }>;
+}
+
+/** The place's NASA season calendar (research/explore/season_calendar.py), for the timeline and the map. */
+export interface SeasonCalendarSummary {
+  place: string;
+  placeBangla: string;
+  station: string | null;
+  seasons: string;
+  thresholds: Record<string, number>;
+  months: Record<string, number[]>;
+  greenness: { recent: Array<number | null>; early: Array<number | null> } | null;
+  trends: Array<{ id: string; early: number; recent: number; change: number; slopePerDecade: number; p: number; clear: boolean }>;
+  trendPeriods: { early: string; recent: string };
+  source: string;
 }
 
 /** One soil-and-water tip beside a rotation, with its numbers from the plan's own records and its source. */
@@ -161,6 +272,14 @@ export interface AdviceJSON {
   farmer_card?: FarmerCard;
   crop_choice?: CropChoiceResult | null; // set when the farmer named the crops they want
   local_context?: LocalContext; // the place's land type, what farmers grow there now, and its local hazards
+  /** The option every other one is compared with (the farmer's own rotation when they gave it). */
+  reference_option_id?: string | null;
+  /** Why the farmer's own rotation could not be shown, when it could not. */
+  current_rotation_note?: { bn: string; en: string } | null;
+  season_calendar?: SeasonCalendarSummary | null;
+  what_if?: WhatIfResult | null;
+  /** The tool supports, and does not replace, the farmer's judgment and the officer's local knowledge. */
+  disclaimer?: { bn: string; en: string };
 }
 
 /** What the engine knows about the place beyond the weather replay, and the notes that follow from it. */

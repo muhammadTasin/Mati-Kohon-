@@ -165,6 +165,23 @@ async function run() {
   check(Object.keys(mapRows.upazilas).length === 544 && god.cropsNow !== undefined && god.boroIrrigationMm > 0 && god.pesticideRice?.length === 2 && god.organicMatter,
     'the map has 544 upazilas with MODIS, NASA replay, PEST-CHEMGRIDS and SRDI values');
   check(Object.values(mapRows.upazilas).filter(r => r.rainStatus).length > 500, "the map carries the daily NASA update's rain and soil status");
+  check(god.springHotDays > 0 && god.winterColdNights >= 0 && god.preMonsoonErosiveDays > 0 && god.dryRootWet > 0 && god.dryRootWet < 1 && mapRows.sources.risk,
+    'the map carries the season risks: spring heat, winter cold, soil-moving rain on bare fields and the dry-season root zone');
+
+  // Field Shift's statement: the farmer's rotation now, constraints and a what-if year go through the advice API
+  const fsAdvice = await (await fetch(`${BASE}/api/v1/advice`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+    unionId: 'talanda_tanore', currentAmanCrop: 'BRRI dhan49', farmerPriorities: { water: 0.5, income: 0.3, soil: 0.2 },
+    currentRotation: { monsoon: 'aman', winter: 'boro' }, constraints: { machinery: 'hand', market: 'nowhere' }, scenario: { rainPct: -90, warmingC: 9 },
+  }) })).json();
+  const fsMine = fsAdvice.options.filter(o => o.farmerCurrent);
+  check(fsAdvice.options.length >= 3 && fsMine.length === 1 && fsAdvice.reference_option_id === fsMine[0].id && fsAdvice.options.every(o => o.review?.why?.length && o.review?.checks?.length),
+    "the farmer's rotation is one marked option, the reference for every option's review");
+  check(fsAdvice.what_if?.rainPct === -20 && fsAdvice.what_if?.warmingC === 3, 'a what-if outside -20..20% rain and 0..3 C is clamped');
+  check(fsAdvice.options.some(o => o.review.constraintFlags.length) && fsAdvice.disclaimer?.bn && fsAdvice.season_calendar?.trends?.length, 'constraints flag options; the disclaimer and the season calendar are sent');
+  const badRotation = await (await fetch(`${BASE}/api/v1/advice`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+    unionId: 'talanda_tanore', currentRotation: { winter: '<script>' } }) })).json();
+  check(!badRotation.options.some(o => o.farmerCurrent) && !badRotation.what_if, 'a malformed rotation is ignored; no scenario, no what-if');
+  console.log('✓ Field Shift: the farmer\'s rotation ranks', fsMine[0].rank, 'of', fsAdvice.options.length, '; what-if clamped; season risks on the map');
   check(Object.values(mapRows.upazilas).filter(r => r.blastStatus && r.lateBlightStatus).length > 500, 'the map carries this week\'s disease weather');
   check(['high', 'watch', 'clear', 'none'].includes(mapRows.upazilas.ADM3_Tanore.amanDryStatus) && typeof mapRows.upazilas.ADM3_Tanore.paddyWaterMm === 'number'
     && mapRows.upazilas.ADM3_Abhaynagar.amanDryStatus === null, 'the map carries this week\'s field alerts where the daily file has field water');

@@ -27,6 +27,8 @@ import { diseaseData, typicalDiseaseDays, type DiseaseNow } from './data/disease
 import { budgetHere, groundwaterBudgetData } from './data/groundwater_budget.ts';
 import { FIELD_ALERT_METHOD, drainText, fieldAlerts, type FieldCrops, type FieldWeather, type FloodNow } from './field_alerts.ts';
 import { stewardshipTips } from './stewardship.ts';
+import { DISCLAIMER, reviewOptions, seasonRisk, whatIf, type FieldSpan } from './review.ts';
+import { calendarSummary } from './data/season_calendar.ts';
 import {
   CHOICE_BY_ID,
   CHOICE_CROPS,
@@ -124,7 +126,23 @@ export interface PlanOptionsRequest {
     flood?: number;
     pest?: number;
   };
+  /**
+   * The rotation the farmer grows now, as crop ids in field order: the monsoon ('aman', 'fallow' or a monsoon crop
+   * such as 'soybean'), the winter crop ('boro', 'lentil', 'mustard', 'wheat', 'potato', ...) and an optional summer
+   * crop before the next monsoon ('mungbean', 'sesame', 'jute', 'aus'). It is always among the options, marked, and
+   * every other option is read against it.
+   */
+  currentRotation?: { monsoon?: string; winter: string; summer?: string | null };
+  /** What the farmer said they cannot do: no machines ('hand') or selling only at the village market ('village'). */
+  constraints?: { machinery?: 'hand' | 'hire' | 'own'; market?: 'village' | 'town' };
+  /** A what-if year: rain changed by this many per cent (-20 to 20) and every day this many degrees warmer (0 to 3). */
+  scenario?: { rainPct?: number; warmingC?: number };
+  /** True when the priorities are the server's defaults, not the farmer's own. */
+  defaultPriorities?: boolean;
 }
+
+/** Field Shift asks to compare at least three rotations, the farmer's own among them. */
+const MIN_OPTIONS = 3;
 
 /** The detailed pilot; every upazila in data/national_replay.json is advised too (data/location.ts). */
 export const SUPPORTED_UNIONS = ['talanda_tanore'];
@@ -758,6 +776,14 @@ export class RotationEngine {
     const cropIds = [aman ? 'aman' : spec.kharif2 ? choiceIdOf(spec.kharif2) : '', choiceIdOf(spec.rabi), spec.kharif1 ? choiceIdOf(spec.kharif1) : '']
       .filter(Boolean);
     option.stewardship = stewardshipTips(option, tspKgHa, riceCrops, cropIds);
+    option.cropIds = cropIds;
+    // The crops' field days, for the season calendar: when each meets heat, cold and heavy rain, and when the soil is bare
+    const spans: FieldSpan[] = [];
+    if (aman) spans.push({ id: 'aman', bn: 'আমন ধান', en: 'Aman rice', start: seasonDay(aman.transplant), days: aman.fieldDays, rice: true, irrigationMm: 0, cropWaterUseMm: aman.cropWaterUseMm });
+    else if (k2) spans.push({ id: choiceIdOf(k2.key), bn: k2.catalog.cropBangla, en: k2.catalog.crop, start: seasonDay(k2.record.sowing), days: k2.record.fieldDays, rice: false, irrigationMm: k2.record.netIrrigationMm, cropWaterUseMm: k2.record.cropWaterUseMm ?? null });
+    spans.push({ id: choiceIdOf(spec.rabi), bn: rabiName.cropBangla, en: rabiName.crop, start: seasonDay(rabi.sowing), days: rabi.fieldDays, rice: rabiName.isRice, irrigationMm: rabi.netIrrigationMm, cropWaterUseMm: rabi.cropWaterUseMm ?? null });
+    if (k1 && k1Name && spec.kharif1) spans.push({ id: choiceIdOf(spec.kharif1), bn: k1Name.cropBangla, en: k1Name.crop, start: seasonDay(k1.sowing), days: k1.fieldDays, rice: k1Name.isRice, irrigationMm: k1.netIrrigationMm, cropWaterUseMm: k1.cropWaterUseMm ?? null });
+    option.seasonRisk = seasonRisk(spans);
     return option;
   }
 
@@ -1157,6 +1183,121 @@ export class RotationEngine {
       }
     }
     return null;
+  }
+
+  /**
+   * The rotation the farmer grows now as a plan, fitted to this place's calendar like any other: their Aman variety
+   * (or the usual BRRI dhan49), their winter crop on its first date after the field is ready, their summer crop if
+   * it still fits before the next monsoon. Null, with the reason, when it cannot be built here.
+   */
+  private farmerRotationSpec(cur: NonNullable<PlanOptionsRequest['currentRotation']>, request: PlanOptionsRequest, rules: LandRules):
+    { spec: CandidateSpec | null; note: { bn: string; en: string } | null } {
+    const no = (bn: string, en: string) => ({ spec: null, note: { bn, en } });
+    const winter = CHOICE_BY_ID[String(cur.winter ?? '').toLowerCase()];
+    if (!winter || winter.season !== 'Rabi') {
+      return no('শীতে কোনো ফসল না থাকলে (বছরে শুধু আমন) চক্রটি এখনো হিসাব করা যায় না; তুলনার জন্য প্রচলিত চক্র দেখানো হলো।',
+        'A year with no winter crop (Aman only) cannot be modelled yet; the usual rotation is shown for comparison.');
+    }
+    const monsoon = String(cur.monsoon ?? 'aman').toLowerCase();
+    let amanKey: string | undefined;
+    let k2Key: string | undefined;
+    if (monsoon === 'aman') {
+      if (!rules.aman) return no('এই জমিতে বর্ষায় আমন হয় না (পানি গভীর), তাই আপনার চক্রে আমন ধরা যায়নি।', 'Aman does not grow on this land in the monsoon (deep water), so the rotation cannot hold it.');
+      amanKey = [request.currentAmanCrop, 'BRRI dhan49', ...Object.keys(AMAN_CATALOG)].find(a => a && LOC.aman[a] && AMAN_CATALOG[a]);
+    } else if (monsoon !== 'fallow') {
+      const crop = CHOICE_BY_ID[`${monsoon}_k2`] ?? CHOICE_BY_ID[monsoon];
+      if (!crop || crop.season !== 'Kharif-2' || !rules.kharif2) return no('আপনার বর্ষার ফসলটি এই জমিতে হিসাব করা যায় না।', 'The monsoon crop given cannot be modelled on this land.');
+      k2Key = kharif2Keys(crop)[0];
+      if (!k2Key) return no('আপনার বর্ষার ফসলের তথ্য এই জায়গায় নেই।', 'No replay data for that monsoon crop here.');
+    }
+    const amanRecord = amanKey ? LOC.aman[amanKey] : undefined;
+    const k2Record = k2Key ? recordFor(k2Key) : undefined;
+    const ready = amanRecord ? amanRecord.fieldFree : k2Record ? addDays(k2Record.harvest, TURNAROUND_DAYS) : rules.ready;
+    // The winter crop's replay records that fit after the monsoon slot (Boro also as the early BRRI dhan88)
+    const winters = [winter, ...(winter.alsoCovers ?? []).map(id => CHOICE_BY_ID[id]).filter(c => c?.season === 'Rabi')];
+    const rabiKeys = winters.map(crop => rabiFit(crop, ready, amanRecord?.maturity))
+      .filter(isFit).map(f => f.key).filter(key => !harvestTooLate(request.landType, recordFor(key)!.harvest));
+    if (!rabiKeys.length) return no(`আপনার ${winter.cropBangla} এই জায়গার হিসাবে বর্ষার ফসলের পরে সময়মতো বসে না।`, `The ${winter.crop.toLowerCase()} does not fit after the monsoon crop on this place's calendar.`);
+    let rabiKey = rabiKeys[0];
+    let k1Key: string | undefined;
+    let note: { bn: string; en: string } | null = null;
+    const summerId = cur.summer ? String(cur.summer).toLowerCase() : '';
+    if (summerId && summerId !== 'fallow') {
+      const summer = CHOICE_BY_ID[summerId];
+      const nextStart = (key: string) => (amanRecord ? amanRecord.transplant : k2Record ? k2Record.sowing : recordFor(key)!.sowing);
+      // The first winter record that leaves room for the summer crop (an early Boro may), else the year without it
+      const fitted = summer && summer.season === 'Kharif-1' && rules.kharif1
+        ? rabiKeys.map(key => ({ key, fit: kharif1Fit(summer, recordFor(key)!.harvest, nextStart(key)) })).find(x => isFit(x.fit))
+        : undefined;
+      if (fitted && isFit(fitted.fit)) {
+        rabiKey = fitted.key;
+        k1Key = fitted.fit.key;
+      } else {
+        const name = summer ? [summer.cropBangla, summer.crop.toLowerCase()] : [summerId, summerId];
+        note = {
+          bn: `আপনার ${name[0]} এই জায়গার হিসাবে শীতের ফসল আর বর্ষার মাঝে বসে না, তাই আপনার চক্র ${name[0]} ছাড়া দেখানো হলো।`,
+          en: `The ${name[1]} does not fit between the winter crop and the monsoon on this place's calendar, so the farmer's rotation is shown without it.`,
+        };
+      }
+    }
+    const known = amanKey && !k1Key ? CANDIDATES.find(c => c.aman === amanKey && c.rabi === rabiKey) : undefined;
+    const monsoonId = amanKey ? amanShort(amanKey) : k2Key ? choiceIdOf(k2Key) : 'fallow';
+    return {
+      spec: known ?? {
+        id: `rot_${monsoonId}_${RELEASE_SHORT[rabiKey] ?? choiceIdOf(rabiKey)}${k1Key ? `_${choiceIdOf(k1Key)}` : ''}`,
+        aman: amanKey,
+        kharif2: k2Key,
+        rabi: rabiKey,
+        kharif1: k1Key,
+        isBaseline: false,
+        tagBangla: 'আপনার এখনকার চক্র',
+        tagEnglish: 'your rotation now',
+      },
+      note,
+    };
+  }
+
+  /** The same Aman variety (or monsoon crop) and the same winter and summer crops, on any sowing date. */
+  private sameRotation(a: CandidateSpec, b: CandidateSpec): boolean {
+    const kind = (s: CandidateSpec) => [s.aman ?? (s.kharif2 ? choiceIdOf(s.kharif2) : 'fallow'), choiceIdOf(s.rabi), s.kharif1 ? choiceIdOf(s.kharif1) : ''].join('|');
+    return kind(a) === kind(b);
+  }
+
+  /** Adds the farmer's own rotation (or marks the plan already showing it) and re-ranks. */
+  private withFarmerRotation(specs: CandidateSpec[], options: CandidateRotation[], request: PlanOptionsRequest, seasonYear: number, rules: LandRules) {
+    const { spec, note } = this.farmerRotationSpec(request.currentRotation!, request, rules);
+    if (!spec) return { specs, options, note };
+    const same = specs.find(s => this.sameRotation(s, spec));
+    const allSpecs = same ? specs : [...specs, spec];
+    const allOptions = same ? options : [...options, this.evaluateRotation(spec, request, seasonYear)];
+    const mine = allOptions.find(o => o.id === (same ?? spec).id)!;
+    mine.farmerCurrent = true;
+    allOptions.sort((a, b) => b.totalWeightedScore - a.totalWeightedScore);
+    allOptions.forEach((o, i) => {
+      o.rank = i + 1;
+    });
+    return { specs: allSpecs, options: allOptions, note };
+  }
+
+  /** Tops a short list up to three with the best plans for the place (the farmer's named crops can leave fewer). */
+  private atLeastThree(specs: CandidateSpec[], options: CandidateRotation[], request: PlanOptionsRequest, seasonYear: number) {
+    if (options.length >= MIN_OPTIONS) return { specs, options };
+    const rules = landRules(request.landType);
+    const open = { ...request, preferredCrops: undefined, heroCrop: rules.aman ? undefined : 'boro' };
+    const more = this.choicePlans(open, seasonYear, true);
+    const allSpecs = [...specs];
+    const allOptions = [...options];
+    for (const [i, extra] of more.specs.entries()) {
+      if (allOptions.length >= MIN_OPTIONS) break;
+      if (allSpecs.some(s => s.id === extra.id || this.sameRotation(s, extra))) continue;
+      allSpecs.push(extra);
+      allOptions.push(more.options[i]);
+    }
+    allOptions.sort((a, b) => b.totalWeightedScore - a.totalWeightedScore);
+    allOptions.forEach((o, i) => {
+      o.rank = i + 1;
+    });
+    return { specs: allSpecs, options: allOptions };
   }
 
   /** The early Boro's replay key after a monsoon slot, when it fits. */
@@ -1575,6 +1716,13 @@ export class RotationEngine {
     let specs = useChoice ? choice!.specs : CANDIDATES;
     let options = useChoice ? choice!.options : this.rank(CANDIDATES, request, seasonYear);
     if (planLocally && useChoice) ({ specs, options } = this.withCurrentPractice(specs, options, request, seasonYear, rules));
+    let currentRotationNote: { bn: string; en: string } | null = null;
+    if (request.currentRotation?.winter) {
+      const mine = this.withFarmerRotation(specs, options, request, seasonYear, rules);
+      ({ specs, options } = mine);
+      currentRotationNote = mine.note;
+    }
+    ({ specs, options } = this.atLeastThree(specs, options, request, seasonYear));
 
     const bestSpec = specs.find(c => c.id === options[0].id)!;
     const altSpec = options[1] ? specs.find(c => c.id === options[1].id) : undefined;
@@ -1668,6 +1816,15 @@ export class RotationEngine {
 
     const askedCrops = [...(request.heroCrop ? [request.heroCrop] : []), ...(request.preferredCrops ?? [])]
       .map(id => CHOICE_BY_ID[String(id).toLowerCase()]).filter(Boolean);
+    const reference = reviewOptions(options, {
+      priorities: request.farmerPriorities as Record<string, number | undefined>,
+      constraints: request.constraints,
+      landTypeAssumed: Boolean(request.landTypeAssumed),
+      soilCard: Boolean(LOC.srdi),
+      defaultPriorities: Boolean(request.defaultPriorities),
+      groundwaterFalling: (LOC.conditions.groundwater?.trendMmPerYear ?? 0) < 0,
+    });
+    const scenario = request.scenario;
     return {
       schema_version: '1.0',
       advice_id: `adv_${Date.now()}_${request.unionId}`,
@@ -1697,6 +1854,11 @@ export class RotationEngine {
       farmer_card: this.farmerCard(bestSpec, altSpec, aman ? amanStageBangla(aman, today, seasonYear) : ''),
       ...(choice && wantsChoice ? { crop_choice: choice.result } : {}),
       local_context: local.context,
+      reference_option_id: reference?.id ?? null,
+      current_rotation_note: currentRotationNote,
+      season_calendar: calendarSummary(),
+      what_if: scenario && (scenario.rainPct || scenario.warmingC) ? whatIf(options, scenario.rainPct ?? 0, scenario.warmingC ?? 0) : null,
+      disclaimer: DISCLAIMER,
     };
   }
 }

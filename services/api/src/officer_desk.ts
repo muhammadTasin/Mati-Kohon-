@@ -360,7 +360,19 @@ export function planRequestForFarmer(farmerId: string, base: PlanOptionsRequest)
     landTypeAssumed: false,
     currentAmanCrop: obs?.currentAmanCrop ?? farmer.currentAmanCrop,
     farmerPriorities: obs ? { ...obs.priorities } : base.farmerPriorities,
+    defaultPriorities: obs ? false : base.defaultPriorities,
+    currentRotation: base.currentRotation ?? rotationFromCrops(farmer.crops),
   };
+}
+
+/** The register's crops this year as the farmer's rotation now: the monsoon crop, the winter crop, a summer crop. */
+export function rotationFromCrops(crops: string[] | undefined): PlanOptionsRequest['currentRotation'] {
+  if (!crops?.length) return undefined;
+  const season = (id: string) => CHOICE_CROPS.find(c => c.id === id)?.season;
+  const winter = crops.find(c => season(c) === 'Rabi');
+  if (!winter) return undefined;
+  const monsoon = crops.includes('aman') ? 'aman' : crops.find(c => season(c) === 'Kharif-2' || season(`${c}_k2`) === 'Kharif-2') ?? 'fallow';
+  return { monsoon, winter, summer: crops.find(c => season(c) === 'Kharif-1') ?? null };
 }
 
 export function verificationFor(farmerId: string): OfficerVerification | null {

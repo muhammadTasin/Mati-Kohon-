@@ -2,7 +2,9 @@
  * One row per upazila for the dashboard's map of Bangladesh, read from the same files the advice uses:
  * MODIS crops a year and winter greenness (research/explore/national_greenness.py), the district's 25-season NASA
  * replay and GLDAS groundwater (national_replay.py), NASA SEDAC PEST-CHEMGRIDS pesticide on rice and on pulses and
- * oilseeds (pesticide_load.py), SRDI soil fertility classes (soil_atlas_export.py), and today's NASA conditions
+ * oilseeds (pesticide_load.py), SRDI soil fertility classes (soil_atlas_export.py), the district's season risks
+ * (season_calendar.py: spring heat, winter cold nights, soil-moving rain in the bare pre-monsoon months, the dry season's
+ * root zone and the 25-year trend of hot days), and today's NASA conditions
  * (research/live/daily_update.py). District-level values repeat for every upazila of the district, and say so.
  * This week's field alerts use the engine's rules (field_alerts.ts) with the usual crop calendar: every Aman variety
  * the advice knows (the most serious result counts), BRRI dhan28 for Boro and BARI Gom 33 for wheat, where the
@@ -30,6 +32,15 @@ interface StaticRow {
   pesticideOther: [number, number] | null;
   organicMatter: string | null;
   ph: string | null;
+  /** Days of 36 C or more in March-May, nights of 10 C or less in December-February (a year, 2001-2025). */
+  springHotDays: number | null;
+  winterColdNights: number | null;
+  /** Days of 23 mm or more of rain in April-June, when fields stand bare between the winter crop and Aman. */
+  preMonsoonErosiveDays: number | null;
+  /** NASA POWER root-zone wetness (0-1) in January-April, when Rabi crops and Boro draw on the soil. */
+  dryRootWet: number | null;
+  /** The yearly hot days' Theil-Sen slope per decade, only where the Mann-Kendall p is below 0.05; else null. */
+  hotTrendPerDecade: number | null;
 }
 
 let fixed: { rows: Record<string, StaticRow>; sources: Record<string, string> } | null = null;
@@ -41,12 +52,17 @@ function staticRows() {
   const atlas = read('soil_atlas.json');
   const pest = read('pesticide_load.json');
   const budget = read('groundwater_budget.json');
+  const calendar = read('season_calendar.json');
+  const sum = (arr: number[] | undefined, months: number[]) => (arr ? Math.round(months.reduce((a, m) => a + arr[m], 0) * 10) / 10 : null);
+  const mean = (arr: number[] | undefined, months: number[]) => (arr ? Math.round(months.reduce((a, m) => a + arr[m], 0) / months.length * 100) / 100 : null);
   const rows: Record<string, StaticRow> = {};
   for (const u of national.upazilas as Array<{ id: string; name: string; district: string }>) {
     const d = national.districts[u.district];
     const g = green.upazilas[u.id];
     const s = atlas.classes[u.id];
     const p = pest.upazilas[u.id] ?? {};
+    const c = calendar.places[u.district];
+    const hotTrend = c?.trend?.hotDays;
     rows[u.id] = {
       name: u.name,
       district: u.district,
@@ -61,6 +77,11 @@ function staticRows() {
       pesticideOther: p.other ?? null,
       organicMatter: s?.organicMatter ?? null,
       ph: s?.ph ?? null,
+      springHotDays: sum(c?.months?.hotDays, [2, 3, 4]),
+      winterColdNights: sum(c?.months?.coldNights, [11, 0, 1]),
+      preMonsoonErosiveDays: sum(c?.months?.erosiveRainDays, [3, 4, 5]),
+      dryRootWet: mean(c?.months?.rootWet, [0, 1, 2, 3]),
+      hotTrendPerDecade: hotTrend && hotTrend.p < 0.05 ? hotTrend.slopePerDecade : null,
     };
   }
   fixed = {
@@ -73,6 +94,7 @@ function staticRows() {
       flood: 'NASA OPERA DSWx-HLS (Landsat and Sentinel-2) or NASA-ISRO NISAR radar, whichever is newer: water now on land normally dry in winter (not water in both December 2025 and February 2026), of the land seen',
       field: "Paddy water from NASA GPM IMERG rain and POWER evapotranspiration (the replay's water balance); heat and cold from NASA POWER and Open-Meteo's 7-day forecast (a weather model, not NASA)",
       soil: atlas.source,
+      risk: `${calendar.source}; seasons ${calendar.seasons} (research/explore/season_calendar.py)`,
     },
   };
   return fixed;

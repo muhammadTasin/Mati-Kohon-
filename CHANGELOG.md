@@ -2,6 +2,26 @@
 
 What changed in Project EDEN, newest first, with who made each change and the branch it came from. Every branch below was merged into `main` on 1 October 2026.
 
+## 29 October 2026 · Field Shift's full statement, line by line (Tasrif, `feature/field-shift-statement`)
+
+- **The statement mapped:** `docs/field-shift-statement.md` maps every requirement and suggestion of the full statement (released 28 October) to the product, with status and honest gaps.
+- **The farmer's rotation now:** the planner asks what the farmer grows (monsoon, winter, summer crop). That rotation is always among the options, and every option is compared with it. At least three options are guaranteed. A registered farmer's crops give their rotation automatically.
+- **The five questions for each option** (`packages/rotation-engine/src/review.ts`): why it was suggested, the evidence with sources, possible benefits, information gaps, and the risks to check locally. Also the crop roles (nitrogen-fixing, deep-rooting per FAO-56, little irrigation here, soil cover, fodder) and flags for the farmer's constraints (no machines, village market only), with crop needs in `data/crop_traits.ts`.
+- **Season calendar** (`research/explore/season_calendar.py` → `season_calendar.json`):
+  - Month-by-month data at the pilot and the 64 district points: hot, cold and near-frost days; heavy and soil-moving rain; dry days; ET0; ET; root-zone wetness. From NASA POWER with the station correction, and GPM IMERG, 2001-2025.
+  - MODIS NDVI by month for 518 upazilas (2021-25 against 2001-05).
+  - 25-year trends by two methods, called clear only at p < 0.05.
+  - Where the replay's nearest station has under three years of data, the nearest station within 50 km is used.
+- **On the dashboard:**
+  - A season-risk strip under each rotation's timeline (crop or bare, risks, NDVI).
+  - What-if sliders for rain and warming.
+  - The place's calendar and trend table on the evidence screen.
+  - A plain-language glossary and methods card (terms, satellite against ground, one grid, five methods compared, crop roles).
+  - Forage, heat and flood priority sliders.
+  - Four map layers of field risks.
+  - The disclaimer above the comparison.
+- **Engine and API:** `currentRotation`, `constraints` and `scenario` on `POST /api/v1/advice`. TEST 18 and the API checks cover them.
+
 ## 29 October 2026 · Real photos, a question box for farmers, and Tasin's work merged (Tasrif, `feature/latest`)
 
 - **Merged:** muhammadTasin's `integrations-audit` line (Supabase sign-in for managers, sites, the NASA POWER climate card, the data-sources card, no Talanda fertilizer doses outside the pilot, phone-app audit fixes) and `main` (the daily updates). The farmer calls follow the officer's site. A fresh daily NASA update was run with this branch's code.

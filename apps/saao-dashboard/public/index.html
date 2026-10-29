@@ -550,6 +550,33 @@
               <option value="none" data-i18n="planner.irrigationNo">নেই, শুধু বৃষ্টি</option>
             </select>
           </div>
+          <fieldset class="form-group current-rotation">
+            <legend data-i18n="planner.currentRotation">কৃষক এখন কী চাষ করেন? (সব বিকল্প এর সাথে তুলনা হবে)</legend>
+            <div class="rot-row">
+              <label><span data-i18n="planner.curMonsoon">বর্ষা</span>
+                <select id="curMonsoon" class="form-control"></select></label>
+              <label><span data-i18n="planner.curWinter">শীত (রবি)</span>
+                <select id="curWinter" class="form-control"></select></label>
+              <label><span data-i18n="planner.curSummer">গ্রীষ্ম (খরিফ-১)</span>
+                <select id="curSummer" class="form-control"></select></label>
+            </div>
+            <small class="form-note" data-i18n="planner.curNote">না জানালে এলাকার প্রচলিত চক্রের (BRRI জরিপ) বা বোরো চক্রের সাথে তুলনা হবে।</small>
+          </fieldset>
+          <div class="form-group constraint-row">
+            <label><span data-i18n="planner.machinery">যন্ত্রপাতি (মাড়াই, শেলার)</span>
+              <select id="planMachinery" class="form-control">
+                <option value="" data-i18n="planner.notSaid">বলা নেই</option>
+                <option value="own" data-i18n="planner.machineryOwn">নিজের আছে</option>
+                <option value="hire" data-i18n="planner.machineryHire">ভাড়ায় পাওয়া যায়</option>
+                <option value="hand" data-i18n="planner.machineryHand">নেই, হাতে কাজ</option>
+              </select></label>
+            <label><span data-i18n="planner.market">ফসল কোথায় বিক্রি</span>
+              <select id="planMarket" class="form-control">
+                <option value="" data-i18n="planner.notSaid">বলা নেই</option>
+                <option value="town" data-i18n="planner.marketTown">শহরের বাজার, মিল বা হিমাগার</option>
+                <option value="village" data-i18n="planner.marketVillage">শুধু গ্রামের হাট</option>
+              </select></label>
+          </div>
 
           <div class="form-group">
             <label data-i18n="planner.currentAman">এ মৌসুমে জমিতে থাকা আমন জাত</label>
@@ -598,7 +625,7 @@
 
             <div class="slider-group">
               <div class="slider-header">
-                <span data-i18n="planner.wSoil">মাটির পুষ্টি ও জৈব পদার্থ</span>
+                <span data-i18n="planner.wSoil">মাটি: নাইট্রোজেন, জৈব পদার্থ ও ক্ষয়রোধ</span>
                 <span id="valWeightSoil" class="slider-val">২০%</span>
               </div>
               <input type="range" id="weightSoil" min="0" max="100" value="20" oninput="updateWeights()">
@@ -611,6 +638,28 @@
               </div>
               <input type="range" id="weightPest" min="0" max="100" value="10" oninput="updateWeights()">
             </div>
+            <div class="slider-group">
+              <div class="slider-header">
+                <span data-i18n="planner.wFodder">গোখাদ্য (খড়, ডাঁটা, পাতা)</span>
+                <span id="valWeightFodder" class="slider-val">০%</span>
+              </div>
+              <input type="range" id="weightFodder" min="0" max="100" value="0" oninput="updateWeights()">
+            </div>
+            <div class="slider-group">
+              <div class="slider-header">
+                <span data-i18n="planner.wHeat">ফুল আসার সময় গরম সহ্য</span>
+                <span id="valWeightHeat" class="slider-val">০%</span>
+              </div>
+              <input type="range" id="weightHeat" min="0" max="100" value="0" oninput="updateWeights()">
+            </div>
+            <div class="slider-group">
+              <div class="slider-header">
+                <span data-i18n="planner.wFlood">বন্যা ও জলাবদ্ধতা থেকে নিরাপদ</span>
+                <span id="valWeightFlood" class="slider-val">০%</span>
+              </div>
+              <input type="range" id="weightFlood" min="0" max="100" value="0" oninput="updateWeights()">
+            </div>
+            <small class="form-note" data-i18n="planner.zeroNote">০% মানে কৃষক বলেননি: তখন সামান্য ওজন (৫%) ধরা হয়।</small>
           </div>
 
           <button class="btn btn-primary btn-block" onclick="runPlannerCalculation()" data-i18n="planner.run">
@@ -648,6 +697,9 @@
         </div>
       </div>
 
+      <p id="comparisonDisclaimer" class="disclaimer-note" role="note" hidden></p>
+      <div id="currentRotationNote" class="local-context-note" hidden></div>
+
       <!-- COMPARISON CARDS ROW -->
       <div id="comparisonCardsGrid" class="comparison-grid">
         <!-- Dynamically rendered options comparison -->
@@ -663,6 +715,24 @@
         <div id="timelineContainer" class="timeline-visual">
           <!-- Dynamically populated timeline -->
         </div>
+        <div id="seasonRiskContainer" class="season-risk"></div>
+      </div>
+
+      <!-- WHAT-IF: A DRIER OR WETTER, WARMER YEAR -->
+      <div class="card whatif-card">
+        <div class="card-header">
+          <h3 data-i18n="whatif.title">বৃষ্টি কম-বেশি হলে, গরম বাড়লে কী হয়?</h3>
+          <span class="badge badge-warning" data-i18n="whatif.badge">আনুমানিক হিসাব</span>
+        </div>
+        <p class="timeline-desc" data-i18n="whatif.lead">স্লাইডার সরিয়ে দেখুন প্রতিটি চক্রে সেচ, জমিতে থাকা অবস্থায় গরম দিন আর খালি মাটিতে মাটি-ধোয়া বৃষ্টি কীভাবে বদলায়। এটি দ্রুত আন্দাজ, ২৫ মৌসুমের পূর্ণ হিসাব নয়।</p>
+        <div class="whatif-controls">
+          <label for="whatIfRain"><span data-i18n="whatif.rain">বৃষ্টি</span> <output id="whatIfRainVal">০%</output></label>
+          <input type="range" id="whatIfRain" min="-20" max="20" step="10" value="0">
+          <label for="whatIfWarm"><span data-i18n="whatif.warm">প্রতিদিন বেশি গরম</span> <output id="whatIfWarmVal">০°সে</output></label>
+          <input type="range" id="whatIfWarm" min="0" max="3" step="1" value="0">
+        </div>
+        <div id="whatIfResults" class="whatif-results"></div>
+        <p class="form-note" id="whatIfMethod"></p>
       </div>
     </section>
 
@@ -755,6 +825,95 @@
             <p data-i18n="evidence.limitIncome"><strong>আয়:</strong> বাজারদর (DAM) ও কৃষকের খরচ এখনো সংগ্রহ হয়নি; আয়ের স্কোর দলের অনুমান।</p>
             <p data-i18n="evidence.limitFlood"><strong>বন্যা, বালাই ও কৃষকের পছন্দ:</strong> বরেন্দ্রে বন্যা মডেল করা হয়নি; বালাই স্কোর নিয়মভিত্তিক; কৃষক সাক্ষাৎকারের আগে অগ্রাধিকারগুলো ডিফল্ট।</p>
           </div>
+        </div>
+      </div>
+
+      <!-- THE PLACE'S SEASON CALENDAR AND ITS TRENDS -->
+      <div class="card calendar-card">
+        <div class="card-header">
+          <h3 data-i18n="calendar.title">এই জায়গার বছর: মাসে মাসে গরম, শীত, বৃষ্টি, মাটির রস ও সবুজ</h3>
+          <span class="badge badge-info" id="calendarPlace">…</span>
+        </div>
+        <p class="timeline-desc" data-i18n="calendar.lead">২০০১–২০২৫ সালের গড়: নাসা POWER (কাছের BMD স্টেশনের সাথে মিলিয়ে) ও GPM IMERG বৃষ্টি; সবুজ নাসা MODIS NDVI (২০২১–২৫)। এক বছরে প্রতি মাসে কত দিন।</p>
+        <div id="calendarChart" class="calendar-chart"></div>
+        <h4 class="calendar-sub" data-i18n="calendar.trendsTitle">২৫ বছরে কী বদলাল: দুই পদ্ধতিতে পরীক্ষা</h4>
+        <p class="form-note" data-i18n="calendar.trendsLead">প্রথম ১২ বছরের গড় বনাম শেষ ১২ বছরের গড়, আর থাইল-সেন ঢাল (ম্যান-কেন্ডাল পরীক্ষা)। p ০.০৫-এর কম হলে তবেই "স্পষ্ট ধারা" বলা হয়।</p>
+        <div id="calendarTrends"></div>
+      </div>
+
+      <!-- TERMS AND METHODS IN PLAIN WORDS -->
+      <div class="card glossary-card">
+        <div class="card-header">
+          <h3 data-i18n="glossary.title">শব্দ ও পদ্ধতি, সহজ ভাষায়</h3>
+          <span class="badge badge-neutral" data-i18n="glossary.badge">কৃষক ও কর্মকর্তার জন্য</span>
+        </div>
+        <div class="glossary-grid">
+          <details class="fold" open>
+            <summary data-i18n="glossary.termsTitle">বিজ্ঞানের শব্দগুলো</summary>
+            <dl class="glossary-list">
+              <dt data-i18n="glossary.etTerm">বাষ্পীভবন-প্রস্বেদন (ET)</dt>
+              <dd data-i18n="glossary.etText">মাটি থেকে বাষ্প হয়ে আর পাতা দিয়ে যে পানি বাতাসে যায়। নাসা POWER-এর আবহাওয়া থেকে FAO-56 সূত্রে ঘাসের জমির চাহিদা (ET0) বের করে ফসলের গুণাঙ্ক দিয়ে গুণ করলে ফসলের চাহিদা; বৃষ্টিতে যা মেটে না, সেটুকুই সেচ।</dd>
+              <dt data-i18n="glossary.smTerm">মাটির রসের অস্বাভাবিকতা</dt>
+              <dd data-i18n="glossary.smText">আজকের মাটির রস অতীত বছরগুলোর একই দিনের তুলনায় কত বেশি বা কম। নাসার SMAP উপগ্রহ (৯ কিমি) ও POWER/GLDAS মডেল থেকে; রবি বোনার আগে শুকনো মাটি মানে আগে বোনা বা হালকা সেচ।</dd>
+              <dt data-i18n="glossary.ndviTerm">NDVI (সবুজের সূচক)</dt>
+              <dd data-i18n="glossary.ndviText">পাতা যত ঘন ও সবুজ, সূচক তত বেশি (০ থেকে ১)। ০.৩৫-এর নিচে জমি খালি, পানিতে ডোবা বা সদ্য রোপণ; ০.৬-এর ওপরে ঘন ফসল। নাসা MODIS (২৫০ মি) ও HLS (৩০ মি) থেকে।</dd>
+              <dt data-i18n="glossary.frostTerm">তুষার ও শীতের ঝুঁকি</dt>
+              <dd data-i18n="glossary.frostText">বাংলাদেশে তুষার প্রায় পড়ে না; আসল ঝুঁকি শীতের রাত। ১০°সে বা কম (BMD-র শৈত্যপ্রবাহ) বোরোর চারা ও আলুর ক্ষতি করে; ৪°সে বা কম হলে মাটির কাছে তুষার জমতে পারে, যা উত্তরাঞ্চলেও বছরে এক রাতের কম।</dd>
+              <dt data-i18n="glossary.wbTerm">পানির হিসাব</dt>
+              <dd data-i18n="glossary.wbText">বৃষ্টি আর সেচ যোগ, ফসলের খরচ আর চুয়ে যাওয়া বাদ: বাকিটা জমিতে জমে থাকা পানি। প্রতিদিনের এই হিসাবে দেখা হয় কোন বছরে আমনের ফুলের সময় জমি শুকায়।</dd>
+              <dt data-i18n="glossary.graceTerm">ভূগর্ভস্থ পানির ধারা (GRACE)</dt>
+              <dd data-i18n="glossary.graceText">নাসার GRACE ও GRACE-FO উপগ্রহ পৃথিবীর টানের সূক্ষ্ম বদল মেপে বোঝে নিচের পানি কমছে কি না; GLDAS মডেল তা জেলা পর্যন্ত ভাগ করে।</dd>
+              <dt data-i18n="glossary.rainTerm">ভারী ও মাটি-ধোয়া বৃষ্টি</dt>
+              <dd data-i18n="glossary.rainText">দিনে ৪৪ মিমি বা বেশি হলে ভারী বৃষ্টি (BMD); ২৩ মিমি বা বেশি হলে খালি মাটি ধুয়ে যায়। জমিতে ফসল থাকলে এই ক্ষয় কম হয়।</dd>
+            </dl>
+          </details>
+          <details class="fold">
+            <summary data-i18n="glossary.groundTitle">উপগ্রহের মাপ বনাম মাঠের মাপ</summary>
+            <p data-i18n="glossary.groundSat"><strong>উপগ্রহ:</strong> সারা দেশ একই নিয়মে, প্রতিদিন, ২৫ বছর ধরে মাপে; কিন্তু একটি গ্রিড (৯–৫০ কিমি) বা পিক্সেলের (৩০–২৫০ মি) গড় দেয়, আর বর্ষায় মেঘে চোখ ঢাকা পড়ে (রাডার ছাড়া)।</p>
+            <p data-i18n="glossary.groundField"><strong>মাঠ:</strong> আবহাওয়া স্টেশন, মাটি পরীক্ষা আর কর্মকর্তার পর্যবেক্ষণ একটি জায়গার সঠিক মাপ দেয়, কিন্তু সব জায়গায় নেই।</p>
+            <p data-i18n="glossary.groundBoth"><strong>দুটো মিলিয়ে:</strong> নাসা POWER-এর তাপমাত্রা কাছের BMD স্টেশনের সাথে মাস ধরে মেলানো; GPM IMERG বৃষ্টি বৃষ্টিমাপকের সাথে মিলিয়ে তৈরি; সার আসে SRDI-র মাটি পরীক্ষা থেকে; কর্মকর্তার মাঠের পর্যবেক্ষণ পেলে পরামর্শ বদলায়।</p>
+          </details>
+          <details class="fold">
+            <summary data-i18n="glossary.gridTitle">আলাদা মাপের তথ্য এক ছকে আনা</summary>
+            <p data-i18n="glossary.gridLead">সব তথ্য উপজেলায় (৫৪৪টি) আর তার জেলার বিন্দুতে আনা হয়, তারপর স্কোর হয়:</p>
+            <table class="data-table glossary-table">
+              <thead><tr><th data-i18n="glossary.thData">তথ্য</th><th data-i18n="glossary.thNative">নিজের মাপ</th><th data-i18n="glossary.thHere">এখানে যেভাবে</th></tr></thead>
+              <tbody>
+                <tr><td>NASA POWER (MERRA-2)</td><td data-i18n="glossary.powerNative">০.৫° গ্রিড, দৈনিক</td><td data-i18n="glossary.powerHere">জেলার বিন্দু; BMD স্টেশনের সাথে মাসভিত্তিক সমন্বয়</td></tr>
+                <tr><td>GPM IMERG Final</td><td data-i18n="glossary.imergNative">০.১° (~১০ কিমি), দৈনিক</td><td data-i18n="glossary.imergHere">একই বিন্দু; ২৫ মৌসুমের পানির হিসাব</td></tr>
+                <tr><td>SMAP L4</td><td data-i18n="glossary.smapNative">৯ কিমি, ৩ ঘণ্টা</td><td data-i18n="glossary.smapHere">উপজেলার বিন্দু; অতীতের একই দিনের সাথে তুলনা</td></tr>
+                <tr><td>MODIS NDVI (MOD13Q1)</td><td data-i18n="glossary.modisNative">২৫০ মি, ১৬ দিন</td><td data-i18n="glossary.modisHere">উপজেলার কেন্দ্রের পিক্সেল; মাসের মধ্যমা</td></tr>
+                <tr><td>HLS (Landsat + Sentinel-2)</td><td data-i18n="glossary.hlsNative">৩০ মি, ২–৩ দিন</td><td data-i18n="glossary.hlsHere">উপজেলার আমন জমির অংশ</td></tr>
+                <tr><td>OPERA DSWx, NISAR</td><td data-i18n="glossary.operaNative">৩০ মি / ২০ মি</td><td data-i18n="glossary.operaHere">উপজেলার জমির কত অংশ পানির নিচে</td></tr>
+                <tr><td>GRACE/GRACE-FO → GLDAS-2.2</td><td data-i18n="glossary.graceNative">০.২৫°, মাসিক</td><td data-i18n="glossary.graceHere">জেলার ভূগর্ভস্থ পানির ধারা</td></tr>
+                <tr><td>NASADEM (SRTM)</td><td data-i18n="glossary.demNative">৩০ মি</td><td data-i18n="glossary.demHere">৯০ মি-এ পড়ে উপজেলার জমির ধরন</td></tr>
+                <tr><td>SRDI</td><td data-i18n="glossary.srdiNative">ইউনিয়ন কার্ড, উপজেলা অ্যাটলাস</td><td data-i18n="glossary.srdiHere">যেমন আছে; কার্ড না থাকলে সার দেওয়া হয় না</td></tr>
+              </tbody>
+            </table>
+          </details>
+          <details class="fold">
+            <summary data-i18n="glossary.siTitle">কোন পদ্ধতি কোথায়: নিয়ম, পরিসংখ্যান ও মেশিন লার্নিং</summary>
+            <ol class="glossary-methods">
+              <li data-i18n="glossary.si1"><strong>ভৌত হিসাব (স্কোরের ভিত্তি):</strong> FAO-56 পানির হিসাব আর ফুল আসার সময়ের তাপ, ২৫ মৌসুম ধরে। প্রতিটি সংখ্যা ব্যাখ্যা করা যায়, লেবেলের দরকার হয় না।</li>
+              <li data-i18n="glossary.si2"><strong>পরিসংখ্যানে ধারা:</strong> দুই পদ্ধতি পাশাপাশি: আগের-পরের গড়ের পার্থক্য আর থাইল-সেন ঢাল (ম্যান-কেন্ডাল p)। দুটো না মিললে বা p বেশি হলে "স্পষ্ট নয়" বলা হয়।</li>
+              <li data-i18n="glossary.si3"><strong>সংকেত বিশ্লেষণে মৌসুম:</strong> MODIS NDVI-কে সাভিৎস্কি-গোলে পদ্ধতিতে মসৃণ করে চূড়া গুনে বছরে কয়টি ফসল আর কোন মাসে জমি খালি, তা বের করা হয়।</li>
+              <li data-i18n="glossary.si4"><strong>মেশিন লার্নিং (পরীক্ষা করা, স্কোরে নেই):</strong> নাসার তথ্য দিয়ে জেলার ফলন অনুমানের মডেল এক মৌসুম বাদ রেখে যাচাই করা হয়েছিল; জেলার সাধারণ ধারার চেয়ে ভালো হয়নি (BBS-এর ফলন কাটা জমির হিসাবে, ক্ষতি লুকায়)। জমির লেবেল (কর্মকর্তার মাঠ যাচাই) জমলে আবার চেষ্টা হবে।</li>
+              <li data-i18n="glossary.si5"><strong>ভাষার মডেল:</strong> শুধু অনুমোদিত তথ্যকে সহজ বাংলায় বলে; একটি সংখ্যাও বদলালে দুই ধাপের যাচাই তা বাতিল করে ছকের বাক্যে ফিরে যায়।</li>
+            </ol>
+          </details>
+          <details class="fold">
+            <summary data-i18n="glossary.rolesTitle">কোন ফসল মাটির জন্য কী করে</summary>
+            <dl class="glossary-list">
+              <dt data-i18n="glossary.nTerm">নাইট্রোজেন যোগ করে (ডাল: মসুর, ছোলা, খেসারি, মুগ, সয়াবিন)</dt>
+              <dd data-i18n="glossary.nText">শিকড়ের গুটির জীবাণু বাতাসের নাইট্রোজেন মাটিতে ধরে, তাই পরের ফসলে ইউরিয়া কম লাগে।</dd>
+              <dt data-i18n="glossary.coverTerm">মাটি ঢেকে রাখে (বর্ষার আগে মুগ, তিল, পাট, আউশ; সবুজ সার ধৈঞ্চা)</dt>
+              <dd data-i18n="glossary.coverText">এপ্রিল-জুনের ঝড়বৃষ্টিতে খালি মাটি ধুয়ে যায়; জমিতে ফসল থাকলে ক্ষয় কমে, আর গাছ মাটিতে মিশিয়ে দিলে জৈব পদার্থ বাড়ে।</dd>
+              <dt data-i18n="glossary.rootTerm">গভীর শিকড় (সরিষা, ভুট্টা, গম, সূর্যমুখী, তিল)</dt>
+              <dd data-i18n="glossary.rootText">দেড় মিটার বা বেশি গভীর শিকড় ধান চাষের শক্ত স্তর ভেঙে নিচের পানি ও পুষ্টি তোলে, বৃষ্টির পানি মাটিতে ঢোকার পথ করে (FAO-56)।</dd>
+              <dt data-i18n="glossary.dryTerm">কম সেচে হয় (খরা সহনশীল)</dt>
+              <dd data-i18n="glossary.dryText">এই জায়গার ২৫ মৌসুমের হিসাবে যে ফসলে ১০০ মিমির কম সেচ লাগে: মাটির রস আর বৃষ্টিতেই বেশিরভাগ চলে, ভূগর্ভস্থ পানি বাঁচে।</dd>
+            </dl>
+          </details>
         </div>
       </div>
     </section>

@@ -531,3 +531,80 @@ figure { margin: 0; }
   .ask-art { width: 110px; }
   .ask-form { grid-template-columns: minmax(0, 1fr); }
 }
+
+/* ---------------------------------------------------------------------------
+   Field Shift (28 Oct 2026 statement): the farmer's rotation now, constraints, each option's review, the season
+   risk under the timeline, the what-if and the place's season calendar (review.js)
+   --------------------------------------------------------------------------- */
+.current-rotation { border: 1px solid var(--line); border-radius: 2px; padding: 10px 12px 8px; background: var(--face-lo); }
+.current-rotation legend { padding: 0 4px; font-weight: 600; color: var(--deep); font-size: 14px; }
+.rot-row, .constraint-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.rot-row label, .constraint-row label { display: grid; grid-template-columns: minmax(84px, 38%) minmax(0, 1fr); align-items: center; gap: 8px; font-size: 13px; color: var(--muted-ink); }
+.disclaimer-note { margin: 0 0 14px; padding: 10px 14px; border-left: 4px solid var(--sky-ink); background: var(--sky-soft); color: var(--ink-2); border-radius: 2px; font-size: 14px; }
+.role-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
+.role-chip { font-size: 12px; padding: 2px 8px; border-radius: 2px; background: var(--lime-soft); color: var(--deep); border: 1px solid var(--lime-line); cursor: help; }
+.role-chip.role-deep_root { background: var(--sky-soft); color: var(--sky-ink); border-color: #C7DFEA; }
+.role-chip.role-drought { background: var(--amber-soft); color: var(--amber-deep); border-color: #EBD3B0; }
+.constraint-flag { display: flex; gap: 6px; align-items: flex-start; margin: 6px 0; padding: 6px 8px; font-size: 13px; background: var(--amber-soft); color: var(--amber-deep); border-radius: 2px; }
+.constraint-flag .material-symbols-outlined { font-size: 18px; }
+.review-fold { margin: 8px 0 4px; }
+.review-sec { margin: 8px 0 0; }
+.review-sec h5 { margin: 0 0 4px; font-size: 13px; color: var(--deep); }
+.review-sec ul { margin: 0; padding-left: 18px; font-size: 13px; line-height: 1.5; color: var(--text); }
+.review-sec li { margin: 2px 0; }
+.review-evidence li { color: var(--muted-ink); }
+.review-gaps h5 { color: var(--amber-deep); }
+.review-checks h5 { color: var(--sky-ink); }
+.review-src { font-size: 11px; color: var(--sky-ink); text-decoration: underline dotted; cursor: help; }
+.season-risk { margin-top: 18px; }
+.risk-title { margin: 0 0 8px; font-size: 15px; color: var(--deep); }
+.risk-grid { display: grid; grid-template-columns: repeat(12, minmax(64px, 1fr)); gap: 4px; overflow-x: auto; padding-bottom: 4px; }
+.risk-col { display: flex; flex-direction: column; gap: 4px; padding: 6px 4px; border: 1px solid var(--line); border-radius: 2px; background: var(--face); min-width: 64px; }
+.risk-col.is-bare { background: var(--face-lo); border-style: dashed; }
+.risk-month { font-size: 12px; font-weight: 600; color: var(--deep); text-align: center; }
+.risk-crop { font-size: 12px; text-align: center; color: var(--text); min-height: 2.4em; }
+.risk-flags { display: flex; flex-direction: column; gap: 3px; min-height: 44px; }
+.risk-chip { font-size: 11px; line-height: 1.3; padding: 1px 4px; border-radius: 2px; text-align: center; }
+.risk-heat { background: #F5E0C8; color: #7A3E08; }
+.risk-cold { background: #DCE9F5; color: #1F4F86; }
+.risk-frost { background: #C9DCF0; color: #163C66; }
+.risk-heavy_rain, .risk-bare_rain { background: var(--sky-soft); color: var(--sky-ink); }
+.risk-dry { background: var(--amber-soft); color: var(--amber-deep); }
+.risk-none { font-size: 12px; color: var(--muted-ink); text-align: center; }
+.risk-ndvi { font-size: 12px; text-align: center; padding: 3px 0; border-radius: 2px; }
+.risk-rowlabels { font-size: 12px; color: var(--muted-ink); margin-top: 4px; }
+.risk-summary { font-size: 13.5px; margin: 8px 0 2px; color: var(--text); }
+.whatif-controls { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 8px 14px; align-items: center; max-width: 560px; margin: 8px 0 12px; }
+.whatif-controls label { font-size: 14px; color: var(--ink-2); }
+.whatif-controls output { font-weight: 700; color: var(--deep); margin-left: 6px; }
+.whatif-results { overflow-x: auto; }
+.whatif-table td, .whatif-table th { font-size: 13px; }
+.whatif-table tr.is-current td { background: var(--amber-soft); }
+.calendar-card, .glossary-card { margin-top: 18px; }
+.calendar-sub { margin: 16px 0 4px; font-size: 15px; color: var(--deep); }
+.cal-table { display: flex; flex-direction: column; gap: 3px; overflow-x: auto; }
+.cal-row { display: grid; grid-template-columns: 170px repeat(12, minmax(44px, 1fr)); gap: 3px; align-items: end; min-width: 720px; }
+.cal-head { align-items: center; }
+.cal-label { font-size: 12.5px; color: var(--text); align-self: center; }
+.cal-m { font-size: 12px; font-weight: 600; color: var(--deep); text-align: center; }
+.cal-cell { position: relative; height: 46px; background: var(--face-lo); border-radius: 2px; display: flex; align-items: flex-end; justify-content: center; }
+.cal-bar { width: 70%; border-radius: 2px 2px 0 0; }
+.cal-val { position: absolute; top: 2px; left: 0; right: 0; text-align: center; font-size: 11px; color: var(--ink-2); }
+.cal-heat { background: #DFB680; }
+.cal-cold { background: #8FB5E0; }
+.cal-rain { background: var(--sky); }
+.cal-dry { background: #EBD3B0; }
+.cal-num { font-size: 12px; text-align: center; padding: 4px 0; border-radius: 2px; background: var(--face-lo); }
+.trend-table td, .trend-table th { font-size: 13px; }
+.glossary-grid { display: flex; flex-direction: column; gap: 4px; }
+.glossary-grid > details > summary { font-size: 15px; font-weight: 600; color: var(--deep); }
+.glossary-list { margin: 8px 0 4px; display: grid; grid-template-columns: minmax(180px, 260px) minmax(0, 1fr); gap: 6px 16px; }
+.glossary-list dt { font-weight: 600; color: var(--ink-2); font-size: 14px; }
+.glossary-list dd { margin: 0; font-size: 14px; color: var(--text); line-height: 1.55; }
+.glossary-table td, .glossary-table th { font-size: 13px; }
+.glossary-methods { margin: 8px 0; padding-left: 20px; font-size: 14px; line-height: 1.55; color: var(--text); }
+.glossary-methods li { margin: 4px 0; }
+@media (max-width: 640px) {
+  .glossary-list { grid-template-columns: minmax(0, 1fr); }
+  .whatif-controls { grid-template-columns: minmax(0, 1fr); }
+}
