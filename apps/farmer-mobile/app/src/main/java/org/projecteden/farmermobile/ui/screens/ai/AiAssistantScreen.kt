@@ -135,6 +135,7 @@ fun AiAssistantScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item { Spacer(modifier = Modifier.height(6.dp)) }
+            item { AskOfficerCard(onSignIn = onNavigateToProfile) }
 
             items(messages, key = { it.id }) { msg ->
                 ChatBubble(message = msg)
@@ -342,7 +343,7 @@ private fun ChatBubble(message: ChatMessage) {
                             )
                         }
                         Text(
-                            text = if (message.isInsufficientEvidence) "প্রমাণ সীমাবদ্ধতা" else "ইডেন এআই সহকারী",
+                            text = if (message.isInsufficientEvidence) "প্রমাণ সীমাবদ্ধতা" else "মাটি কহন সহকারী",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = if (message.isInsufficientEvidence) Color(0xFFBA1A1A) else Primary

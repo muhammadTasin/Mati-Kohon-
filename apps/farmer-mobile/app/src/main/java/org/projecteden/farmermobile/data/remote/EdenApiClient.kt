@@ -105,6 +105,15 @@ data class RemoteAuthResponse(
     val currentAmanCrop: String?
 )
 
+/** A farmer's question to their SAAO (GET/POST /api/v1/farmer/questions); the answer comes back as a call. */
+data class RemoteFarmerQuestion(
+    val id: String,
+    val askedAt: String,
+    val status: String, // open, answered, called
+    val textBangla: String,
+    val answerBangla: String?
+)
+
 data class RemoteAiResponse(
     val answer: String,
     val sources: List<String>,
@@ -411,6 +420,30 @@ open class EdenApiClient(
     suspend fun logout(token: String): Result<Boolean> = withContext(Dispatchers.IO) {
         val res = sendRequest("/api/v1/auth/logout", method = "POST", authToken = token)
         res.mapCatching { true }
+    }
+
+    private fun question(json: JSONObject) = RemoteFarmerQuestion(
+        id = json.getString("id"),
+        askedAt = json.optString("askedAt", ""),
+        status = json.optString("status", "open"),
+        textBangla = json.optString("textBangla", ""),
+        answerBangla = if (json.isNull("answerBangla")) null else json.optString("answerBangla")
+    )
+
+    /** The signed-in farmer's questions to their SAAO, newest first. */
+    suspend fun myQuestions(token: String): Result<List<RemoteFarmerQuestion>> = withContext(Dispatchers.IO) {
+        sendRequest("/api/v1/farmer/questions", authToken = token).mapCatching { body ->
+            val list = JSONObject(body).optJSONArray("questions") ?: JSONArray()
+            (0 until list.length()).map { question(list.getJSONObject(it)) }
+        }
+    }
+
+    /** Sends a question to the farmer's SAAO, who checks the answer; the answer then comes as a phone call. */
+    suspend fun askOfficer(token: String, textBangla: String): Result<RemoteFarmerQuestion> = withContext(Dispatchers.IO) {
+        val payload = JSONObject().put("textBangla", textBangla).toString()
+        sendRequest("/api/v1/farmer/questions", method = "POST", authToken = token, bodyJson = payload).mapCatching { body ->
+            question(JSONObject(body).getJSONObject("question"))
+        }
     }
 
     /** POST /api/v1/voice/answer. If the configured shared API lacks this optional route, callers can fall back to /ai/ask. */

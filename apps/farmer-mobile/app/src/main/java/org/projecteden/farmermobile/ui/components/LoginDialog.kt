@@ -88,7 +88,7 @@ fun LoginDialog(
                         modifier = Modifier.size(28.dp)
                     )
                     Text(
-                        text = "প্রজেক্ট ইডেন সাইন-ইন",
+                        text = "মাটি কহন সাইন-ইন",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = OnSurface

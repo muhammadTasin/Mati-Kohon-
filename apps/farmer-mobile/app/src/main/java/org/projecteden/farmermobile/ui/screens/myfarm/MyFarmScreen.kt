@@ -1,5 +1,6 @@
 package org.projecteden.farmermobile.ui.screens.myfarm
 
+import org.projecteden.farmermobile.ui.components.PHOTO_CREDITS
 import org.projecteden.farmermobile.theme.EdenShape
 
 import org.projecteden.farmermobile.theme.bevel
@@ -732,6 +733,27 @@ fun MyFarmScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = OnSurfaceVariant,
                             lineHeight = 18.sp
+                        )
+                    }
+                }
+
+                // Photo credits: Wikimedia Commons photos (CC BY / CC BY-SA), resized and cropped
+                Column(
+                    modifier = Modifier.fillMaxWidth().padding(top = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(2.dp)
+                ) {
+                    Text(
+                        text = "ছবির কৃতজ্ঞতা (উইকিমিডিয়া কমন্স, ছোট ও কাটা করা)",
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = OnSurfaceVariant
+                    )
+                    PHOTO_CREDITS.forEach { (what, who) ->
+                        Text(
+                            text = "$what: $who",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = OnSurfaceVariant,
+                            fontSize = 11.sp
                         )
                     }
                 }

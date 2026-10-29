@@ -9,6 +9,7 @@ What changed in Project EDEN, newest first, with who made each change and the br
 - **Drawings:** a field with a NASA satellite and a farmer taking the advice call (`img/fields.svg`, `img/farmer-call.svg`), on the calls screen and the farmer's question card.
 - **Ask your officer:** the farmer's assistant tab has a question box; the question goes to the SAAO's list and the farmer sees its status (with the officer, answered, called) and the answer.
 - **Fixes:** the server sends photos as images (not text, not gzipped); the demo officer ID is shown as the sign-in hint.
+- **Phone app:** the dashboard's calm leaf-and-sky colours; Today shows each season's crop as a photo and the crop stage on a photo of a BRRI Rajshahi paddy field (no gradient); the assistant tab opens with "Ask your agriculture officer" (`GET`/`POST /api/v1/farmer/questions` with the farmer's sign-in), showing each question's status and answer; photo credits on My farm; the remaining "EDEN" names are Mati Kohon. It builds and its unit tests pass.
 
 ## 29 October 2026 · Daily advice calls to registered farmers (Tasrif, `feature/farmer-calls`)
 
