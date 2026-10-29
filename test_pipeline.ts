@@ -585,6 +585,11 @@ async function runTests() {
   if (!cal18 || cal18.months.hotDays.length !== 12 || !cal18.greenness || cal18.trends.some(t => t.clear !== (t.p < 0.05))) {
     throw new Error('The season calendar has twelve months, the satellite\'s greenness and honest trends');
   }
+  // NASA ECOSTRESS (70 m) checks the pilot's dry season field by field; other places have none
+  const eco18 = cal18.ecostress;
+  if (!eco18 || eco18.overpasses < 5 || !eco18.monthly['4'] || eco18.monthly['4'].etMedian < eco18.monthly['2'].etMedian) {
+    throw new Error('ECOSTRESS around the pilot: clear daytime passes, and April uses more water than February');
+  }
   // A rotation the engine does not list (Aman, potato) is added, marked and ranked; a summer crop that does not fit is
   // left out with a note; a year with no winter crop is explained
   const potato18 = engine.generateAdvice({ ...TALANDA, farmerPriorities: priorities, currentRotation: { monsoon: 'aman', winter: 'potato' } });
@@ -599,8 +604,8 @@ async function runTests() {
   }
   // Outside the pilot: no soil card is a stated gap; a registered farmer's crops give their rotation
   const godagari18 = at('ADM3_Godagari', { currentRotation: { monsoon: 'aman', winter: 'mustard' } });
-  if (godagari18.options.length < 3 || !godagari18.options.every(o => o.review!.gaps.some(l => /No SRDI soil card/.test(l.en)))) {
-    throw new Error('Outside the pilot every option states the missing soil card');
+  if (godagari18.options.length < 3 || !godagari18.options.every(o => o.review!.gaps.some(l => /No SRDI soil card/.test(l.en))) || godagari18.season_calendar?.ecostress) {
+    throw new Error('Outside the pilot every option states the missing soil card, and there is no ECOSTRESS block');
   }
   console.log(`Farmer's Aman-Boro ranks ${mine18[0].rank} of ${fs18.options.length}; lentil saves ${Math.round((mine18[0].ledger!.groundwaterPumpedM3PerHa - lentil18.ledger!.groundwaterPumpedM3PerHa) / 100) * 100} m3/ha; Boro meets ${boroCrop.hotDays} hot days; 20% less rain and +2 C: Boro irrigation ${w18.options.find(x => x.id === mine18[0].id)!.irrigationMm} -> ${w18.options.find(x => x.id === mine18[0].id)!.irrigationMmScenario} mm`);
   console.log('✓ TEST 18 PASSED: The farmer\'s rotation, the five-part review, the season risk and the what-if follow the Field Shift statement.\n');

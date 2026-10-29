@@ -199,7 +199,8 @@ The full statement asks for things the product now answers directly. [docs/field
 - **What-if:** sliders for rain (-20 to +20%) and warming (0 to 3 °C) show every option's irrigation, hot days in the field and soil-moving rain on bare soil. It is a rough estimate; the 25-season replay is not re-run.
 - **Map:** a new group, "Field risks (NASA, 25 years)", with four layers: spring heat days, winter cold nights, soil-moving rain in the bare pre-monsoon months, and dry-season root-zone wetness.
 - **Plain words:** the evidence screen explains the terms (ET, soil moisture anomaly, NDVI, frost risk, water balance, GRACE, heavy rain) and how satellite and ground measurements differ. It also shows how each dataset is brought to the upazila and compares the methods: physics, statistics, signal processing, machine learning (tested, no skill yet) and the language model. A disclaimer says the tool supports and does not replace the farmer and the officer.
-- **Not yet:** ECOSTRESS. Mustard then Boro in one winter. A time slider on the map.
+- **ECOSTRESS, as a check:** `research/explore/ecostress_pilot.py` takes daily ET and the evaporative stress index at 70 m around the Talanda pilot (10 clear daytime passes, February-April 2019-2025) and shows them on the evidence screen. It is not a score input: the share at ESI 0.8 or more does not match Boro's share of the land.
+- **Not yet:** Mustard then Boro in one winter. A time slider on the map. ECOSTRESS as a scoring feature.
 
 ## Architecture
 

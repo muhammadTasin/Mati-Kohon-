@@ -21,6 +21,10 @@ What changed in Project EDEN, newest first, with who made each change and the br
   - Four map layers of field risks.
   - The disclaimer above the comparison.
 - **Engine and API:** `currentRotation`, `constraints` and `scenario` on `POST /api/v1/advice`. TEST 18 and the API checks cover them.
+- **ECOSTRESS around the pilot** (`research/explore/ecostress_pilot.py` → `ecostress_pilot.json`): daily ET and the evaporative stress index at 70 m, February-April 2019-2025, in an 11 x 11 km box around Talanda.
+  - Only daytime passes count; one scene listed under several builds counts once. That leaves 10 clear passes.
+  - The 188 MB of tiles are cached in the git-ignored `research/data/ecostress`.
+  - The pilot's season calendar shows it. It is not a score input: the share at ESI 0.8 or more does not match the Boro area.
 
 ## 29 October 2026 · Real photos, a question box for farmers, and Tasin's work merged (Tasrif, `feature/latest`)
 

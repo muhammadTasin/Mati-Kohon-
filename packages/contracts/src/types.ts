@@ -212,6 +212,14 @@ export interface SeasonCalendarSummary {
   trends: Array<{ id: string; early: number; recent: number; change: number; slopePerDecade: number; p: number; clear: boolean }>;
   trendPeriods: { early: string; recent: string };
   source: string;
+  /** NASA ECOSTRESS (70 m) around the pilot in the dry season: water use and stress by month (pilot only). */
+  ecostress?: {
+    source: string;
+    years: string;
+    thresholds: Record<string, number>;
+    monthly: Record<string, { overpasses: number; etMedian: number; esiMedian: number; wetShare: number; stressedShare: number }>;
+    overpasses: number;
+  } | null;
 }
 
 /** One soil-and-water tip beside a rotation, with its numbers from the plan's own records and its source. */

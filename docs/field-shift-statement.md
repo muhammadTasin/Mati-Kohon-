@@ -21,7 +21,7 @@ The full challenge statement for **Field Shift: Adapting Farms with NASA Data** 
 | Statement | Where | Status |
 |---|---|---|
 | "an app, model, interactive map, or other decision-support tool" | SAAO dashboard: planner, comparison, evidence, map, calls. Farmer phone app. One-way Bangla advice calls with keypad answers. | Done |
-| "SMAP, ECOSTRESS, GPM, Landsat, MODIS, NASA POWER, GRACE and GRACE-FO, and SRTM or other NASA elevation products" | All are used except ECOSTRESS: SMAP L4, GPM IMERG, Landsat via HLS, MODIS NDVI, NASA POWER, GRACE via GLDAS-2.2, NASADEM (SRTM reprocessed). | Partial: ECOSTRESS not yet (see below) |
+| "SMAP, ECOSTRESS, GPM, Landsat, MODIS, NASA POWER, GRACE and GRACE-FO, and SRTM or other NASA elevation products" | All are used: SMAP L4, GPM IMERG, Landsat via HLS, MODIS NDVI, NASA POWER, GRACE via GLDAS-2.2, NASADEM (SRTM reprocessed). ECOSTRESS is used as a field-scale check of the pilot's dry season only (see below). | Done (ECOSTRESS partial) |
 | "temperature, heat stress, rainfall, soil moisture, evaporation, frost risk, extreme precipitation, vegetation stress, and long-term water trends" | Temperature and heat stress: heat score and the season calendar. Rainfall: water balance. Soil moisture: SMAP, POWER root zone. Evaporation: FAO-56 ET0 and POWER ET. Frost: near-frost nights at 4 °C or less, and cold nights at 10 °C or less. Extreme precipitation: days of 44 mm or more, haor flash floods. Vegetation stress: HLS Aman not green, MODIS NDVI. Long-term water: GRACE/GLDAS groundwater trend and the 25-year trend table. | Done |
 | "local soil information, crop characteristics, and farmer priorities — such as water use, forage value, nitrogen-fixing potential, erosion reduction, organic matter improvement, or market suitability" | Water use: water score and ledger. Forage value: fodder score and slider. Nitrogen-fixing: soil score and the crop role. Erosion reduction: soil-moving rain on bare soil and the cover role. Organic matter: soil score with the SRDI atlas. Market suitability: income score plus the farmer's market constraint. | Done (income uses estimates; see gaps) |
 | "highlight times when fields are typically bare" | Two views. The season-risk strip under each rotation's timeline marks the bare months and their soil-moving rain. The satellite view is MODIS NDVI by month (2021-25 against 2001-05). | Done |
@@ -49,7 +49,7 @@ The full challenge statement for **Field Shift: Adapting Farms with NASA Data** 
 | SI to highlight seasonal transitions, bare-field periods, crop stress | Savitzky-Golay smoothing of MODIS NDVI with peak detection gives crops per year (`national_greenness.py`). Monthly NDVI medians give the green and bare months (`season_calendar.py`). HLS greenness shows crops under stress (`crop_loss.py`). | Done |
 | How the model interprets uncertainty; where local expertise is needed | Each score carries a confidence level, measured / modelled / assumed, and a sample flag. Each option's "Information gaps" and "Check locally" lists say what is uncertain. A trend is called clear only at p < 0.05. | Done |
 | Harmonise datasets to a common analysis grid | Everything is brought to the upazila (544) and its district point before scoring. The glossary table lists each dataset's native size and how it is used. | Done (point/upazila units, not a raster grid) |
-| SMAP, ECOSTRESS LST, GPM, Landsat/MODIS VIs, GEDI biomass and soil data as coherent features | SMAP, GPM, Landsat/MODIS and soil data are used. **ECOSTRESS is not yet used.** **GEDI is not used:** its biomass products are for forest canopy, not field crops. | Partial |
+| SMAP, ECOSTRESS LST, GPM, Landsat/MODIS VIs, GEDI biomass and soil data as coherent features | SMAP, GPM, Landsat/MODIS and soil data are used. **ECOSTRESS** (ET and the evaporative stress index, 70 m) is summarised around the pilot, but is not yet a scoring feature. **GEDI is not used:** its biomass products are for forest canopy, not field crops. | Partial |
 
 ### Rotation strategy exploration
 
@@ -80,7 +80,7 @@ The full challenge statement for **Field Shift: Adapting Farms with NASA Data** 
 | Dataset | Used for | Where |
 |---|---|---|
 | SMAP | Root-zone moisture before Rabi sowing; today's soil wetness | `research/explore/soil_moisture.py`, `research/live/` |
-| ECOSTRESS | Not yet | — |
+| ECOSTRESS | Daily ET and the evaporative stress index at 70 m around the Talanda pilot, February-April 2019-2025, daytime passes. A check on the evidence screen, not a score input. | `research/explore/ecostress_pilot.py` |
 | GPM IMERG | Daily rain for the 25-season water balance; heavy and soil-moving rain; haor flash floods | `national_replay.py`, `season_calendar.py`, `daily_update.py` |
 | Landsat (HLS) | Aman not green this year; winter cropping | `crop_loss.py`, HLS winter run |
 | MODIS | NDVI crops per year and green/bare months; flood imagery | `national_greenness.py`, `season_calendar.py` |
@@ -91,7 +91,7 @@ The full challenge statement for **Field Shift: Adapting Farms with NASA Data** 
 
 ## Known gaps, honestly
 
-- **ECOSTRESS** (evapotranspiration and the evaporative stress index at 70 m) is named twice in the statement and is not used yet. It would add field-scale water stress for the pilot.
+- **ECOSTRESS** is a pilot-only check, and its sample is thin: 10 clear daytime passes from February to April, 2019-2025. Over about 11 x 11 km around Talanda, the median ET rises from 1.9 mm/day in February to 3.2 mm/day in April, and about 23% of the land is strongly stressed in late March. The share of land at ESI 0.8 or more (10-15%) is far below the roughly 40% under Boro in BRRI's survey, so the index is not a Boro-area measure here until field labels calibrate it. It does not enter the scores. The tiles (188 MB) are cached in the git-ignored `research/data/ecostress`.
 - **Income** uses BBS prices and yields and team cost estimates, not this year's farm-gate prices (DAM's tables come back empty) or farmer cost interviews.
 - **Farmer priorities** are defaults until the Talanda interviews; the planner and the keypad let each farmer set their own.
 - **Mustard then Boro in one winter** (Mustard-Boro-T.Aman, common in parts of the north) is not modelled: the engine has one winter slot. A farmer who names it sees their rotation without the second winter crop, with a note.
@@ -101,6 +101,7 @@ The full challenge statement for **Field Shift: Adapting Farms with NASA Data** 
 ## Files
 
 - `research/explore/season_calendar.py` writes `packages/rotation-engine/src/data/season_calendar.json`: the month-by-month risks, the 25-year trends and the NDVI calendars.
+- `research/explore/ecostress_pilot.py` writes `ecostress_pilot.json`: ECOSTRESS around the pilot, which the season calendar carries for the pilot only.
 - `packages/rotation-engine/src/review.ts` builds the season risk per rotation, the five-part review and the what-if.
 - `packages/rotation-engine/src/data/crop_traits.ts` holds the crop roles and local needs.
 - `services/api/src/advice.ts` accepts `currentRotation`, `constraints` and `scenario`. `officer_desk.ts` turns a registered farmer's crops into their rotation.

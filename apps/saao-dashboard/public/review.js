@@ -143,6 +143,23 @@ const TRENDS = {
   et0Mm: ['বাষ্পীভবন চাহিদা ET0', 'Evaporative demand ET0', 'মিমি', 'mm'],
 };
 
+/** NASA ECOSTRESS at 70 m around the pilot in the dry season: how much land is well watered or stressed, by month. */
+function ecostressHtml(eco, { tr, escapeHtml, num }) {
+  if (!eco) return '';
+  const pct = v => num(Math.round(v * 100));
+  const rows = Object.entries(eco.monthly).map(([m, r]) => `<tr><td>${escapeHtml(tr(MONTHS_BN[m - 1], MONTHS_EN[m - 1]))}</td><td>${num(r.overpasses)}</td>
+    <td>${num(r.etMedian.toFixed(1))}</td><td>${num(r.esiMedian.toFixed(2))}</td><td>${pct(r.wetShare)}%</td><td>${pct(r.stressedShare)}%</td></tr>`).join('');
+  return `<h4 class="calendar-sub">${tr('মাঠের মাপে পানি খরচ ও পানির টান: নাসা ECOSTRESS (৭০ মিটার)', 'Water use and stress field by field: NASA ECOSTRESS (70 m)')}</h4>
+    <p class="form-note">${tr(`পাইলটের চারপাশে প্রায় ১১ × ১১ কিমি, ফেব্রুয়ারি-এপ্রিলে দিনের বেলার মাত্র ${num(eco.overpasses)}টি মেঘমুক্ত পাস: নমুনা ছোট। প্রতিটি ৭০ মিটার জমির পানি খরচ আলাদা দেখা যায়, তাই পানির টানের জায়গা চেনা যায়।`,
+      `About 11 x 11 km around the pilot, only ${eco.overpasses} clear daytime passes in February-April: a small sample. Each 70 m field's water use is seen separately, so stressed patches can be found.`)}</p>
+    <table class="data-table trend-table">
+      <thead><tr><th>${tr('মাস', 'Month')}</th><th>${tr('পাস', 'Passes')}</th><th>${tr('বাষ্পীভবন (মিমি/দিন, মধ্যমা)', 'ET (mm/day, median)')}</th><th>${tr('পানির টান সূচক ESI (মধ্যমা)', 'Stress index ESI (median)')}</th>
+        <th>${tr(`ভালো পানি পায় (ESI ${num(eco.thresholds.wellWateredEsi)}+)`, `Well watered (ESI ${eco.thresholds.wellWateredEsi}+)`)}</th><th>${tr(`তীব্র টান (ESI ${num(eco.thresholds.stressedEsi)}-এর নিচে)`, `Strongly stressed (ESI under ${eco.thresholds.stressedEsi})`)}</th></tr></thead>
+      <tbody>${rows}</tbody></table>
+    <p class="form-note">${tr('সতর্কতা: BRRI-র জরিপে তানোরের প্রায় ৪০% জমিতে বোরো, কিন্তু মার্চ-এপ্রিলে ESI ০.৮+ মাত্র ১০–১৫% জমিতে; তাই এই সূচক এখানে বোরোর জমির মাপ নয়, মাঠের লেবেল দিয়ে মেলাতে হবে। স্কোরে এটি ঢোকে না।', 'Caution: BRRI\'s survey puts Boro on about 40% of Tanore\'s land, but only 10-15% reaches ESI 0.8+ in March-April, so here the index is not a measure of Boro area; it needs field labels to calibrate. It does not enter the scores.')}
+      ${escapeHtml(eco.source)}; ${escapeHtml(eco.years)}.</p>`;
+}
+
 /** The place's season calendar (bars per month) and its trends table, on the evidence screen. */
 export function calendarHtml(cal, { tr, escapeHtml, num }) {
   if (!cal) return { chart: `<p class="form-note">${tr('এই জায়গার মৌসুম ক্যালেন্ডার নেই।', 'No season calendar for this place.')}</p>`, trends: '' };
@@ -168,7 +185,8 @@ export function calendarHtml(cal, { tr, escapeHtml, num }) {
       <div class="cal-row"><span class="cal-label">${tr('সবুজ NDVI ২০০১–০৫', 'NDVI 2001-05')}</span>${order.map(m => `<span class="cal-num" style="${ndviStyle(green.early[m])}">${green.early[m] === null ? '–' : num(green.early[m].toFixed(2))}</span>`).join('')}</div>` : ''}
     </div>
     <p class="form-note">${escapeHtml(tr(`বিন্দু: ${cal.placeBangla ?? cal.place}${cal.station ? `; স্টেশন ${cal.station}` : '; কাছে স্টেশন নেই, গ্রিডের মান'}। তুষার-সম্ভব রাত (৪°সে বা কম): বছরে ${num((cal.months.nearFrostNights ?? []).reduce((a, b) => a + b, 0).toFixed(1))}।`,
-      `Point: ${cal.place}${cal.station ? `; station ${cal.station}` : '; no station near, grid values'}. Near-frost nights (4 °C or less): ${(cal.months.nearFrostNights ?? []).reduce((a, b) => a + b, 0).toFixed(1)} a year.`))}</p>`;
+      `Point: ${cal.place}${cal.station ? `; station ${cal.station}` : '; no station near, grid values'}. Near-frost nights (4 °C or less): ${(cal.months.nearFrostNights ?? []).reduce((a, b) => a + b, 0).toFixed(1)} a year.`))}</p>
+    ${ecostressHtml(cal.ecostress, { tr, escapeHtml, num })}`;
   const fmt = (id, v) => (id.includes('Wet') ? num(v.toFixed(2)) : num(v));
   const trends = `<table class="data-table trend-table">
     <thead><tr><th>${tr('কী', 'What')}</th><th>${escapeHtml(num(cal.trendPeriods.early))}</th><th>${escapeHtml(num(cal.trendPeriods.recent))}</th><th>${tr('ঢাল / দশক', 'Slope a decade')}</th><th>p</th><th>${tr('ফলাফল', 'Reading')}</th></tr></thead>

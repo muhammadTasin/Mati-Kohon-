@@ -62,6 +62,21 @@ export function greennessHere(): { recent: Array<number | null>; early: Array<nu
   return calendarFile().greenness.upazilas[LOC.kind === 'pilot' ? 'ADM3_Tanore' : LOC.id] ?? null;
 }
 
+type EcostressPilot = NonNullable<SeasonCalendarSummary['ecostress']>;
+let ecostressCache: EcostressPilot | null | undefined;
+/**
+ * NASA ECOSTRESS at 70 m around the Talanda pilot (research/explore/ecostress_pilot.py): per dry-season month, the
+ * median evapotranspiration and stress index and the shares of land well watered or strongly stressed. Pilot only.
+ */
+export function ecostressPilot(): EcostressPilot | null {
+  if (ecostressCache !== undefined) return ecostressCache;
+  const url = new URL('./ecostress_pilot.json', import.meta.url);
+  if (!fs.existsSync(url)) return (ecostressCache = null);
+  const f = JSON.parse(fs.readFileSync(url, 'utf8'));
+  ecostressCache = { source: f.source, years: f.years, thresholds: f.thresholds, monthly: f.monthly, overpasses: f.overpasses.length };
+  return ecostressCache;
+}
+
 /** What the dashboard's timeline, trends table and glossary need, for the current place. */
 export function calendarSummary(): SeasonCalendarSummary | null {
   const f = calendarFile();
@@ -82,5 +97,6 @@ export function calendarSummary(): SeasonCalendarSummary | null {
     }),
     trendPeriods: f.trendPeriods,
     source: f.source,
+    ecostress: LOC.kind === 'pilot' ? ecostressPilot() : null,
   };
 }
