@@ -1,39 +1,57 @@
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
+import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import type { AdviceJSON, CandidateRotation } from '@project-eden/contracts';
 import type { PlanOptionsRequest } from '../../../packages/rotation-engine/src/engine.ts';
-import { RotationEngine, UnsupportedUnionError, SUPPORTED_UNIONS } from '../../../packages/rotation-engine/src/engine.ts';
-import { FeatureRegistry } from '../../../packages/rotation-engine/src/registry.ts';
+import { UnsupportedUnionError, SUPPORTED_UNIONS } from '../../../packages/rotation-engine/src/engine.ts';
 import { HAOR_FLASH_FLOOD, RELEASE, TANORE_ADVISORIES, TANORE_SOIL_CARBON } from '../../../packages/rotation-engine/src/data/tanore_replay_data.ts';
-import { LOC, listPlaces, placeFor, withPlace } from '../../../packages/rotation-engine/src/data/location.ts';
+import { LOC, NO_SOIL_CARD, listPlaces, placeFor, withPlace } from '../../../packages/rotation-engine/src/data/location.ts';
 import { AMAN_CATALOG, RABI_CATALOG } from '../../../packages/rotation-engine/src/data/crop_catalog.ts';
 import { IPM_AMAN, IPM_BY_RABI, IPM_GENERAL } from '../../../packages/rotation-engine/src/data/ipm_catalog.ts';
-import { bnDate, bnDateOf, bnDigits, bnOf, enDate } from '../../../packages/rotation-engine/src/bn.ts';
+import { bnDate, bnDateOf, bnDigits, bnOf, enDate, patternBangla } from '../../../packages/rotation-engine/src/bn.ts';
 import * as desk from './officer_desk.ts';
+import * as calls from './farmer_calls.ts';
+import { authConfig, requireManager } from './auth.ts';
+import { nasaConfigStatus } from './config.ts';
+import { integrationStatuses } from './integrations.ts';
+import { managerArea, managerClimate } from './manager_climate.ts';
+import { normalizeSite } from './sites.ts';
 import { DualGateNarrationValidator } from '../../../packages/narration-core/src/dual_gate_validator.ts';
-import { TemplateNarrator } from '../../../packages/narration-core/src/template_narrator.ts';
-import { getNasaWeather } from './weather.ts';
+import { getNasaWeather, lastNasaSuccessAt } from './weather.ts';
+import { getOpenMeteoForecast, lastOpenMeteoSuccessAt } from './open_meteo_weather.ts';
+import { ApiError, errorBody, parseCoordinates } from './errors.ts';
+import { getLocationsPayload } from './locations.ts';
+import { createLlmClient, llmStatus } from './providers/llm.ts';
+import { synthesizeSpeech, ttsStatus } from './providers/tts.ts';
+import { sendSms, smsConfig } from './sms.ts';
 import { getRiverErosion } from './erosion.ts';
-import { liveHaor, liveStatus, liveUpazila, liveUpazilas } from './live.ts';
+import { cropLossStatus, floodStatus, liveHaor, liveStatus, liveUpazila, liveUpazilas } from './live.ts';
+import { floodCheckList, mapLayers, mapYears } from './map_layers.ts';
 import { askAiAssistant } from './ai_assistant.ts';
 import { cropMenu } from '../../../packages/rotation-engine/src/data/crop_choice.ts';
-import { cropsFromKeys, keypadMenu, replyFor, requestFromWords, understand } from './voice.ts';
-import { awajConfig, bdMobile, sendKeypadSurvey, sendTemplateSurvey, sendTtsCall } from './awaj.ts';
+import { cropsFromKeys, keypadMenu, landFromKey, replyFor, understand } from './voice.ts';
+import { adviseWithNarration, planRequest, rotationEngine, voiceAnswer } from './advice.ts';
+import { awajConfig, awajPublicStatus, sendAudioCall, bdMobile, sendKeypadSurvey, sendTemplateSurvey, sendTtsCall } from './awaj.ts';
+import { sendSystechCall, systechConfig, type CallRoute } from './systech.ts';
+import { createFarmAoi } from './cattle/aoi.ts';
+import { cattleRepository } from './cattle/repository.ts';
+import { backgroundJobManager } from './cattle/jobs.ts';
+import { getEarthEngineReadiness, detectEarthEngineCredentialFiles } from './cattle/adapters/earth_engine.ts';
+import { triggerModelTraining } from './cattle/ml_pipeline.ts';
 
 const __filename = fileURLToPath(import.meta.url);
+const gzipCache = new Map<string, { mtime: number; body: Buffer }>();
 const __dirname = path.dirname(__filename);
 const PUBLIC_DIR = path.resolve(__dirname, '../../../apps/saao-dashboard/public');
+const SUPABASE_BROWSER_BUNDLE = path.resolve(__dirname, '../../../node_modules/@supabase/supabase-js/dist/umd/supabase.js');
 
-const featureRegistry = new FeatureRegistry();
-const rotationEngine = new RotationEngine(featureRegistry);
-const templateNarrator = new TemplateNarrator();
-const dualGateValidator = new DualGateNarrationValidator();
+// Optional server-side LLM (OpenAI-compatible endpoint). Undefined when not configured: the deterministic template narrator is used.
+const dualGateValidator = new DualGateNarrationValidator(createLlmClient() ?? undefined, { timeoutMs: Number(process.env.LLM_TIMEOUT_MS) || 15000 });
 
 const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 4000;
 
-const DEFAULT_PRIORITIES = { water: 0.5, income: 0.3, soil: 0.2 };
 const KEYPAD_PRIORITIES: Record<string, { label: string; labelEnglish: string; priorities: PlanOptionsRequest['farmerPriorities'] }> = {
   '1': { label: 'পানির নিরাপত্তা', labelEnglish: 'water security', priorities: { water: 1 } },
   '2': { label: 'সর্বোচ্চ আয়', labelEnglish: 'highest income', priorities: { income: 1 } },
@@ -53,99 +71,69 @@ const RAIN_VERDICT_BANGLA: Record<string, string> = {
   normal: 'স্বাভাবিক',
 };
 
+const CORS_ORIGINS = (process.env.CORS_ORIGINS || '').split(',').map(o => o.trim()).filter(Boolean);
+const WRITE_TOKEN = process.env.API_WRITE_TOKEN?.trim() || '';
+
+/** CORS is off unless CORS_ORIGINS is set ('*' or a comma-separated list), so the default is same-origin only. */
+function applyCors(req: http.IncomingMessage, res: http.ServerResponse) {
+  const origin = req.headers.origin;
+  if (CORS_ORIGINS.includes('*')) res.setHeader('Access-Control-Allow-Origin', '*');
+  else if (origin && CORS_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Vary', 'Origin');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+}
+
 function sendJSON(res: http.ServerResponse, statusCode: number, data: any) {
-  res.writeHead(statusCode, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
-  });
+  res.writeHead(statusCode, { 'Content-Type': 'application/json; charset=utf-8' });
   res.end(JSON.stringify(data));
 }
 
+function sendError(res: http.ServerResponse, err: ApiError) {
+  sendJSON(res, err.status, errorBody(err));
+}
+
+const MAX_BODY_BYTES = 1_000_000;
 function parseBody(req: http.IncomingMessage): Promise<any> {
   return new Promise((resolve, reject) => {
     let body = '';
-    req.on('data', chunk => { body += chunk; });
+    req.on('data', chunk => {
+      body += chunk;
+      if (body.length > MAX_BODY_BYTES) { reject(new ApiError('invalid_input', 'Request body too large')); req.destroy(); }
+    });
     req.on('end', () => {
       try {
-        resolve(body ? JSON.parse(body) : {});
-      } catch (err) {
-        reject(err);
+        const parsed = body ? JSON.parse(body) : {};
+        if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('not an object');
+        resolve(parsed);
+      } catch {
+        reject(new ApiError('invalid_input', 'Request body must be a valid JSON object'));
       }
     });
     req.on('error', reject);
   });
 }
 
-/** Crops a request names: an array of ids, or one comma-separated string ('sunflower,lentil'). */
-function cropList(value: unknown): string[] | undefined {
-  const list = Array.isArray(value) ? value : typeof value === 'string' ? value.split(',') : [];
-  const ids = list.map(v => String(v).trim().toLowerCase()).filter(Boolean);
-  return ids.length ? ids : undefined;
+/** Optional minimum protection for mutating cattle routes. When API_WRITE_TOKEN is set, a matching bearer token is required. */
+function requireWriteToken(req: http.IncomingMessage) {
+  if (!WRITE_TOKEN) return;
+  const given = (req.headers.authorization || '').replace(/^Bearer\s+/i, '');
+  if (given !== WRITE_TOKEN) throw new ApiError('unauthorized', 'A valid write token is required for this operation');
 }
 
-function planRequest(body: any): PlanOptionsRequest {
-  const place = placeFor(body.unionId || 'talanda_tanore');
-  return {
-    unionId: body.unionId || 'talanda_tanore',
-    unionNameBangla: body.unionNameBangla || place?.nameBangla || 'তালন্দ ইউনিয়ন',
-    upazila: body.upazila || place?.upazila || 'Tanore',
-    district: body.district || place?.district || 'Rajshahi',
-    landType: body.landType || 'medium_high',
-    season: body.season || '2026-aman',
-    currentAmanCrop: body.currentAmanCrop,
-    preferredCrops: cropList(body.preferredCrops),
-    heroCrop: typeof body.heroCrop === 'string' && body.heroCrop.trim() ? body.heroCrop.trim().toLowerCase() : undefined,
-    avoidCrops: cropList(body.avoidCrops),
-    farmerPriorities: body.farmerPriorities || DEFAULT_PRIORITIES,
-  };
-}
-
-/**
- * A farmer's sentence (typed, or from speech-to-text) -> the engine's plan for it -> the Bangla call script and SMS.
- * What the sentence names overrides the request's crops, land type and priorities.
- */
-function voiceAnswer(body: any) {
-  const heard = understand(String(body.text ?? ''));
-  const words = requestFromWords(heard);
-  const request = planRequest({
-    ...body,
-    ...words,
-    ...(words.heroCrop ? { preferredCrops: words.preferredCrops ?? [] } : {}),
-    avoidCrops: [...(words.avoidCrops ?? []), ...(cropList(body.avoidCrops) ?? [])],
-  });
-  const advice = adviseWithNarration(request, body.farmerId);
-  return {
-    understood: heard,
-    request: { unionId: request.unionId, heroCrop: request.heroCrop ?? null, preferredCrops: request.preferredCrops ?? [], avoidCrops: request.avoidCrops ?? [], landType: request.landType, farmerPriorities: request.farmerPriorities },
-    reply: replyFor(advice, heard),
-    advice,
-  };
-}
+/** Call audio in Google's voice (services/api/data/audio, git-ignored), served at /api/v1/audio/. */
+const AUDIO_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../data/audio');
 
 /** Recent phone-channel events (Awaj survey answers and the call-backs they triggered), newest first. */
 const CALL_LOG: Array<Record<string, unknown>> = [];
 function logCall(event: Record<string, unknown>) {
-  CALL_LOG.unshift({ at: new Date().toISOString(), ...event });
+  // every phone channel today serves the Talanda pilot, so its events belong to the 'talanda' site
+  CALL_LOG.unshift({ at: new Date().toISOString(), site: 'talanda', ...event });
   CALL_LOG.length = Math.min(CALL_LOG.length, 50);
 }
 const maskPhone = (phone: string | null) => (phone ? `${phone.slice(0, 3)}XXXX${phone.slice(-4)}` : null);
-
-/**
- * Engine advice plus the checked spoken script for the phone app's cached card. With a farmer ID, the Krishi
- * officer's latest field observation takes priority over the request's land type, Aman variety and priorities.
- */
-function adviseWithNarration(request: PlanOptionsRequest, farmerId?: string): AdviceJSON {
-  const advice = rotationEngine.generateAdvice(farmerId ? desk.planRequestForFarmer(farmerId, request) : request);
-  if (farmerId) advice.verification = desk.verificationFor(farmerId);
-  if (advice.farmer_card) {
-    const narration = templateNarrator.render(advice, advice.options[0]);
-    advice.farmer_card.audioScriptBangla = narration.banglaSpeechText;
-    advice.farmer_card.audioDurationSeconds = narration.durationSecondsEstimate;
-  }
-  return advice;
-}
 
 function overview(placeId?: string | null) {
   const place = placeFor(placeId);
@@ -158,6 +146,7 @@ function overviewHere(placeId: string) {
   const best = advice.options[0];
   const bestAman = LOC.aman[best.cropSequence[0].variety];
   const dhan49 = LOC.aman['BRRI dhan49'];
+  const local = advice.local_context;
   const rain = LOC.conditions.rainLast30Days;
   const smap = LOC.conditions.smap;
 
@@ -169,7 +158,8 @@ function overviewHere(placeId: string) {
       union_id: LOC.id,
       place_kind: LOC.kind,
       data_note: LOC.dataNote,
-      land_type: 'medium_high',
+      land_type: advice.scope.land_type,
+      land_type_assumed: local?.landTypeAssumed ?? true,
       lat: LOC.conditions.lat,
       lon: LOC.conditions.lon,
     },
@@ -183,9 +173,9 @@ function overviewHere(placeId: string) {
     season_summary: {
       season: 'Aman 2026 (আমন ২০২৬)',
       dominantPattern: LOC.conditions.landUse?.topPattern ?? null,
-      dominantPatternBangla: LOC.conditions.landUse ? (PATTERN_BANGLA[LOC.conditions.landUse.topPattern] ?? LOC.conditions.landUse.topPattern) : null,
+      dominantPatternBangla: LOC.conditions.landUse ? (PATTERN_BANGLA[LOC.conditions.landUse.topPattern] ?? patternBangla(LOC.conditions.landUse.topPattern)) : null,
       dominantPatternPct: LOC.conditions.landUse?.topPatternPct ?? null,
-      croppingIntensity: LOC.conditions.landUse ? `${LOC.conditions.landUse.croppingIntensityPct}%` : null,
+      croppingIntensity: typeof LOC.conditions.landUse?.croppingIntensityPct === 'number' ? `${LOC.conditions.landUse.croppingIntensityPct}%` : null,
       landUseYear: LOC.conditions.landUse?.year ?? null,
       activeFarmersInUnion: null, // no farmer interviews yet
     },
@@ -227,8 +217,24 @@ function overviewHere(placeId: string) {
       fieldFreeBangla: bnDate(r.fieldFree),
       fieldFreeEnglish: enDate(r.fieldFree),
     })),
+    local_context: local ?? null,
     active_alerts: [
-      {
+      // The place's own hazards first (haor flash floods, deep water, a dry start, winter fallow on the coast)
+      // (a field alert's own action this week, else the first option)
+      ...(local?.alerts ?? []).slice(0, 1).map(a => {
+        const now = local?.fieldAlerts?.alerts.find(f => f.id === a.hazard);
+        return {
+          id: `alt_local_${a.hazard}`,
+          type: 'warning',
+          titleBangla: a.titleBangla,
+          titleEnglish: a.titleEnglish,
+          textBangla: a.textBangla,
+          textEnglish: a.textEnglish,
+          recommendationBangla: now?.smsBangla || best.nameBangla,
+          recommendationEnglish: now ? now.titleEnglish : best.nameEnglish,
+        };
+      }),
+      ...(bestAman ? [{
         id: 'alt_late_aman_drought',
         type: 'warning',
         titleBangla: 'দেরিতে ফুল আসা আমনে খরার ঝুঁকি',
@@ -237,13 +243,14 @@ function overviewHere(placeId: string) {
         textEnglish: `In ${dhan49.rescueSeasons} of ${dhan49.totalSeasons} seasons (${Math.round((100 * dhan49.rescueSeasons) / dhan49.totalSeasons)}%) BRRI dhan49 needed rescue irrigation at flowering (~${enDate(dhan49.flowering)}).`,
         recommendationEnglish: `${best.cropSequence[0].variety} flowers ~${enDate(bestAman.flowering)} (irrigation in ${bestAman.rescueSeasons} seasons) and frees the field by ${enDate(bestAman.fieldFree)}, before dhan49's ${enDate(dhan49.fieldFree)}.`,
         recommendationBangla: `${best.cropSequence[0].varietyBangla} ফুল আনে ~${bnDate(bestAman.flowering)} (${bnDigits(bestAman.rescueSeasons)}টি মৌসুমে সেচ), আর জমি খালি করে ${bnDate(bestAman.fieldFree)}, ধান৪৯-এর ${bnDateOf(bnDate(dhan49.fieldFree))} আগে।`,
-      },
+      }] : []),
     ],
     context: {
       soilTypeBangla: LOC.kind === 'pilot' ? LOC.srdi.soilTypeBangla : null,
       soilTypeEnglish: LOC.kind === 'pilot' ? 'Kharia soil (Barind)' : null,
-      landTypeBangla: LOC.srdi.landTypeBangla,
-      landTypeEnglish: 'medium-high land',
+      // the SRDI card's land class: only the pilot has a card (the upazila default land type is in local_context)
+      landTypeBangla: LOC.kind === 'pilot' ? LOC.srdi.landTypeBangla : null,
+      landTypeEnglish: LOC.kind === 'pilot' ? 'medium-high land' : null,
       bmdStation: LOC.conditions.bmdStation,
       bmdStationBangla: BMD_STATION_BANGLA[LOC.conditions.bmdStation] ?? LOC.conditions.bmdStation,
       bmdStationKm: LOC.conditions.bmdStationKm,
@@ -252,10 +259,11 @@ function overviewHere(placeId: string) {
       rootZoneGldasMm: LOC.conditions.rootZoneGldasMm,
       cattlePerKm2: LOC.conditions.cattlePerKm2,
     },
-    early_warnings: earlyWarnings(),
-    soil_carbon: TANORE_SOIL_CARBON,
-    recent_farmer_contacts: farmerRows(),
-    pest_reports: pestReports(),
+    // These four describe the Tanore pilot (its heat and cattle trends, SMAP carbon, sample farmers and field reports): another place never gets them
+    early_warnings: LOC.kind === 'pilot' ? earlyWarnings() : null,
+    soil_carbon: LOC.kind === 'pilot' ? TANORE_SOIL_CARBON : null,
+    recent_farmer_contacts: LOC.kind === 'pilot' ? farmerRows() : [],
+    pest_reports: LOC.kind === 'pilot' ? pestReports() : [],
   };
 }
 
@@ -309,10 +317,13 @@ function earlyWarnings() {
   };
 }
 
+/** The overview describes the Tanore pilot, so its sample farmers and field reports are the pilot site's (other sites' desks are not shown on it). */
+const PILOT_SITE = 'talanda';
+
 /** Union-level pest sightings from officers' latest field observations (farmer details stay officer-only). */
 function pestReports() {
   const counts = new Map<string, { pest: string; bn: string; en: string; fields: number; highSeverity: number }>();
-  for (const f of desk.farmers()) {
+  for (const f of desk.farmers(PILOT_SITE)) {
     const obs = desk.latestObservation(f.id);
     if (!obs || obs.pestSeen === 'none') continue;
     const entry = counts.get(obs.pestSeen) ?? { pest: obs.pestSeen, ...desk.PEST_NAMES[obs.pestSeen], fields: 0, highSeverity: 0 };
@@ -325,13 +336,13 @@ function pestReports() {
 
 /** Sample farmer rows for the overview, each with its own officer-aware top rotation. */
 function farmerRows() {
-  const openCallbacks = new Set(desk.callbacks().filter(c => c.status === 'open').map(c => c.farmerId));
+  const openCallbacks = new Set(desk.callbacks(PILOT_SITE).filter(c => c.status === 'open').map(c => c.farmerId));
   const short = (o: CandidateRotation) => ({
     bn: `${(o.cropSequence[0].varietyBangla ?? o.cropSequence[0].variety).replace('ব্রি ', '')} → ${o.cropSequence[1].cropBangla ?? o.cropSequence[1].crop}`,
     en: `${o.cropSequence[0].variety.replace('BRRI ', '')} → ${o.cropSequence[1].crop}`,
   });
-  return desk.farmers().map(f => {
-    const advice = adviseWithNarration(planRequest({}), f.id);
+  return desk.farmers(PILOT_SITE).map(f => {
+    const advice = adviseWithNarration(planRequest({ unionId: f.placeId }), f.id);
     const next = short(advice.options[0]);
     const nowOption = advice.options.find(o => o.id === advice.this_season_option_id);
     const now = nowOption ? short(nowOption) : null;
@@ -353,17 +364,20 @@ function farmerRows() {
   });
 }
 
-/** Officer-only reference: the full SRDI card, replay details, IPM steps and data caveats. */
+/**
+ * Officer-only reference for the pilot site: the full SRDI card, replay details, IPM steps and data caveats. All of it is Talanda/Tanore data,
+ * so only a manager whose site is the pilot gets it (see noKnowledgePack for everyone else).
+ */
 function knowledgePack() {
   const advice = adviseWithNarration(planRequest({}));
   const rabiKeys = Object.keys(LOC.rabi).filter(k => k !== 'BARI Gom 33 (Late)');
   return {
     srdi: {
-      soilTypeBangla: LOC.srdi.soilTypeBangla,
-      landTypeBangla: LOC.srdi.landTypeBangla,
-      source: LOC.srdi.source,
+      soilTypeBangla: LOC.srdi!.soilTypeBangla,
+      landTypeBangla: LOC.srdi!.landTypeBangla,
+      source: LOC.srdi!.source,
       rows: [
-        { cropBangla: 'আমন ধান', cropEnglish: 'Aman rice', dose: LOC.srdi.aman },
+        { cropBangla: 'আমন ধান', cropEnglish: 'Aman rice', dose: LOC.srdi!.aman },
         ...rabiKeys.map(k => ({ cropBangla: RABI_CATALOG[k].cropBangla, cropEnglish: RABI_CATALOG[k].crop, dose: LOC.rabi[k].fertilizer })),
       ],
     },
@@ -410,19 +424,42 @@ function knowledgePack() {
   };
 }
 
+/** A farmer's place for the register: the union, the upazila and district. */
+function registerPlace(f: ReturnType<typeof desk.farmers>[number]) {
+  const place = placeFor(f.placeId ?? 'talanda_tanore');
+  return {
+    id: place?.id ?? null, upazila: place?.upazila ?? null, upazilaBangla: place ? calls.upazilaNameBangla(place) : null,
+    district: place?.district ?? null, unionBangla: f.unionBangla ?? null, unionEnglish: f.unionEnglish ?? null,
+  };
+}
+
+/** The Calls and SMS screen for one site: the day's list with each farmer's register row (masked numbers only). */
+function callScreen(date: string | null | undefined, site: string | null) {
+  const day = date && /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : calls.dhakaToday();
+  const farmers = desk.farmers(site);
+  return {
+    ...calls.callDesk(day, farmers),
+    farmers: farmers.map(f => ({ farmer: f, place: registerPlace(f), callable: desk.callable(f) })),
+    crops: desk.REGISTER_CROPS,
+  };
+}
+
 /** Everything the officer desk screen shows in one call. */
-function deskView(officer: (typeof desk.OFFICERS)[number]) {
-  const queue = desk.queue();
+function deskView(officer: desk.Officer) {
+  // the desk shows only the farmers and call-backs of the manager's own site (app_metadata.site); no site, nothing
+  const site = officer.site ?? null;
+  const queue = desk.queue(site);
   return {
     officer,
     pestNames: desk.PEST_NAMES,
     queue,
-    callbacks: desk.callbacks(),
-    farmers: desk.farmers().map(f => {
-      const advice = adviseWithNarration(planRequest({}), f.id);
+    callbacks: desk.callbacks(site),
+    farmers: desk.farmers(site).map(f => {
+      const advice = adviseWithNarration(planRequest({ unionId: f.placeId }), f.id);
       const top = advice.options[0];
       return {
         farmer: f,
+        place: registerPlace(f),
         observation: desk.latestObservation(f.id) ?? null,
         queue: queue.find(q => q.farmerId === f.id) ?? null,
         advice: {
@@ -439,6 +476,11 @@ function deskView(officer: (typeof desk.OFFICERS)[number]) {
       };
     }),
   };
+}
+
+/** What a manager of any other site gets instead: no soil card, and none of the pilot's replay, IPM, caveats or haor and cattle tables. */
+function noKnowledgePack() {
+  return { srdi: null, noSoilCard: NO_SOIL_CARD };
 }
 
 function dataRelease() {
@@ -465,26 +507,104 @@ function dataRelease() {
   };
 }
 
-const server = http.createServer(async (req, res) => {
-  const url = new URL(req.url || '/', `http://${req.headers.host}`);
-  const pathname = url.pathname;
+/** Real capability/status report. Nothing here is hardcoded "operational": each entry reflects configuration or the last real call. */
+async function capabilities() {
+  const ee = await getEarthEngineReadiness();
+  return {
+    api: { version: 'v1', time: new Date().toISOString() },
+    weatherForecast: {
+      provider: 'Open-Meteo',
+      kind: 'model_estimate',
+      apiKeyConfigured: Boolean(process.env.OPEN_METEO_API_KEY?.trim()),
+      lastSuccessAt: lastOpenMeteoSuccessAt,
+      status: lastOpenMeteoSuccessAt ? 'last_request_succeeded' : 'not_yet_requested',
+    },
+    nasaPower: {
+      provider: 'NASA POWER (community AG)',
+      kind: 'satellite_delayed',
+      live: false,
+      latency: '2-3 days',
+      lastSuccessAt: lastNasaSuccessAt,
+      status: lastNasaSuccessAt ? 'last_request_succeeded' : 'not_yet_requested',
+    },
+    earthEngine: {
+      status: ee.status,
+      reason: ee.reason,
+      details: ee.details,
+      setupInstructions: ee.status === 'ready' ? undefined : ee.setupInstructions,
+      credentialFilesDetected: detectEarthEngineCredentialFiles(),
+      checkedAt: ee.checkedAt,
+    },
+    llm: llmStatus(),
+    tts: ttsStatus(),
+    sms: (({ configured, live, sender }) => ({ configured, live, sender }))(smsConfig()),
+    mlModels: {
+      supervisedHeatStress: 'training_data_unavailable',
+      supervisedForageBiomass: 'training_data_unavailable',
+      milkLossPredictor: 'training_data_unavailable',
+      diseaseRiskPredictor: 'training_data_unavailable',
+      ruleBasedBaseline: 'rule_based_thi (not a trained model)',
+    },
+    jobs: {
+      persistence: 'local_file',
+      productionDurable: false,
+      note: 'Jobs run in-process and are stored in a local JSON file. A restart interrupts running jobs; they are marked failed and can be retried.',
+      storeLoadError: cattleRepository.loadError,
+      lastWriteError: cattleRepository.lastPersistError,
+    },
+    writeProtection: { cattleWriteTokenRequired: Boolean(WRITE_TOKEN) },
+  };
+}
 
-  // Handle CORS preflight
+const MIME_TYPES: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.geojson': 'application/geo+json; charset=utf-8',
+  '.png': 'image/png',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.svg': 'image/svg+xml',
+};
+
+const server = http.createServer(async (req, res) => {
+  const url = new URL(req.url || '/', `http://${req.headers.host || 'localhost'}`);
+  const pathname = url.pathname;
+  applyCors(req, res);
+
   if (req.method === 'OPTIONS') {
-    res.writeHead(204, {
-      'Access-Control-Allow-Origin': '*',
-      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type',
-    });
+    res.writeHead(204);
     res.end();
     return;
   }
 
   try {
-    // API: SAAO Overview
+    // ---- Sign-in configuration for the website (public: the Supabase URL and anon key are public by design) ----
+    if (pathname === '/api/v1/auth/config' && req.method === 'GET') {
+      return sendJSON(res, 200, authConfig());
+    }
+
+    // ---- Capability / status ------------------------------------------------------------------
+    if (pathname === '/api/v1/config' && req.method === 'GET') {
+      return sendJSON(res, 200, await capabilities());
+    }
+
+    // ---- Bangladesh districts and upazilas (shared by website and Android) -----------------------
+    if (pathname === '/api/v1/locations' && req.method === 'GET') {
+      return sendJSON(res, 200, getLocationsPayload());
+    }
+
+    // ---- Pilot-site (Talanda, Tanore) rotation planning ----------------------------------------
     if (pathname === '/api/v1/overview' && req.method === 'GET') {
       const ov = overview(url.searchParams.get('place'));
       return ov ? sendJSON(res, 200, ov) : sendJSON(res, 422, { error: 'No research data for this place yet' });
+    }
+
+    // API: where to check first for flood damage (NASA OPERA DSWx-HLS), most water first
+    if (pathname === '/api/v1/flood/upazilas' && req.method === 'GET') {
+      return sendJSON(res, 200, { status: floodStatus(), cropLoss: cropLossStatus(), upazilas: floodCheckList() });
     }
 
     // API: the crops a farmer can ask for at a place, and after which Aman varieties each one fits
@@ -509,34 +629,91 @@ const server = http.createServer(async (req, res) => {
     // API: phone calls through Awaj Digital (dry runs until AWAJ_API_TOKEN, AWAJ_SENDER and AWAJ_LIVE=1 are set)
     if (pathname === '/api/v1/calls/status' && req.method === 'GET') {
       const cfg = awajConfig();
+      const st = systechConfig();
+      const route = (r: typeof st.voiceblast) => ({ signInSet: r.signInSet, callerIdSet: Boolean(r.callerId), live: r.live });
       return sendJSON(res, 200, {
         provider: 'Awaj Digital', live: cfg.live, tokenSet: cfg.tokenSet, senderSet: Boolean(cfg.sender), voice: cfg.voice,
         keypadReady: Boolean(cfg.menuVoice || cfg.surveyTemplate), webhookSet: Boolean(cfg.webhookUrl), keypad: keypadMenu(),
+        adviceCallsVia: st.provider ?? 'awaj',
+        systech: { voiceblast: route(st.voiceblast), broadcast: route(st.broadcast), googleVoice: ttsStatus().provider === 'google' },
       });
     }
     if (pathname === '/api/v1/calls/advice' && req.method === 'POST') {
       const body = await parseBody(req);
       // A real, billed call needs a signed-in officer; a dry run shows what would be sent
-      if (awajConfig().live && !desk.officerForToken(req.headers.authorization)) {
-        return sendJSON(res, 401, { error: 'Officer sign-in required to place a real call' });
-      }
+      if (awajConfig().live) await requireManager(req);
       const phone = bdMobile(String(body.phone ?? ''));
       if (!phone) return sendJSON(res, 400, { error: 'phone must be a Bangladeshi mobile number (01XXXXXXXXX)' });
       const answer = body.text ? voiceAnswer(body) : { reply: replyFor(adviseWithNarration(planRequest(body), body.farmerId)) };
-      const sent = await sendTtsCall({ phoneNumbers: [phone], texts: [answer.reply.speechBangla], metadata: { channel: 'mather-kotha', unionId: body.unionId ?? 'talanda_tanore', option: answer.reply.topOptionId } });
-      logCall({ kind: 'advice_call', phone: maskPhone(phone), crops: answer.reply.understoodCrops, dryRun: sent.dryRun });
+      const metadata = { channel: 'mati-kohon', unionId: body.unionId ?? 'talanda_tanore', option: answer.reply.topOptionId };
+      // SysTech (VoiceBlast portal or the Voice Broadcast API) plays our Google recording; Awaj otherwise
+      const via: CallRoute | null = body.via === 'voiceblast' || body.via === 'broadcast' ? body.via : body.via === 'awaj' ? null : systechConfig().provider;
+      if (via) {
+        if (systechConfig()[via].live) await requireManager(req);
+        let audio: Buffer | null = null, voiceNote: string | null = null;
+        if (ttsStatus().provider === 'google') {
+          try {
+            audio = (await synthesizeSpeech(answer.reply.speechBangla, 'bn', process.env, 'wav8k')).audio;
+          } catch (err: any) {
+            voiceNote = `Google voice unavailable (${err?.details?.reason || err?.message || err})`;
+          }
+        }
+        let sent: any;
+        try {
+          sent = { ...(await sendSystechCall(via, { phone, audio, script: answer.reply.speechBangla })), voiceSource: 'google', ...(voiceNote ? { note: voiceNote } : {}) };
+        } catch (err: any) {
+          sent = { dryRun: false, route: via, error: String(err?.message || err) };
+        }
+        logCall({ kind: 'advice_call', phone: maskPhone(phone), crops: answer.reply.understoodCrops, dryRun: sent.dryRun, voice: `google via ${via}` });
+        return sendJSON(res, sent.error ? 502 : 200, { reply: answer.reply, call: sent });
+      }
+      // Our own Bangla voice (Google Cloud TTS) when it is set up and Awaj can reach this server; else Awaj's voice
+      let voiceNote: string | null = null;
+      let sent: any = null;
+      if (process.env.AWAJ_VOICE_SOURCE === 'google' && ttsStatus().provider === 'google' && process.env.PUBLIC_BASE_URL) {
+        try {
+          const audio = await synthesizeSpeech(answer.reply.speechBangla, 'bn', process.env, 'wav8k');
+          const id = `call_${Date.now().toString(36)}_${Math.random().toString(36).slice(2, 8)}`;
+          fs.mkdirSync(AUDIO_DIR, { recursive: true });
+          fs.writeFileSync(path.join(AUDIO_DIR, `${id}.wav`), audio.audio);
+          const url = `${process.env.PUBLIC_BASE_URL.replace(/\/$/, '')}/api/v1/audio/${id}.wav`;
+          sent = { ...(await sendAudioCall({ phoneNumbers: [phone], audioUrls: [url], metadata })), voiceSource: 'google' };
+        } catch (err: any) {
+          voiceNote = `Google voice unavailable (${err?.details?.reason || err?.message || err}); Awaj's own Bangla voice used instead`;
+        }
+      }
+      if (!sent) sent = { ...(await sendTtsCall({ phoneNumbers: [phone], texts: [answer.reply.speechBangla], metadata })), voiceSource: 'awaj', ...(voiceNote ? { note: voiceNote } : {}) };
+      logCall({ kind: 'advice_call', phone: maskPhone(phone), crops: answer.reply.understoodCrops, dryRun: sent.dryRun, voice: sent.voiceSource });
       return sendJSON(res, 200, { reply: answer.reply, call: sent });
+    }
+    // The advice as a Bangla SMS through the REVE gateway (a dry run until SMS_LIVE=1)
+    if (pathname === '/api/v1/sms/advice' && req.method === 'POST') {
+      const body = await parseBody(req);
+      if (smsConfig().live) await requireManager(req);
+      const phone = bdMobile(String(body.phone ?? ''));
+      if (!phone) return sendJSON(res, 400, { error: 'phone must be a Bangladeshi mobile number (01XXXXXXXXX)' });
+      const answer = body.text ? voiceAnswer(body) : { reply: replyFor(adviseWithNarration(planRequest(body), body.farmerId)) };
+      const sent = await sendSms(phone, answer.reply.smsBangla);
+      logCall({ kind: 'advice_sms', phone: maskPhone(phone), dryRun: sent.dryRun });
+      return sendJSON(res, 200, { reply: answer.reply, sms: sent });
+    }
+    // Call audio made with Google's voice, fetched by Awaj while it places the call
+    if (pathname.startsWith('/api/v1/audio/') && req.method === 'GET') {
+      const name = pathname.slice('/api/v1/audio/'.length);
+      if (!/^call_[a-z0-9]+_[a-z0-9]+\.wav$/.test(name) || !fs.existsSync(path.join(AUDIO_DIR, name))) return sendJSON(res, 404, { error: 'No such audio' });
+      res.writeHead(200, { 'Content-Type': 'audio/wav', 'Cache-Control': 'no-store' });
+      return fs.createReadStream(path.join(AUDIO_DIR, name)).pipe(res);
     }
     // The keypad call: the farmer hears the recorded crop menu and presses keys; Awaj posts them to the webhook
     if (pathname === '/api/v1/calls/keypad' && req.method === 'POST') {
       const body = await parseBody(req);
-      if (awajConfig().live && !desk.officerForToken(req.headers.authorization)) {
-        return sendJSON(res, 401, { error: 'Officer sign-in required to place a real call' });
-      }
+      if (awajConfig().live) await requireManager(req);
       const phones = (Array.isArray(body.phones) ? body.phones : [body.phone]).map((p: unknown) => bdMobile(String(p ?? ''))).filter(Boolean) as string[];
       if (!phones.length) return sendJSON(res, 400, { error: 'phone must be a Bangladeshi mobile number (01XXXXXXXXX)' });
       const cfg = awajConfig();
-      const metadata = { channel: 'mather-kotha-keypad', unionId: body.unionId ?? 'talanda_tanore', farmerId: body.farmerId ?? null };
+      // A template that also asks how deep the field floods (AWAJ_LAND_QUESTION=1) answers it last
+      const landQuestion = Boolean(cfg.surveyTemplate) && process.env.AWAJ_LAND_QUESTION === '1';
+      const metadata = { channel: 'mather-kotha-keypad', unionId: body.unionId ?? 'talanda_tanore', farmerId: body.farmerId ?? null, landQuestion };
       const menu = keypadMenu();
       const sent = cfg.surveyTemplate
         ? await sendTemplateSurvey({ phoneNumbers: phones, templateName: cfg.surveyTemplate, webhookUrl: cfg.webhookUrl ?? undefined, metadata })
@@ -567,14 +744,42 @@ const server = http.createServer(async (req, res) => {
       for (const r of Array.isArray(body.results) ? body.results : []) {
         const phone = bdMobile(String(r.phone_number ?? ''));
         if (!phone || r.status !== 'answered') continue;
-        const { crops, officer } = cropsFromKeys(Array.isArray(r.responses) ? r.responses.map(String) : [String(r.response ?? '')]);
+        const keys: string[] = Array.isArray(r.responses) ? r.responses.map(String) : [String(r.response ?? '')];
+        // With the land question the last key is the land (1 high ... 4 low); the others name crops
+        const landType = body.metadata?.landQuestion ? landFromKey(keys[keys.length - 1]) : undefined;
+        const { crops, officer } = cropsFromKeys(body.metadata?.landQuestion ? keys.slice(0, -1) : keys);
         const callback = officer ? desk.requestCallback(String(body.metadata?.farmerId ?? 'F01'), 'ivr_keypad_9') : null;
-        const reply = crops.length ? replyFor(adviseWithNarration(planRequest({ unionId, preferredCrops: crops }))) : null;
+        const reply = crops.length ? replyFor(adviseWithNarration(planRequest({ unionId, preferredCrops: crops, landType }))) : null;
         const sent = reply ? await sendTtsCall({ phoneNumbers: [phone], texts: [reply.speechBangla], metadata: { channel: 'mather-kotha', surveyId: body.survey_id, unionId } }) : null;
-        logCall({ kind: 'survey_answer', surveyId: body.survey_id, phone: maskPhone(phone), keys: r.responses ?? [r.response], crops, officer, callbackId: callback?.id ?? null, dryRun: sent?.dryRun ?? null });
-        handled.push({ phone: maskPhone(phone), crops, officer, callBack: sent ? { dryRun: sent.dryRun } : null });
+        logCall({ kind: 'survey_answer', surveyId: body.survey_id, phone: maskPhone(phone), keys: r.responses ?? [r.response], crops, landType: landType ?? null, officer, callbackId: callback?.id ?? null, dryRun: sent?.dryRun ?? null });
+        handled.push({ phone: maskPhone(phone), crops, landType: landType ?? null, officer, callBack: sent ? { dryRun: sent.dryRun } : null });
       }
       return sendJSON(res, 200, { ok: true, handled });
+    }
+
+    // A missed call to the project's number (posted by the provider): a registered farmer gets this week's advice
+    // on the call list; the shared key (MISSED_CALL_KEY) is required because the reply says whether a number is known
+    if (pathname === '/api/v1/calls/missed' && req.method === 'POST') {
+      const key = process.env.MISSED_CALL_KEY;
+      if (!key) throw new ApiError('configuration_required', 'Set MISSED_CALL_KEY to accept missed calls', {}, 503);
+      if (url.searchParams.get('key') !== key) throw new ApiError('unauthorized', 'Unknown webhook key');
+      const body = await parseBody(req);
+      const got = calls.missedCall(String(body.phone ?? body.caller ?? ''));
+      logCall({ kind: 'missed_call', registered: got.registered, stopped: got.stopped ?? false, callId: got.call?.id ?? null });
+      return sendJSON(res, 200, { ok: true, registered: got.registered, queued: Boolean(got.call) });
+    }
+
+    // A signed-in farmer's question from the app; the officer answers and the answer comes as a call
+    if (pathname === '/api/v1/farmer/questions') {
+      const user = desk.userForToken(req.headers.authorization);
+      if (!user || user.role !== 'farmer') throw new ApiError('unauthorized', 'Farmer sign-in required');
+      if (req.method === 'GET') return sendJSON(res, 200, { questions: calls.questions().filter(q => q.farmerId === user.id) });
+      if (req.method === 'POST') {
+        const body = await parseBody(req);
+        const got = calls.addQuestion(null, { farmerId: user.id, textBangla: body.textBangla, channel: 'app' });
+        if (got.error) throw new ApiError('invalid_input', got.error);
+        return sendJSON(res, 200, { question: got.question });
+      }
     }
 
     // API: every place the engine can advise (the pilot and all upazilas)
@@ -582,53 +787,35 @@ const server = http.createServer(async (req, res) => {
       return sendJSON(res, 200, { pilot: { id: 'talanda_tanore', name: 'Talanda union', upazila: 'Tanore', district: 'Rajshahi' }, upazilas: listPlaces() });
     }
 
-    // API: Generate Rotation Advice
     if (pathname === '/api/v1/advice' && req.method === 'POST') {
       const body = await parseBody(req);
       return sendJSON(res, 200, adviseWithNarration(planRequest(body), body.farmerId));
     }
 
-    // API: Narrate Advice
+    // Narration: numeric advice is computed by the rotation engine; an LLM (if configured) only words approved facts,
+    // and the dual-gate validator falls back to the deterministic template if the wording fails the audit.
     if (pathname === '/api/v1/narrate' && req.method === 'POST') {
       const body = await parseBody(req);
       const advice = body.advice;
-      const selectedOptionId = body.selectedOptionId;
-      const option = advice?.options?.find((o: any) => o.id === selectedOptionId) || advice?.options?.[0];
-
-      if (!advice || !option) {
-        return sendJSON(res, 400, { error: 'Advice object and option are required' });
-      }
-
-      // Check if user requested mock local LLM or template
-      if (body.simulateLLM) {
-        const mockLLM = {
-          async generate() {
-            const water = option.dimensionDetails.water.metrics;
-            return `${bnOf(advice.scope.union_name_bangla)} জন্য ${option.nameBangla} উপযোগী। ${bnDigits(water.totalSeasonsSimulated)} মৌসুমে ${bnDigits(water.amanRescueIrrigationSeasons)} বার সম্পূরক সেচ লেগেছে এবং ${bnDateOf(option.fieldFreeDateBangla)} মধ্যে জমি খালি হবে।`;
-          },
-        };
-        const customValidator = new DualGateNarrationValidator(mockLLM);
-        const result = await customValidator.narrate(advice, option);
-        return sendJSON(res, 200, result);
-      }
-
+      const option = advice?.options?.find((o: any) => o.id === body.selectedOptionId) || advice?.options?.[0];
+      if (!advice || !option) throw new ApiError('invalid_input', 'Advice object and option are required');
       const result = await dualGateValidator.narrate(advice, option);
-      return sendJSON(res, 200, result);
+      return sendJSON(res, 200, { ...result, llm: llmStatus() });
     }
 
-    // API: Channel Events (simulated IVR keypad): re-ranks the rotations for the chosen priority
+    // Simulated IVR keypad: no call is placed. Clearly labelled so clients never show it as a delivered call.
     if (pathname === '/api/v1/channel-events' && req.method === 'POST') {
       const body = await parseBody(req);
       const keypad = String(body.keypad || '1');
       const choice = KEYPAD_PRIORITIES[keypad];
-      const top = choice ? rotationEngine.generateAdvice(planRequest({ farmerPriorities: choice.priorities })).options[0] : null;
-      // Keypad 9: the farmer asks for their Krishi officer; the request tops the officer desk queue.
+      const landType = landFromKey(body.landKey);
+      const top = choice ? rotationEngine.generateAdvice(planRequest({ unionId: body.unionId, farmerPriorities: choice.priorities, landType })).options[0] : null;
       const callback = keypad === '9' ? desk.requestCallback(String(body.farmerId || 'F01'), 'ivr_keypad_9') : null;
 
       return sendJSON(res, 200, {
-        callId: `call_${Date.now()}`,
-        farmerPhone: body.phone || '017XXXXXXXX',
-        status: 'delivered',
+        simulated: true,
+        callId: `sim_${Date.now()}`,
+        status: 'simulated',
         keypadInput: keypad,
         acknowledgementBangla: top
           ? `আপনার পছন্দ "${choice.label}" নথিভুক্ত হয়েছে। এই অগ্রাধিকারে শীর্ষে: ${top.nameBangla}।`
@@ -659,128 +846,334 @@ const server = http.createServer(async (req, res) => {
       return one ? sendJSON(res, 200, one) : sendJSON(res, 404, { error: 'Upazila not found; pass id, name, or lat and lon' });
     }
 
+    // API: one row per upazila for the dashboard's map (MODIS, NASA replay, GLDAS, PEST-CHEMGRIDS, SRDI, today's NASA update)
+    if (pathname === '/api/v1/map/upazilas' && req.method === 'GET') {
+      return sendJSON(res, 200, mapLayers());
+    }
+
+    // API: year-by-year values for the map's time slider (NASA POWER, GPM IMERG, GLDAS-2.2 groundwater, MODIS crops)
+    if (pathname === '/api/v1/map/years' && req.method === 'GET') {
+      return sendJSON(res, 200, mapYears());
+    }
+
     if (pathname === '/api/v1/haor/flash-flood' && req.method === 'GET') {
       return sendJSON(res, 200, { ...HAOR_FLASH_FLOOD, status: haorStatus(), live: liveHaor() });
     }
 
-    // API: Location-aware Weather (Open-Meteo model forecast + NASA POWER agroclimatology & SMAP soil moisture)
+    // ---- Weather ---------------------------------------------------------------------------------
+    // Open-Meteo numerical model estimate (current + hourly incl. humidity + daily) for the requested coordinates.
+    if (pathname === '/api/v1/weather/forecast' && req.method === 'GET') {
+      const { lat, lon } = parseCoordinates(url.searchParams.get('lat'), url.searchParams.get('lon'));
+      const forecast = await getOpenMeteoForecast(lat, lon);
+      return sendJSON(res, 200, { location: { lat, lon }, source: forecast.source, forecast });
+    }
+
+    // NASA POWER delayed observations for the requested coordinates. Never live, never a forecast.
     if (pathname === '/api/v1/weather' && req.method === 'GET') {
-      const latParam = url.searchParams.get('lat');
-      const lonParam = url.searchParams.get('lon');
-      const lat = latParam !== null ? parseFloat(latParam) : 24.62;
-      const lon = lonParam !== null ? parseFloat(lonParam) : 88.56;
-
-      if (!Number.isFinite(lat) || !Number.isFinite(lon) || lat < -90 || lat > 90 || lon < -180 || lon > 180) {
-        return sendJSON(res, 400, { error: 'Invalid coordinates; latitude must be between -90 and 90, and longitude between -180 and 180.' });
-      }
-
-      const weather = await getNasaWeather(lat, lon);
-      return sendJSON(res, 200, weather);
+      const { lat, lon } = parseCoordinates(url.searchParams.get('lat'), url.searchParams.get('lon'));
+      return sendJSON(res, 200, await getNasaWeather(lat, lon));
     }
 
-    // API: River Erosion Information (BWDB station records, CEGIS vulnerability & IMERG basin rain)
     if (pathname === '/api/v1/erosion' && req.method === 'GET') {
-      const river = url.searchParams.get('river') || 'jamuna';
-      const erosion = getRiverErosion(river);
-      return sendJSON(res, 200, erosion);
+      return sendJSON(res, 200, getRiverErosion(url.searchParams.get('river') || 'jamuna'));
     }
 
-    // API: Grounded Bengali AI Agricultural Assistant
+    // Rule-based assistant (not an LLM): answers only from provider data and reference cards.
     if (pathname === '/api/v1/ai/ask' && req.method === 'POST') {
       const body = await parseBody(req);
-      const answer = await askAiAssistant(body);
-      return sendJSON(res, 200, answer);
+      if (typeof body.query !== 'string' || !body.query.trim()) throw new ApiError('invalid_input', 'query is required');
+      return sendJSON(res, 200, await askAiAssistant(body));
     }
 
-    // API: Unified Authentication (Farmer and SAAO Officer)
+    // ---- Text to speech (separate from text generation) -----------------------------------------
+    if (pathname === '/api/v1/tts' && req.method === 'POST') {
+      const body = await parseBody(req);
+      const text = typeof body.text === 'string' ? body.text.trim() : '';
+      if (!text || text.length > 2000) throw new ApiError('invalid_input', 'text is required (max 2000 characters)');
+      const audio = await synthesizeSpeech(text, typeof body.language === 'string' ? body.language : 'bn');
+      res.writeHead(200, { 'Content-Type': audio.contentType, 'Content-Length': audio.audio.length });
+      return res.end(audio.audio);
+    }
+
+    // ---- Cattle AOI data and advisory pipeline ---------------------------------------------------
+    if (pathname === '/api/v1/cattle/readiness' && req.method === 'GET') {
+      const c = await capabilities();
+      return sendJSON(res, 200, {
+        earthEngine: c.earthEngine,
+        weatherForecast: c.weatherForecast,
+        nasaPower: c.nasaPower,
+        mlModels: c.mlModels,
+        jobs: c.jobs,
+      });
+    }
+
+    if (pathname === '/api/v1/cattle/aois' && req.method === 'GET') {
+      return sendJSON(res, 200, { aois: await cattleRepository.listAois() });
+    }
+
+    if (pathname === '/api/v1/cattle/aois' && req.method === 'POST') {
+      requireWriteToken(req);
+      const body = await parseBody(req);
+      const aoi = createFarmAoi(body); // throws invalid_input
+      await cattleRepository.saveAoi(aoi);
+      const initialJob = await backgroundJobManager.enqueueJob(aoi.aoiId, 'pipeline_refresh');
+      return sendJSON(res, 201, { aoi, job: initialJob });
+    }
+
+    const cattleAdvMatch = /^\/api\/v1\/cattle\/aois\/([^/]+)\/advisory$/.exec(pathname);
+    if (cattleAdvMatch && req.method === 'GET') {
+      const aoiId = decodeURIComponent(cattleAdvMatch[1]);
+      if (!(await cattleRepository.getAoi(aoiId))) throw new ApiError('not_found', `AOI "${aoiId}" not found`);
+      // Advisories are produced only by completed jobs. Reading never computes one from partial inputs.
+      const advisory = await cattleRepository.getLatestAdvisory(aoiId);
+      if (!advisory) throw new ApiError('no_data', 'No advisory has been produced for this AOI yet. Check its jobs.', { jobsUrl: `/api/v1/cattle/jobs?aoiId=${encodeURIComponent(aoiId)}` });
+      return sendJSON(res, 200, { advisory });
+    }
+
+    const cattleAoiMatch = /^\/api\/v1\/cattle\/aois\/([^/]+)$/.exec(pathname);
+    if (cattleAoiMatch && req.method === 'GET') {
+      const aoiId = decodeURIComponent(cattleAoiMatch[1]);
+      const aoi = await cattleRepository.getAoi(aoiId);
+      if (!aoi) throw new ApiError('not_found', `AOI "${aoiId}" not found`);
+      return sendJSON(res, 200, { aoi, latestAdvisory: await cattleRepository.getLatestAdvisory(aoiId) });
+    }
+
+    if (cattleAoiMatch && req.method === 'DELETE') {
+      requireWriteToken(req);
+      const aoiId = decodeURIComponent(cattleAoiMatch[1]);
+      if (!(await cattleRepository.deleteAoi(aoiId))) throw new ApiError('not_found', `AOI "${aoiId}" not found`);
+      return sendJSON(res, 200, { deleted: true, aoiId });
+    }
+
+    if (pathname === '/api/v1/cattle/jobs' && req.method === 'GET') {
+      return sendJSON(res, 200, { jobs: await cattleRepository.listJobs(url.searchParams.get('aoiId') || undefined) });
+    }
+
+    if (pathname === '/api/v1/cattle/jobs' && req.method === 'POST') {
+      requireWriteToken(req);
+      const body = await parseBody(req);
+      if (typeof body.aoiId !== 'string' || !body.aoiId) throw new ApiError('invalid_input', 'aoiId is required');
+      const job = await backgroundJobManager.enqueueJob(body.aoiId, body.jobType || 'pipeline_refresh');
+      return sendJSON(res, 202, { job });
+    }
+
+    const cattleJobRetry = /^\/api\/v1\/cattle\/jobs\/([^/]+)\/retry$/.exec(pathname);
+    if (cattleJobRetry && req.method === 'POST') {
+      requireWriteToken(req);
+      return sendJSON(res, 202, { job: await backgroundJobManager.retryJob(decodeURIComponent(cattleJobRetry[1])) });
+    }
+
+    const cattleJobMatch = /^\/api\/v1\/cattle\/jobs\/([^/]+)$/.exec(pathname);
+    if (cattleJobMatch && req.method === 'GET') {
+      const job = await cattleRepository.getJob(decodeURIComponent(cattleJobMatch[1]));
+      if (!job) throw new ApiError('not_found', `Job "${decodeURIComponent(cattleJobMatch[1])}" not found`);
+      return sendJSON(res, 200, { job });
+    }
+
+    if (pathname === '/api/v1/cattle/models/train' && req.method === 'POST') {
+      requireWriteToken(req);
+      const body = await parseBody(req);
+      const aoi = body.aoiId ? await cattleRepository.getAoi(body.aoiId) : undefined;
+      const result = await triggerModelTraining(body.target || 'heat_stress_panting', aoi || undefined);
+      return sendJSON(res, 200, result);
+    }
+
+    // ---- Authentication (demo accounts) ----------------------------------------------------------
     if (pathname === '/api/v1/auth/login' && req.method === 'POST') {
       const body = await parseBody(req);
       const session = desk.loginUser(body);
-      return session ? sendJSON(res, 200, session) : sendJSON(res, 401, { error: 'Invalid login credentials' });
+      if (!session) throw new ApiError('unauthorized', 'Invalid login credentials');
+      return sendJSON(res, 200, session);
     }
     if (pathname === '/api/v1/auth/session' && req.method === 'GET') {
       const user = desk.userForToken(req.headers.authorization);
-      return user ? sendJSON(res, 200, { user }) : sendJSON(res, 401, { error: 'No active session' });
+      if (!user) throw new ApiError('unauthorized', 'No active session');
+      return sendJSON(res, 200, { user });
     }
     if (pathname === '/api/v1/auth/logout' && req.method === 'POST') {
-      const ok = desk.logout(req.headers.authorization);
-      return sendJSON(res, 200, { ok });
+      return sendJSON(res, 200, { ok: desk.logout(req.headers.authorization) });
     }
 
-    // API: Krishi officer desk (sign-in required for everything except the officer list and login)
+    // ---- Which NASA data sources the server can use (manager only; set/unset flags, never a key, token or password) ----
+    if (pathname === '/api/v1/manager/data-sources' && req.method === 'GET') {
+      await requireManager(req);
+      // the NASA flags as before, plus every integration with one of four labels (live, saved, demo, notset): names and sentences, never a value
+      return sendJSON(res, 200, { ...nasaConfigStatus(), integrations: integrationStatuses() });
+    }
+    if (pathname === '/api/v1/manager/climate' && req.method === 'GET') {
+      return sendJSON(res, 200, await managerClimate(req));
+    }
+    if (pathname === '/api/v1/manager/area' && req.method === 'GET') {
+      return sendJSON(res, 200, await managerArea(req));
+    }
+
+    // ---- Krishi officer desk -----------------------------------------------------------------------
     if (pathname === '/api/v1/officers' && req.method === 'GET') {
-      return sendJSON(res, 200, desk.OFFICERS);
+      // the demo officer list; empty unless DEMO_MODE=true
+      return sendJSON(res, 200, desk.demoEnabled() ? desk.OFFICERS : []);
     }
     if (pathname === '/api/v1/officer/login' && req.method === 'POST') {
+      // the demo login: desk.login() refuses everything unless DEMO_MODE=true (real sign-in is Supabase, see auth.ts)
       const body = await parseBody(req);
       const session = desk.login(String(body.officerId ?? ''), String(body.accessCode ?? ''));
-      return session ? sendJSON(res, 200, session) : sendJSON(res, 401, { error: 'Wrong officer ID or access code' });
+      if (!session) throw new ApiError('unauthorized', 'Wrong officer ID or access code');
+      return sendJSON(res, 200, session);
     }
     if (pathname.startsWith('/api/v1/officer/')) {
-      const officer = desk.officerForToken(req.headers.authorization);
-      if (!officer) {
-        return sendJSON(res, 401, { error: 'Officer sign-in required' });
-      }
+      const officer = await requireManager(req);
       if (pathname === '/api/v1/officer/desk' && req.method === 'GET') {
         return sendJSON(res, 200, deskView(officer));
       }
       if (pathname === '/api/v1/officer/observations' && req.method === 'POST') {
         const body = await parseBody(req);
-        const result = desk.addObservation(officer.id, body);
-        if (result.error) return sendJSON(res, 400, { error: result.error });
+        const result = desk.addObservation(officer.id, body, officer.site ?? null);
+        if (result.error) throw new ApiError('invalid_input', result.error);
         return sendJSON(res, 200, { observation: result.observation, advice: adviseWithNarration(planRequest({}), body.farmerId) });
       }
       const resolve = /^\/api\/v1\/officer\/callbacks\/([^/]+)\/resolve$/.exec(pathname);
       if (resolve && req.method === 'POST') {
-        const request = desk.resolveCallback(decodeURIComponent(resolve[1]));
-        return request ? sendJSON(res, 200, request) : sendJSON(res, 404, { error: 'Unknown call-back request' });
+        const request = desk.resolveCallback(decodeURIComponent(resolve[1]), officer.site ?? null);
+        if (!request) throw new ApiError('not_found', 'Unknown call-back request');
+        return sendJSON(res, 200, request);
       }
       if (pathname === '/api/v1/officer/calls' && req.method === 'GET') {
-        return sendJSON(res, 200, { calls: CALL_LOG, provider: awajConfig() });
+        return sendJSON(res, 200, { calls: CALL_LOG.filter(c => c.site === normalizeSite(officer.site)), provider: awajPublicStatus() });
       }
       if (pathname === '/api/v1/officer/knowledge' && req.method === 'GET') {
-        return sendJSON(res, 200, knowledgePack());
+        return sendJSON(res, 200, normalizeSite(officer.site) === PILOT_SITE ? knowledgePack() : noKnowledgePack());
       }
       if (pathname === '/api/v1/officer/reset' && req.method === 'POST') {
-        desk.resetDesk();
+        const site = normalizeSite(officer.site);
+        if (!site) throw new ApiError('site_required', 'This manager account has no site in app_metadata');
+        calls.resetCalls(desk.farmers(site).map(f => f.id)); // the site's calls and questions, before its farmers are re-seeded
+        desk.resetDesk(site); // only this manager's own site
         return sendJSON(res, 200, { ok: true });
       }
-      return sendJSON(res, 404, { error: 'Unknown officer endpoint' });
+
+      // ---- The farmer register and the daily advice calls (farmer_calls.ts), for the officer's own site ----
+      // (a manager account without a site sees no farmers, as on the desk)
+      const site = officer.site ?? null;
+      const mine = () => desk.farmers(site).map(f => f.id);
+      const ownCall = (id: string) => {
+        const call = calls.callById(id);
+        if (!call || !mine().includes(call.farmerId)) throw new ApiError('not_found', 'Unknown call');
+      };
+      if (pathname === '/api/v1/officer/farmers' && req.method === 'POST') {
+        const got = desk.registerFarmer(officer.id, await parseBody(req), site);
+        if (got.error) throw new ApiError('invalid_input', got.error);
+        return sendJSON(res, 200, { farmer: got.farmer });
+      }
+      const farmerCalls = /^\/api\/v1\/officer\/farmers\/([^/]+)\/calls$/.exec(pathname);
+      if (farmerCalls && req.method === 'POST') {
+        const body = await parseBody(req);
+        const farmer = desk.setCalls(officer.id, decodeURIComponent(farmerCalls[1]), body.on === true, String(body.how ?? ''), site);
+        if (!farmer) throw new ApiError('not_found', 'Unknown farmer');
+        if (!body.on) {
+          // Calls still waiting for this farmer are dropped at once
+          for (const c of calls.callsOn(calls.dhakaToday()).filter(c => c.farmerId === farmer.id && (c.status === 'proposed' || c.status === 'approved'))) {
+            calls.reviewCall(officer.id, c.id, { action: 'remove' });
+          }
+        }
+        return sendJSON(res, 200, { farmer });
+      }
+      if (pathname === '/api/v1/officer/calls/plan' && req.method === 'GET') {
+        return sendJSON(res, 200, callScreen(url.searchParams.get('date'), site));
+      }
+      if (pathname === '/api/v1/officer/calls/plan' && req.method === 'POST') {
+        const body = await parseBody(req);
+        const day = typeof body.date === 'string' && body.date ? body.date : calls.dhakaToday();
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new ApiError('invalid_input', 'date must be YYYY-MM-DD');
+        const built = calls.buildPlan(day, mine());
+        return sendJSON(res, 200, { ...callScreen(day, site), skipped: built.skipped });
+      }
+      if (pathname === '/api/v1/officer/calls/approve-all' && req.method === 'POST') {
+        const body = await parseBody(req);
+        const day = typeof body.date === 'string' && body.date ? body.date : calls.dhakaToday();
+        return sendJSON(res, 200, { approved: calls.approveAll(officer.id, day, mine()), ...callScreen(day, site) });
+      }
+      if (pathname === '/api/v1/officer/calls/send' && req.method === 'POST') {
+        const body = await parseBody(req);
+        const day = typeof body.date === 'string' && body.date ? body.date : calls.dhakaToday();
+        // A signed-in officer may place real calls; they are real only when the provider's *_LIVE switch is on too
+        const sent = await calls.sendApproved({ date: day, allowLive: true, farmerIds: mine() });
+        logCall({ kind: 'call_list', date: day, calls: sent.sent.length, live: sent.live });
+        return sendJSON(res, 200, { result: sent, ...callScreen(day, site) });
+      }
+      if (pathname === '/api/v1/officer/calls/follow-up' && req.method === 'POST') {
+        const body = await parseBody(req);
+        const result = await calls.followUp({ allowLive: true, farmerIds: mine() });
+        return sendJSON(res, 200, { result, ...callScreen(typeof body.date === 'string' ? body.date : null, site) });
+      }
+      const callReview = /^\/api\/v1\/officer\/calls\/([^/]+)\/(review|outcome)$/.exec(pathname);
+      if (callReview && req.method === 'POST') {
+        const body = await parseBody(req);
+        const id = decodeURIComponent(callReview[1]);
+        ownCall(id);
+        const got = callReview[2] === 'review' ? calls.reviewCall(officer.id, id, body) : await calls.markOutcome(id, String(body.outcome ?? ''), true);
+        if (got.error) throw new ApiError('invalid_input', got.error);
+        return sendJSON(res, 200, { call: got.call, ...callScreen(got.call!.date, site) });
+      }
+      if (pathname === '/api/v1/officer/questions' && req.method === 'POST') {
+        const body = await parseBody(req);
+        if (!mine().includes(String(body.farmerId ?? ''))) throw new ApiError('invalid_input', 'Unknown farmer');
+        const got = calls.addQuestion(officer.id, body);
+        if (got.error) throw new ApiError('invalid_input', got.error);
+        return sendJSON(res, 200, { question: got.question });
+      }
+      const answerMatch = /^\/api\/v1\/officer\/questions\/([^/]+)\/answer$/.exec(pathname);
+      if (answerMatch && req.method === 'POST') {
+        const q = calls.questions().find(x => x.id === decodeURIComponent(answerMatch[1]));
+        if (!q || !mine().includes(q.farmerId)) throw new ApiError('not_found', 'Unknown question');
+        const got = calls.answerQuestion(officer.id, q.id, await parseBody(req));
+        if (got.error) throw new ApiError('invalid_input', got.error);
+        return sendJSON(res, 200, { question: got.question, call: got.call, ...callScreen(null, site) });
+      }
+      throw new ApiError('not_found', 'Unknown officer endpoint');
     }
 
-    // API: Data Quality & Provenance
     if (pathname === '/api/v1/data-release' && req.method === 'GET') {
       return sendJSON(res, 200, dataRelease());
     }
 
-    // Serve static files from apps/saao-dashboard/public
-    let filePath = path.join(PUBLIC_DIR, pathname === '/' ? 'index.html' : pathname);
+    // Unknown API paths are JSON 404s, never the HTML page.
+    if (pathname.startsWith('/api/')) {
+      throw new ApiError('not_found', `No such endpoint: ${req.method} ${pathname}`);
+    }
+
+    // ---- Static website ---------------------------------------------------------------------------
+    const requested = path.resolve(PUBLIC_DIR, '.' + (pathname === '/' ? '/index.html' : pathname));
+    const inside = requested === PUBLIC_DIR || requested.startsWith(PUBLIC_DIR + path.sep);
+    let filePath = inside ? requested : path.join(PUBLIC_DIR, 'index.html');
+    // the Supabase browser client, served from node_modules so the site needs no CDN (this one file only)
+    if (pathname === '/vendor/supabase.js') filePath = SUPABASE_BROWSER_BUNDLE;
     if (!fs.existsSync(filePath) || fs.statSync(filePath).isDirectory()) {
       filePath = path.join(PUBLIC_DIR, 'index.html');
     }
-
-    const ext = path.extname(filePath).toLowerCase();
-    const mimeTypes: Record<string, string> = {
-      '.html': 'text/html; charset=utf-8',
-      '.css': 'text/css; charset=utf-8',
-      '.js': 'application/javascript; charset=utf-8',
-      '.json': 'application/json; charset=utf-8',
-      '.png': 'image/png',
-      '.svg': 'image/svg+xml',
-    };
-
-    const contentType = mimeTypes[ext] || 'text/plain';
+    const contentType = MIME_TYPES[path.extname(filePath).toLowerCase()] || 'text/plain';
     const content = fs.readFileSync(filePath);
+    // text files go out gzipped when the browser accepts it (the map's outlines are ~0.9 MB, ~0.25 MB gzipped)
+    if (content.length > 2048 && !/^image\/(png|jpeg|webp)/.test(contentType) && /\bgzip\b/.test(String(req.headers['accept-encoding'] || ''))) {
+      const mtime = fs.statSync(filePath).mtimeMs;
+      let hit = gzipCache.get(filePath);
+      if (!hit || hit.mtime !== mtime) gzipCache.set(filePath, hit = { mtime, body: zlib.gzipSync(content) });
+      res.writeHead(200, { 'Content-Type': contentType, 'Content-Encoding': 'gzip', Vary: 'Accept-Encoding' });
+      return res.end(hit.body);
+    }
     res.writeHead(200, { 'Content-Type': contentType });
     res.end(content);
   } catch (err: any) {
+    if (err instanceof ApiError) return sendError(res, err);
     if (err instanceof UnsupportedUnionError) {
-      return sendJSON(res, 422, { error: err.message, supportedUnions: SUPPORTED_UNIONS });
+      return sendError(res, new ApiError('invalid_input', err.message, { supportedUnions: SUPPORTED_UNIONS }, 422));
     }
     console.error('Server error:', err);
-    sendJSON(res, 500, { error: err.message || 'Internal Server Error' });
+    sendError(res, new ApiError('internal', 'Internal server error'));
   }
 });
+
+backgroundJobManager.recoverInterruptedJobs()
+  .then(n => { if (n) console.warn(`Marked ${n} job(s) interrupted by a previous restart as failed (retry them via POST /api/v1/cattle/jobs/:id/retry)`); })
+  .catch(err => console.error('Job recovery failed:', err));
 
 server.listen(PORT, () => {
   console.log(`✓ EDEN API & SAAO Dashboard server listening on http://localhost:${PORT} (data release ${RELEASE.id})`);

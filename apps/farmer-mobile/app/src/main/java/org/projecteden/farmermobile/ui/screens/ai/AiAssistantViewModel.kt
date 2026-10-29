@@ -37,13 +37,20 @@ class AiAssistantViewModel(application: Application) : AndroidViewModel(applicat
             ChatMessage(
                 id = "init_0",
                 isUser = false,
-                text = "নমস্কার/সালাম। আমি প্রজেক্ট ইডেন কৃত্রিম বুদ্ধিমত্তা সহকারী। আমি নাসা উপগ্রহ উপাত্ত, বাংলাদেশ ধান গবেষণা ইনস্টিটিউট (BRRI) এবং মৃত্তিকা সম্পদ উন্নয়ন ইনস্টিটিউট (SRDI)-এর পরীক্ষিত তথ্যের ভিত্তিতে প্রশ্নের উত্তর দিই। আপনার জমি, সেচ বা আবহাওয়া সম্পর্কে কী জানতে চান?",
+                text = "নমস্কার/সালাম। আমি মাটি কহন সহকারী। আমি নাসা উপগ্রহ উপাত্ত, বাংলাদেশ ধান গবেষণা ইনস্টিটিউট (BRRI) এবং মৃত্তিকা সম্পদ উন্নয়ন ইনস্টিটিউট (SRDI)-এর পরীক্ষিত তথ্যের ভিত্তিতে প্রশ্নের উত্তর দিই। আপনার জমি, সেচ বা আবহাওয়া সম্পর্কে কী জানতে চান?",
                 sources = listOf("NASA Earth Science", "BRRI", "SRDI", "BWDB"),
                 timeFormatted = currentTime()
             )
         )
     )
     val messages: StateFlow<List<ChatMessage>> = _messages.asStateFlow()
+
+    private val _inputDraft = MutableStateFlow("")
+    val inputDraft: StateFlow<String> = _inputDraft.asStateFlow()
+
+    fun updateInputDraft(value: String) {
+        _inputDraft.value = value
+    }
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -92,7 +99,8 @@ class AiAssistantViewModel(application: Application) : AndroidViewModel(applicat
                 }
             } else null
 
-            val plan = apiClient.voiceAnswer(trimmed).getOrNull()
+            val unionId = org.projecteden.farmermobile.location.adviceUnionId(PrefsLocationStore(getApplication()), apiClient)
+            val plan = apiClient.voiceAnswer(trimmed, unionId).getOrNull()
             if (plan != null && plan.namedCrops) {
                 val text = buildString {
                     append(plan.speechBangla)

@@ -37,7 +37,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.foundation.Image
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
+import org.projecteden.farmermobile.R
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -58,6 +61,7 @@ import org.projecteden.farmermobile.theme.SurfaceContainer
 import org.projecteden.farmermobile.theme.SurfaceContainerLow
 import org.projecteden.farmermobile.theme.SurfaceContainerLowest
 import org.projecteden.farmermobile.ui.components.AudioPlayerCard
+import org.projecteden.farmermobile.ui.components.CropPhoto
 import org.projecteden.farmermobile.ui.components.EdenTopAppBar
 import org.projecteden.farmermobile.ui.components.OfflineStatusBanner
 import org.projecteden.farmermobile.ui.components.windowPart
@@ -282,6 +286,7 @@ fun TodayAdviceScreen(
                             modifier = Modifier.weight(1f)
                         ) {
                             Column(modifier = Modifier.padding(10.dp)) {
+                                CropPhoto(advice.season1Name, modifier = Modifier.padding(bottom = 6.dp))
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -329,6 +334,7 @@ fun TodayAdviceScreen(
                             modifier = Modifier.weight(1f)
                         ) {
                             Column(modifier = Modifier.padding(10.dp)) {
+                                CropPhoto(advice.season2Name, modifier = Modifier.padding(bottom = 6.dp))
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -370,24 +376,25 @@ fun TodayAdviceScreen(
                         }
                     }
 
-                    // Field Stage Card (Organic Canvas Gradient)
+                    // Field stage on a photo of a paddy field at BRRI Rajshahi (Tahmid Reza, CC BY-SA 4.0; credits on My farm)
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(88.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(
-                                Brush.verticalGradient(
-                                    colors = listOf(
-                                        PrimaryContainer,
-                                        Primary
-                                    )
-                                )
-                            )
-                            .padding(12.dp),
+                            .height(150.dp)
+                            .clip(RoundedCornerShape(2.dp)),
                         contentAlignment = Alignment.BottomStart
                     ) {
+                        Image(
+                            painter = painterResource(R.drawable.photo_field_rajshahi),
+                            contentDescription = "ব্রি রাজশাহীর ধানখেতে কৃষক",
+                            contentScale = ContentScale.Crop,
+                            modifier = Modifier.matchParentSize()
+                        )
                         Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .background(PrimaryContainer.copy(alpha = 0.78f))
+                                .padding(horizontal = 12.dp, vertical = 8.dp),
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.spacedBy(6.dp)
                         ) {

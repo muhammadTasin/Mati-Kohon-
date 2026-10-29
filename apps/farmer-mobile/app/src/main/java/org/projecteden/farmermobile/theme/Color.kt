@@ -2,63 +2,64 @@ package org.projecteden.farmermobile.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Mather Kotha material, the same as the story site (github.com/Tasrif-Ahmed-Mohsin/Mati-Kohon) and the SAAO
-// dashboard: matte warm paper, paddy green, rain blue and amber, high contrast for reading in the sun.
+// Mati Kohon's leaf-and-sky palette, the same as the SAAO dashboard (apps/saao-dashboard/public/brand.css): deep
+// #054204, forest #1D6517, leaf #79B425, lime #C0DE7B, sky #55A6C3. Calm: light surfaces carry the screen and green is
+// an accent (buttons, the selected item, icons); text on light surfaces is deep green or sky ink, never lime or leaf.
 
-val Primary = Color(0xFF2F6B48)           // paddy
-val PrimaryContainer = Color(0xFF1D4A31)  // paddy, deep
-val OnPrimary = Color(0xFFF7F2E7)         // cream
-val OnPrimaryContainer = Color(0xFFD5E5D3)
-val PrimaryFixed = Color(0xFFD5E5D3)      // paddy, soft
-val PrimaryFixedDim = Color(0xFFB7D2B3)
-val OnPrimaryFixed = Color(0xFF0E2A1A)
-val OnPrimaryFixedVariant = Color(0xFF245A3B)
+val Primary = Color(0xFF1D6517)           // forest
+val PrimaryContainer = Color(0xFF054204)  // deep
+val OnPrimary = Color(0xFFFFFFFF)
+val OnPrimaryContainer = Color(0xFFEEF5E2) // lime, soft
+val PrimaryFixed = Color(0xFFEEF5E2)      // lime, soft
+val PrimaryFixedDim = Color(0xFFC0DE7B)   // lime
+val OnPrimaryFixed = Color(0xFF054204)
+val OnPrimaryFixedVariant = Color(0xFF144D10)
 
-val Secondary = Color(0xFF9A5A14)         // amber, deep
-val SecondaryContainer = Color(0xFFF1DFC6) // amber, soft
-val OnSecondary = Color(0xFFF7F2E7)
-val OnSecondaryContainer = Color(0xFF6E3C10)
-val SecondaryFixed = Color(0xFFF1DFC6)
-val SecondaryFixedDim = Color(0xFFDDBB8A)
-val OnSecondaryFixed = Color(0xFF3D2108)
-val OnSecondaryFixedVariant = Color(0xFF7A4510)
+val Secondary = Color(0xFF7A4E08)         // amber, deep (warnings and dates)
+val SecondaryContainer = Color(0xFFF8EDD6) // amber, soft
+val OnSecondary = Color(0xFFFFFFFF)
+val OnSecondaryContainer = Color(0xFF6B4208)
+val SecondaryFixed = Color(0xFFF8EDD6)
+val SecondaryFixedDim = Color(0xFFE6CB93)
+val OnSecondaryFixed = Color(0xFF3D2706)
+val OnSecondaryFixedVariant = Color(0xFF6B4208)
 
-val Tertiary = Color(0xFF1F4F86)          // rain, deep
-val TertiaryContainer = Color(0xFF2F6FB3) // rain
+val Tertiary = Color(0xFF1F5A70)          // sky ink, deep (water)
+val TertiaryContainer = Color(0xFF2A6E88) // sky ink
 val OnTertiary = Color(0xFFFFFFFF)
-val OnTertiaryContainer = Color(0xFFCFE0F0)
-val TertiaryFixed = Color(0xFFCFE0F0)     // rain, soft
-val TertiaryFixedDim = Color(0xFFAFC9E6)
-val OnTertiaryFixed = Color(0xFF0F2A48)
-val OnTertiaryFixedVariant = Color(0xFF1F4F86)
+val OnTertiaryContainer = Color(0xFFE8F3F7)
+val TertiaryFixed = Color(0xFFE8F3F7)     // sky, soft
+val TertiaryFixedDim = Color(0xFFBBDCE8)
+val OnTertiaryFixed = Color(0xFF0F3442)
+val OnTertiaryFixedVariant = Color(0xFF1F5A70)
 
-val Surface = Color(0xFFEEE9E2)           // paper
-val SurfaceDim = Color(0xFFE6E0D6)
-val SurfaceBright = Color(0xFFF5F2ED)
-val SurfaceContainerLowest = Color(0xFFFAF8F5) // raised face, lit
-val SurfaceContainerLow = Color(0xFFF5F2ED)    // raised face
-val SurfaceContainer = Color(0xFFECE7DF)       // raised face, shaded
-val SurfaceContainerHigh = Color(0xFFE4DED4)   // sunk well
-val SurfaceContainerHighest = Color(0xFFDBD3C6)
+val Surface = Color(0xFFF2F5F0)           // paper
+val SurfaceDim = Color(0xFFE9EEE6)
+val SurfaceBright = Color(0xFFF7FAF5)
+val SurfaceContainerLowest = Color(0xFFFFFFFF) // card face
+val SurfaceContainerLow = Color(0xFFF7FAF5)    // rail
+val SurfaceContainer = Color(0xFFEEF2EB)       // sunk
+val SurfaceContainerHigh = Color(0xFFE6ECE2)
+val SurfaceContainerHighest = Color(0xFFDDE5D8) // line
 
-val OnSurface = Color(0xFF1D2320)         // ink
-val OnSurfaceVariant = Color(0xFF4A463F)  // text
-val InverseSurface = Color(0xFF303833)
-val InverseOnSurface = Color(0xFFF7F2E7)
+val OnSurface = Color(0xFF142614)         // ink
+val OnSurfaceVariant = Color(0xFF34483A)  // text
+val InverseSurface = Color(0xFF243A23)
+val InverseOnSurface = Color(0xFFF2F5F0)
 
-val Outline = Color(0xFF6D675C)
-val OutlineVariant = Color(0xFFCFC6B8)
-val SurfaceTint = Color(0xFF2F6B48)
+val Outline = Color(0xFF5E6F5C)
+val OutlineVariant = Color(0xFFDDE5D8)
+val SurfaceTint = Color(0xFF1D6517)
 
-val Error = Color(0xFFA33A2A)
-val ErrorContainer = Color(0xFFF1D4CC)
+val Error = Color(0xFFA23726)
+val ErrorContainer = Color(0xFFF8E2DD)
 val OnError = Color(0xFFFFFFFF)
-val OnErrorContainer = Color(0xFF8A2E20)
+val OnErrorContainer = Color(0xFF8E2A1C)
 
 // Bevel edges: the light from the top left, the shade bottom right
 val BevelLight = Color(0xF2FFFFFF)
-val BevelShade = Color(0x3868563E)
+val BevelShade = Color(0x24054204)
 
-// The LCD screen the story site uses for anything a phone says
-val Lcd = Color(0xFFC9D4A6)
-val LcdInk = Color(0xFF1F2A16)
+// The panel for anything a phone says (pale lime, like the dashboard's banner)
+val Lcd = Color(0xFFEEF5E2)
+val LcdInk = Color(0xFF1B3A1A)

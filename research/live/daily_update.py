@@ -7,6 +7,9 @@ Rain and soil wetness are also compared with the same dates in each of the past 
 GPM IMERG, 0.1 degree, 1 to 2 days behind: rain from research/data/imerg_nrt/imerg_daily_bd.parquet, refreshed by
 `python research/acquire/imerg_nrt.py --days 10` (needs an Earthdata Login). Skipped when the file is missing or old.
 
+Field water and weather for the crop-stage alerts (field_weather.py): reference ET, a rainfed paddy's standing water,
+and Open-Meteo's 7-day forecast (a weather model, not NASA). `--no-forecast` skips Open-Meteo.
+
 Output: services/api/data/live/upazila_conditions.json (summary and one record per upazila), read by the API.
 Usage : python research/live/daily_update.py [--imerg-parquet PATH]
 """
@@ -23,6 +26,10 @@ from pathlib import Path
 
 import requests
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import disease_weather as dw  # noqa: E402
+import field_weather as fw  # noqa: E402
+
 ROOT = Path(__file__).resolve().parents[2]
 UPAZILAS = ROOT / "research" / "sites" / "upazilas.csv"
 DEFAULT_IMERG = ROOT / "research" / "data" / "imerg_nrt" / "imerg_daily_bd.parquet"
@@ -30,7 +37,7 @@ OUT = ROOT / "services" / "api" / "data" / "live" / "upazila_conditions.json"
 
 POWER = "https://power.larc.nasa.gov/api/temporal/daily/regional"
 BBOX = {"latitude-min": 20.5, "latitude-max": 26.7, "longitude-min": 88.0, "longitude-max": 92.7}
-PARAMS = ["PRECTOTCORR", "T2M_MAX", "T2M_MIN", "RH2M", "GWETROOT", "GWETTOP"]
+PARAMS = ["PRECTOTCORR", "T2M_MAX", "T2M_MIN", "RH2M", "GWETROOT", "GWETTOP", "T2MDEW"]
 NORMAL_YEARS = 10
 HOT_C = 35.0  # rice flowers start to fail at about 35 C
 RAIN_VS_NORMAL = ROOT / "research" / "pilots" / "rain_vs_normal.csv"
@@ -50,7 +57,22 @@ UPSTREAM = [
      "districts": ["Sylhet", "Maulvibazar", "Habiganj"]},
 ]
 WATCH_MM, WARNING_MM = 200, 250
+CARRY_DAYS = 7  # a run without IMERG keeps the last IMERG reading this long, with its own date
 SOHRA = (UPSTREAM[0]["lat"], UPSTREAM[0]["lon"])
+
+
+def disease_now(s: dict, latest_d: date) -> dict:
+    """Rice-blast and late-blight weather in the 7 days to the latest day (rules in disease_weather.py)."""
+    days = [{"tmin": valid(s["T2M_MIN"], f"{latest_d - timedelta(days=k):%Y%m%d}"),
+             "tmax": valid(s["T2M_MAX"], f"{latest_d - timedelta(days=k):%Y%m%d}"),
+             "tdew": valid(s["T2MDEW"], f"{latest_d - timedelta(days=k):%Y%m%d}")} for k in range(7, -1, -1)]
+    marks = dw.flags(days)
+    out = {"date": f"{latest_d}"}
+    for rule in dw.RULES:
+        n = sum(marks[rule][1:])  # the last 7 days; the 8th back only seeds the late-blight pair
+        season = dw.season_of(rule, f"{latest_d:%m-%d}")
+        out[rule] = {"days7": n, "status": dw.status(n) if season else "off", "season": season}
+    return out
 
 
 def power_regional(param: str, start: date, end: date) -> dict:
@@ -137,6 +159,7 @@ def modis_flood(today: date) -> dict | None:
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     ap.add_argument("--imerg-parquet", type=Path, default=DEFAULT_IMERG)
+    ap.add_argument("--no-forecast", action="store_true", help="skip Open-Meteo (no forecast in the field records)")
     args = ap.parse_args()
 
     ups = list(csv.DictReader(open(UPAZILAS, encoding="utf-8")))
@@ -152,6 +175,8 @@ def main() -> None:
     latest = min(last_day(p) for p in PARAMS)
     latest_d = datetime.strptime(latest, "%Y%m%d").date()
     print(f"  latest complete day {latest_d} ({(today - latest_d).days} days behind)")
+    # sunshine, wind and pressure for Penman-Monteith ET; sunshine lags a day or two, and Hargreaves covers those days
+    grid.update({p: power_regional(p, start, today) for p in fw.POWER_EXTRA})
 
     # the same 30-day window in each of the past years, for rain and soil wetness
     print(f"Normals: the same window in {latest_d.year - NORMAL_YEARS}-{latest_d.year - 1}")
@@ -197,8 +222,23 @@ def main() -> None:
         vals = [imerg["cells"].get((cl, cn, imerg["last"] - timedelta(days=k))) for k in range(n)]
         return None if any(v is None for v in vals) else round(sum(vals), 1)
 
+    _, median_ratio = late_final_ratios()
+
+    def imerg_scaled(lat: float, lon: float):
+        if not imerg:
+            return lambda d: None
+        cl, cn = imerg_cell(lat, lon)
+        return lambda d: (None if (v := imerg["cells"].get((cl, cn, d))) is None else round(v / median_ratio, 1))
+
+    forecasts = [None] * len(ups)
+    if not args.no_forecast:
+        print(f"Open-Meteo forecast, {fw.FORECAST_DAYS} days, for {len(ups)} upazilas")
+        forecasts = fw.open_meteo([(float(u["lat"]), float(u["lon"])) for u in ups])
+        print(f"  {sum(f is not None for f in forecasts)} of {len(ups)} answered")
+    fetched_at = datetime.now(timezone.utc).isoformat(timespec="seconds")
+
     records = []
-    for u in ups:
+    for u, om in zip(ups, forecasts):
         lat, lon = float(u["lat"]), float(u["lon"])
         q = nearest(lat, lon)
         s = {p: grid[p][q] for p in PARAMS}
@@ -225,6 +265,9 @@ def main() -> None:
                 "soilStatus": status(rank_of(soil, past_soil), len(past_soil), "dry", "wet"),
             },
             "imerg": None,
+            "disease": disease_now(s, latest_d),
+            "field": fw.field_block(lat, latest_d, today, {p: grid[p].get(q, {}) for p in PARAMS + fw.POWER_EXTRA},
+                                    imerg_scaled(lat, lon), om),
         }
         if imerg:
             rec["imerg"] = {"date": f"{imerg['last']}", "run": imerg["runs"], "rain1": imerg_sum(lat, lon, 1),
@@ -256,6 +299,21 @@ def main() -> None:
                                      "level": level, "series": series})
     haor["modisFlood"] = modis_flood(today)
 
+    # No IMERG on this run (no Earthdata Login, or GES DISC down): keep the last reading for up to a week, marked
+    # with its own date, so the haor check and the upazila rain do not go blank for a day.
+    imerg_date, carried = (imerg["last"] if imerg else None), False
+    if not imerg and OUT.exists():
+        prev = json.loads(OUT.read_text(encoding="utf-8"))
+        ph = prev["summary"].get("haor") or {}
+        if ph.get("available") and ph.get("date") and (today - date.fromisoformat(ph["date"])).days <= CARRY_DAYS:
+            imerg_date, carried = date.fromisoformat(ph["date"]), True
+            haor = {**ph, "modisFlood": haor["modisFlood"], "carriedForward": True, "ageDays": (today - imerg_date).days}
+            before = {r["id"]: r.get("imerg") for r in prev["upazilas"]}
+            for r in records:
+                if (old := before.get(r["id"])) and (today - date.fromisoformat(old["date"])).days <= CARRY_DAYS:
+                    r["imerg"] = {**old, "carriedForward": True}
+            print(f"GPM IMERG not refreshed; kept the reading of {imerg_date} ({(today - imerg_date).days} days old)")
+
     summary = {
         "generatedAt": datetime.now(timezone.utc).isoformat(timespec="seconds"),
         "upazilas": len(records),
@@ -265,14 +323,20 @@ def main() -> None:
             {"id": "power", "name": "NASA POWER daily (MERRA-2 / GEOS-IT, precipitation from GPM IMERG)", "latestDate": f"{latest_d}",
              "lagDays": (today - latest_d).days, "grid": "0.5 degree", "login": False},
             {"id": "imerg", "name": "NASA GPM IMERG daily (Early run for the newest day, then Late)",
-             "latestDate": f"{imerg['last']}" if imerg else None, "lagDays": (today - imerg["last"]).days if imerg else None,
-             "grid": "0.1 degree", "login": True},
+             "latestDate": f"{imerg_date}" if imerg_date else None, "lagDays": (today - imerg_date).days if imerg_date else None,
+             "grid": "0.1 degree", "login": True, "carriedForward": carried},
+            {"id": "open_meteo", "name": "Open-Meteo 7-day forecast (a weather model, not NASA)", "fetchedAt": fetched_at,
+             "answered": sum(f is not None for f in forecasts), "login": False},
         ],
         "haor": haor,
         "method": {
             "rainStatus": "30-day rain against the same 30 days in each past year: dry if at or below the 2nd lowest of 10, wet if at or above the 8th",
             "soilStatus": "root-zone soil wetness (0 to 1) against the same date in each past year, with the same cut-offs",
             "hotDays7": f"days in the last 7 with a maximum of {HOT_C:.0f} C or more",
+            "disease": ("days in the last 7 of rice-blast weather (leaves wet 10 h or more at 15-26 C) and potato "
+                        "late-blight weather (Hutton criteria), estimated from NASA POWER's minimum, maximum and dew "
+                        "point; 3 or more is high, 1-2 watch, none low; 'off' and a null season outside the crop's window"),
+            "field": fw.METHOD,
             "caution": ("POWER's newest weeks come from near-real-time inputs (GEOS-IT, IMERG Early/Late), which read drier "
                         "than the reprocessed archive used for past years, so dry labels are provisional until SMAP confirms them"),
         },

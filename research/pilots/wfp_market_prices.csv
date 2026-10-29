@@ -521,20 +521,30 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2017-06-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,"Rice (coarse, Guti Sharna)",589,100 KG,actual,Wholesale,4522.22
 2017-07-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,"Rice (coarse, Guti Sharna)",589,100 KG,actual,Wholesale,4176.56
 2008-01-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,33.5
+2008-02-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,33.72
+2008-03-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,34.21
+2008-04-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,36.92
 2008-05-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,34.11
 2008-06-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,34.4
+2008-07-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,37.14
 2008-08-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,36.5
 2008-09-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,35.92
 2008-10-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,35.75
 2008-11-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,33.29
 2008-12-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,31.77
+2009-01-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,30.83
+2009-02-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,30.05
+2009-03-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,28.11
 2009-04-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,26.25
+2009-05-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,25.95
+2009-06-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,25.0
 2009-07-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,25.0
 2009-08-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,25.0
 2009-09-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,25.25
 2009-10-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,26.0
 2009-11-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,26.59
 2009-12-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,28.85
+2010-01-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,33.12
 2010-02-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,35.53
 2010-03-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,35.0
 2010-04-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,33.64
@@ -549,14 +559,21 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2011-01-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,41.18
 2011-02-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,42.0
 2011-03-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,40.64
+2011-04-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,40.5
+2011-05-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,35.97
 2011-06-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,34.23
 2011-07-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,36.23
+2011-08-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,36.5
 2011-09-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,36.5
 2011-10-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,36.02
 2011-11-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,34.56
 2011-12-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,34.0
 2012-01-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,34.11
 2012-02-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,34.0
+2012-03-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,34.0
+2012-04-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,34.0
+2012-05-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,32.76
+2012-06-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,31.97
 2012-07-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,31.8
 2012-08-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,31.8
 2012-09-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,32.5
@@ -564,17 +581,23 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2012-11-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,32.5
 2012-12-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,32.5
 2013-01-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,34.5
+2013-02-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,37.58
 2013-03-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,37.5
+2013-04-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,36.86
 2013-05-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,34.86
 2013-06-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,34.83
+2013-07-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,36.36
 2013-08-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,37.04
 2013-09-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,38.1
 2013-10-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,38.0
 2013-11-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,39.39
 2013-12-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,39.66
 2014-01-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,39.92
+2014-02-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,39.68
+2014-03-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,39.87
 2014-04-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,39.74
 2014-05-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,38.88
+2014-06-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,38.68
 2014-07-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,39.63
 2014-08-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,40.0
 2014-09-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,40.0
@@ -583,50 +606,81 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2014-12-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,39.02
 2015-01-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,38.5
 2015-02-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,39.45
+2015-03-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,38.68
+2015-04-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,37.88
+2015-05-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,36.33
 2015-06-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,36.0
+2015-07-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,35.67
 2015-08-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,36.02
 2015-09-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,36.03
 2015-10-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,36.5
 2015-11-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,35.72
 2015-12-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,34.9
+2016-01-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,35.29
 2016-02-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,35.86
+2016-03-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,34.16
+2016-04-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,34.89
 2016-05-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,33.55
 2016-06-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,34.5
+2016-07-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,35.5
 2016-08-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,36.62
 2016-09-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,39.39
 2016-10-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,40.5
 2016-11-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,40.11
 2016-12-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,40.0
+2017-01-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,40.13
+2017-02-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,41.0
+2017-03-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,41.58
+2017-04-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,43.0
+2017-05-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,49.0
 2017-06-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,50.14
+2017-07-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,48.84
 2017-08-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,48.4
 2017-09-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,52.47
 2017-10-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,50.44
 2017-11-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,48.12
 2017-12-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,49.8
 2018-01-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,51.0
+2018-02-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,50.6
+2018-03-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,50.1
 2018-04-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,49.6
+2018-05-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,47.1
+2018-06-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,45.5
+2018-07-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,47.1
 2018-08-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,46.4
 2018-09-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,45.63
 2018-10-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,44.45
 2018-11-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,43.29
 2018-12-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,41.06
+2019-01-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,42.3
+2019-02-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,41.87
+2019-03-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,41.11
+2019-04-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,38.39
 2019-05-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,39.0
 2019-06-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,39.0
+2019-07-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,38.81
 2019-08-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,37.56
 2019-09-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,37.0
 2019-10-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,36.52
 2019-11-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,37.38
 2019-12-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,37.52
 2020-01-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,36.45
+2020-02-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,38.6
 2020-03-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,41.38
+2020-04-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,45.88
+2020-05-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,44.96
+2020-06-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,44.87
 2020-07-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,44.38
 2020-08-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,45.95
 2020-09-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,48.19
 2020-10-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,49.25
 2020-11-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,49.0
 2020-12-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,50.05
+2021-01-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,50.81
+2021-02-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,50.53
 2021-03-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,52.0
 2021-04-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,52.0
+2021-05-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,KG,actual,Retail,49.89
 2008-01-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,100 KG,actual,Wholesale,3085.25
 2008-02-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,100 KG,actual,Wholesale,3173.11
 2008-03-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,100 KG,actual,Wholesale,3241.95
@@ -722,6 +776,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2015-09-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,100 KG,actual,Wholesale,3173.44
 2015-10-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,100 KG,actual,Wholesale,3248.33
 2015-11-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,100 KG,actual,Wholesale,3126.56
+2015-12-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,100 KG,actual,Wholesale,3087.5
 2016-01-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,100 KG,actual,Wholesale,3211.9
 2016-02-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,100 KG,actual,Wholesale,3168.06
 2016-03-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,100 KG,actual,Wholesale,3004.69
@@ -780,6 +835,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2020-09-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,100 KG,actual,Wholesale,4464.29
 2020-10-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,100 KG,actual,Wholesale,4652.78
 2020-11-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,100 KG,actual,Wholesale,4650.0
+2020-12-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,100 KG,actual,Wholesale,4750.0
 2021-01-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,100 KG,actual,Wholesale,4692.86
 2021-02-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,100 KG,actual,Wholesale,4650.0
 2021-03-15,Dhaka,Dhaka,Dhaka,2574,23.81,90.41,cereals and tubers,Rice (medium grain),131,100 KG,actual,Wholesale,4650.0
@@ -2187,12 +2243,19 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2024-12-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,Chili (green),90,KG,actual,Retail,96.28
 2025-01-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,Chili (green),90,KG,actual,Retail,73.98
 2025-02-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,Chili (green),90,KG,actual,Retail,68.5
+2025-03-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,Chili (green),90,KG,actual,Retail,70.0
+2025-04-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,Chili (green),90,KG,actual,Retail,86.11
+2025-05-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,Chili (green),90,KG,actual,Retail,88.5
+2025-07-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,Chili (green),90,KG,actual,Retail,188.86
 2025-08-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,Chili (green),90,KG,actual,Retail,226.0
 2025-09-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,Chili (green),90,KG,actual,Retail,211.82
 2025-10-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,Chili (green),90,KG,actual,Retail,196.25
 2025-12-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,Chili (green),90,KG,actual,Retail,101.0
 2026-02-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,Chili (green),90,KG,actual,Retail,154.56
+2026-03-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,Chili (green),90,KG,actual,Retail,147.94
+2026-04-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,Chili (green),90,KG,actual,Retail,95.69
 2026-05-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,Chili (green),90,KG,actual,Retail,113.24
+2026-06-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,Chili (green),90,KG,actual,Retail,120.2
 2026-07-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,Chili (green),90,KG,actual,Retail,184.1
 2024-09-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,"meat, fish and eggs",Eggs (brown),1073,1 piece,actual,Retail,13.38
 2024-10-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,"meat, fish and eggs",Eggs (brown),1073,1 piece,actual,Retail,13.12
@@ -2219,18 +2282,26 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2024-10-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,"meat, fish and eggs","Fish (live, pangasius)",1080,KG,actual,Retail,140.0
 2024-11-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,"meat, fish and eggs","Fish (live, pangasius)",1080,KG,actual,Retail,140.0
 2024-12-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,"meat, fish and eggs","Fish (live, pangasius)",1080,KG,actual,Retail,210.0
+2024-09-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,212.5
 2024-10-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,215.0
+2024-11-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,230.0
+2024-12-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,223.9
+2025-01-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,222.95
 2025-02-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,230.0
 2025-03-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,243.68
 2025-04-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,222.5
 2025-05-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,210.0
 2025-06-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,184.38
 2025-07-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,168.86
+2025-08-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,159.0
 2025-09-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,155.0
+2025-10-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,165.75
 2025-12-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,179.88
 2026-02-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,182.35
 2026-03-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,212.06
+2026-04-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,167.11
 2026-05-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,161.47
+2026-06-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,144.8
 2026-07-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,152.1
 2024-09-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,Gourd (bottle),1276,KG,actual,Retail,35.0
 2024-10-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,vegetables and fruits,Gourd (bottle),1276,KG,actual,Retail,43.75
@@ -2311,12 +2382,14 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2024-09-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,oil and fats,Oil (palm),62,L,actual,Retail,129.0
 2024-10-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,oil and fats,Oil (palm),62,L,actual,Retail,141.5
 2024-11-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,oil and fats,Oil (palm),62,L,actual,Retail,157.5
+2024-12-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,oil and fats,Oil (palm),62,L,actual,Retail,159.7
 2025-01-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,oil and fats,Oil (palm),62,L,actual,Retail,156.45
 2025-02-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,oil and fats,Oil (palm),62,L,actual,Retail,153.05
 2025-03-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,oil and fats,Oil (palm),62,L,actual,Retail,150.39
 2025-08-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,oil and fats,Oil (palm),62,L,actual,Retail,147.0
 2025-09-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,oil and fats,Oil (palm),62,L,actual,Retail,154.91
 2025-10-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,oil and fats,Oil (palm),62,L,actual,Retail,159.55
+2025-12-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,oil and fats,Oil (palm),62,L,actual,Retail,156.88
 2026-01-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,oil and fats,Oil (palm),62,L,actual,Retail,153.5
 2026-02-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,oil and fats,Oil (palm),62,L,actual,Retail,153.5
 2026-03-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,oil and fats,Oil (palm),62,L,actual,Retail,159.56
@@ -2531,6 +2604,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2026-05-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,cereals and tubers,Wheat flour,58,KG,actual,Retail,62.5
 2026-06-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,cereals and tubers,Wheat flour,58,KG,actual,Retail,62.5
 2026-07-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,cereals and tubers,Wheat flour,58,KG,actual,Retail,62.5
+2026-08-15,Dhaka,Dhaka,Dhaka Sadar,4083,23.73,90.38,cereals and tubers,Wheat flour,58,KG,actual,Retail,62.5
 2026-05-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,vegetables and fruits,Bananas (ripe),1210,1 piece,actual,Retail,9.19
 2026-06-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,vegetables and fruits,Bananas (ripe),1210,1 piece,actual,Retail,9.8
 2026-07-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,vegetables and fruits,Bananas (ripe),1210,1 piece,actual,Retail,11.3
@@ -2540,9 +2614,14 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2026-06-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,"meat, fish and eggs","Fish (live, pangasius)",1080,KG,actual,Retail,235.0
 2026-07-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,"meat, fish and eggs","Fish (live, pangasius)",1080,KG,actual,Retail,235.0
 2026-05-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,157.06
+2026-06-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,143.6
+2026-07-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,147.6
 2026-05-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,pulses and nuts,Lentils (masur),61,KG,actual,Retail,92.5
 2026-06-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,pulses and nuts,Lentils (masur),61,KG,actual,Retail,93.9
 2026-07-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,pulses and nuts,Lentils (masur),61,KG,actual,Retail,94.0
+2026-05-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,oil and fats,Oil (palm),62,L,actual,Retail,164.5
+2026-06-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,oil and fats,Oil (palm),62,L,actual,Retail,164.1
+2026-07-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,oil and fats,Oil (palm),62,L,actual,Retail,164.0
 2026-05-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,oil and fats,"Oil (soybean, fortified)",1282,L,actual,Retail,190.47
 2026-06-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,oil and fats,"Oil (soybean, fortified)",1282,L,actual,Retail,189.4
 2026-07-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,oil and fats,"Oil (soybean, fortified)",1282,L,actual,Retail,186.5
@@ -2558,6 +2637,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2026-05-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,cereals and tubers,Wheat flour,58,KG,actual,Retail,60.0
 2026-06-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,cereals and tubers,Wheat flour,58,KG,actual,Retail,60.0
 2026-07-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,cereals and tubers,Wheat flour,58,KG,actual,Retail,60.0
+2026-08-15,Dhaka,Dhaka,Kawran Bazar Dhaka,7942,23.75,90.39,cereals and tubers,Wheat flour,58,KG,actual,Retail,60.0
 2026-05-15,Dhaka,Dhaka,Mirpur 1 no.,11796,23.8,90.35,vegetables and fruits,Chili (green),90,KG,actual,Retail,94.41
 2026-06-15,Dhaka,Dhaka,Mirpur 1 no.,11796,23.8,90.35,vegetables and fruits,Chili (green),90,KG,actual,Retail,88.2
 2026-07-15,Dhaka,Dhaka,Mirpur 1 no.,11796,23.8,90.35,vegetables and fruits,Chili (green),90,KG,actual,Retail,185.2
@@ -2586,6 +2666,9 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2026-05-15,Dhaka,Dhaka,Mirpur 1 no.,11796,23.8,90.35,cereals and tubers,Wheat flour,58,KG,actual,Retail,60.0
 2026-06-15,Dhaka,Dhaka,Mirpur 1 no.,11796,23.8,90.35,cereals and tubers,Wheat flour,58,KG,actual,Retail,60.0
 2026-07-15,Dhaka,Dhaka,Mirpur 1 no.,11796,23.8,90.35,cereals and tubers,Wheat flour,58,KG,actual,Retail,60.0
+2026-08-15,Dhaka,Dhaka,Mirpur 1 no.,11796,23.8,90.35,cereals and tubers,Wheat flour,58,KG,actual,Retail,60.0
+2026-09-15,Dhaka,Dhaka,Nawabganj,12299,23.72,90.38,oil and fats,"Oil (soybean, fortified)",1282,L,actual,Retail,207.5
+2026-09-15,Dhaka,Dhaka,Savar,12300,23.85,90.25,oil and fats,"Oil (soybean, fortified)",1282,L,actual,Retail,182.5
 2026-06-15,Khulna,Khulna,Dumuria,11833,22.81,89.42,vegetables and fruits,Chili (green),90,KG,actual,Retail,79.5
 2026-07-15,Khulna,Khulna,Dumuria,11833,22.81,89.42,vegetables and fruits,Chili (green),90,KG,actual,Retail,137.4
 2026-05-15,Khulna,Khulna,Dumuria,11833,22.81,89.42,"meat, fish and eggs",Eggs (brown),1073,1 piece,actual,Retail,12.0
@@ -2601,6 +2684,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2026-05-15,Khulna,Khulna,Dumuria,11833,22.81,89.42,cereals and tubers,Wheat flour,58,KG,actual,Retail,57.5
 2026-06-15,Khulna,Khulna,Dumuria,11833,22.81,89.42,cereals and tubers,Wheat flour,58,KG,actual,Retail,54.5
 2026-07-15,Khulna,Khulna,Dumuria,11833,22.81,89.42,cereals and tubers,Wheat flour,58,KG,actual,Retail,53.3
+2026-08-15,Khulna,Khulna,Dumuria,11833,22.81,89.42,cereals and tubers,Wheat flour,58,KG,actual,Retail,54.9
 2006-01-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,pulses and nuts,Lentils (masur),61,KG,actual,Retail,43.0
 2006-02-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,pulses and nuts,Lentils (masur),61,KG,actual,Retail,43.0
 2006-03-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,pulses and nuts,Lentils (masur),61,KG,actual,Retail,47.0
@@ -2783,6 +2867,8 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2007-05-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,66.0
 2007-06-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,68.0
 2007-07-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,68.0
+2007-08-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,72.0
+2007-09-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,72.0
 2007-10-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,74.0
 2007-11-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,80.0
 2007-12-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,80.0
@@ -2794,6 +2880,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2008-06-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,98.0
 2008-07-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,100.5
 2008-08-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,90.67
+2008-09-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,75.67
 2008-10-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,64.0
 2008-11-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,68.33
 2008-12-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,63.0
@@ -2803,7 +2890,9 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2009-04-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,58.67
 2009-05-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,66.0
 2009-06-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,65.0
+2009-07-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,59.67
 2009-08-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,60.5
+2009-09-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,61.0
 2009-10-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,59.33
 2009-11-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,57.67
 2009-12-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,59.0
@@ -2813,6 +2902,8 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2010-04-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,61.0
 2010-05-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,63.67
 2010-06-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,65.0
+2010-07-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,66.67
+2010-08-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,68.67
 2010-09-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,74.0
 2010-10-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,78.67
 2010-11-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,81.67
@@ -2835,6 +2926,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2012-04-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,104.83
 2012-05-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,106.17
 2012-06-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,103.17
+2012-07-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,107.62
 2012-08-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,97.71
 2012-09-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,97.29
 2012-10-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,91.75
@@ -2847,6 +2939,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2013-05-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,78.5
 2013-06-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,77.75
 2013-07-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,77.71
+2013-08-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,75.29
 2013-09-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,73.57
 2013-10-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,72.67
 2013-11-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,72.6
@@ -2869,6 +2962,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2015-04-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,63.33
 2015-05-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,61.33
 2015-06-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,62.17
+2015-07-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,63.17
 2015-08-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,64.67
 2015-09-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,63.67
 2015-10-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,62.17
@@ -2892,6 +2986,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2017-04-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,72.71
 2017-05-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,72.14
 2017-06-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,73.71
+2017-07-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,72.42
 2017-08-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,71.73
 2017-09-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,72.3
 2017-10-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,72.83
@@ -2903,6 +2998,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2018-04-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,70.79
 2018-05-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,70.36
 2018-06-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,70.4
+2018-07-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,70.04
 2018-08-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,68.07
 2018-09-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,68.45
 2018-10-15,Khulna,Khulna,Khulna Division,118,22.82,89.56,oil and fats,Oil (palm),62,L,actual,Retail,67.53
@@ -3280,6 +3376,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2024-09-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,vegetables and fruits,Chili (green),90,KG,actual,Retail,180.0
 2024-10-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,vegetables and fruits,Chili (green),90,KG,actual,Retail,215.0
 2024-11-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,vegetables and fruits,Chili (green),90,KG,actual,Retail,140.0
+2024-12-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,vegetables and fruits,Chili (green),90,KG,actual,Retail,64.77
 2026-05-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,vegetables and fruits,Chili (green),90,KG,actual,Retail,106.82
 2026-06-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,vegetables and fruits,Chili (green),90,KG,actual,Retail,91.8
 2026-07-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,vegetables and fruits,Chili (green),90,KG,actual,Retail,173.0
@@ -3295,8 +3392,10 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2024-11-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,"meat, fish and eggs","Fish (live, pangasius)",1080,KG,actual,Retail,185.0
 2024-09-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,227.5
 2024-10-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,225.0
+2024-11-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,242.5
 2026-05-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,178.64
 2026-06-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,161.8
+2026-07-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,vegetables and fruits,"Garlic (imported, China)",1082,KG,actual,Retail,160.0
 2024-09-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,vegetables and fruits,Gourd (bottle),1276,KG,actual,Retail,60.0
 2024-10-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,vegetables and fruits,Gourd (bottle),1276,KG,actual,Retail,60.0
 2024-11-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,vegetables and fruits,Gourd (bottle),1276,KG,actual,Retail,85.0
@@ -3567,6 +3666,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2026-05-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,cereals and tubers,Wheat flour,58,KG,actual,Retail,57.5
 2026-06-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,cereals and tubers,Wheat flour,58,KG,actual,Retail,57.5
 2026-07-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,cereals and tubers,Wheat flour,58,KG,actual,Retail,57.5
+2026-08-15,Khulna,Khulna,Khulna Sadar,4081,22.81,89.55,cereals and tubers,Wheat flour,58,KG,actual,Retail,60.0
 2026-05-15,Rajshahi,Rajshahi,Baneshor,11805,24.39,88.75,"meat, fish and eggs",Eggs (brown),1073,1 piece,actual,Retail,12.08
 2026-06-15,Rajshahi,Rajshahi,Baneshor,11805,24.39,88.75,"meat, fish and eggs",Eggs (brown),1073,1 piece,actual,Retail,10.4
 2026-07-15,Rajshahi,Rajshahi,Baneshor,11805,24.39,88.75,"meat, fish and eggs",Eggs (brown),1073,1 piece,actual,Retail,11.0
@@ -3580,6 +3680,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2026-05-15,Rajshahi,Rajshahi,Baneshor,11805,24.39,88.75,cereals and tubers,Wheat flour,58,KG,actual,Retail,56.5
 2026-06-15,Rajshahi,Rajshahi,Baneshor,11805,24.39,88.75,cereals and tubers,Wheat flour,58,KG,actual,Retail,56.5
 2026-07-15,Rajshahi,Rajshahi,Baneshor,11805,24.39,88.75,cereals and tubers,Wheat flour,58,KG,actual,Retail,56.5
+2026-08-15,Rajshahi,Rajshahi,Baneshor,11805,24.39,88.75,cereals and tubers,Wheat flour,58,KG,actual,Retail,55.9
 2026-05-15,Rajshahi,Rajshahi,Godagari Sadar,11806,24.48,88.32,vegetables and fruits,Chili (green),90,KG,actual,Retail,90.67
 2026-06-15,Rajshahi,Rajshahi,Godagari Sadar,11806,24.48,88.32,vegetables and fruits,Chili (green),90,KG,actual,Retail,53.5
 2026-07-15,Rajshahi,Rajshahi,Godagari Sadar,11806,24.48,88.32,vegetables and fruits,Chili (green),90,KG,actual,Retail,179.1
@@ -3619,6 +3720,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2026-05-15,Rajshahi,Rajshahi,Godagari Sadar,11806,24.48,88.32,cereals and tubers,Wheat flour,58,KG,actual,Retail,57.5
 2026-06-15,Rajshahi,Rajshahi,Godagari Sadar,11806,24.48,88.32,cereals and tubers,Wheat flour,58,KG,actual,Retail,57.5
 2026-07-15,Rajshahi,Rajshahi,Godagari Sadar,11806,24.48,88.32,cereals and tubers,Wheat flour,58,KG,actual,Retail,57.5
+2026-08-15,Rajshahi,Rajshahi,Godagari Sadar,11806,24.48,88.32,cereals and tubers,Wheat flour,58,KG,actual,Retail,57.5
 2006-05-15,Rajshahi,Rajshahi,Rajshahi Division,120,24.37,88.6,pulses and nuts,Lentils (masur),61,KG,actual,Retail,52.0
 2006-07-15,Rajshahi,Rajshahi,Rajshahi Division,120,24.37,88.6,pulses and nuts,Lentils (masur),61,KG,actual,Retail,52.0
 2006-08-15,Rajshahi,Rajshahi,Rajshahi Division,120,24.37,88.6,pulses and nuts,Lentils (masur),61,KG,actual,Retail,53.44
@@ -4446,6 +4548,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2024-10-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,"meat, fish and eggs","Meat (chicken, broiler)",89,KG,actual,Retail,180.0
 2024-11-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,"meat, fish and eggs","Meat (chicken, broiler)",89,KG,actual,Retail,180.0
 2020-07-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,78.3
+2020-08-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,77.08
 2020-09-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,77.0
 2020-10-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,77.0
 2020-11-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,77.0
@@ -4457,6 +4560,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2021-05-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,112.38
 2021-06-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,113.0
 2021-07-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,113.0
+2021-08-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,113.0
 2021-09-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,113.0
 2021-10-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,121.63
 2021-11-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,129.16
@@ -4479,6 +4583,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2023-04-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,124.56
 2023-05-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,131.37
 2023-06-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,128.59
+2023-07-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,128.24
 2023-08-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,129.0
 2023-09-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,127.25
 2023-10-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,124.5
@@ -4491,6 +4596,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2024-05-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,124.5
 2024-06-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,129.0
 2024-07-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,130.0
+2024-08-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,aggregate,Retail,131.0
 2024-09-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,actual,Retail,135.0
 2024-10-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,actual,Retail,151.25
 2024-11-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,oil and fats,Oil (palm),62,L,actual,Retail,159.8
@@ -4773,6 +4879,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2026-05-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,cereals and tubers,Wheat flour,58,KG,actual,Retail,55.5
 2026-06-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,cereals and tubers,Wheat flour,58,KG,actual,Retail,55.5
 2026-07-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,cereals and tubers,Wheat flour,58,KG,actual,Retail,55.5
+2026-08-15,Rajshahi,Rajshahi,Rajshahi Sadar,4074,24.37,88.6,cereals and tubers,Wheat flour,58,KG,actual,Retail,55.5
 2026-05-15,Rangpur,Rangpur,Mithapukur,11810,25.57,89.28,vegetables and fruits,Chili (green),90,KG,actual,Retail,70.5
 2026-06-15,Rangpur,Rangpur,Mithapukur,11810,25.57,89.28,vegetables and fruits,Chili (green),90,KG,actual,Retail,53.0
 2026-07-15,Rangpur,Rangpur,Mithapukur,11810,25.57,89.28,vegetables and fruits,Chili (green),90,KG,actual,Retail,137.3
@@ -4804,6 +4911,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2026-05-15,Rangpur,Rangpur,Mithapukur,11810,25.57,89.28,cereals and tubers,Wheat flour,58,KG,actual,Retail,55.5
 2026-06-15,Rangpur,Rangpur,Mithapukur,11810,25.57,89.28,cereals and tubers,Wheat flour,58,KG,actual,Retail,53.3
 2026-07-15,Rangpur,Rangpur,Mithapukur,11810,25.57,89.28,cereals and tubers,Wheat flour,58,KG,actual,Retail,52.5
+2026-08-15,Rangpur,Rangpur,Mithapukur,11810,25.57,89.28,cereals and tubers,Wheat flour,58,KG,actual,Retail,52.5
 2024-10-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,vegetables and fruits,Bananas (ripe),1210,1 piece,actual,Retail,4.38
 2024-09-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,vegetables and fruits,Chili (green),90,KG,actual,Retail,160.0
 2024-10-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,vegetables and fruits,Chili (green),90,KG,actual,Retail,220.0
@@ -4953,6 +5061,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2021-02-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,102.38
 2021-03-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,106.91
 2021-04-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,108.11
+2021-05-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,119.29
 2021-06-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,121.29
 2021-07-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,112.96
 2021-08-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,120.01
@@ -4963,6 +5072,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2022-01-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,130.01
 2022-02-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,141.0
 2022-03-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,153.91
+2022-04-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,155.76
 2022-05-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,162.5
 2022-06-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,173.29
 2022-07-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,153.15
@@ -4974,6 +5084,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2023-01-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,121.0
 2023-02-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,122.27
 2023-03-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,122.82
+2023-04-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,124.96
 2023-05-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,132.52
 2023-06-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,127.48
 2023-07-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,124.0
@@ -4984,6 +5095,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2024-01-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,126.0
 2024-02-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,126.0
 2024-03-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,126.3
+2024-04-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,129.0
 2024-05-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,131.0
 2024-06-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,130.0
 2024-07-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,130.0
@@ -4995,6 +5107,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2025-01-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,actual,Retail,163.0
 2025-02-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,actual,Retail,158.15
 2025-03-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,actual,Retail,155.32
+2025-04-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,actual,Retail,155.39
 2025-05-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,actual,Retail,151.57
 2025-06-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,actual,Retail,153.06
 2025-07-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,actual,Retail,153.5
@@ -5004,6 +5117,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2025-12-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,actual,Retail,156.25
 2026-01-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,actual,Retail,156.21
 2026-02-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,actual,Retail,158.26
+2026-03-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,actual,Retail,161.97
 2026-04-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,actual,Retail,170.4
 2026-05-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,actual,Retail,171.5
 2026-06-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,oil and fats,Oil (palm),62,L,actual,Retail,171.5
@@ -5193,6 +5307,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2026-05-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,cereals and tubers,Wheat flour,58,KG,actual,Retail,53.0
 2026-06-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,cereals and tubers,Wheat flour,58,KG,actual,Retail,53.0
 2026-07-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,cereals and tubers,Wheat flour,58,KG,actual,Retail,53.2
+2026-08-15,Rangpur,Rangpur,Rangpur Municipality Market,4066,25.75,89.25,cereals and tubers,Wheat flour,58,KG,actual,Retail,54.0
 2024-12-15,Rangpur,Rangpur,Rangpur Sadar,3033,25.75,89.25,vegetables and fruits,Chili (green),90,KG,actual,Retail,60.48
 2024-12-15,Rangpur,Rangpur,Rangpur Sadar,3033,25.75,89.25,"meat, fish and eggs",Eggs (brown),1073,1 piece,actual,Retail,11.76
 2024-12-15,Rangpur,Rangpur,Rangpur Sadar,3033,25.75,89.25,vegetables and fruits,Gourd (bottle),1276,KG,actual,Retail,28.69
@@ -5209,6 +5324,7 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2020-11-15,Rangpur,Rangpur,Rangpur Sadar,3033,25.75,89.25,oil and fats,Oil (palm),62,L,aggregate,Retail,87.0
 2024-12-15,Rangpur,Rangpur,Rangpur Sadar,3033,25.75,89.25,vegetables and fruits,"Onions (imported, China)",1108,KG,actual,Retail,78.26
 2024-12-15,Rangpur,Rangpur,Rangpur Sadar,3033,25.75,89.25,vegetables and fruits,Papaya (green),1114,KG,actual,Retail,27.5
+2020-05-15,Rangpur,Rangpur,Rangpur Sadar,3033,25.75,89.25,cereals and tubers,Rice (coarse),60,KG,actual,Retail,37.6
 2020-06-15,Rangpur,Rangpur,Rangpur Sadar,3033,25.75,89.25,cereals and tubers,Rice (coarse),60,KG,aggregate,Retail,36.83
 2024-12-15,Rangpur,Rangpur,Rangpur Sadar,3033,25.75,89.25,miscellaneous food,Sugar,97,KG,actual,Retail,125.6
 2020-05-15,Rangpur,Rangpur,Rangpur Sadar,3033,25.75,89.25,cereals and tubers,Wheat flour,58,KG,actual,Retail,33.9
@@ -5217,6 +5333,8 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2020-08-15,Rangpur,Rangpur,Rangpur Sadar,3033,25.75,89.25,cereals and tubers,Wheat flour,58,KG,aggregate,Retail,32.94
 2020-11-15,Rangpur,Rangpur,Rangpur Sadar,3033,25.75,89.25,cereals and tubers,Wheat flour,58,KG,aggregate,Retail,34.5
 2024-12-15,Rangpur,Rangpur,Rangpur Sadar,3033,25.75,89.25,cereals and tubers,Wheat flour,58,KG,actual,Retail,56.36
+2026-09-15,Rajshahi,Sirajganj,Sirajganj Sadar,12313,24.45,89.71,oil and fats,Oil (palm),62,L,actual,Retail,169.0
+2026-09-15,Rajshahi,Sirajganj,Sirajganj Sadar,12313,24.45,89.71,oil and fats,"Oil (soybean, fortified)",1282,L,actual,Retail,189.0
 2024-09-15,Rajshahi,Sirajganj,Sirajgonj Sadar,4075,24.46,89.7,vegetables and fruits,Bananas (ripe),1210,1 piece,actual,Retail,3.75
 2024-10-15,Rajshahi,Sirajganj,Sirajgonj Sadar,4075,24.46,89.7,vegetables and fruits,Bananas (ripe),1210,1 piece,actual,Retail,3.75
 2024-11-15,Rajshahi,Sirajganj,Sirajgonj Sadar,4075,24.46,89.7,vegetables and fruits,Bananas (ripe),1210,1 piece,actual,Retail,3.8
@@ -5558,8 +5676,13 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2024-10-15,Sylhet,Sunamganj,Sunamgonj Sadar,4078,25.07,91.4,vegetables and fruits,Bananas (ripe),1210,1 piece,actual,Retail,5.62
 2024-11-15,Sylhet,Sunamganj,Sunamgonj Sadar,4078,25.07,91.4,vegetables and fruits,Bananas (ripe),1210,1 piece,actual,Retail,5.9
 2024-09-15,Sylhet,Sunamganj,Sunamgonj Sadar,4078,25.07,91.4,vegetables and fruits,Chili (green),90,KG,actual,Retail,227.5
+2024-10-15,Sylhet,Sunamganj,Sunamgonj Sadar,4078,25.07,91.4,vegetables and fruits,Chili (green),90,KG,actual,Retail,315.0
 2024-11-15,Sylhet,Sunamganj,Sunamgonj Sadar,4078,25.07,91.4,vegetables and fruits,Chili (green),90,KG,actual,Retail,125.0
 2025-01-15,Sylhet,Sunamganj,Sunamgonj Sadar,4078,25.07,91.4,vegetables and fruits,Chili (green),90,KG,actual,Retail,49.55
+2025-02-15,Sylhet,Sunamganj,Sunamgonj Sadar,4078,25.07,91.4,vegetables and fruits,Chili (green),90,KG,actual,Retail,49.26
+2025-03-15,Sylhet,Sunamganj,Sunamgonj Sadar,4078,25.07,91.4,vegetables and fruits,Chili (green),90,KG,actual,Retail,48.19
+2025-04-15,Sylhet,Sunamganj,Sunamgonj Sadar,4078,25.07,91.4,vegetables and fruits,Chili (green),90,KG,actual,Retail,61.25
+2025-05-15,Sylhet,Sunamganj,Sunamgonj Sadar,4078,25.07,91.4,vegetables and fruits,Chili (green),90,KG,actual,Retail,48.36
 2026-05-15,Sylhet,Sunamganj,Sunamgonj Sadar,4078,25.07,91.4,vegetables and fruits,Chili (green),90,KG,actual,Retail,104.71
 2026-06-15,Sylhet,Sunamganj,Sunamgonj Sadar,4078,25.07,91.4,vegetables and fruits,Chili (green),90,KG,actual,Retail,111.9
 2026-07-15,Sylhet,Sunamganj,Sunamgonj Sadar,4078,25.07,91.4,vegetables and fruits,Chili (green),90,KG,actual,Retail,186.6
@@ -5931,3 +6054,4 @@ date,admin1,admin2,market,market_id,latitude,longitude,category,commodity,commod
 2026-05-15,Sylhet,Sunamganj,Sunamgonj Sadar,4078,25.07,91.4,cereals and tubers,Wheat flour,58,KG,actual,Retail,62.5
 2026-06-15,Sylhet,Sunamganj,Sunamgonj Sadar,4078,25.07,91.4,cereals and tubers,Wheat flour,58,KG,actual,Retail,62.5
 2026-07-15,Sylhet,Sunamganj,Sunamgonj Sadar,4078,25.07,91.4,cereals and tubers,Wheat flour,58,KG,actual,Retail,62.5
+2026-08-15,Sylhet,Sunamganj,Sunamgonj Sadar,4078,25.07,91.4,cereals and tubers,Wheat flour,58,KG,actual,Retail,62.5

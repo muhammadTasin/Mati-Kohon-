@@ -46,9 +46,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -81,8 +78,8 @@ fun AiAssistantScreen(
     modifier: Modifier = Modifier
 ) {
     val messages by viewModel.messages.collectAsStateWithLifecycle()
+    val inputText by viewModel.inputDraft.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
-    var inputText by remember { mutableStateOf("") }
     val listState = rememberLazyListState()
 
     LaunchedEffect(messages.size) {
@@ -138,6 +135,7 @@ fun AiAssistantScreen(
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             item { Spacer(modifier = Modifier.height(6.dp)) }
+            item { AskOfficerCard(onSignIn = onNavigateToProfile) }
 
             items(messages, key = { it.id }) { msg ->
                 ChatBubble(message = msg)
@@ -239,7 +237,7 @@ fun AiAssistantScreen(
 
                 OutlinedTextField(
                     value = inputText,
-                    onValueChange = { inputText = it },
+                    onValueChange = viewModel::updateInputDraft,
                     placeholder = { Text("আপনার প্রশ্ন এখানে লিখুন...", color = OnSurfaceVariant) },
                     maxLines = 3,
                     shape = RoundedCornerShape(2.dp),
@@ -262,7 +260,7 @@ fun AiAssistantScreen(
                 IconButton(
                     onClick = {
                         val text = inputText
-                        inputText = ""
+                        viewModel.updateInputDraft("")
                         viewModel.sendQuery(text)
                     },
                     enabled = !isLoading && inputText.isNotBlank(),
@@ -292,7 +290,7 @@ private fun ChatBubble(message: ChatMessage) {
         ) {
             Surface(
                 color = Primary,
-                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 4.dp, bottomStart = 16.dp, bottomEnd = 16.dp),
+                shape = RoundedCornerShape(2.dp),
                 modifier = Modifier.fillMaxWidth(0.82f)
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
@@ -321,7 +319,7 @@ private fun ChatBubble(message: ChatMessage) {
         ) {
             Surface(
                 color = SurfaceContainerLow,
-                shape = RoundedCornerShape(topStart = 4.dp, topEnd = 16.dp, bottomStart = 16.dp, bottomEnd = 16.dp),
+                shape = RoundedCornerShape(2.dp),
                 border = if (message.isInsufficientEvidence) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBA1A1A).copy(alpha = 0.4f)) else null,
                 modifier = Modifier.fillMaxWidth(0.92f)
             ) {
@@ -345,7 +343,7 @@ private fun ChatBubble(message: ChatMessage) {
                             )
                         }
                         Text(
-                            text = if (message.isInsufficientEvidence) "প্রমাণ সীমাবদ্ধতা" else "ইডেন এআই সহকারী",
+                            text = if (message.isInsufficientEvidence) "প্রমাণ সীমাবদ্ধতা" else "মাটি কহন সহকারী",
                             style = MaterialTheme.typography.labelMedium,
                             fontWeight = FontWeight.Bold,
                             color = if (message.isInsufficientEvidence) Color(0xFFBA1A1A) else Primary

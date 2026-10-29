@@ -1,13 +1,22 @@
 import type { IEvidenceDimensionPlugin, EvaluationContext, DimensionScoreResult } from '@project-eden/contracts';
-import { amanOrNull, rabiOf, kharif1Of, kharif2Of, clampScore } from '../data/lookup.ts';
-import { LOC } from '../data/location.ts';
+import { amanOrNull, rabiOf, kharif1Of, kharif2Of, clampScore, rotationDose } from '../data/lookup.ts';
+import { LOC, NO_SOIL_CARD } from '../data/location.ts';
 import { bnDigits, bnDecimal } from '../bn.ts';
+import { soilClassesHere } from '../stewardship.ts';
+
+const OM_BANGLA: Record<string, string> = {
+  'Very Low': 'খুব কম', Low: 'কম', Medium: 'মাঝারি', Optimum: 'উপযুক্ত মাত্রায়', High: 'বেশি', 'Very High': 'খুব বেশি',
+};
+const PH_BANGLA: Record<string, string> = {
+  'Very Strongly Acidic': 'খুব বেশি অম্লীয়', 'Strongly Acidic': 'বেশ অম্লীয়', 'Slightly Acidic': 'সামান্য অম্লীয়',
+  Neutral: 'নিরপেক্ষ', 'Slightly Alkaline': 'সামান্য ক্ষারীয়', 'Strongly Alkaline': 'বেশ ক্ষারীয়',
+};
 
 export class SoilDimensionPlugin implements IEvidenceDimensionPlugin {
   readonly id = 'soil';
   readonly displayNameBangla = 'মাটি স্বাস্থ্য ও পুষ্টি ভারসাম্য';
   readonly displayNameEnglish = 'Soil Health & Fertilizer Load';
-  readonly version = '2.0.0';
+  readonly version = '2.1.0';
   readonly isEnabled = true;
 
   evaluate(context: EvaluationContext): DimensionScoreResult {
@@ -16,9 +25,11 @@ export class SoilDimensionPlugin implements IEvidenceDimensionPlugin {
     const k2 = kharif2Of(context);
     const hasAman = Boolean(amanOrNull(context));
     const dose = rabi.fertilizer;
-    const rotationUrea = Math.round((hasAman ? LOC.srdi.aman.ureaKgHa : 0) + (k2?.record.fertilizer.ureaKgHa ?? 0) + dose.ureaKgHa + (k1?.record.fertilizer.ureaKgHa ?? 0));
+    // null where the place has no SRDI soil card: the soil score below does not use fertilizer numbers, so it is unchanged
+    const rotationUreaExact = rotationDose([hasAman ? (LOC.srdi?.aman ?? null) : undefined, k2?.record.fertilizer, dose, k1?.record.fertilizer], 'ureaKgHa');
+    const rotationUrea = rotationUreaExact === null ? null : Math.round(rotationUreaExact);
     const noRice = !hasAman && !rabiName.isRice && !k1?.catalog.isRice;
-    const handbookDose = (dose as { source?: string }).source?.startsWith('BARI');
+    const handbookDose = (dose as { source?: string } | null)?.source?.startsWith('BARI');
 
     // Legumes add nitrogen and cut urea; two rice crops in a year work the soil hardest. A third crop before Aman
     // adds nitrogen if it is a legume, and otherwise draws more nutrients (more still if it is rice).
@@ -28,7 +39,22 @@ export class SoilDimensionPlugin implements IEvidenceDimensionPlugin {
       + (k1 ? (k1.catalog.isLegume ? 0.05 : k1.catalog.isRice ? -0.15 : -0.05) : 0)
       + (k2 ? (k2.catalog.isLegume ? 0.05 : -0.05) : 0)
       + (noRice ? 0.05 : 0);
-    const soilScore = k1 || k2 || noRice ? clampScore(adjusted, 0.1, 0.95) : base;
+    // Where the SRDI atlas finds organic matter low in the upazila, what the rotation does for the soil weighs more:
+    // a legume or a year without puddled rice adds a little more, rice after rice takes a little more.
+    const atlas = soilClassesHere();
+    const lowOm = atlas?.organicMatter === 'Low' || atlas?.organicMatter === 'Very Low';
+    const riceAfterRice = [hasAman, rabiName.isRice, Boolean(k1?.catalog.isRice)].filter(Boolean).length >= 2;
+    const omShift = lowOm ? (rabiName.isLegume || k1?.catalog.isLegume || k2?.catalog.isLegume ? 0.03 : 0) + (noRice ? 0.02 : 0) - (riceAfterRice ? 0.03 : 0) : 0;
+    const soilScore = clampScore((k1 || k2 || noRice ? adjusted : base) + omShift, 0.1, 0.95);
+    const atlasBangla = atlas && LOC.kind !== 'pilot'
+      ? ` SRDI মাটির মানচিত্রে এই উপজেলায় জৈব পদার্থ ${OM_BANGLA[atlas.organicMatter ?? ''] ?? 'অজানা'}${atlas.ph ? `, মাটি ${PH_BANGLA[atlas.ph] ?? atlas.ph}` : ''}${lowOm ? '; তাই ডাল ফসল ও খড় রাখা বেশি কাজে দেয়' : ''}।`
+      : '';
+    const atlasEnglish = atlas && LOC.kind !== 'pilot'
+      ? ` SRDI atlas for this upazila: organic matter ${(atlas.organicMatter ?? 'unknown').toLowerCase()}${atlas.ph ? `, ${atlas.ph.toLowerCase()} soil` : ''}${lowOm ? ', so legumes and kept straw count for more' : ''}.`
+      : '';
+    // Doses are given only where there is a soil card (the pilot): elsewhere the summary says so instead
+    const cardBangla = `SRDI তালন্দ কার্ডে (${LOC.srdi?.soilTypeBangla ?? ''})`;
+    const cardEnglish = 'SRDI Talanda card (Kharia soil)';
     const k2Bangla = k2 ? ` বর্ষায় ${k2.catalog.cropBangla}: ${k2.catalog.isLegume ? 'ডাল ফসল, নাইট্রোজেন যোগ করে' : 'বাড়তি ফসলে পুষ্টি বেশি লাগে'}।` : '';
     const k2English = k2 ? ` Monsoon ${k2.catalog.crop.toLowerCase()} ${k2.catalog.isLegume ? 'is a legume and adds nitrogen' : 'draws more nutrients'}.` : '';
     const noRiceBangla = noRice ? ' সারা বছর কাদা করা ধান নেই, তাই মাটির গঠন ভালো থাকে।' : '';
@@ -49,28 +75,46 @@ export class SoilDimensionPlugin implements IEvidenceDimensionPlugin {
       dimensionId: this.id,
       score: soilScore,
       confidence: 'medium',
-      summaryBangla: `${why} ${handbookDose ? 'BARI হাতবইয়ে' : `SRDI তালন্দ কার্ডে (${LOC.srdi.soilTypeBangla})`} ${rabiName.cropInBangla} ইউরিয়া ${bnDecimal(dose.ureaKgHa)} কেজি/হেক্টর; ${hasAman ? 'আমনসহ ' : ''}পুরো চক্রে ${bnDigits(rotationUrea)} কেজি।${k1Bangla}${k2Bangla}${noRiceBangla}`,
-      summaryEnglish: `${handbookDose ? 'BARI handbook' : 'SRDI Talanda card (Kharia soil)'}: ${rabiName.crop} urea ${dose.ureaKgHa} kg/ha; ${rotationUrea} kg/ha for the whole rotation${hasAman ? ' with Aman' : ''}.${k1English}${k2English}${noRiceEnglish}`,
+      summaryBangla: dose && rotationUrea !== null
+        ? `${why} ${handbookDose ? 'BARI হাতবইয়ে' : cardBangla} ${rabiName.cropInBangla} ইউরিয়া ${bnDecimal(dose.ureaKgHa)} কেজি/হেক্টর; ${hasAman ? 'আমনসহ ' : ''}পুরো চক্রে ${bnDigits(rotationUrea)} কেজি।${k1Bangla}${k2Bangla}${noRiceBangla}${atlasBangla}`
+        : `${why} ${NO_SOIL_CARD.bn}।${k1Bangla}${k2Bangla}${noRiceBangla}${atlasBangla}`,
+      summaryEnglish: dose && rotationUrea !== null
+        ? `${handbookDose ? 'BARI handbook' : cardEnglish}: ${rabiName.crop} urea ${dose.ureaKgHa} kg/ha; ${rotationUrea} kg/ha for the whole rotation${hasAman ? ' with Aman' : ''}.${k1English}${k2English}${noRiceEnglish}${atlasEnglish}`
+        : `${NO_SOIL_CARD.en}.${k1English}${k2English}${noRiceEnglish}${atlasEnglish}`,
       metrics: {
-        srdiSoilType: LOC.srdi.soilTypeBangla,
-        rabiUreaKgHa: dose.ureaKgHa,
-        rabiTspKgHa: dose.tspKgHa,
-        rabiMopKgHa: dose.mopKgHa,
+        srdiSoilType: LOC.srdi?.soilTypeBangla ?? null,
+        rabiUreaKgHa: dose?.ureaKgHa ?? null,
+        rabiTspKgHa: dose?.tspKgHa ?? null,
+        rabiMopKgHa: dose?.mopKgHa ?? null,
         rotationUreaKgHa: rotationUrea,
         legume: rabiName.isLegume,
+        atlasOrganicMatter: atlas?.organicMatter ?? 'n/a',
+        atlasPh: atlas?.ph ?? 'n/a',
+        organicMatterShift: omShift,
       },
-      provenance: {
-        source: LOC.srdi.source + ' — Talanda, medium-high land',
-        timePeriod: 'current SRDI card',
-        spatialResolution: 'Union (Talanda)',
-        measuredOrModeled: 'measured',
-        notesBangla: 'SRDI-র মাটি পরীক্ষাভিত্তিক ইউনিয়ন সার সুপারিশ; নিজের জমির মাটি পরীক্ষা হলে সেটিই আগে।',
-      },
+      provenance: LOC.srdi
+        ? {
+            source: LOC.srdi.source + ' — Talanda, medium-high land' + (atlas ? '; SRDI Soil Fertility Atlas 2020 classes for the upazila' : ''),
+            timePeriod: 'current SRDI card',
+            spatialResolution: 'Union (Talanda)',
+            measuredOrModeled: 'measured',
+            notesBangla: 'SRDI-র মাটি পরীক্ষাভিত্তিক ইউনিয়ন সার সুপারিশ; নিজের জমির মাটি পরীক্ষা হলে সেটিই আগে।',
+          }
+        : {
+            source: 'No SRDI soil card for this area; no fertilizer amount is given' + (atlas ? '; SRDI Soil Fertility Atlas 2020 classes for the upazila' : ''),
+            timePeriod: 'not available',
+            spatialResolution: 'not available',
+            measuredOrModeled: 'assumed',
+            notesBangla: NO_SOIL_CARD.bn,
+          },
     };
   }
 
   explain(result: DimensionScoreResult) {
     const m = result.metrics;
+    if (m.rotationUreaKgHa === null) {
+      return { banglaBullets: [NO_SOIL_CARD.bn], englishBullets: [NO_SOIL_CARD.en] };
+    }
     return {
       banglaBullets: [
         m.legume

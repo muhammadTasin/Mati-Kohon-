@@ -1,18 +1,20 @@
 /**
  * Soil-and-water tips beside a rotation: what the plan saves against the usual Aman-Boro rotation at the same place,
  * and what to watch for. Numbers come from the plan's own records (SRDI fertilizer cards, the NASA POWER + IMERG water
- * replay, NASA GLDAS groundwater) and the SRDI soil fertility atlas for the upazila. Satellites cannot measure lead,
+ * replay, NASA GLDAS groundwater, NASA SEDAC's PEST-CHEMGRIDS pesticide estimate) and the SRDI soil fertility atlas for
+ * the upazila. Satellites cannot measure lead,
  * mercury or arsenic in soil, so the metal tips are sourced safe-practice guidance tied to the plan's irrigation and
  * phosphate use, not a measurement.
  */
 import fs from 'node:fs';
 import type { CandidateRotation, StewardshipTip } from '@project-eden/contracts';
-import { LOC } from './data/location.ts';
-import { bnDecimal, bnDigits, bnNumber } from './bn.ts';
+import { rotationDose } from './data/lookup.ts';
+import { LOC, NO_SOIL_CARD } from './data/location.ts';
+import { bnDecimal, bnDigits, bnNumber, enNumber } from './bn.ts';
 
 const BIGHA_HA = 0.1336;
 
-interface AtlasClasses {
+export interface AtlasClasses {
   ph: string | null;
   organicMatter: string | null;
   phosphorus: string | null;
@@ -28,9 +30,49 @@ function soilAtlas() {
   return atlas!;
 }
 
+interface PesticideLoad {
+  source: { name: string; citation: string; year: number; units: string; caution: string };
+  classes: Record<string, { national: { low: number; high: number } }>;
+  upazilas: Record<string, Record<string, [number, number]>>;
+}
+let pesticide: PesticideLoad | null = null;
+function pesticideLoad() {
+  if (!pesticide) pesticide = JSON.parse(fs.readFileSync(new URL('./data/pesticide_load.json', import.meta.url), 'utf8'));
+  return pesticide!;
+}
+
+/** PEST-CHEMGRIDS crop class of each crop the engine plans; pulses, oilseeds, jute and barley are its "other crops". */
+const PEST_CLASS: Record<string, string> = {
+  aman: 'rice', boro: 'rice', boro_early: 'rice', boro_late: 'rice', aus: 'rice', wheat: 'wheat', maize: 'maize', soybean: 'soybean', soybean_k2: 'soybean',
+  potato: 'vegfruit', sweetpotato: 'vegfruit',
+};
+
+/**
+ * Pesticide active ingredient a year (kg/ha, the dataset's low and high estimates) on a list of crops at this upazila:
+ * each crop adds its class's 2020 rate (NASA SEDAC PEST-CHEMGRIDS v1.01, research/explore/pesticide_load.py).
+ */
+export function pesticideEstimate(cropIds: string[]): { low: number; high: number } {
+  const data = pesticideLoad();
+  const here = data.upazilas[upazilaId()] ?? {};
+  let low = 0;
+  let high = 0;
+  for (const id of cropIds) {
+    const cls = PEST_CLASS[id] ?? 'other';
+    const [l, h] = here[cls] ?? [data.classes[cls].national.low, data.classes[cls].national.high];
+    low += l;
+    high += h;
+  }
+  return { low, high };
+}
+
 /** The upazila the advice is for: the pilot is Tanore. */
 function upazilaId(): string {
   return LOC.kind === 'pilot' ? 'ADM3_Tanore' : LOC.id;
+}
+
+/** The SRDI atlas classes (pH, organic matter, nutrients) of the upazila the advice is for, or null. */
+export function soilClassesHere(): AtlasClasses | null {
+  return soilAtlas().classes[upazilaId()] ?? null;
 }
 
 const LOW = new Set(['Low', 'Very Low']);
@@ -39,19 +81,21 @@ const ACID = new Set(['Strongly Acidic', 'Very Strongly Acidic']);
 /** What the usual Aman-Boro rotation (BRRI dhan49 then BRRI dhan28) takes at this place, from the same records. */
 function baseline() {
   const boro = LOC.rabi['BRRI dhan28'];
+  const doses = [LOC.srdi?.aman ?? null, boro.fertilizer];
   return {
     pumpedM3PerHa: boro.pumpedM3PerHa,
-    ureaKgHa: LOC.srdi.aman.ureaKgHa + boro.fertilizer.ureaKgHa,
-    tspKgHa: LOC.srdi.aman.tspKgHa + boro.fertilizer.tspKgHa,
+    ureaKgHa: rotationDose(doses, 'ureaKgHa'), // null where there is no SRDI soil card
+    tspKgHa: rotationDose(doses, 'tspKgHa'),
   };
 }
 
 const perBigha = (kgHa: number) => kgHa * BIGHA_HA;
 
 /**
- * Tips for one option. `tspKgHa` is the plan's phosphate per hectare; `riceCrops` how many rice crops the year holds.
+ * Tips for one option. `tspKgHa` is the plan's phosphate per hectare; `riceCrops` how many rice crops the year holds;
+ * `cropIds` the year's crops (engine ids such as 'aman', 'wheat', 'jute').
  */
-export function stewardshipTips(option: CandidateRotation, tspKgHa: number, riceCrops: number): StewardshipTip[] {
+export function stewardshipTips(option: CandidateRotation, tspKgHa: number | null, riceCrops: number, cropIds: string[]): StewardshipTip[] {
   const base = baseline();
   const ledger = option.ledger!;
   const tips: StewardshipTip[] = [];
@@ -66,61 +110,89 @@ export function stewardshipTips(option: CandidateRotation, tspKgHa: number, rice
     tips.push({
       kind: 'water',
       bn: `প্রচলিত আমন–বোরো চক্রের চেয়ে বছরে বিঘাপ্রতি প্রায় ${bnNumber(perBigha(savedM3))} ঘনমিটার কম ভূগর্ভস্থ পানি তুলতে হয়।${trendBn}`,
-      en: `About ${Math.round(perBigha(savedM3)).toLocaleString('en-US')} m3 less groundwater pumped per bigha each year than the usual Aman-Boro rotation.${trendEn}`,
+      en: `About ${enNumber(Math.round(perBigha(savedM3)))} m3 less groundwater pumped per bigha each year than the usual Aman-Boro rotation.${trendEn}`,
       source: 'NASA POWER + GPM IMERG water replay; NASA GLDAS-2.2 (GRACE-assimilated) groundwater',
     });
   } else {
     tips.push({
       kind: 'water',
       bn: `এই চক্রে বছরে বিঘাপ্রতি প্রায় ${bnNumber(perBigha(ledger.groundwaterPumpedM3PerHa))} ঘনমিটার ভূগর্ভস্থ পানি লাগে; সেচে ভেজানো-শুকানো (AWD) পদ্ধতিতে পানি বাঁচে।${trendBn}`,
-      en: `This rotation pumps about ${Math.round(perBigha(ledger.groundwaterPumpedM3PerHa)).toLocaleString('en-US')} m3 of groundwater per bigha a year; alternate wetting and drying saves water.${trendEn}`,
+      en: `This rotation pumps about ${enNumber(Math.round(perBigha(ledger.groundwaterPumpedM3PerHa)))} m3 of groundwater per bigha a year; alternate wetting and drying saves water.${trendEn}`,
       source: 'NASA POWER + GPM IMERG water replay; BRRI alternate wetting and drying guidance',
     });
   }
 
-  // Fertilizer: urea and phosphate against the usual rotation; legumes fix nitrogen; extra urea ends up in water
-  const ureaLess = perBigha(base.ureaKgHa - ledger.ureaKgHa);
-  const tspLess = perBigha(base.tspKgHa - tspKgHa);
+  // Fertilizer: urea and phosphate against the usual rotation; legumes fix nitrogen; extra urea ends up in water.
+  // With no SRDI soil card at this place there are no amounts to compare: the tip says so instead.
   const legume = ledger.legume;
-  tips.push({
-    kind: 'fertilizer',
-    bn: [
-      ureaLess > 0.5
-        ? `প্রচলিত চক্রের চেয়ে বছরে বিঘাপ্রতি প্রায় ${bnDecimal(ureaLess)} কেজি কম ইউরিয়া${tspLess > 0.5 ? ` ও ${bnDecimal(tspLess)} কেজি কম টিএসপি` : ''} লাগে।`
-        : `এই চক্রে বছরে বিঘাপ্রতি ইউরিয়া প্রায় ${bnDecimal(perBigha(ledger.ureaKgHa))} কেজি লাগে।`,
-      legume ? 'ডাল ফসলের শিকড়ের গুটি বাতাসের নাইট্রোজেন মাটিতে ধরে রাখে।' : '',
-      'কার্ডের মাত্রার বেশি ইউরিয়া দিলে বাড়তি নাইট্রোজেন নাইট্রেট হয়ে পানিতে মেশে।',
-    ].filter(Boolean).join(' '),
-    en: [
-      ureaLess > 0.5
-        ? `About ${ureaLess.toFixed(1)} kg less urea${tspLess > 0.5 ? ` and ${tspLess.toFixed(1)} kg less TSP` : ''} per bigha a year than the usual rotation.`
-        : `About ${perBigha(ledger.ureaKgHa).toFixed(1)} kg of urea per bigha a year.`,
-      legume ? 'The legume fixes nitrogen from the air in its root nodules.' : '',
-      'Urea above the card dose leaves as nitrate in the water.',
-    ].filter(Boolean).join(' '),
-    source: 'SRDI Fertilizer Recommendation cards (Talanda stand-in); FAO fertilizer guidance',
-  });
+  if (ledger.ureaKgHa === null || base.ureaKgHa === null || tspKgHa === null || base.tspKgHa === null) {
+    tips.push({
+      kind: 'fertilizer',
+      bn: [NO_SOIL_CARD.bn + '।', legume ? 'ডাল ফসলের শিকড়ের গুটি বাতাসের নাইট্রোজেন মাটিতে ধরে রাখে।' : ''].filter(Boolean).join(' '),
+      en: [NO_SOIL_CARD.en + '.', legume ? 'The legume fixes nitrogen from the air in its root nodules.' : ''].filter(Boolean).join(' '),
+      source: 'No SRDI soil card for this area',
+    });
+  } else {
+    const ureaLess = perBigha(base.ureaKgHa - ledger.ureaKgHa);
+    const tspLess = perBigha(base.tspKgHa - tspKgHa);
+    tips.push({
+      kind: 'fertilizer',
+      bn: [
+        ureaLess > 0.5
+          ? `প্রচলিত চক্রের চেয়ে বছরে বিঘাপ্রতি প্রায় ${bnDecimal(ureaLess)} কেজি কম ইউরিয়া${tspLess > 0.5 ? ` ও ${bnDecimal(tspLess)} কেজি কম টিএসপি` : ''} লাগে।`
+          : `এই চক্রে বছরে বিঘাপ্রতি ইউরিয়া প্রায় ${bnDecimal(perBigha(ledger.ureaKgHa))} কেজি লাগে।`,
+        legume ? 'ডাল ফসলের শিকড়ের গুটি বাতাসের নাইট্রোজেন মাটিতে ধরে রাখে।' : '',
+        'কার্ডের মাত্রার বেশি ইউরিয়া দিলে বাড়তি নাইট্রোজেন নাইট্রেট হয়ে পানিতে মেশে।',
+      ].filter(Boolean).join(' '),
+      en: [
+        ureaLess > 0.5
+          ? `About ${ureaLess.toFixed(1)} kg less urea${tspLess > 0.5 ? ` and ${tspLess.toFixed(1)} kg less TSP` : ''} per bigha a year than the usual rotation.`
+          : `About ${perBigha(ledger.ureaKgHa).toFixed(1)} kg of urea per bigha a year.`,
+        legume ? 'The legume fixes nitrogen from the air in its root nodules.' : '',
+        'Urea above the card dose leaves as nitrate in the water.',
+      ].filter(Boolean).join(' '),
+      source: 'SRDI Fertilizer Recommendation cards (Talanda stand-in); FAO fertilizer guidance',
+    });
+  }
 
-  // Pesticide: the rice-pest cycle, and safe use
+  // Pesticide: NASA SEDAC's estimate for the year's crops against Aman-Boro, the rice-pest cycle, and safe use
+  const plan = pesticideEstimate(cropIds);
+  const usual = pesticideEstimate(['aman', 'boro']);
+  const grams = (kgHa: number) => kgHa * BIGHA_HA * 1000;
+  const lessPct = Math.round(100 * (1 - (plan.low + plan.high) / (usual.low + usual.high)));
+  const vegetable = cropIds.some(id => PEST_CLASS[id] === 'vegfruit');
+  const sameAsUsual = isBaseline || Math.abs(lessPct) < 3;
+  const pestNumbersBn = sameAsUsual
+    ? `নাসার PEST-CHEMGRIDS অনুমানে এই এলাকায় আমন–বোরো চক্রে বছরে বিঘাপ্রতি প্রায় ${bnNumber(grams(usual.low))}–${bnNumber(grams(usual.high))} গ্রাম কীটনাশকের সক্রিয় উপাদান পড়ে।`
+    : `নাসার PEST-CHEMGRIDS অনুমানে এই চক্রের ফসলে বছরে বিঘাপ্রতি প্রায় ${bnNumber(grams(plan.low))}–${bnNumber(grams(plan.high))} গ্রাম কীটনাশকের সক্রিয় উপাদান পড়ে, প্রচলিত আমন–বোরো চক্রে ${bnNumber(grams(usual.low))}–${bnNumber(grams(usual.high))} গ্রাম${lessPct > 0 ? ` (প্রায় ${bnDigits(lessPct)}% কম)` : ` (প্রায় ${bnDigits(-lessPct)}% বেশি)`}।`;
+  const pestNumbersEn = sameAsUsual
+    ? `NASA SEDAC's PEST-CHEMGRIDS estimates about ${Math.round(grams(usual.low))}-${Math.round(grams(usual.high))} g of pesticide active ingredient per bigha a year on the Aman-Boro rotation here.`
+    : `NASA SEDAC's PEST-CHEMGRIDS estimates about ${Math.round(grams(plan.low))}-${Math.round(grams(plan.high))} g of pesticide active ingredient per bigha a year on this rotation's crops here, against ${Math.round(grams(usual.low))}-${Math.round(grams(usual.high))} g on the usual Aman-Boro rotation (${lessPct > 0 ? `about ${lessPct}% less` : `about ${-lessPct}% more`}).`;
   tips.push({
     kind: 'pesticide',
     bn: [
+      pestNumbersBn,
+      vegetable ? 'আলু ও সবজিতে সবচেয়ে বেশি কীটনাশক লাগে: রোগ দেখা দিলে তবেই স্প্রে, পরপর একই ওষুধ নয়।' : '',
       riceCrops === 0
         ? 'সারা বছর ধান নেই: মাজরা পোকা ও বাদামি গাছফড়িং খাবার পায় না, ধানের কীটনাশক লাগে না।'
         : riceCrops === 1
           ? 'ধানের পর ধান নেই: ধানের পোকার চক্র ভাঙে, বোরো চক্রের চেয়ে কীটনাশক স্প্রে কম লাগে।'
           : 'ধানের পর ধান: পোকা সারা বছর খাবার পায়; আলোক ফাঁদ ও পার্চিং দিন, মাঠ ঘুরে পোকা গুনে তবেই স্প্রে।',
       'স্প্রের পর ফসল তোলার নির্ধারিত অপেক্ষার সময় মানুন; খালি বোতল পুকুর বা খালে ফেলবেন না।',
-    ].join(' '),
+      '(কীটনাশকের হিসাব মডেলের অনুমান, মাটি শোধনের ফিউমিগ্যান্ট বাদে; মাঠের মাপ নয়।)',
+    ].filter(Boolean).join(' '),
     en: [
+      pestNumbersEn,
+      vegetable ? 'Potato and vegetables take the most pesticide: spray only when disease shows, and rotate products.' : '',
       riceCrops === 0
         ? 'No rice all year: stem borers and planthoppers find no host, so no rice pesticide.'
         : riceCrops === 1
           ? 'No rice after rice: the rice-pest cycle breaks and fewer sprays are needed than in the Boro rotation.'
           : 'Rice after rice keeps pests fed all year: use light traps and perches, and spray only after counting pests.',
       'Keep the waiting time between spraying and harvest, and never throw empty bottles into ponds or canals.',
-    ].join(' '),
-    source: 'BRRI rice IPM guidance; FAO/WHO International Code of Conduct on Pesticide Management (2014)',
+      '(The pesticide figures are a model estimate without soil fumigants, not a farm measurement.)',
+    ].filter(Boolean).join(' '),
+    source: 'NASA SEDAC PEST-CHEMGRIDS v1.01 (2020, Maggi et al. 2019); BRRI rice IPM guidance; FAO/WHO International Code of Conduct on Pesticide Management (2014)',
   });
 
   // Soil: the SRDI atlas classes for this upazila
@@ -164,8 +236,8 @@ export function stewardshipTips(option: CandidateRotation, tspKgHa: number, rice
   });
   tips.push({
     kind: 'metals',
-    bn: `টিএসপির মতো ফসফেট সারে অল্প ক্যাডমিয়াম থাকে: এই চক্রে বছরে বিঘাপ্রতি টিএসপি প্রায় ${bnDecimal(perBigha(tspKgHa))} কেজি, কার্ডের বেশি দেবেন না। কলকারখানা, ট্যানারি বা ব্যাটারি ভাঙার জায়গার বর্জ্য পানি দিয়ে সেচ দেবেন না, শহরের স্লাজ জমিতে দেবেন না: সীসা, ক্রোমিয়াম ও পারদ মাটিতে থেকে যায়। উপগ্রহ এগুলো মাপতে পারে না; সন্দেহ হলে SRDI-তে মাটি পরীক্ষা করান।`,
-    en: `Phosphate fertilizers such as TSP carry some cadmium: this rotation uses about ${perBigha(tspKgHa).toFixed(1)} kg of TSP per bigha a year; do not exceed the card. Do not irrigate with waste water from factories, tanneries or battery-breaking sites, or spread city sludge: lead, chromium and mercury stay in the soil. Satellites cannot measure them; test suspect soil at SRDI.`,
+    bn: `টিএসপির মতো ফসফেট সারে অল্প ক্যাডমিয়াম থাকে: ${tspKgHa === null ? 'কৃষি কর্মকর্তার দেওয়া মাত্রার বেশি দেবেন না।' : `এই চক্রে বছরে বিঘাপ্রতি টিএসপি প্রায় ${bnDecimal(perBigha(tspKgHa))} কেজি, কার্ডের বেশি দেবেন না।`} কলকারখানা, ট্যানারি বা ব্যাটারি ভাঙার জায়গার বর্জ্য পানি দিয়ে সেচ দেবেন না, শহরের স্লাজ জমিতে দেবেন না: সীসা, ক্রোমিয়াম ও পারদ মাটিতে থেকে যায়। উপগ্রহ এগুলো মাপতে পারে না; সন্দেহ হলে SRDI-তে মাটি পরীক্ষা করান।`,
+    en: `Phosphate fertilizers such as TSP carry some cadmium: ${tspKgHa === null ? 'do not exceed the dose your agriculture officer gives.' : `this rotation uses about ${perBigha(tspKgHa).toFixed(1)} kg of TSP per bigha a year; do not exceed the card.`} Do not irrigate with waste water from factories, tanneries or battery-breaking sites, or spread city sludge: lead, chromium and mercury stay in the soil. Satellites cannot measure them; test suspect soil at SRDI.`,
     source: 'EU Regulation 2019/1009 (cadmium in phosphate fertilizers); WHO (2006) guidelines for the safe use of wastewater in agriculture',
   });
   return tips;

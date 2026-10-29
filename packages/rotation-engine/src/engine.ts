@@ -8,18 +8,27 @@ import type {
   FarmerCard,
   IpmTip,
   LandType,
+  LocalContext,
   MonthTimelineSlot,
   ThisSeasonFit,
 } from '@project-eden/contracts';
 import { FeatureRegistry } from './registry.ts';
 import { RELEASE } from './data/tanore_replay_data.ts';
-import { LOC, placeFor, withPlace } from './data/location.ts';
+import { LOC, NO_SOIL_CARD, placeFor, profileData, withPlace } from './data/location.ts';
+import { rotationDose } from './data/lookup.ts';
+import { OPERA_MIN_EXTRA, flashFloodExposed, flashFloodRisk, harvestTooLate, landRules, radarReady, type LandRules } from './data/land.ts';
+import { SALT_LIMIT, salinityEffect } from './data/salinity.ts';
 import { AMAN_CATALOG, RABI_CATALOG } from './data/crop_catalog.ts';
 import type { AmanCatalogEntry } from './data/crop_catalog.ts';
 import type { AmanRecord, MonthDay, RabiRecord } from './data/release_types.ts';
 import type { RabiCatalogEntry } from './data/crop_catalog.ts';
 import { IPM_AMAN, IPM_BY_RABI, IPM_GENERAL } from './data/ipm_catalog.ts';
+import { diseaseData, typicalDiseaseDays, type DiseaseNow } from './data/disease.ts';
+import { budgetHere, groundwaterBudgetData } from './data/groundwater_budget.ts';
+import { FIELD_ALERT_METHOD, drainText, fieldAlerts, type FieldCrops, type FieldWeather, type FloodNow } from './field_alerts.ts';
 import { stewardshipTips } from './stewardship.ts';
+import { DISCLAIMER, reviewOptions, seasonRisk, whatIf, type FieldSpan } from './review.ts';
+import { calendarSummary } from './data/season_calendar.ts';
 import {
   CHOICE_BY_ID,
   CHOICE_CROPS,
@@ -56,6 +65,7 @@ import {
   enDate,
   enMonth,
   isoDate,
+  patternBangla,
   seasonDate,
   seasonDay,
 } from './bn.ts';
@@ -66,6 +76,32 @@ export interface PlanOptionsRequest {
   upazila: string;
   district: string;
   landType: LandType;
+  /** True when `landType` is the place's default (data/location.ts) rather than what the farmer said. */
+  landTypeAssumed?: boolean;
+  /**
+   * Today's NASA reading at the place, when the server has one (services/api/src/live.ts): soil wetness ranked against
+   * the same date in past years and 30-day rain against normal. From 1 September to 15 December a dry soil changes
+   * the winter crop's plan (see DRY_START_MM in plugins/water.ts).
+   */
+  /** 'none' when the farmer has no irrigation: rice in the dry season is left out and crops are judged on rain alone. */
+  irrigation?: 'available' | 'none';
+  currentConditions?: {
+    date: string;
+    soilStatus: string; // 'dry' | 'normal' | 'wet'
+    soilRank?: number | null;
+    soilYears?: number | null;
+    /** NASA SMAP L4's root-zone percentile (0-100) against its climatology, when SMAP is the reading. */
+    soilPercentile?: number | null;
+    sensor?: 'SMAP' | 'POWER';
+    rain30PctOfNormal?: number | null;
+    /** This week's rice-blast and potato late-blight weather from the daily NASA POWER update. */
+    disease?: DiseaseNow | null;
+    /** This week's field water and weather with a 7-day forecast (research/live/field_weather.py), for field_alerts.ts. */
+    field?: FieldWeather | null;
+    /** Flood water now from NASA OPERA DSWx-HLS (research/live/flood_now.py). */
+    flood?: FloodNow | null;
+    source: string;
+  };
   season: string;
   currentAmanCrop?: string;
   today?: string; // ISO date for the crop-stage text; defaults to now
@@ -90,7 +126,23 @@ export interface PlanOptionsRequest {
     flood?: number;
     pest?: number;
   };
+  /**
+   * The rotation the farmer grows now, as crop ids in field order: the monsoon ('aman', 'fallow' or a monsoon crop
+   * such as 'soybean'), the winter crop ('boro', 'lentil', 'mustard', 'wheat', 'potato', ...) and an optional summer
+   * crop before the next monsoon ('mungbean', 'sesame', 'jute', 'aus'). It is always among the options, marked, and
+   * every other option is read against it.
+   */
+  currentRotation?: { monsoon?: string; winter: string; summer?: string | null };
+  /** What the farmer said they cannot do: no machines ('hand') or selling only at the village market ('village'). */
+  constraints?: { machinery?: 'hand' | 'hire' | 'own'; market?: 'village' | 'town' };
+  /** A what-if year: rain changed by this many per cent (-20 to 20) and every day this many degrees warmer (0 to 3). */
+  scenario?: { rainPct?: number; warmingC?: number };
+  /** True when the priorities are the server's defaults, not the farmer's own. */
+  defaultPriorities?: boolean;
 }
+
+/** Field Shift asks to compare at least three rotations, the farmer's own among them. */
+const MIN_OPTIONS = 3;
 
 /** The detailed pilot; every upazila in data/national_replay.json is advised too (data/location.ts). */
 export const SUPPORTED_UNIONS = ['talanda_tanore'];
@@ -107,12 +159,39 @@ export class UnsupportedUnionError extends Error {
 
 /** Weight of a score the farmer gave no priority for, so the stated priorities decide the ranking. */
 const UNSTATED_PRIORITY_WEIGHT = 0.05;
+const roundOrNull = (value: number | null): number | null => (value === null ? null : Math.round(value));
+
+/**
+ * IPM tips that cite or lean on the SRDI card (flagged `needsSoilCard` in the catalog) are given only where the place has one.
+ * The flag is a catalog attribute: it is not part of the advice, so the pilot's output is exactly what it was.
+ */
+function withoutSoilCardTips<T extends { needsSoilCard?: boolean }>(tips: T[]): Array<Omit<T, 'needsSoilCard'>> {
+  return (LOC.srdi ? tips : tips.filter(tip => !tip.needsSoilCard)).map(({ needsSoilCard: _flag, ...tip }) => tip);
+}
+
+
 /** One bigha of 33 decimals, in hectares. */
 const BIGHA_HA = 0.1336;
 const DAY_MS = 86_400_000;
 const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 /** Options shown for a crop choice, as many as the five fixed rotations. */
 const CHOICE_OPTIONS = 5;
+/** The order in which a place's hazards are raised: the most serious first. */
+/** 1st, 2nd, 3rd, 4th ... for percentiles. */
+const ordinal = (n: number) => `${n}${[11, 12, 13].includes(n % 100) ? 'th' : ['th', 'st', 'nd', 'rd'][n % 10] ?? 'th'}`;
+
+const HAZARD_ORDER = ['flash_flood', 'flood_now', 'aman_dry_spell', 'rice_heat', 'cold_seedbed', 'salinity', 'winter_fallow_salinity', 'dry_start', 'disease_weather', 'wheat_heat', 'deep_flooding', 'submergence'];
+/** A pattern is named among what farmers grow at this share of the cropped land, and taken as current practice at this. */
+const PATTERN_NOTE_PCT = 10;
+const CURRENT_PRACTICE_PCT = 20;
+/** BRRI pattern words for the crops the engine replays. */
+const PATTERN_CROP: Record<string, string> = {
+  Boro: 'boro', Wheat: 'wheat', Lentil: 'lentil', Mustard: 'mustard', Potato: 'potato', Maize: 'maize', Grasspea: 'grasspea',
+  Jute: 'jute', Aus: 'aus',
+};
+/** The coastal zone's 19 districts (Coastal Zone Policy 2005), where land left empty in winter is often saline. */
+const COASTAL_DISTRICTS = new Set(['Bagerhat', 'Barguna', 'Barisal', 'Bhola', 'Chandpur', 'Chittagong', "Cox's Bazar", 'Feni', 'Gopalganj',
+  'Jessore', 'Jhalokati', 'Khulna', 'Lakshmipur', 'Narail', 'Noakhali', 'Patuakhali', 'Pirojpur', 'Satkhira', 'Shariatpur']);
 
 interface CandidateSpec {
   id: string;
@@ -398,6 +477,7 @@ type Evaluated = { spec: CandidateSpec; covers: Set<number>; option: CandidateRo
 
 export class RotationEngine {
   private registry: FeatureRegistry;
+  private landType: LandType = 'medium_high'; // the field's land type for the call in progress
 
   constructor(registry?: FeatureRegistry) {
     this.registry = registry || new FeatureRegistry();
@@ -407,16 +487,15 @@ export class RotationEngine {
     return this.registry;
   }
 
-  private evaluateRotation(spec: CandidateSpec, request: PlanOptionsRequest, seasonYear: number): CandidateRotation {
+  /** The rotation's crops in field order, with their dates in this crop year. */
+  private cropsOf(spec: CandidateSpec, seasonYear: number): EvaluationContext['crops'] {
     const mon = monsoonOf(spec);
     const aman = mon.aman;
-    const amanName = mon.amanName;
     const k2 = mon.k2;
     const { record: rabi, catalog: rabiName } = cropSlot(spec.rabi);
     const k1Slot = spec.kharif1 ? cropSlot(spec.kharif1) : undefined;
     const k1 = k1Slot?.record;
     const k1Name = k1Slot?.catalog;
-
     const amanDays = aman ? Math.round((aman.durationDays[0] + aman.durationDays[1]) / 2) : 0;
     const rabiDays = seasonDay(rabi.harvest) - seasonDay(rabi.sowing);
     const crops: EvaluationContext['crops'] = [];
@@ -457,7 +536,11 @@ export class RotationEngine {
         durationDays: k1.fieldDays,
       });
     }
+    return crops;
+  }
 
+  /** Every dimension's score for a rotation and the total weighted by the farmer's priorities. */
+  private scoreRotation(spec: CandidateSpec, request: PlanOptionsRequest, seasonYear: number) {
     const activePlugins = this.registry.getActivePlugins();
     const evalContext: EvaluationContext = {
       unionId: request.unionId,
@@ -466,7 +549,7 @@ export class RotationEngine {
       landType: request.landType,
       seasonYear,
       rotationId: spec.id,
-      crops,
+      crops: this.cropsOf(spec, seasonYear),
       farmerPriorities: request.farmerPriorities as Record<string, number>,
     };
 
@@ -488,6 +571,21 @@ export class RotationEngine {
       weightedSum += (scores[plugin.id] || 0) * weight;
     }
     const totalWeightedScore = totalWeight > 0 ? Number((weightedSum / totalWeight).toFixed(3)) : 0.5;
+    return { scores, dimensionDetails, totalWeightedScore };
+  }
+
+  private evaluateRotation(spec: CandidateSpec, request: PlanOptionsRequest, seasonYear: number): CandidateRotation {
+    const mon = monsoonOf(spec);
+    const aman = mon.aman;
+    const amanName = mon.amanName;
+    const k2 = mon.k2;
+    const { record: rabi, catalog: rabiName } = cropSlot(spec.rabi);
+    const k1Slot = spec.kharif1 ? cropSlot(spec.kharif1) : undefined;
+    const k1 = k1Slot?.record;
+    const k1Name = k1Slot?.catalog;
+    const amanDays = aman ? Math.round((aman.durationDays[0] + aman.durationDays[1]) / 2) : 0;
+    const rabiDays = seasonDay(rabi.harvest) - seasonDay(rabi.sowing);
+    const { scores, dimensionDetails, totalWeightedScore } = this.scoreRotation(spec, request, seasonYear);
 
     const deadline = rabi.sowingWindow?.[1];
     const withinWindow = !deadline || seasonDay(rabi.sowing) <= seasonDay(deadline);
@@ -563,7 +661,7 @@ export class RotationEngine {
         cropBangla: k1Name.cropBangla,
         variety: varietyEnglish(spec.kharif1, k1),
         varietyBangla: k1Name.varietyBangla,
-        seasonType: k1Name.isRice ? 'Aus' : 'Pre-Kharif',
+        seasonType: choiceIdOf(spec.kharif1) === 'boro_late' ? 'Rabi' : k1Name.isRice ? 'Aus' : 'Pre-Kharif',
         sowingWindow: `${enDate(k1.sowingWindow![0])}-${enDate(k1.sowingWindow![1])} (${k1.sowingWindowSource}); replay ${k1Name.isRice ? 'transplants' : 'sows'} ${enDate(k1.sowing)}`,
         harvestWindow: `~${enDate(k1.harvest)}`,
         durationDays: k1.fieldDays,
@@ -596,14 +694,16 @@ export class RotationEngine {
             `Prepare the field for ${rabiName.crop.toLowerCase()} before ${enDate(rabi.sowing)}.`,
           ];
     const actionsEnglish = [...monsoonActionsEn, rabiActionEn];
-    const ipmActions: IpmTip[] = [...(IPM_BY_RABI[spec.rabi] ?? []), ...(aman ? IPM_AMAN : []), ...IPM_GENERAL];
+    const ipmActions: IpmTip[] = withoutSoilCardTips([...(IPM_BY_RABI[spec.rabi] ?? []), ...(aman ? IPM_AMAN : []), ...IPM_GENERAL]);
     // The research's environment ledger: rice stands flooded from transplanting to two weeks before harvest
     const relayOverlap = relayDays && aman ? Math.max(0, seasonDay(aman.maturity) - seasonDay(rabi.sowing)) : 0;
     const monsoonDays = aman ? aman.fieldDays : k2 ? k2.record.fieldDays : 0;
+    // the slots' fertilizer doses; null in a slot = no SRDI soil card at this place, so no fertilizer total
+    const doseParts = [aman ? (LOC.srdi?.aman ?? null) : undefined, k2?.record.fertilizer, rabi.fertilizer, k1?.fertilizer];
     const ledger = {
       groundwaterPumpedM3PerHa: rabi.pumpedM3PerHa + (k1?.pumpedM3PerHa ?? 0) + (k2?.record.pumpedM3PerHa ?? 0),
       floodedRiceDays: (aman ? aman.fieldDays - 14 : 0) + (rabiName.isRice ? rabi.fieldDays - 14 : 0) + (k1 && k1Name?.isRice ? k1.fieldDays - 14 : 0),
-      ureaKgHa: Math.round((aman ? LOC.srdi.aman.ureaKgHa : 0) + (k2?.record.fertilizer.ureaKgHa ?? 0) + rabi.fertilizer.ureaKgHa + (k1?.fertilizer.ureaKgHa ?? 0)),
+      ureaKgHa: roundOrNull(rotationDose(doseParts, 'ureaKgHa')),
       legume: rabiName.isLegume || Boolean(k1Name?.isLegume) || Boolean(k2?.catalog.isLegume),
       bareDays: 365 - monsoonDays - rabi.fieldDays - (k1?.fieldDays ?? 0) + relayOverlap,
     };
@@ -630,6 +730,10 @@ export class RotationEngine {
             ['action_ready_rabi', `${rabiName.cropBangla} বোনার জন্য ${bnDateOf(bnDate(rabi.sowing))} আগে জমি তৈরি করুন।`],
           ];
     const actions: Array<[string, string]> = [...monsoonActions, rabiAction];
+    if (LOC.conditions.current?.dryStart && !rabiName.isRice) {
+      actions.push(['action_dry_start', `এ বছর মাটি শুকনো: আমন কাটার পর দেরি না করে ${rabiName.cropBangla} বুনুন; জমিতে রস না থাকলে বোনার আগে একটি হালকা সেচ দিন।`]);
+      actionsEnglish.push(`The soil is dry this year: sow ${rabiName.crop.toLowerCase()} right after the Aman harvest, with a light irrigation before sowing if the topsoil is dry.`);
+    }
     if (k1 && k1Name && spec.kharif1) {
       const seedling = replayFacts(choiceIdOf(spec.kharif1))?.seedlingDays;
       const beforeBn = aman ? ', আমন রোপণের আগে' : k2 ? `, বর্ষার ${k2.catalog.cropBangla} বোনার আগে` : '';
@@ -648,7 +752,7 @@ export class RotationEngine {
     const k1Bangla = k1Name ? ` → ${k1Name.varietyBangla}` : '';
     const k1English = k1 && spec.kharif1 ? ` -> ${varietyEnglish(spec.kharif1, k1)}` : '';
     const fieldFree = mon.ready ?? k1Late;
-    const tspKgHa = (aman ? LOC.srdi.aman.tspKgHa : 0) + (k2?.record.fertilizer.tspKgHa ?? 0) + rabi.fertilizer.tspKgHa + (k1?.fertilizer.tspKgHa ?? 0);
+    const tspKgHa = rotationDose(doseParts, 'tspKgHa');
     const riceCrops = (aman ? 1 : 0) + (rabiName.isRice ? 1 : 0) + (k1Name?.isRice ? 1 : 0);
     const option: CandidateRotation = {
       id: spec.id,
@@ -669,7 +773,17 @@ export class RotationEngine {
       ipmActions,
       ledger,
     };
-    option.stewardship = stewardshipTips(option, tspKgHa, riceCrops);
+    const cropIds = [aman ? 'aman' : spec.kharif2 ? choiceIdOf(spec.kharif2) : '', choiceIdOf(spec.rabi), spec.kharif1 ? choiceIdOf(spec.kharif1) : '']
+      .filter(Boolean);
+    option.stewardship = stewardshipTips(option, tspKgHa, riceCrops, cropIds);
+    option.cropIds = cropIds;
+    // The crops' field days, for the season calendar: when each meets heat, cold and heavy rain, and when the soil is bare
+    const spans: FieldSpan[] = [];
+    if (aman) spans.push({ id: 'aman', bn: 'আমন ধান', en: 'Aman rice', start: seasonDay(aman.transplant), days: aman.fieldDays, rice: true, irrigationMm: 0, cropWaterUseMm: aman.cropWaterUseMm });
+    else if (k2) spans.push({ id: choiceIdOf(k2.key), bn: k2.catalog.cropBangla, en: k2.catalog.crop, start: seasonDay(k2.record.sowing), days: k2.record.fieldDays, rice: false, irrigationMm: k2.record.netIrrigationMm, cropWaterUseMm: k2.record.cropWaterUseMm ?? null });
+    spans.push({ id: choiceIdOf(spec.rabi), bn: rabiName.cropBangla, en: rabiName.crop, start: seasonDay(rabi.sowing), days: rabi.fieldDays, rice: rabiName.isRice, irrigationMm: rabi.netIrrigationMm, cropWaterUseMm: rabi.cropWaterUseMm ?? null });
+    if (k1 && k1Name && spec.kharif1) spans.push({ id: choiceIdOf(spec.kharif1), bn: k1Name.cropBangla, en: k1Name.crop, start: seasonDay(k1.sowing), days: k1.fieldDays, rice: k1Name.isRice, irrigationMm: k1.netIrrigationMm, cropWaterUseMm: k1.cropWaterUseMm ?? null });
+    option.seasonRisk = seasonRisk(spans);
     return option;
   }
 
@@ -690,7 +804,7 @@ export class RotationEngine {
    * fills the rest of the year from every crop it knows; avoided crops (rice, for one) are left out. Plans holding
    * more of the named crops come first, then the higher weighted score.
    */
-  private choicePlans(request: PlanOptionsRequest, seasonYear: number) {
+  private choicePlans(request: PlanOptionsRequest, seasonYear: number, local = false) {
     const { families, notModelled } = familiesOf(request.preferredCrops ?? [], request.heroCrop);
     const heroIndex = families.findIndex(f => f.hero);
     const open = families.length === 0; // only crops to avoid were named: rank everything else by score
@@ -701,14 +815,26 @@ export class RotationEngine {
     const inPool = (c: ChoiceCrop) => usable(c) && (fill || askedIds.has(c.id));
     const familyOf = (id: string) => families.findIndex(f => f.members.some(m => m.id === id));
 
+    // The field's land type rules some seasons out: no Aman or monsoon crop under deep water, no upland monsoon crop
+    // where water stands, and on haor low land no crop harvested after the flash floods in too many springs
+    const rules = landRules(request.landType);
+    const tooLate = (harvest: MonthDay) => harvestTooLate(request.landType, harvest);
+    // A place's own plans leave out winter and pre-monsoon crops its soil salinity would halve (a farmer may still name
+    // them); without irrigation, rice in the dry season (Boro, Aus) is left out altogether
+    const rainOnly = request.irrigation === 'none';
+    const tooSalty = (crop: ChoiceCrop) => (local && (salinityEffect(crop.id)?.relativeYield ?? 1) < SALT_LIMIT) || (rainOnly && crop.isRice);
     const heroMembers = heroIndex >= 0 ? families[heroIndex].members : [];
     const heroOnlyWinter = heroMembers.length > 0 && heroMembers.every(m => m.season === 'Rabi');
     const neverWinter = families.some(f => f.members.every(m => m.season !== 'Rabi'));
     let rabiPool = heroOnlyWinter ? heroMembers.filter(usable) : CHOICE_CROPS.filter(c => c.season === 'Rabi' && inPool(c));
     if (!fill && (neverWinter || !rabiPool.length)) rabiPool = CHOICE_CROPS.filter(c => c.season === 'Rabi' && usable(c));
-    const k1Pool: Array<ChoiceCrop | null> = [null, ...CHOICE_CROPS.filter(c => c.season === 'Kharif-1' && inPool(c))];
-    const amanOk = !avoid.has('aman');
-    const k2Crops = CHOICE_CROPS.filter(c => c.season === 'Kharif-2' && usable(c) && (fill || askedIds.has(c.id) || !amanOk));
+    const k1Pool: Array<ChoiceCrop | null> = [null, ...(rules.kharif1 ? CHOICE_CROPS.filter(c => c.season === 'Kharif-1' && inPool(c)) : [])];
+    const amanOk = !avoid.has('aman') && rules.aman;
+    // Planning for a place (no crops named) keeps Aman, the monsoon staple, wherever the land allows it: a non-rice
+    // monsoon crop or an empty monsoon field comes in when the farmer leaves rice out or names such a crop
+    const k2Crops = rules.kharif2 && !(local && amanOk)
+      ? CHOICE_CROPS.filter(c => c.season === 'Kharif-2' && usable(c) && (fill || askedIds.has(c.id) || !amanOk))
+      : [];
     const fallowOk = !amanOk || askedIds.has('jute');
     const monsoonOptions: Array<{ aman?: string; k2?: string }> = [
       ...(amanOk ? Object.keys(AMAN_CATALOG).filter(a => LOC.aman[a]).map(a => ({ aman: a })) : []),
@@ -726,23 +852,33 @@ export class RotationEngine {
       const amanRecord = mon.aman ? LOC.aman[mon.aman] : undefined;
       const k2Record = mon.k2 ? recordFor(mon.k2) : undefined;
       const k2Crop = mon.k2 ? CHOICE_BY_ID[choiceIdOf(mon.k2)] : undefined;
-      const ready = amanRecord ? amanRecord.fieldFree : k2Record ? addDays(k2Record.harvest, TURNAROUND_DAYS) : null;
+      const ready = amanRecord ? amanRecord.fieldFree : k2Record ? addDays(k2Record.harvest, TURNAROUND_DAYS) : rules.ready;
       for (const rabiCrop of rabiPool) {
         if (k2Crop && sameFamily(k2Crop, rabiCrop)) continue;
+        if (tooSalty(rabiCrop)) continue;
         const rFit = rabiFit(rabiCrop, ready, amanRecord?.maturity);
         if (!isFit(rFit)) {
           noteMiss(rabiCrop, rFit);
           continue;
         }
         const rabiRecord = recordFor(rFit.key)!;
+        if (tooLate(rabiRecord.harvest)) {
+          noteMiss(rabiCrop, { reason: 'flash_flood', deadline: rabiRecord.harvest, ready: ready ?? rabiRecord.sowing });
+          continue;
+        }
         const nextStart = amanRecord ? amanRecord.transplant : k2Record ? k2Record.sowing : rabiRecord.sowing;
         for (const k1Crop of k1Pool) {
           let k1Key: string | undefined;
           if (k1Crop) {
-            if (sameFamily(k1Crop, rabiCrop) || (k2Crop && sameFamily(k1Crop, k2Crop))) continue;
+            if (sameFamily(k1Crop, rabiCrop) || (k2Crop && sameFamily(k1Crop, k2Crop)) || tooSalty(k1Crop)) continue;
             const kFit = kharif1Fit(k1Crop, rabiRecord.harvest, nextStart);
             if (!isFit(kFit)) {
               noteMiss(k1Crop, kFit);
+              continue;
+            }
+            const k1Harvest = recordFor(kFit.key)!.harvest;
+            if (tooLate(k1Harvest)) {
+              noteMiss(k1Crop, { reason: 'flash_flood', deadline: k1Harvest, ready: addDays(rabiRecord.harvest, TURNAROUND_DAYS) });
               continue;
             }
             k1Key = kFit.key;
@@ -777,9 +913,10 @@ export class RotationEngine {
     const ownSeason = (e: { spec: CandidateSpec }) => (heroId && [e.spec.kharif2, e.spec.rabi, e.spec.kharif1].some(k => k && choiceIdOf(k) === heroId) ? 1 : 0);
     const better = (a: Evaluated, b: Evaluated) =>
       b.covers.size - a.covers.size || ownSeason(b) - ownSeason(a) || b.option.totalWeightedScore - a.option.totalWeightedScore;
+    // Ranked on the scores alone; only the plans shown are written out in full below
     const byId = new Map<string, Evaluated>();
     for (const s of specs) {
-      const e = { ...s, option: this.evaluateRotation(s.spec, request, seasonYear) };
+      const e = { ...s, option: { id: s.spec.id, ...this.scoreRotation(s.spec, request, seasonYear) } as CandidateRotation };
       const seen = byId.get(e.spec.id);
       if (!seen || better(e, seen) < 0) byId.set(e.spec.id, e);
     }
@@ -803,6 +940,7 @@ export class RotationEngine {
         add(e);
       }
     }
+    for (const e of picked) e.option = this.evaluateRotation(e.spec, request, seasonYear);
     picked.sort(better);
     picked.forEach((e, i) => {
       e.option.rank = i + 1;
@@ -821,9 +959,11 @@ export class RotationEngine {
     const kind = kindOf(catalog);
     const monsoonBn = mon.aman ? '' : k2 ? `; বর্ষায় ${k2.catalog.cropBangla}` : '; বর্ষায় ধান নেই';
     const monsoonEn = mon.aman ? '' : k2 ? `; monsoon ${k2.catalog.crop.toLowerCase()}` : '; no rice in the monsoon';
+    // A late Boro after the winter crop is a second winter crop, not a summer one
+    const lateBoro = k1Key ? choiceIdOf(k1Key) === 'boro_late' : false;
     return [
-      `${water[0]}, ${kind[0]}${monsoonBn}${k1 ? `; গ্রীষ্মে ${k1.catalog.cropBangla}` : ''}`,
-      `${water[1]}, ${kind[1]}${monsoonEn}${k1 ? `; ${k1.catalog.crop.toLowerCase()} before ${mon.aman ? 'Aman' : 'the monsoon'}` : ''}`,
+      `${water[0]}, ${kind[0]}${monsoonBn}${k1 ? lateBoro ? '; তারপর নাবি বোরো' : `; গ্রীষ্মে ${k1.catalog.cropBangla}` : ''}`,
+      `${water[1]}, ${kind[1]}${monsoonEn}${k1 ? lateBoro ? '; then a late Boro' : `; ${k1.catalog.crop.toLowerCase()} before ${mon.aman ? 'Aman' : 'the monsoon'}` : ''}`,
     ];
   }
 
@@ -854,9 +994,11 @@ export class RotationEngine {
         netIrrigationMm: null,
         reasonBangla: !reason ? `${bnGenitive(family.cropBangla)} হিসাব এই জায়গার জন্য পাওয়া যায়নি।`
           : reason.reason === 'aman_clash' ? `${crop.cropBangla} কাটার আগেই বর্ষার ফসলের সময় (~${bnDate(reason.deadline)}) এসে যায়।`
+          : reason.reason === 'flash_flood' ? `${crop.cropBangla} কাটা হয় ~${bnDate(reason.deadline)}, তার আগেই অনেক বছর হাওরে আগাম বন্যা আসে।`
           : `জমি তৈরি হয় ~${bnDate(reason.ready)}, কিন্তু ${crop.cropBangla} বোনার শেষ সময় ~${bnDate(reason.deadline)}।`,
         reasonEnglish: !reason ? `No replay for ${family.cropEnglish.toLowerCase()} at this place.`
           : reason.reason === 'aman_clash' ? `${crop.crop} would still be in the field when the monsoon crop goes in (~${enDate(reason.deadline)}).`
+          : reason.reason === 'flash_flood' ? `${crop.crop} would be harvested around ${enDate(reason.deadline)}, after the haor's flash floods in too many springs.`
           : `The field is ready around ${enDate(reason.ready)}, after the ${crop.crop.toLowerCase()} sowing deadline (~${enDate(reason.deadline)}).`,
       };
     });
@@ -893,8 +1035,8 @@ export class RotationEngine {
       .map(k => catalogFor(k)!).filter(c => c.illustrativeGrossMarginTkPerHa === null).map(c => [c.crop, c] as const)).values()];
     if (noPrice.length) {
       const last = noPrice.length > 1 ? noPrice.slice(0, -1).map(c => c.cropBangla).join(', ') + ' ও ' : '';
-      notesBangla.push(`${last}${bnGenitive(noPrice[noPrice.length - 1].cropBangla)} বাজারদর ও খরচের তথ্য এখনো নেই, তাই আয়ের স্কোর মাঝামাঝি ধরা হয়েছে।`);
-      notesEnglish.push(`No prices and costs yet for ${noPrice.map(c => c.crop.toLowerCase()).join(', ')}, so ${noPrice.length > 1 ? 'their' : 'its'} income score is held at the midpoint.`);
+      notesBangla.push(`${last}${bnGenitive(noPrice[noPrice.length - 1].cropBangla)} বাজারদর ও খরচের তথ্য এখনো নেই, তাই আয়ের হিসাবে নিচের দিকের রবি ফসলের লাভ ধরা হয়েছে।`);
+      notesEnglish.push(`No prices and costs yet for ${noPrice.map(c => c.crop.toLowerCase()).join(', ')}, so a lower-quartile winter crop's return, moved by the district's yield, stands in for ${noPrice.length > 1 ? 'their' : 'its'} income.`);
     }
 
     // Holding more of the asked crops can cost score (a summer crop meets heat); say what fewer crops score
@@ -912,9 +1054,10 @@ export class RotationEngine {
       const { record: rabi } = cropSlot(top.spec.rabi);
       const mon = monsoonOf(top.spec);
       const nextStart = mon.start ?? rabi.sowing;
-      for (const crop of CHOICE_CROPS.filter(c => c.season === 'Kharif-1' && c.id !== 'sunflower_kharif' && !avoid.has(c.id))) {
+      const k1Allowed = landRules(this.landType).kharif1;
+      for (const crop of CHOICE_CROPS.filter(c => k1Allowed && c.season === 'Kharif-1' && c.id !== 'sunflower_kharif' && !avoid.has(c.id))) {
         const fit = kharif1Fit(crop, rabi.harvest, nextStart);
-        if (!isFit(fit)) continue;
+        if (!isFit(fit) || harvestTooLate(this.landType, recordFor(fit.key)!.harvest)) continue;
         const { record } = cropSlot(fit.key);
         gapFillers.push({
           id: crop.id, cropBangla: crop.cropBangla, cropEnglish: crop.crop,
@@ -942,6 +1085,520 @@ export class RotationEngine {
     };
   }
 
+  /**
+   * What most farmers at the place grow now (its main BRRI pattern, made flood-safe on haor land) and the same crops
+   * with mungbean in the summer gap, added to the ranked plans so a farmer can see what a change gains or costs.
+   */
+  private withCurrentPractice(specs: CandidateSpec[], options: CandidateRotation[], request: PlanOptionsRequest, seasonYear: number, rules: LandRules) {
+    const top = LOC.local.patterns[0];
+    const current = top && top[1] >= CURRENT_PRACTICE_PCT ? this.patternSpec(top[0], request.landType, rules) : null;
+    // Without irrigation a usual pattern with Boro or Aus is not a plan this farmer can follow
+    const needsWater = (spec: CandidateSpec) => [spec.rabi, spec.kharif1].some(k => k && catalogFor(k)?.isRice);
+    if (!current || (request.irrigation === 'none' && needsWater(current))) return { specs, options };
+    const summer = current.kharif1 ? null : this.withSummerCrop(current, request.landType);
+    const pulse = summer && request.irrigation === 'none' && needsWater(summer) ? null : summer;
+    const allSpecs = [...specs];
+    const allOptions = [...options];
+    for (const spec of [current, pulse]) {
+      if (!spec) continue;
+      let option = allOptions.find(o => o.id === spec.id);
+      if (!option) {
+        option = this.evaluateRotation(spec, request, seasonYear);
+        allSpecs.push(spec);
+        allOptions.push(option);
+      }
+      if (spec === current) option.currentPractice = true;
+    }
+    allOptions.sort((a, b) => b.totalWeightedScore - a.totalWeightedScore);
+    allOptions.forEach((o, i) => {
+      o.rank = i + 1;
+    });
+    return { specs: allSpecs, options: allOptions };
+  }
+
+  /**
+   * A BRRI pattern ('Boro-Fallow-T. Aman': winter, summer, monsoon) as a plan when the engine replays each of its crops
+   * and they fit this land and calendar. The usual long-duration Aman (BRRI dhan49) comes first, else the first variety
+   * after which the winter crop still fits; Boro falls back to the early BRRI dhan88 where the late one meets the
+   * flash floods.
+   */
+  private patternSpec(pattern: string, landType: LandType, rules: LandRules): CandidateSpec | null {
+    const [winterWord, summerWord, monsoonWord] = pattern.split('-').map(w => w.trim());
+    const winter = CHOICE_BY_ID[PATTERN_CROP[winterWord] ?? ''];
+    // Boro after a winter crop (Mustard-Boro-T. Aman, Potato-Boro-T. Aman) is the late Boro transplanted in February
+    const summer = summerWord === 'Fallow' ? null : CHOICE_BY_ID[summerWord === 'Boro' ? 'boro_late' : PATTERN_CROP[summerWord] ?? ''];
+    const withAman = monsoonWord === 'T. Aman';
+    if (!winter || (summerWord !== 'Fallow' && summer?.season !== 'Kharif-1') || (!withAman && monsoonWord !== 'Fallow')) return null;
+    if (withAman !== rules.aman) return null; // the farmer's land differs from the upazila's usual land
+    const amanOrder = withAman ? ['BRRI dhan49', ...Object.keys(AMAN_CATALOG).filter(a => a !== 'BRRI dhan49')] : [undefined];
+    for (const aman of amanOrder) {
+      const amanRecord = aman ? LOC.aman[aman] : undefined;
+      if (aman && !amanRecord) continue;
+      for (const crop of [winter, ...(winter.alsoCovers ?? []).map(id => CHOICE_BY_ID[id]).filter(c => c?.season === 'Rabi')]) {
+        const fit = rabiFit(crop, amanRecord ? amanRecord.fieldFree : rules.ready, amanRecord?.maturity);
+        if (!isFit(fit)) continue;
+        const rabi = recordFor(fit.key)!;
+        if (harvestTooLate(landType, rabi.harvest)) continue;
+        let k1Key: string | undefined;
+        if (summer) {
+          const kFit = kharif1Fit(summer, rabi.harvest, amanRecord ? amanRecord.transplant : rabi.sowing);
+          if (!isFit(kFit) || harvestTooLate(landType, recordFor(kFit.key)!.harvest)) continue;
+          k1Key = kFit.key;
+        }
+        const known = aman && !k1Key ? CANDIDATES.find(c => c.aman === aman && c.rabi === fit.key) : undefined;
+        return known ?? {
+          id: `rot_${aman ? amanShort(aman) : 'fallow'}_${RELEASE_SHORT[fit.key] ?? choiceIdOf(fit.key)}${k1Key ? `_${choiceIdOf(k1Key)}` : ''}`,
+          aman,
+          rabi: fit.key,
+          kharif1: k1Key,
+          isBaseline: false,
+          tagBangla: 'এখানে সবচেয়ে বেশি যা চাষ হয় (BRRI ২০১৪-১৫)',
+          tagEnglish: 'what most farmers here grow (BRRI 2014-15)',
+        };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * The current plan with a crop in the summer gap after the winter crop: mungbean first (a pulse), else sesame, jute
+   * or Aus, whichever fits the calendar; Boro moves to the early BRRI dhan88 when that makes room.
+   */
+  private withSummerCrop(current: CandidateSpec, landType: LandType): CandidateSpec | null {
+    if (!landRules(landType).kharif1) return null;
+    const mon = monsoonOf(current);
+    const winters = choiceIdOf(current.rabi) === 'boro' ? [current.rabi, ...this.earlyBoro(mon)] : [current.rabi];
+    for (const crop of ['mungbean', 'sesame', 'jute', 'aus'].map(id => CHOICE_BY_ID[id])) {
+      for (const rabiKey of winters) {
+        const rabi = recordFor(rabiKey);
+        if (!rabi || harvestTooLate(landType, rabi.harvest) || (crop.isRice && catalogFor(rabiKey)?.isRice)) continue;
+        const fit = kharif1Fit(crop, rabi.harvest, mon.start ?? rabi.sowing);
+        if (!isFit(fit) || harvestTooLate(landType, recordFor(fit.key)!.harvest)) continue;
+        return {
+          id: `rot_${current.aman ? amanShort(current.aman) : 'fallow'}_${RELEASE_SHORT[rabiKey] ?? choiceIdOf(rabiKey)}_${crop.id}`,
+          aman: current.aman,
+          rabi: rabiKey,
+          kharif1: fit.key,
+          isBaseline: false,
+          tagBangla: `প্রচলিত ফসলের সাথে গ্রীষ্মে ${crop.cropBangla}`,
+          tagEnglish: `the usual crops with ${crop.crop.toLowerCase()} in summer`,
+        };
+      }
+    }
+    return null;
+  }
+
+  /**
+   * The rotation the farmer grows now as a plan, fitted to this place's calendar like any other: their Aman variety
+   * (or the usual BRRI dhan49), their winter crop on its first date after the field is ready, their summer crop if
+   * it still fits before the next monsoon. Null, with the reason, when it cannot be built here.
+   */
+  private farmerRotationSpec(cur: NonNullable<PlanOptionsRequest['currentRotation']>, request: PlanOptionsRequest, rules: LandRules):
+    { spec: CandidateSpec | null; note: { bn: string; en: string } | null } {
+    const no = (bn: string, en: string) => ({ spec: null, note: { bn, en } });
+    const winter = CHOICE_BY_ID[String(cur.winter ?? '').toLowerCase()];
+    if (!winter || winter.season !== 'Rabi') {
+      return no('শীতে কোনো ফসল না থাকলে (বছরে শুধু আমন) চক্রটি এখনো হিসাব করা যায় না; তুলনার জন্য প্রচলিত চক্র দেখানো হলো।',
+        'A year with no winter crop (Aman only) cannot be modelled yet; the usual rotation is shown for comparison.');
+    }
+    const monsoon = String(cur.monsoon ?? 'aman').toLowerCase();
+    let amanKey: string | undefined;
+    let k2Key: string | undefined;
+    if (monsoon === 'aman') {
+      if (!rules.aman) return no('এই জমিতে বর্ষায় আমন হয় না (পানি গভীর), তাই আপনার চক্রে আমন ধরা যায়নি।', 'Aman does not grow on this land in the monsoon (deep water), so the rotation cannot hold it.');
+      amanKey = [request.currentAmanCrop, 'BRRI dhan49', ...Object.keys(AMAN_CATALOG)].find(a => a && LOC.aman[a] && AMAN_CATALOG[a]);
+    } else if (monsoon !== 'fallow') {
+      const crop = CHOICE_BY_ID[`${monsoon}_k2`] ?? CHOICE_BY_ID[monsoon];
+      if (!crop || crop.season !== 'Kharif-2' || !rules.kharif2) return no('আপনার বর্ষার ফসলটি এই জমিতে হিসাব করা যায় না।', 'The monsoon crop given cannot be modelled on this land.');
+      k2Key = kharif2Keys(crop)[0];
+      if (!k2Key) return no('আপনার বর্ষার ফসলের তথ্য এই জায়গায় নেই।', 'No replay data for that monsoon crop here.');
+    }
+    const amanRecord = amanKey ? LOC.aman[amanKey] : undefined;
+    const k2Record = k2Key ? recordFor(k2Key) : undefined;
+    const ready = amanRecord ? amanRecord.fieldFree : k2Record ? addDays(k2Record.harvest, TURNAROUND_DAYS) : rules.ready;
+    // The winter crop's replay records that fit after the monsoon slot (Boro also as the early BRRI dhan88)
+    const winters = [winter, ...(winter.alsoCovers ?? []).map(id => CHOICE_BY_ID[id]).filter(c => c?.season === 'Rabi')];
+    const rabiKeys = winters.map(crop => rabiFit(crop, ready, amanRecord?.maturity))
+      .filter(isFit).map(f => f.key).filter(key => !harvestTooLate(request.landType, recordFor(key)!.harvest));
+    if (!rabiKeys.length) return no(`আপনার ${winter.cropBangla} এই জায়গার হিসাবে বর্ষার ফসলের পরে সময়মতো বসে না।`, `The ${winter.crop.toLowerCase()} does not fit after the monsoon crop on this place's calendar.`);
+    let rabiKey = rabiKeys[0];
+    let k1Key: string | undefined;
+    let note: { bn: string; en: string } | null = null;
+    const named = cur.summer ? String(cur.summer).toLowerCase() : '';
+    const summerId = named === 'boro' || named === 'boro_early' ? 'boro_late' : named;
+    if (summerId && summerId !== 'fallow') {
+      const summer = CHOICE_BY_ID[summerId];
+      const nextStart = (key: string) => (amanRecord ? amanRecord.transplant : k2Record ? k2Record.sowing : recordFor(key)!.sowing);
+      // The first winter record that leaves room for the summer crop (an early Boro may), else the year without it
+      const fitted = summer && summer.season === 'Kharif-1' && rules.kharif1
+        ? rabiKeys.map(key => ({ key, fit: kharif1Fit(summer, recordFor(key)!.harvest, nextStart(key)) })).find(x => isFit(x.fit))
+        : undefined;
+      if (fitted && isFit(fitted.fit)) {
+        rabiKey = fitted.key;
+        k1Key = fitted.fit.key;
+      } else {
+        const name = summer ? [summer.cropBangla, summer.crop.toLowerCase()] : [summerId, summerId];
+        note = {
+          bn: `আপনার ${name[0]} এই জায়গার হিসাবে শীতের ফসল আর বর্ষার মাঝে বসে না, তাই আপনার চক্র ${name[0]} ছাড়া দেখানো হলো।`,
+          en: `The ${name[1]} does not fit between the winter crop and the monsoon on this place's calendar, so the farmer's rotation is shown without it.`,
+        };
+      }
+    }
+    const known = amanKey && !k1Key ? CANDIDATES.find(c => c.aman === amanKey && c.rabi === rabiKey) : undefined;
+    const monsoonId = amanKey ? amanShort(amanKey) : k2Key ? choiceIdOf(k2Key) : 'fallow';
+    return {
+      spec: known ?? {
+        id: `rot_${monsoonId}_${RELEASE_SHORT[rabiKey] ?? choiceIdOf(rabiKey)}${k1Key ? `_${choiceIdOf(k1Key)}` : ''}`,
+        aman: amanKey,
+        kharif2: k2Key,
+        rabi: rabiKey,
+        kharif1: k1Key,
+        isBaseline: false,
+        tagBangla: 'আপনার এখনকার চক্র',
+        tagEnglish: 'your rotation now',
+      },
+      note,
+    };
+  }
+
+  /** The same Aman variety (or monsoon crop) and the same winter and summer crops, on any sowing date. */
+  private sameRotation(a: CandidateSpec, b: CandidateSpec): boolean {
+    const kind = (s: CandidateSpec) => [s.aman ?? (s.kharif2 ? choiceIdOf(s.kharif2) : 'fallow'), choiceIdOf(s.rabi), s.kharif1 ? choiceIdOf(s.kharif1) : ''].join('|');
+    return kind(a) === kind(b);
+  }
+
+  /** Adds the farmer's own rotation (or marks the plan already showing it) and re-ranks. */
+  private withFarmerRotation(specs: CandidateSpec[], options: CandidateRotation[], request: PlanOptionsRequest, seasonYear: number, rules: LandRules) {
+    const { spec, note } = this.farmerRotationSpec(request.currentRotation!, request, rules);
+    if (!spec) return { specs, options, note };
+    const same = specs.find(s => this.sameRotation(s, spec));
+    const allSpecs = same ? specs : [...specs, spec];
+    const allOptions = same ? options : [...options, this.evaluateRotation(spec, request, seasonYear)];
+    const mine = allOptions.find(o => o.id === (same ?? spec).id)!;
+    mine.farmerCurrent = true;
+    allOptions.sort((a, b) => b.totalWeightedScore - a.totalWeightedScore);
+    allOptions.forEach((o, i) => {
+      o.rank = i + 1;
+    });
+    return { specs: allSpecs, options: allOptions, note };
+  }
+
+  /** Tops a short list up to three with the best plans for the place (the farmer's named crops can leave fewer). */
+  private atLeastThree(specs: CandidateSpec[], options: CandidateRotation[], request: PlanOptionsRequest, seasonYear: number) {
+    if (options.length >= MIN_OPTIONS) return { specs, options };
+    const rules = landRules(request.landType);
+    const open = { ...request, preferredCrops: undefined, heroCrop: rules.aman ? undefined : 'boro' };
+    const more = this.choicePlans(open, seasonYear, true);
+    const allSpecs = [...specs];
+    const allOptions = [...options];
+    for (const [i, extra] of more.specs.entries()) {
+      if (allOptions.length >= MIN_OPTIONS) break;
+      if (allSpecs.some(s => s.id === extra.id || this.sameRotation(s, extra))) continue;
+      allSpecs.push(extra);
+      allOptions.push(more.options[i]);
+    }
+    allOptions.sort((a, b) => b.totalWeightedScore - a.totalWeightedScore);
+    allOptions.forEach((o, i) => {
+      o.rank = i + 1;
+    });
+    return { specs: allSpecs, options: allOptions };
+  }
+
+  /** The early Boro's replay key after a monsoon slot, when it fits. */
+  private earlyBoro(mon: MonsoonSlot): string[] {
+    const fit = rabiFit(CHOICE_BY_ID.boro_early, mon.ready, mon.aman?.maturity);
+    return isFit(fit) ? [fit.key] : [];
+  }
+
+  /**
+   * The place's land type and the evidence behind it, what its farmers grow now (BRRI's 2014-15 survey), and the
+   * hazards that shaped the plan: deep monsoon water, submergence, the haor's flash floods and, on the coast, winter
+   * fallow that is often salinity. One short line of it goes into the farmer's summary.
+   */
+  private localContext(request: PlanOptionsRequest, rules: LandRules, options: CandidateRotation[], best: CandidateSpec) {
+    const local = LOC.local;
+    const land = local.land;
+    const landBn = LAND_TYPE_BANGLA[request.landType] ?? '';
+    const landEn = request.landType.replace('_', '-');
+    const assumed = Boolean(request.landTypeAssumed);
+    const pct = (x: number) => Math.round(x * 100);
+    const hazards: string[] = [];
+    const notesBangla: string[] = [];
+    const notesEnglish: string[] = [];
+    let farmerLineBangla = '';
+    let farmerLineEnglish = '';
+
+    // Why this land type
+    let evidenceBn: string;
+    let evidenceEn: string;
+    if (!assumed) {
+      evidenceBn = `জমির ধরন কৃষকের কথামতো: ${landBn} জমি।`;
+      evidenceEn = `Land type as the farmer gave it: ${landEn} land.`;
+    } else if (LOC.kind === 'pilot') {
+      evidenceBn = `${landBn} জমি ধরা হয়েছে (SRDI তালন্দ কার্ড); আপনার জমি অন্যরকম হলে জানান।`;
+      evidenceEn = `${landEn[0].toUpperCase()}${landEn.slice(1)} land assumed (SRDI Talanda card); say so if the field is different.`;
+    } else {
+      const bn: string[] = [];
+      const en: string[] = [];
+      if (land?.basis.includes('water')) {
+        bn.push(`ল্যান্ডস্যাট উপগ্রহে (JRC, ২০২১) এই উপজেলার ${bnDigits(pct(land.seasonalWater))}% জমি বছরে ৩–৬ মাস পানির নিচে`);
+        en.push(`Landsat (JRC surface water, 2021) shows ${pct(land.seasonalWater)}% of the upazila under water 3-6 months a year`);
+      }
+      if (land?.basis.includes('pattern') && local.boroFallowFallowPct !== null) {
+        bn.push(`BRRI-র ২০১৪-১৫ জরিপে চাষের জমির ${bnDigits(Math.round(local.boroFallowFallowPct))}%-এ শুধু বোরো, বর্ষায় জমি পতিত`);
+        en.push(`BRRI's 2014-15 survey found Boro-Fallow-Fallow (no monsoon crop) on ${Math.round(local.boroFallowFallowPct)}% of its cropped land`);
+      }
+      if (land?.basis.includes('elevation')) {
+        bn.push(`নাসার NASADEM উচ্চতায় এখানকার সবচেয়ে নিচু এক-দশমাংশ জমিও ${bnDigits(land.elevP10M)} মিটার উঁচু, ল্যান্ডস্যাটে প্রায় কখনো পানি দেখা যায়নি`);
+        en.push(`NASA NASADEM puts even the lowest tenth of the land ${land.elevP10M} m above sea level, and Landsat almost never saw water there`);
+      }
+      if (!en.length) {
+        bn.push(land ? 'নাসার NASADEM উচ্চতা, ল্যান্ডস্যাটের পানি বা BRRI জরিপে গভীর বা দীর্ঘ বন্যার চিহ্ন নেই' : 'এই উপজেলার জমির মানচিত্র এখনো নেই');
+        en.push(land ? "NASA NASADEM elevation, Landsat surface water and BRRI's survey show no deep or long flooding" : 'No land layers cover this upazila yet');
+      }
+      evidenceBn = `${bn.join('; ')}: তাই ${landBn} জমি ধরা হয়েছে; আপনার জমি অন্যরকম হলে জানান।`;
+      evidenceEn = `${en.join('; ')}, so ${landEn} land is assumed; say so if the field is different.`;
+      farmerLineBangla = `${landBn} জমি ধরে হিসাব; আপনার জমি অন্যরকম হলে জানান।`;
+      farmerLineEnglish = `Planned for ${landEn} land, this upazila's usual land; say so if the field is different.`;
+    }
+    notesBangla.push(evidenceBn);
+    notesEnglish.push(evidenceEn);
+    // NASA HLS (30 m): what share of the Aman land grew a winter crop in the last two winters
+    const hls = local.hls;
+    const winters = hls ? Object.keys(hls).sort().reverse() : [];
+    const latest = winters.length ? hls![winters[0]] : null;
+    if (latest && typeof latest.winterCropShare === 'number') {
+      const prev = winters[1] ? hls![winters[1]]?.winterCropShare : null;
+      const now = Math.round(latest.winterCropShare * 100);
+      const before = typeof prev === 'number' ? Math.round(prev * 100) : null;
+      notesBangla.push(`নাসার HLS উপগ্রহ (৩০ মিটার): যে জমিতে আমন হয়েছিল তার ${bnDigits(now)}% শীতে আবার সবুজ হয়েছে (${bnDigits(winters[0])})${before !== null ? `, আগের শীতে ${bnDigits(before)}%` : ''}; বাকিটা শীতে পতিত ছিল।`);
+      notesEnglish.push(`NASA HLS satellites (30 m): ${now}% of the land that grew Aman was green again with a winter crop in ${winters[0]}${before !== null ? ` (${before}% in ${winters[1]})` : ''}; the rest lay fallow over the winter.`);
+    }
+    // NASA OPERA radar: how much of the upazila the monsoon covered, and when low land drained (2025)
+    const radar = local.opera;
+    const radarDate = radarReady(request.landType);
+    if (radar && radar.extra >= OPERA_MIN_EXTRA) {
+      const peakPct = Math.round(radar.peak * 100), dryPct = Math.round(radar.dry * 100);
+      notesBangla.push(`নাসার OPERA রাডার (২০২৫): বর্ষার চূড়ায় (${bnDate(radar.peakDate.slice(5))}) উপজেলার ${bnDigits(peakPct)}% পানির নিচে, শুকনো মৌসুমে ${bnDigits(dryPct)}%।${radarDate ? ` নিচু জমি ধরা হয়েছে ~${bnDate(radarDate)} থেকে খালি, যখন বর্ষার পানির বেশির ভাগ নেমে গিয়েছিল।` : ''}`);
+      notesEnglish.push(`NASA OPERA radar (2025): ${peakPct}% of the upazila under water at the monsoon peak (${enDate(radar.peakDate.slice(5))}), ${dryPct}% in the dry season.${radarDate ? ` ${request.landType === 'very_low' ? 'Very low' : 'Low'} land is taken as free from ~${enDate(radarDate)}, when ${request.landType === 'very_low' ? '90' : '80'}% of the monsoon water had drained.` : ''}`);
+    }
+
+    // What farmers grow here now: patterns on a tenth of the cropped land or more
+    const patterns = local.patterns
+      .filter(([, share]) => share >= PATTERN_NOTE_PCT)
+      .map(([pattern, share]) => ({ pattern, patternBangla: patternBangla(pattern), pctOfCroppedLand: share }));
+    if (patterns.length) {
+      notesBangla.push(`এখন এখানে যা চাষ হয় (BRRI জরিপ, ২০১৪-১৫): ${patterns.map(p => `${p.patternBangla} ${bnDigits(Math.round(p.pctOfCroppedLand))}%`).join(', ')}।`);
+      notesEnglish.push(`What farmers here grow now (BRRI survey, 2014-15): ${patterns.map(p => `${p.pattern} ${Math.round(p.pctOfCroppedLand)}%`).join(', ')}.`);
+    }
+
+    // Deep water, or standing water in the monsoon
+    const alerts: LocalContext['alerts'] = [];
+    const hazard = (id: string, title: [string, string]) => {
+      hazards.push(id);
+      alerts.push({ hazard: id, titleBangla: title[0], titleEnglish: title[1], textBangla: notesBangla[notesBangla.length - 1], textEnglish: notesEnglish[notesEnglish.length - 1] });
+    };
+    // NASA POWER disease weather this week: look before spraying when it favours blast or late blight, and say so
+    // plainly when it does not, so no spray goes on "just in case"
+    const disease = (LOC.conditions.current as { disease?: DiseaseNow | null } | null | undefined)?.disease ?? null;
+    const typical = typicalDiseaseDays();
+    const diseaseRules = diseaseData().rules;
+    const topSeq = options[0]?.cropSequence ?? [];
+    const hasAman = topSeq.some(p => p.seasonType === 'Aman');
+    const winterCrop = topSeq.find(p => p.seasonType === 'Rabi')?.crop ?? '';
+    const diseaseRows: Array<{ id: string; nameBangla: string; nameEnglish: string; status: string; days7: number; season: string | null; typicalDays: number | null; relevant: boolean }> = [];
+    if (disease) {
+      const when = { bn: bnDate(disease.date.slice(5)), en: enDate(disease.date.slice(5)) };
+      for (const id of ['riceBlast', 'lateBlight'] as const) {
+        const r = disease[id];
+        const rule = diseaseRules[id];
+        if (!r || !rule) continue;
+        const relevant = id === 'riceBlast'
+          ? (r.season === 'aman' && hasAman) || (r.season === 'boro' && winterCrop === 'Boro rice')
+          : r.season === 'potato' && winterCrop === 'Potato';
+        const typicalDays = !typical ? null : id === 'lateBlight' ? typical.lateBlight.median
+          : r.season === 'boro' ? typical.blastBoro.median : typical.blastAman.median;
+        diseaseRows.push({ id, nameBangla: rule.nameBn, nameEnglish: rule.nameEn, status: r.status, days7: r.days7, season: r.season, typicalDays, relevant });
+        if (!relevant) continue;
+        const crop = id === 'lateBlight' ? { bn: 'আলু', en: 'potato' } : r.season === 'boro' ? { bn: 'বোরো', en: 'Boro' } : { bn: 'আমন', en: 'Aman' };
+        if (r.status === 'high' || r.status === 'watch') {
+          notesBangla.push(`নাসার আবহাওয়া (${when.bn} পর্যন্ত ৭ দিন): ${bnDigits(r.days7)} দিন ${rule.nameBn}-এর উপযোগী আবহাওয়া। প্রতি ২–৩ দিনে ${crop.bn} খেত দেখুন; রোগ ছড়াচ্ছে বলে কৃষি কর্মকর্তা নিশ্চিত করলে তবেই ছত্রাকনাশক দিন।`);
+          notesEnglish.push(`NASA POWER weather, 7 days to ${when.en}: ${r.days7} days of ${rule.nameEn.toLowerCase()} weather. Walk the ${crop.en} field every 2-3 days; spray a fungicide only if the agriculture officer confirms the disease is spreading.`);
+          hazard('disease_weather', ['রোগের উপযোগী আবহাওয়া', 'Disease weather']);
+          farmerLineBangla = [farmerLineBangla, `${rule.nameBn}-এর আবহাওয়া: স্প্রের আগে খেত দেখুন।`].filter(Boolean).join(' ');
+          farmerLineEnglish = [farmerLineEnglish, `${rule.nameEn} weather: look at the field before any spray.`].filter(Boolean).join(' ');
+        } else if (r.status === 'low') {
+          notesBangla.push(`নাসার আবহাওয়া (${when.bn} পর্যন্ত ৭ দিন): ${rule.nameBn}-এর উপযোগী আবহাওয়া ছিল না; এই সপ্তাহে ${crop.bn}-এ সতর্কতামূলক ছত্রাকনাশক লাগবে না।`);
+          notesEnglish.push(`NASA POWER weather, 7 days to ${when.en}: no ${rule.nameEn.toLowerCase()} weather, so no precautionary fungicide spray is needed on ${crop.en} this week.`);
+        }
+      }
+    }
+
+    // This week in the field (field_alerts.ts, from research/live/field_weather.py): a dry spell at Aman flowering, heat
+    // at rice flowering or wheat grain filling, cold on Boro seedbeds and AWD in Boro, for the crops of the first option
+    // (the farmer's own Aman variety when given)
+    const nowConditions = LOC.conditions.current as { field?: FieldWeather | null; flood?: FloodNow | null } | null | undefined;
+    const field = nowConditions?.field ?? null;
+    const floodReading = nowConditions?.flood ?? null;
+    const amanKey = rules.aman ? (request.currentAmanCrop && LOC.aman[request.currentAmanCrop] ? request.currentAmanCrop : best.aman) : undefined;
+    const amanRec = amanKey ? LOC.aman[amanKey] : undefined;
+    const rabiRec = recordFor(best.rabi);
+    const rabiCat = catalogFor(best.rabi);
+    const fieldCrops: FieldCrops = {
+      aman: amanKey && amanRec ? { variety: amanKey, varietyBangla: AMAN_CATALOG[amanKey]?.varietyBangla ?? amanKey, flowering: amanRec.flowering } : null,
+      boro: rabiCat?.crop === 'Boro rice' && rabiRec ? { variety: best.rabi, varietyBangla: rabiCat.varietyBangla, transplant: rabiRec.sowing, harvest: rabiRec.harvest } : null,
+      wheat: rabiCat?.crop === 'Wheat' && rabiRec ? { sowing: rabiRec.sowing, harvest: rabiRec.harvest } : null,
+    };
+    const todayIso = (request.today ? new Date(request.today) : new Date()).toISOString().slice(0, 10);
+    const thisWeek = fieldAlerts(todayIso, fieldCrops, field, { flood: floodReading, drained80: local.opera?.drained80 ?? null });
+    for (const a of thisWeek) {
+      notesBangla.push(a.textBangla);
+      notesEnglish.push(a.textEnglish);
+      if (a.level !== 'high' && a.level !== 'watch') continue;
+      hazard(a.id, [a.titleBangla, a.titleEnglish]);
+      if (a.level === 'high' && a.smsBangla) {
+        farmerLineBangla = [farmerLineBangla, a.smsBangla].filter(Boolean).join(' ');
+        farmerLineEnglish = [farmerLineEnglish, `${a.titleEnglish}.`].filter(Boolean).join(' ');
+      }
+    }
+
+    // Low land after the flood alert's window (November to January): how fast this year's water is leaving, from
+    // NISAR radar and OPERA, against the date the plan takes from last year's drainage
+    const md = todayIso.slice(5);
+    const drainNow = md >= '11-01' || md <= '01-31' ? drainText(floodReading?.drain) : null;
+    if (drainNow && (request.landType === 'low' || request.landType === 'very_low')) {
+      const freeBy = floodReading?.drain?.freeBy;
+      const shift = freeBy && rules.ready ? seasonDay(freeBy.slice(5) as MonthDay) - seasonDay(rules.ready) : null;
+      const boro = rabiCat?.crop === 'Boro rice';
+      const later = shift !== null && shift >= 10, sooner = shift !== null && shift <= -10;
+      notesBangla.push(`${drainNow.bn}${later
+        ? ` এটি এই পরিকল্পনার ধরা তারিখের (~${bnDate(rules.ready!)}) প্রায় ${bnDigits(shift!)} দিন পরে: ${boro ? 'বোরোর বীজতলা এমনভাবে দিন যাতে জমি খালি হওয়ার দিন চারার বয়স ৩৫-৪৫ দিন হয়।' : 'রবি ফসল সেই অনুযায়ী দেরিতে বুনুন।'}`
+        : sooner ? ` এটি এই পরিকল্পনার ধরা তারিখের (~${bnDate(rules.ready!)}) প্রায় ${bnDigits(-shift!)} দিন আগে: রবি ফসল আগে বোনা যাবে।` : ''}`);
+      notesEnglish.push(`${drainNow.en}${later
+        ? ` That is about ${shift} days after the date this plan assumes (~${enDate(rules.ready!)}): ${boro ? 'time the Boro seedbed so the seedlings are 35-45 days old when the land is free (BRRI).' : 'sow the winter crop correspondingly later.'}`
+        : sooner ? ` That is about ${-shift!} days before the date this plan assumes (~${enDate(rules.ready!)}): the winter crop can go in sooner.` : ''}`);
+    }
+
+    if (!rules.aman) {
+      notesBangla.push(`${landBn} জমিতে জুন থেকে নভেম্বর পানি থাকে: আমন বা গ্রীষ্মের ফসল হয় না; পানি নামলে (~${bnDate(rules.ready!)}) রবি ফসল।`);
+      notesEnglish.push(`On ${landEn} land water stands from June to November: no Aman or summer crop; the winter crop goes in once the water leaves (~${enDate(rules.ready!)}, after BRRI's haor seedbed dates).`);
+      hazard('deep_flooding', ['নিচু জমি: বর্ষায় গভীর পানি', 'Low land: deep monsoon water']);
+    } else if (request.landType === 'medium_low') {
+      notesBangla.push('মাঝারি নিচু জমিতে বর্ষায় পানি জমে: সয়াবিন, মুগ বা তিল টেকে না; আমনে BRRI-র জলমগ্নতা সহনশীল জাত (ব্রি ধান৫১, ৫২, ৭৯) নিরাপদ।');
+      notesEnglish.push("On medium-low land water stands in the monsoon: soybean, mungbean and sesame do not survive; for Aman, BRRI's submergence-tolerant varieties (BRRI dhan51, dhan52, dhan79) are the safe choice.");
+      hazard('submergence', ['বর্ষায় জলমগ্নতা', 'Submergence in the monsoon']);
+    }
+
+    // The haor's flash floods
+    if (flashFloodExposed(request.landType)) {
+      const boro = LOC.rabi['BRRI dhan28'];
+      const late = boro ? flashFloodRisk(boro.harvest) : null;
+      const flood = options[0]?.dimensionDetails.flood?.metrics;
+      const top = flood?.flashFloodCaught !== undefined
+        ? { caught: flood.flashFloodCaught as number, seasons: flood.flashFloodSeasons as number, harvest: flood.flashFloodHarvest as string }
+        : null;
+      const data = profileData().haorFlashFlood;
+      const years = data ? data.floodYears.join(', ') : '';
+      notesBangla.push([
+        `হাওরের আগাম বন্যা: বন্যা পূর্বাভাস কেন্দ্রের জানানো প্রতিটি আগাম বন্যার (${bnDigits(years)}) আগে মেঘালয় পাহাড়ে ৩ দিনে ১০০ মিমি বা বেশি বৃষ্টি হয়েছিল (নাসার GPM IMERG)।`,
+        top ? `প্রথম পছন্দের ফসল কাটা হয় ~${bnDate(top.harvest)}: ${bnDigits(top.seasons)} বছরের ${bnDigits(top.caught)}টিতে তার আগে এমন বৃষ্টি এসেছে।` : '',
+        late && boro ? `১ ফেব্রুয়ারি রোপণ করা ব্রি ধান২৮ (কাটা ~${bnDate(boro.harvest)}) ${bnDigits(late.caught)}টিতে ধরা পড়ত, তাই এত দেরির ফসল দেওয়া হয়নি।` : '',
+        'বোরোর বীজতলা হাওরে ২৫ অক্টোবর–৭ নভেম্বরে দিন (ব্রি ধান১০২, ১১৮), যাতে এপ্রিলের শুরুতে কাটা যায়।',
+      ].filter(Boolean).join(' '));
+      notesEnglish.push([
+        `Haor flash floods: every flash flood FFWC reported (${years}) followed a burst of 100 mm or more in 3 days over the Meghalaya hills (NASA GPM IMERG).`,
+        top ? `The first option is harvested ~${enDate(top.harvest)}: such a burst came before it in ${top.caught} of ${top.seasons} springs.` : '',
+        late && boro ? `BRRI dhan28 transplanted on 1 February (harvest ~${enDate(boro.harvest)}) would have been caught in ${late.caught}, so crops cut that late are not offered.` : '',
+        "BRRI's haor guidance moves the Boro seedbed to 25 October-7 November (BRRI dhan102, dhan118) so the crop is cut in early April.",
+      ].filter(Boolean).join(' '));
+      hazard('flash_flood', ['হাওরের আগাম বন্যা', "The haor's flash floods"]);
+      farmerLineBangla = [farmerLineBangla, 'হাওরের আগাম বন্যার আগে, এপ্রিলের শুরুতে কাটা যায় এমন সময়ে বোরো লাগান।'].filter(Boolean).join(' ');
+      farmerLineEnglish = [farmerLineEnglish, "Plant Boro so it is cut in early April, before the haor's flash floods."].filter(Boolean).join(' ');
+    }
+
+    // Today's NASA reading: a dry start before the winter sowing
+    const current = LOC.conditions.current;
+    const topWinter = options[0]?.cropSequence.find(p => p.seasonType === 'Rabi');
+    // A dry start matters for a winter crop sown on the soil water Aman leaves, not for irrigated Boro
+    if (current?.dryStart && topWinter && topWinter.crop !== 'Boro rice') {
+      const rain = typeof current.rain30PctOfNormal === 'number' ? current.rain30PctOfNormal : null;
+      if (current.sensor === 'SMAP' && typeof current.soilPercentile === 'number') {
+        const pc = Math.round(current.soilPercentile);
+        notesBangla.push(`আজকের নাসা তথ্য (SMAP উপগ্রহ, ${bnDate(current.date.slice(5))}): শিকড়ের স্তরে মাটির রস এই সময়ের হিসাবে ${bnDigits(pc)} পার্সেন্টাইলে, অর্থাৎ বেশির ভাগ বছরের চেয়ে শুকনো${rain !== null ? `; গত ৩০ দিনে বৃষ্টি স্বাভাবিকের ${bnDigits(rain)}%` : ''}। আমন কাটার পর রস ধরে রাখতে দেরি না করে বুনুন।`);
+        notesEnglish.push(`Today's NASA reading (SMAP satellite, ${enDate(current.date.slice(5))}): root-zone soil moisture at the ${ordinal(pc)} percentile for the date, drier than in most years${rain !== null ? `; rain in the last 30 days ${rain}% of normal` : ''}. Sow soon after the Aman harvest, while the field still holds water.`);
+      } else {
+      notesBangla.push(`আজকের নাসা তথ্য (POWER, ${bnDate(current.date.slice(5))}): মাটির রস এই সময়ের গত ${bnDigits(current.soilYears ?? 10)} বছরের ${current.soilRank === 0 ? 'সবচেয়ে কম' : 'তুলনায় কম'}${rain !== null ? `, গত ৩০ দিনে বৃষ্টি স্বাভাবিকের ${bnDigits(rain)}%` : ''}। রবি ফসল আমন কাটার পরপরই বুনুন, দরকারে বোনার আগে হালকা সেচ দিন।`);
+      notesEnglish.push(`Today's NASA reading (POWER, ${enDate(current.date.slice(5))}): soil moisture ${current.soilRank === 0 ? 'the lowest' : 'lower than most'} of the last ${current.soilYears ?? 10} years for the date${rain !== null ? `, rain in the last 30 days at ${rain}% of normal` : ''}. Sow the winter crop right after the Aman harvest, with a light irrigation first if needed; the plan counts about 50 mm more irrigation this year.`);
+      }
+      hazard('dry_start', ['রবির আগে মাটি শুকনো', 'Dry soil before the winter sowing']);
+      farmerLineBangla = [farmerLineBangla, 'এ বছর মাটি শুকনো: রবি ফসল দেরি না করে বুনুন।'].filter(Boolean).join(' ');
+      farmerLineEnglish = [farmerLineEnglish, 'The soil is dry this year: sow the winter crop without delay.'].filter(Boolean).join(' ');
+    }
+
+    // The district's groundwater budget (NASA GRACE via GLDAS, BBS Boro area): the Boro land a water-saving rotation
+    // would need to take over to stop the fall, a floor at GRACE's scale
+    const budget = budgetHere();
+    if (budget?.applies && budget.moveHaToLentil && budget.moveShareToLentil) {
+      const like = topWinter && topWinter.crop !== 'Boro rice' ? { bn: 'এই চক্রের মতো', en: 'like this one' } : { bn: 'মসুর বা সরিষার', en: 'with lentil or mustard' };
+      const ha = Math.round(budget.moveHaToLentil / 100) * 100;
+      const pctMove = Math.max(1, Math.round(budget.moveShareToLentil * 100));
+      notesBangla.push(`নাসার GRACE (GLDAS): এই জেলায় ভূগর্ভস্থ পানি বছরে প্রায় ${bnDigits(Math.abs(budget.trendMmPerYear))} মিমি কমছে। জেলার বোরো জমির প্রায় ${bnDigits(pctMove)}% (${bnDigits(ha.toLocaleString('en-US'))} হেক্টর) ${like.bn} কম-পানির চক্রে গেলে গড় পতন থামে; বরেন্দ্রের মতো সবচেয়ে ক্ষতিগ্রস্ত এলাকার নলকূপে পানি এর চেয়ে দ্রুত নামে, তাই এটি সর্বনিম্ন হিসাব।`);
+      notesEnglish.push(`NASA GRACE (GLDAS-2.2): groundwater under ${budget.district} district falls about ${Math.abs(budget.trendMmPerYear)} mm of water a year. Moving about ${pctMove}% of the district's Boro land (${ha.toLocaleString('en-US')} ha) to a rotation ${like.en} would stop the average fall; wells in the worst-hit areas, such as the Barind, fall faster than the district average, so this is a floor.`);
+    }
+
+    // Soil salinity: SRDI's survey where it covers the upazila, else the coast's winter fallow as a sign of it
+    const sal = local.salinity;
+    if (sal && sal.salineShare >= 0.3) {
+      const winter = CHOICE_CROPS.filter(c => c.season === 'Rabi' && c.aliases.length)
+        .map(c => ({ c, e: salinityEffect(c.id) }))
+        .filter((x): x is { c: ChoiceCrop; e: NonNullable<typeof x.e> } => x.e !== null)
+        .sort((a, b) => b.e.relativeYield - a.e.relativeYield);
+      const best = winter.slice(0, 3);
+      const out = winter.filter(x => x.e.relativeYield < SALT_LIMIT);
+      notesBangla.push([
+        `লবণাক্ততা: SRDI-র ২০০৯ সালের মে মাসের জরিপে এই উপজেলার চাষের জমির ${bnDigits(Math.round(sal.salineShare * 100))}% শুকনো মৌসুমে লবণাক্ত, ${bnDigits(Math.round(sal.strongShare * 100))}% প্রতি মিটারে ৮ ডেসিসিমেন্সের বেশি।`,
+        `সবচেয়ে বেশি ফলন রাখে: ${best.map(x => `${x.c.cropBangla} (~${bnDigits(Math.round(x.e.relativeYield * 100))}%)`).join(', ')} (FAO-61)।`,
+        out.length ? `অর্ধেকের বেশি ফলন হারায় বলে এখানে দেওয়া হয়নি: ${out.map(x => x.c.cropBangla).join(', ')}।` : '',
+        'বোরো করলে ব্রি-র লবণসহিষ্ণু জাত (ব্রি ধান৬৭, ৯৭, ৯৯); নিজের জমির লবণাক্ততা মেপে নিন।',
+      ].filter(Boolean).join(' '));
+      notesEnglish.push([
+        `Salinity: SRDI's May 2009 survey found ${Math.round(sal.salineShare * 100)}% of this upazila's cultivated land saline in the dry season, ${Math.round(sal.strongShare * 100)}% above 8 dS/m.`,
+        `Winter crops that keep the most yield here: ${best.map(x => `${x.c.crop.toLowerCase()} (~${Math.round(x.e.relativeYield * 100)}%)`).join(', ')} (FAO-61 salt tolerance; lentil, grass pea and mustard are not rated there and are taken as moderately sensitive).`,
+        out.length ? `Left out because they would lose half their yield or more: ${out.map(x => x.c.crop.toLowerCase()).join(', ')}.` : '',
+        "For Boro, BRRI's salt-tolerant varieties (BRRI dhan67, 97, 99); have the field's own salinity measured.",
+      ].filter(Boolean).join(' '));
+      hazard('salinity', ['মাটির লবণাক্ততা', 'Soil salinity']);
+      farmerLineBangla = [farmerLineBangla, `জমি লবণাক্ত হলে ${best[0]?.c.cropBangla ?? 'লবণসহিষ্ণু ফসল'} বেশি টেকে।`].filter(Boolean).join(' ');
+      farmerLineEnglish = [farmerLineEnglish, `On salty land ${best[0]?.c.crop.toLowerCase() ?? 'salt-tolerant crops'} holds up best.`].filter(Boolean).join(' ');
+    }
+    const top = local.patterns[0];
+    if (!sal && COASTAL_DISTRICTS.has(LOC.district) && top && top[1] >= CURRENT_PRACTICE_PCT && /^Fallow-Fallow/.test(top[0])) {
+      notesBangla.push(`এখানে বেশিরভাগ জমি শীতে খালি থাকে (BRRI ২০১৪-১৫: ${patternBangla(top[0])} ${bnDigits(Math.round(top[1]))}%); উপকূলে কারণ প্রায়ই মাটির লবণাক্ততা, যা এই হিসাবে এখনো নেই। বোনার আগে জমির লবণাক্ততা মাপান; গবেষণার তালিকায় লবণসহিষ্ণু জাত: বারি সরিষা-১১ ও ১৯, বারি আলু-৭২, বোরোতে ব্রি ধান৬৭, ৯৭ ও ৯৯।`);
+      notesEnglish.push(`Most land here stays empty in winter (BRRI 2014-15: ${top[0]} on ${Math.round(top[1])}%); on the coast that is usually soil salinity, which this plan does not model yet. Have the field's salinity measured before sowing; salt-tolerant varieties in the research tables: BARI Mustard-11 and -19, BARI Potato-72, and BRRI dhan67, dhan97 and dhan99 for Boro.`);
+      hazard('winter_fallow_salinity', ['শীতে জমি খালি: লবণাক্ততা?', 'Winter fallow: salinity?']);
+      farmerLineBangla = [farmerLineBangla, 'শীতে জমি লবণাক্ত হলে আগে মাটি পরীক্ষা করান।'].filter(Boolean).join(' ');
+      farmerLineEnglish = [farmerLineEnglish, 'If the field turns salty in winter, have the soil tested first.'].filter(Boolean).join(' ');
+    }
+
+    const context: LocalContext = {
+      landType: request.landType,
+      landTypeAssumed: assumed,
+      landEvidenceBangla: evidenceBn,
+      landEvidenceEnglish: evidenceEn,
+      diseaseWeather: disease ? { date: disease.date, rules: diseaseRows, method: diseaseData().method } : null,
+      groundwaterBudget: budget ? { ...budget, source: groundwaterBudgetData().source, caution: groundwaterBudgetData().caution } : null,
+      fieldAlerts: field || floodReading ? { through: field?.through ?? null, observedTo: field?.observedTo ?? null, forecastFrom: field?.forecast?.from ?? null, rainSource: field?.rainSource ?? null, floodDate: floodReading?.date ?? null, floodSensor: floodReading ? floodReading.sensor ?? 'opera' : null, drain: floodReading?.drain ?? null, alerts: thisWeek, method: FIELD_ALERT_METHOD } : null,
+      patterns,
+      patternsSource: patterns.length ? profileData().sources.patterns ?? null : null,
+      croppingIntensityPct: local.intensityPct,
+      hazards,
+      alerts: alerts.sort((a, b) => HAZARD_ORDER.indexOf(a.hazard) - HAZARD_ORDER.indexOf(b.hazard)),
+      notesBangla,
+      notesEnglish,
+    };
+    return { context, hazards, notesBangla, notesEnglish, farmerLineBangla, farmerLineEnglish };
+  }
+
   private farmerCard(best: CandidateSpec, alt: CandidateSpec | undefined, stageBangla: string): FarmerCard {
     const mon = monsoonOf(best);
     const aman = mon.aman;
@@ -953,7 +1610,7 @@ export class RotationEngine {
     const perBigha = (kgHa: number) => bnDecimal(kgHa * BIGHA_HA);
     const deadlineText = rabi.sowingWindow ? ` (শেষ সময় ${bnDate(rabi.sowingWindow[1])})` : '';
     const savedM3 = boro.pumpedM3PerHa - rabi.pumpedM3PerHa;
-    const doseSource = (dose as { source?: string }).source?.startsWith('BARI') ? 'BARI হাতবই' : 'SRDI তালন্দ কার্ড';
+    const doseSource = (dose as { source?: string } | null)?.source?.startsWith('BARI') ? 'BARI হাতবই' : 'SRDI তালন্দ কার্ড';
     const k1 = best.kharif1 ? cropSlot(best.kharif1) : undefined;
 
     const altSlot = alt ? cropSlot(alt.rabi) : undefined;
@@ -1003,7 +1660,10 @@ export class RotationEngine {
         variety: rabiName.varietyBangla,
         windowBangla: `${sowWord(rabiName)}: ~${bnDate(rabi.sowing)}${deadlineText} • কাটা: ~${bnDate(rabi.harvest)}`,
         notesBangla: `সেচ লাগে প্রায় ${bnDigits(rabi.netIrrigationMm)} মিমি${rabiName.isLegume ? '; ডাল ফসল মাটিতে নাইট্রোজেন যোগ করে' : ''}`,
-        fertilizerBangla: `প্রতি বিঘায় (৩৩ শতক) ইউরিয়া ${perBigha(dose.ureaKgHa)}, টিএসপি ${perBigha(dose.tspKgHa)}, এমওপি ${perBigha(dose.mopKgHa)} কেজি (${doseSource})`,
+        fertilizerBangla: dose
+          ? `প্রতি বিঘায় (৩৩ শতক) ইউরিয়া ${perBigha(dose.ureaKgHa)}, টিএসপি ${perBigha(dose.tspKgHa)}, এমওপি ${perBigha(dose.mopKgHa)} কেজি (${doseSource})`
+          : NO_SOIL_CARD.bn,
+        ...(dose ? {} : { fertilizerEnglish: NO_SOIL_CARD.en }), // the pilot's card is unchanged; elsewhere the English line too
       },
       alternative: altRabi && altName && alt
         ? {
@@ -1014,9 +1674,11 @@ export class RotationEngine {
             noteBangla: `${altMonsoon}; সেচ প্রায় ${bnDigits(altRabi.netIrrigationMm)} মিমি`,
             marketPriceBangla: 'তথ্য পাওয়া যায়নি',
           }
-        : { name: 'তথ্য পাওয়া যায়নি', categoryBangla: '', sowingBangla: '', yieldBangla: '', noteBangla: '', marketPriceBangla: 'তথ্য পাওয়া যায়নি' },
+        : !landRules(this.landType).aman
+          ? { name: 'বিকল্প নেই', categoryBangla: '', sowingBangla: '', yieldBangla: '', noteBangla: 'নিচু জমিতে পানি নামার পর বোরোই প্রধান ফসল; অন্য ফসল চাইলে নাম বলুন', marketPriceBangla: 'তথ্য পাওয়া যায়নি' }
+          : { name: 'তথ্য পাওয়া যায়নি', categoryBangla: '', sowingBangla: '', yieldBangla: '', noteBangla: '', marketPriceBangla: 'তথ্য পাওয়া যায়নি' },
       narrativeBangla: opening + k1Text,
-      provenanceBangla: `তথ্যসূত্র: নাসা POWER ও GPM IMERG দিয়ে ${bnDigits(aman?.totalSeasons ?? 25)} মৌসুমের পানির হিসাব, SRDI তালন্দ কার্ড, BRRI/BARI সময়সূচি। রিলিজ ${RELEASE.id}।`,
+      provenanceBangla: `তথ্যসূত্র: নাসা POWER ও GPM IMERG দিয়ে ${bnDigits(aman?.totalSeasons ?? 25)} মৌসুমের পানির হিসাব, ${LOC.srdi ? 'SRDI তালন্দ কার্ড, ' : ''}BRRI/BARI সময়সূচি। রিলিজ ${RELEASE.id}।`,
       audioScriptBangla: '',
       audioDurationSeconds: 0,
     };
@@ -1027,7 +1689,15 @@ export class RotationEngine {
     if (!place) {
       throw new UnsupportedUnionError(request.unionId);
     }
-    return withPlace(place, () => this.adviseHere(request));
+    // A dry soil counts only in the run-up to and during the winter sowing (1 September-15 December)
+    const today = request.today ? new Date(request.today) : new Date();
+    const day = seasonDay(isoDate(today).slice(5));
+    const sowingTime = day >= seasonDay('09-01') && day <= seasonDay('12-15');
+    const current = request.currentConditions
+      ? { ...request.currentConditions, dryStart: sowingTime && request.currentConditions.soilStatus === 'dry' }
+      : null;
+    const irrigation = request.irrigation === 'none' ? 'none' : 'available';
+    return withPlace({ ...place, conditions: { ...place.conditions, current, irrigation } }, () => this.adviseHere(request));
   }
 
   /** Advice for the place `LOC` currently points at (see data/location.ts). */
@@ -1035,11 +1705,28 @@ export class RotationEngine {
     const seasonYear = parseSeasonYear(request.season);
     const today = request.today ? new Date(request.today) : new Date();
 
+    const rules = landRules(request.landType);
     const wantsChoice = Boolean(request.preferredCrops?.length || request.heroCrop || request.avoidCrops?.length);
-    const choice = wantsChoice ? this.choicePlans(request, seasonYear) : null;
+    // Outside the pilot, and wherever the land rules Aman out, the year is planned from every crop the engine knows
+    // that fits this place's land and calendar; the pilot keeps its five researched rotations.
+    const planLocally = !wantsChoice && (LOC.kind !== 'pilot' || !rules.aman || request.irrigation === 'none');
+    this.landType = request.landType;
+    // Land under deep monsoon water grows Boro (BRRI's survey: Boro-Fallow-Fallow on most of it), so the plan holds
+    // Boro, the haor-safe early one where the flash floods come; other winter crops come in when the farmer names them
+    const choice = wantsChoice ? this.choicePlans(request, seasonYear)
+      : planLocally ? this.choicePlans(rules.aman ? request : { ...request, heroCrop: 'boro' }, seasonYear, true)
+        : null;
     const useChoice = Boolean(choice && choice.options.length);
-    const specs = useChoice ? choice!.specs : CANDIDATES;
-    const options = useChoice ? choice!.options : this.rank(CANDIDATES, request, seasonYear);
+    let specs = useChoice ? choice!.specs : CANDIDATES;
+    let options = useChoice ? choice!.options : this.rank(CANDIDATES, request, seasonYear);
+    if (planLocally && useChoice) ({ specs, options } = this.withCurrentPractice(specs, options, request, seasonYear, rules));
+    let currentRotationNote: { bn: string; en: string } | null = null;
+    if (request.currentRotation?.winter) {
+      const mine = this.withFarmerRotation(specs, options, request, seasonYear, rules);
+      ({ specs, options } = mine);
+      currentRotationNote = mine.note;
+    }
+    ({ specs, options } = this.atLeastThree(specs, options, request, seasonYear));
 
     const bestSpec = specs.find(c => c.id === options[0].id)!;
     const altSpec = options[1] ? specs.find(c => c.id === options[1].id) : undefined;
@@ -1052,8 +1739,9 @@ export class RotationEngine {
     const boro = LOC.rabi['BRRI dhan28'];
     const smap = LOC.conditions.smap;
     const landBangla = LAND_TYPE_BANGLA[request.landType] ?? '';
-    const asked = useChoice ? choice!.result.requested : [];
-    const hero = useChoice ? choice!.result.heroCrop : null;
+    const asked = useChoice && wantsChoice ? choice!.result.requested : [];
+    const hero = useChoice && wantsChoice ? choice!.result.heroCrop : null;
+    const local = this.localContext(request, rules, options, bestSpec);
     const heroName = hero ? asked.find(a => a.id === hero) : undefined;
 
     const monsoonLineBangla = aman && amanName
@@ -1074,6 +1762,7 @@ export class RotationEngine {
       k1 ? `তারপর ${aman ? 'আমনের' : 'বর্ষার'} আগে ${k1.catalog.cropInBangla} ${bnIrrigation(k1.record.netIrrigationMm)}।` : '',
       heroName ? `প্রধান ফসল ${heroName.cropBangla} ধরে পুরো বছর সাজানো হয়েছে।` : '',
       asked.length && !heroName ? `আপনার পছন্দ (${asked.map(a => a.cropBangla).join(', ')}) ধরে হিসাব করা হয়েছে।` : '',
+      local.farmerLineBangla,
     ].filter(Boolean).join(' ');
 
     const farmerSummaryEnglish = [
@@ -1084,6 +1773,7 @@ export class RotationEngine {
       k1 ? `Then ${k1.catalog.crop.toLowerCase()} before ${aman ? 'Aman' : 'the monsoon'} needs ${k1.record.netIrrigationMm < 20 ? 'almost no irrigation' : `about ${k1.record.netIrrigationMm} mm`}.` : '',
       heroName ? `The whole year is planned around the main crop, ${heroName.cropEnglish.toLowerCase()}.` : '',
       asked.length && !heroName ? `Planned around the farmer's choice: ${asked.map(a => a.cropEnglish.toLowerCase()).join(', ')}.` : '',
+      local.farmerLineEnglish,
     ].filter(Boolean).join(' ');
 
     const choiceNote = (key: string | undefined) => {
@@ -1091,33 +1781,54 @@ export class RotationEngine {
       const { record, catalog } = cropSlot(key);
       const facts = replayFacts(choiceIdOf(key))!;
       const heat = record.heat ? `, ${record.heat.hotDays} of ${record.heat.windowDays} days above ${record.heat.thresholdC} C at ${record.heat.stage}${facts.heat?.assumed ? ' (assumed limit)' : ''}` : '';
-      return `${catalog.crop} sown ${enDate(record.sowing)} (crop-choice replay, ${choiceReplay().seasons}): net irrigation ~${record.netIrrigationMm} mm (p10-p90 ${record.netIrrigationRangeMm[0]}-${record.netIrrigationRangeMm[1]})${heat}; fertilizer from the ${(record.fertilizer as { source?: string }).source ?? 'SRDI Talanda card'}.`;
+      return `${catalog.crop} sown ${enDate(record.sowing)} (crop-choice replay, ${choiceReplay().seasons}): net irrigation ~${record.netIrrigationMm} mm (p10-p90 ${record.netIrrigationRangeMm[0]}-${record.netIrrigationRangeMm[1]})${heat}${record.fertilizer ? `; fertilizer from the ${(record.fertilizer as { source?: string }).source ?? 'SRDI Talanda card'}` : '; no fertilizer advice (no SRDI soil card for this area)'}.`;
     };
     const saaoNotes = [
       aman
-        ? `Talanda (Tanore) replay ${RELEASE.seasons} with NASA POWER ET0 and GPM IMERG Final rain: ${bestSpec.aman} flowers ~${enDate(aman.flowering)} and needed rescue irrigation at flowering in ${aman.rescueSeasons} of ${aman.totalSeasons} seasons; field free ~${enDate(aman.fieldFree)}.`
+        ? `${LOC.kind === 'pilot' ? 'Talanda (Tanore)' : `${LOC.district} district`} replay ${RELEASE.seasons} with NASA POWER ET0 and GPM IMERG Final rain: ${bestSpec.aman} flowers ~${enDate(aman.flowering)} and needed rescue irrigation at flowering in ${aman.rescueSeasons} of ${aman.totalSeasons} seasons; field free ~${enDate(aman.fieldFree)}.`
         : 'No Aman in the top option: the monsoon slot holds another crop or stands empty.',
       `${rabiName.crop} net irrigation ~${rabi.netIrrigationMm} mm (p10-p90 ${rabi.netIrrigationRangeMm[0]}-${rabi.netIrrigationRangeMm[1]}) against ~${boro.netIrrigationMm} mm for Boro.`,
-      useChoice ? choiceNote(bestSpec.kharif2) : '',
-      useChoice ? choiceNote(bestSpec.rabi) : '',
-      useChoice ? choiceNote(bestSpec.kharif1) : '',
+      choiceNote(bestSpec.kharif2),
+      choiceNote(bestSpec.rabi),
+      choiceNote(bestSpec.kharif1),
       smap ? `SMAP L4 root zone around 10 Nov (${smap.nov10Years.join(', ')}): ${smap.nov10TypicalM3M3} m3/m3.` : '',
       LOC.conditions.groundwater ? `GLDAS-2.2 groundwater at ${LOC.upazila}: ${LOC.conditions.groundwater.trendMmPerYear} mm/yr (${LOC.conditions.groundwater.changeMm} mm, ${LOC.conditions.groundwater.period}).` : '',
       LOC.kind === 'pilot' ? '' : LOC.dataNote,
-      `Income scores are illustrative team estimates. Release ${RELEASE.id} (research ${RELEASE.researchCommit}).`,
+      ...local.notesEnglish,
+      `Income scores are illustrative team estimates moved by district yields. Release ${RELEASE.id} (research ${RELEASE.researchCommit}).`,
     ].filter(Boolean).join(' ');
 
     const stale: AdviceJSON['stale_or_missing_inputs'] = [
       { dataset: 'DAM farm-gate prices and farmer cost survey', issue: 'Not collected yet; income uses illustrative team estimates', affectedDimension: 'income' },
       { dataset: 'Farmer interviews in Talanda', issue: 'Priority weights are defaults until interviews', affectedDimension: 'all' },
-      { dataset: 'Flood model for Barind land', issue: 'Not modelled; land-type assumption from the SRDI card', affectedDimension: 'flood' },
+      LOC.srdi
+        ? { dataset: 'Flood model for Barind land', issue: 'Not modelled; land-type assumption from the SRDI card', affectedDimension: 'flood' }
+        : { dataset: 'River flood model', issue: request.landTypeAssumed ? 'Not modelled; the land type is the upazila default from NASA NASADEM, Landsat and BRRI\'s survey, and a farm may differ' : 'Not modelled; the land type is the farmer\'s', affectedDimension: 'flood' },
     ];
+    if (!LOC.srdi) {
+      stale.push({ dataset: 'SRDI soil card (fertilizer)', issue: 'No soil card for this area: no fertilizer advice, and the pest score is partial (no nitrogen term), not comparable with the pilot\'s', affectedDimension: 'pest' });
+    }
+    if (local.hazards.includes('winter_fallow_salinity')) {
+      stale.push({ dataset: 'Soil salinity', issue: 'Not modelled; most land here stays fallow in winter, often because of salinity', affectedDimension: 'all' });
+    }
+    if (local.hazards.includes('salinity')) {
+      stale.push({ dataset: 'Soil salinity', issue: "SRDI's 2009 upazila classes, not this field: a field's own salinity may differ, so test it", affectedDimension: 'income' });
+    }
     if (useChoice) {
       stale.push({ dataset: 'Heat limits for crops outside crop_parameters.csv', issue: 'Literature values, marked as assumed in the crop-choice replay', affectedDimension: 'heat' });
     }
 
     const askedCrops = [...(request.heroCrop ? [request.heroCrop] : []), ...(request.preferredCrops ?? [])]
       .map(id => CHOICE_BY_ID[String(id).toLowerCase()]).filter(Boolean);
+    const reference = reviewOptions(options, {
+      priorities: request.farmerPriorities as Record<string, number | undefined>,
+      constraints: request.constraints,
+      landTypeAssumed: Boolean(request.landTypeAssumed),
+      soilCard: Boolean(LOC.srdi),
+      defaultPriorities: Boolean(request.defaultPriorities),
+      groundwaterFalling: (LOC.conditions.groundwater?.trendMmPerYear ?? 0) < 0,
+    });
+    const scenario = request.scenario;
     return {
       schema_version: '1.0',
       advice_id: `adv_${Date.now()}_${request.unionId}`,
@@ -1140,12 +1851,18 @@ export class RotationEngine {
       farmer_summary_english: farmerSummaryEnglish,
       saao_technical_notes: saaoNotes,
       verification: null,
-      this_season: thisSeasonFit(request.currentAmanCrop, askedCrops),
+      this_season: rules.aman ? thisSeasonFit(request.currentAmanCrop, askedCrops) : null, // no Aman stands on low land
       this_season_option_id: request.currentAmanCrop
         ? options.find(o => o.cropSequence[0].variety === request.currentAmanCrop)?.id ?? null
         : null,
       farmer_card: this.farmerCard(bestSpec, altSpec, aman ? amanStageBangla(aman, today, seasonYear) : ''),
-      ...(choice ? { crop_choice: choice.result } : {}),
+      ...(choice && wantsChoice ? { crop_choice: choice.result } : {}),
+      local_context: local.context,
+      reference_option_id: reference?.id ?? null,
+      current_rotation_note: currentRotationNote,
+      season_calendar: calendarSummary(),
+      what_if: scenario && (scenario.rainPct || scenario.warmingC) ? whatIf(options, scenario.rainPct ?? 0, scenario.warmingC ?? 0) : null,
+      disclaimer: DISCLAIMER,
     };
   }
 }

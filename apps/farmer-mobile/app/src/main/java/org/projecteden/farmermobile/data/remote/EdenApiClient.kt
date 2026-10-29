@@ -15,8 +15,14 @@ import org.projecteden.farmermobile.data.model.ForecastResponse
 import org.projecteden.farmermobile.data.model.LocationCatalog
 import org.projecteden.farmermobile.data.model.ObservationResponse
 
-/** The rotation engine only models this one pilot union (Talanda, Tanore); the Today screen is pilot-site advice. */
+/**
+ * The detailed pilot (Talanda union, Tanore). Advice goes to the upazila nearest the farmer's saved location
+ * (see location/AdvicePlace.kt) and falls back to the pilot when no location is saved or the server cannot say.
+ */
 const val PILOT_UNION_ID = "talanda_tanore"
+
+/** One of the 544 upazilas the rotation engine plans for (geoBoundaries ids, e.g. ADM3_Khaliajuri). */
+data class AdvicePlace(val id: String, val name: String, val district: String)
 
 /** The server's farmer card for the top-ranked rotation (see FarmerCard in packages/contracts). */
 data class RemoteAdviceResponse(
@@ -97,6 +103,15 @@ data class RemoteAuthResponse(
     val blockOrVillage: String,
     val landType: String?,
     val currentAmanCrop: String?
+)
+
+/** A farmer's question to their SAAO (GET/POST /api/v1/farmer/questions); the answer comes back as a call. */
+data class RemoteFarmerQuestion(
+    val id: String,
+    val askedAt: String,
+    val status: String, // open, answered, called
+    val textBangla: String,
+    val answerBangla: String?
 )
 
 data class RemoteAiResponse(
@@ -254,13 +269,21 @@ open class EdenApiClient(
         }
     }
 
+    /** The engine's upazila nearest a point, from the daily NASA file (`/api/v1/live/upazila?lat=&lon=`). */
+    open suspend fun nearestAdvicePlace(lat: Double, lon: Double): Result<AdvicePlace> =
+        sendRequest("/api/v1/live/upazila?${coords(lat, lon)}").mapCatching { body ->
+            val j = JSONObject(body)
+            AdvicePlace(j.getString("id"), j.optString("name"), j.optString("district"))
+        }
+
     suspend fun fetchAdvice(
         landType: String = "medium_high",
         waterWeight: Double = 0.5,
         incomeWeight: Double = 0.3,
-        soilWeight: Double = 0.2
+        soilWeight: Double = 0.2,
+        unionId: String = PILOT_UNION_ID
     ): Result<RemoteAdviceResponse> = withContext(Dispatchers.IO) {
-        val payload = """{"unionId":"$PILOT_UNION_ID","landType":"${escapeJson(landType)}","farmerPriorities":{"water":$waterWeight,"income":$incomeWeight,"soil":$soilWeight}}"""
+        val payload = """{"unionId":"${escapeJson(unionId)}","landType":"${escapeJson(landType)}","farmerPriorities":{"water":$waterWeight,"income":$incomeWeight,"soil":$soilWeight}}"""
         val res = sendRequest("/api/v1/advice", method = "POST", bodyJson = payload)
         res.mapCatching { body ->
             val json = JSONObject(body)
@@ -397,6 +420,30 @@ open class EdenApiClient(
     suspend fun logout(token: String): Result<Boolean> = withContext(Dispatchers.IO) {
         val res = sendRequest("/api/v1/auth/logout", method = "POST", authToken = token)
         res.mapCatching { true }
+    }
+
+    private fun question(json: JSONObject) = RemoteFarmerQuestion(
+        id = json.getString("id"),
+        askedAt = json.optString("askedAt", ""),
+        status = json.optString("status", "open"),
+        textBangla = json.optString("textBangla", ""),
+        answerBangla = if (json.isNull("answerBangla")) null else json.optString("answerBangla")
+    )
+
+    /** The signed-in farmer's questions to their SAAO, newest first. */
+    suspend fun myQuestions(token: String): Result<List<RemoteFarmerQuestion>> = withContext(Dispatchers.IO) {
+        sendRequest("/api/v1/farmer/questions", authToken = token).mapCatching { body ->
+            val list = JSONObject(body).optJSONArray("questions") ?: JSONArray()
+            (0 until list.length()).map { question(list.getJSONObject(it)) }
+        }
+    }
+
+    /** Sends a question to the farmer's SAAO, who checks the answer; the answer then comes as a phone call. */
+    suspend fun askOfficer(token: String, textBangla: String): Result<RemoteFarmerQuestion> = withContext(Dispatchers.IO) {
+        val payload = JSONObject().put("textBangla", textBangla).toString()
+        sendRequest("/api/v1/farmer/questions", method = "POST", authToken = token, bodyJson = payload).mapCatching { body ->
+            question(JSONObject(body).getJSONObject("question"))
+        }
     }
 
     /** POST /api/v1/voice/answer. If the configured shared API lacks this optional route, callers can fall back to /ai/ask. */

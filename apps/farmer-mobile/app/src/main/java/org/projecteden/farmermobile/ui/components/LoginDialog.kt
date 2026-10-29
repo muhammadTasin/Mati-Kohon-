@@ -1,5 +1,7 @@
 package org.projecteden.farmermobile.ui.components
 
+import org.projecteden.farmermobile.theme.EdenShape
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -86,7 +88,7 @@ fun LoginDialog(
                         modifier = Modifier.size(28.dp)
                     )
                     Text(
-                        text = "প্রজেক্ট ইডেন সাইন-ইন",
+                        text = "মাটি কহন সাইন-ইন",
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = OnSurface
@@ -265,7 +267,7 @@ fun LoginDialog(
                     horizontalArrangement = Arrangement.End,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(onClick = onDismiss, enabled = !isLoading) {
+                    TextButton(onClick = onDismiss, enabled = !isLoading, shape = EdenShape) {
                         Text("বাতিল")
                     }
                     Spacer(modifier = Modifier.width(8.dp))

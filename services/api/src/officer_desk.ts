@@ -6,9 +6,13 @@
  *  - An officer's observation "describes" the farmer's field (land type, the Aman variety in the ground,
  *    irrigation, pests, priorities). It takes priority over defaults when that farmer's advice is built.
  *  - Farmers reach the desk by pressing 9 in the IVR call; that request tops the officer's queue.
+ *  - The farmer register behind the advice calls (farmer_calls.ts): the officer registers a farmer with their union,
+ *    land, crops and call time only after the farmer agrees to the calls; a farmer can stop them at any time. Phone
+ *    numbers stay in the store's `phones` map and never leave the server; screens get the masked number.
  *
- * Demo only: the access code is a shared demo secret (EDEN_OFFICER_CODE, default in the README) and the store
- * is a JSON file under services/api/.data/ (git-ignored). Farmers here are sample records, not real people.
+ * Real officer sign-in is Supabase Auth (auth.ts). The shared access code below is the demo login: it works only when
+ * DEMO_MODE=true and EDEN_OFFICER_CODE is set (there is no built-in default). The store is a JSON file under
+ * services/api/.data/ (git-ignored). Farmers here are sample records, not real people.
  */
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -16,6 +20,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type {
   CallbackRequest,
+  CallSlot,
+  FarmerConsent,
   FarmerRecord,
   FieldObservation,
   LandType,
@@ -25,15 +31,53 @@ import type {
 } from '@project-eden/contracts';
 import type { PlanOptionsRequest } from '../../../packages/rotation-engine/src/engine.ts';
 import { thisSeasonFit } from '../../../packages/rotation-engine/src/engine.ts';
-import { LOC } from '../../../packages/rotation-engine/src/data/location.ts';
+import { LOC, placeFor } from '../../../packages/rotation-engine/src/data/location.ts';
+import { CHOICE_CROPS } from '../../../packages/rotation-engine/src/data/crop_choice.ts';
+import { bdMobile } from './awaj.ts';
+import { normalizeSite } from './sites.ts';
 import { FORBIDDEN_TERMS } from '../../../packages/narration-core/src/dual_gate_validator.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const STORE_FILE = process.env.EDEN_OFFICER_STORE || path.resolve(__dirname, '../.data/officer_store.json');
-const ACCESS_CODE = process.env.EDEN_OFFICER_CODE || 'talanda-demo';
 
-export const OFFICERS = [
-  { id: 'saao_talanda_01', nameBangla: 'নমুনা কর্মকর্তা (SAAO)', nameEnglish: 'Sample officer (SAAO)', blockBangla: 'তালন্দ ব্লক', blockEnglish: 'Talanda block' },
+/** The demo officer login is off unless DEMO_MODE=true. */
+export function demoEnabled(): boolean {
+  return process.env.DEMO_MODE === 'true';
+}
+
+/** The shared demo access code, or '' when none is configured (then the demo login stays closed). */
+function demoAccessCode(): string {
+  return process.env.EDEN_OFFICER_CODE ?? '';
+}
+
+if (demoEnabled() && !demoAccessCode()) {
+  console.warn('DEMO_MODE=true but EDEN_OFFICER_CODE is not set: the demo officer login stays disabled.');
+}
+
+/** Desk records written before sites existed belong to the pilot site. */
+const DEFAULT_SITE = 'talanda';
+const siteOfFarmer = (farmer: FarmerRecord): string => normalizeSite(farmer.site ?? DEFAULT_SITE) ?? DEFAULT_SITE;
+
+/**
+ * A site as the desk compares it: undefined stays "no officer, every site" (farmer-facing callers), null and an empty or unknown site
+ * match nothing, anything else is normalised (trim, lower case, aliases such as "tanore" -> "talanda") on both sides of the comparison.
+ */
+function scopeOf(site: string | null | undefined): string | null | undefined {
+  return site === undefined ? undefined : normalizeSite(site);
+}
+
+/** An officer as the desk sees them: a demo account or a Supabase user (site comes from app_metadata.site). */
+export interface Officer {
+  id: string;
+  nameBangla: string;
+  nameEnglish: string;
+  blockBangla: string;
+  blockEnglish: string;
+  site?: string;
+}
+
+export const OFFICERS: Officer[] = [
+  { id: 'saao_talanda_01', nameBangla: 'নমুনা কর্মকর্তা (SAAO)', nameEnglish: 'Sample officer (SAAO)', blockBangla: 'তালন্দ ব্লক', blockEnglish: 'Talanda block', site: 'talanda' },
 ];
 
 export const PEST_NAMES: Record<PestSeen, { bn: string; en: string }> = {
@@ -48,33 +92,60 @@ export const PEST_NAMES: Record<PestSeen, { bn: string; en: string }> = {
 const LAND_TYPES: LandType[] = ['high', 'medium_high', 'medium_low', 'low', 'very_low'];
 const IRRIGATION: FieldObservation['irrigation'][] = ['rainfed', 'shallow_tube_well', 'deep_tube_well'];
 const SEVERITY = ['low', 'medium', 'high'] as const;
+export const CALL_SLOTS: CallSlot[] = ['morning', 'afternoon', 'evening'];
+const CONSENT_METHODS: FarmerConsent['method'][] = ['in_person', 'phone', 'app'];
+/** The crops a farmer can register: Aman and every crop on the crop menu. */
+export const REGISTER_CROPS = ['aman', ...CHOICE_CROPS.map(c => c.id)];
 
 interface Store {
   farmers: FarmerRecord[];
   observations: FieldObservation[];
   callbacks: CallbackRequest[];
+  /** farmer id -> 01XXXXXXXXX; sample farmers have none and are never dialled. */
+  phones?: Record<string, string>;
 }
 
-function seedStore(): Store {
-  const farmer = (n: string, landType: LandType, currentAmanCrop: string, irrigation: FarmerRecord['irrigation']): FarmerRecord => ({
+function seedFarmers(): FarmerRecord[] {
+  const bn = (n: string) => n.replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[Number(d)]);
+  const farmer = (n: string, landType: LandType, currentAmanCrop: string, irrigation: FarmerRecord['irrigation'],
+    crops: string[], callSlot: CallSlot, where: Partial<FarmerRecord> = {}): FarmerRecord => ({
     id: `F${n}`,
-    nameBangla: `নমুনা কৃষক ${n.replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[Number(d)])}`,
+    nameBangla: `নমুনা কৃষক ${bn(n)}`,
     nameEnglish: `Sample farmer ${n}`,
-    villageBangla: `নমুনা গ্রাম ${n.replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[Number(d)])}`,
+    villageBangla: `নমুনা গ্রাম ${bn(n)}`,
     villageEnglish: `Sample village ${n}`,
     phoneMasked: `017XX-XXX${n}`,
     landType,
     currentAmanCrop,
     irrigation,
     sample: true,
+    site: DEFAULT_SITE,
+    placeId: 'talanda_tanore',
+    unionBangla: 'তালন্দ',
+    unionEnglish: 'Talanda',
+    crops,
+    callSlot,
+    consent: { date: '2026-09-20T09:00:00.000Z', takenBy: 'saao_talanda_01', method: 'sample' },
+    optedOut: null,
+    registeredAt: '2026-09-20T09:00:00.000Z',
+    registeredBy: 'saao_talanda_01',
+    ...where,
   });
+  // Two haor farmers on low land in Bajitpur (Kishoreganj), where NISAR radar sees the monsoon water leaving
+  const haor = { placeId: 'ADM3_Bajitpur', unionBangla: 'নমুনা', unionEnglish: 'Sample' };
+  return [
+    farmer('01', 'medium_high', 'BRRI dhan71', 'deep_tube_well', ['aman', 'lentil'], 'evening'),
+    farmer('02', 'high', 'BRRI dhan49', 'shallow_tube_well', ['aman', 'mustard', 'boro'], 'morning'),
+    farmer('03', 'medium_high', 'BRRI dhan75', 'rainfed', ['aman', 'wheat'], 'evening'),
+    farmer('04', 'medium_low', 'BRRI dhan49', 'deep_tube_well', ['aman', 'boro'], 'afternoon'),
+    farmer('05', 'low', 'BRRI dhan49', 'shallow_tube_well', ['boro'], 'evening', haor),
+    farmer('06', 'very_low', 'BRRI dhan49', 'shallow_tube_well', ['boro'], 'morning', haor),
+  ];
+}
+
+function seedStore(): Store {
   return {
-    farmers: [
-      farmer('01', 'medium_high', 'BRRI dhan71', 'deep_tube_well'),
-      farmer('02', 'high', 'BRRI dhan49', 'shallow_tube_well'),
-      farmer('03', 'medium_high', 'BRRI dhan75', 'rainfed'),
-      farmer('04', 'medium_low', 'BRRI dhan49', 'deep_tube_well'),
-    ],
+    farmers: seedFarmers(),
     observations: [
       {
         id: 'obs_seed_01',
@@ -93,12 +164,19 @@ function seedStore(): Store {
     callbacks: [
       { id: 'cb_seed_04', farmerId: 'F04', channel: 'ivr_keypad_9', createdAt: '2026-09-29T08:30:00.000Z', status: 'open' },
     ],
+    phones: {},
   };
 }
 
 function loadStore(): Store {
   try {
-    return JSON.parse(fs.readFileSync(STORE_FILE, 'utf8')) as Store;
+    const saved = JSON.parse(fs.readFileSync(STORE_FILE, 'utf8')) as Store;
+    // The untouched demo store from before the register (only the four sample farmers): this release's samples.
+    // Any other store is left as it is, so no site's farmers are ever replaced.
+    const untouchedDemo = saved.farmers.map(f => f.id).sort().join(',') === 'F01,F02,F03,F04' && saved.farmers.every(f => f.sample && !f.crops);
+    if (untouchedDemo) saved.farmers = seedFarmers();
+    saved.phones ??= {};
+    return saved;
   } catch {
     return seedStore();
   }
@@ -113,11 +191,25 @@ function save(): void {
 }
 
 /** Restore the sample data (used by tests and before a demo recording). */
-export function resetDesk(): void {
+export function resetDesk(rawSite?: string | null): void {
   const fresh = seedStore();
-  store.farmers = fresh.farmers;
-  store.observations = fresh.observations;
-  store.callbacks = fresh.callbacks;
+  const site = scopeOf(rawSite);
+  if (site === null) return; // an empty or missing site resets nothing
+  if (site === undefined) {
+    store.farmers = fresh.farmers;
+    store.observations = fresh.observations;
+    store.callbacks = fresh.callbacks;
+    store.phones = fresh.phones;
+  } else {
+    // only this site's records are replaced by the seed; other sites' desks are never touched
+    const mine = new Set(store.farmers.filter(f => siteOfFarmer(f) === site).map(f => f.id));
+    const seeded = fresh.farmers.filter(f => siteOfFarmer(f) === site);
+    const seededIds = new Set(seeded.map(f => f.id));
+    store.farmers = [...store.farmers.filter(f => !mine.has(f.id)), ...seeded];
+    store.observations = [...store.observations.filter(o => !mine.has(o.farmerId)), ...fresh.observations.filter(o => seededIds.has(o.farmerId))];
+    store.callbacks = [...store.callbacks.filter(c => !mine.has(c.farmerId)), ...fresh.callbacks.filter(c => seededIds.has(c.farmerId))];
+    store.phones = Object.fromEntries(Object.entries(store.phones ?? {}).filter(([id]) => !mine.has(id)));
+  }
   save();
 }
 
@@ -135,10 +227,12 @@ export interface AuthUser {
 
 const userSessions = new Map<string, AuthUser>();
 
-export function login(officerId: string, accessCode: string): { token: string; officer: (typeof OFFICERS)[number] } | null {
+export function login(officerId: string, accessCode: string): { token: string; officer: Officer } | null {
+  const code = demoAccessCode();
+  if (!demoEnabled() || !code) return null;
   const officer = OFFICERS.find(o => o.id === officerId);
   const given = Buffer.from(String(accessCode ?? ''));
-  const expected = Buffer.from(ACCESS_CODE);
+  const expected = Buffer.from(code);
   if (!officer || given.length !== expected.length || !crypto.timingSafeEqual(given, expected)) return null;
   const token = crypto.randomUUID();
   sessions.set(token, officer.id);
@@ -223,7 +317,8 @@ export function logout(authorization: string | undefined): boolean {
   return true;
 }
 
-export function officerForToken(authorization: string | undefined) {
+export function officerForToken(authorization: string | undefined): Officer | null {
+  if (!demoEnabled()) return null;
   const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : '';
   const officerId = token ? sessions.get(token) : undefined;
   return officerId ? OFFICERS.find(o => o.id === officerId) ?? null : null;
@@ -239,12 +334,16 @@ export function latestObservation(farmerId: string): FieldObservation | undefine
     .sort((a, b) => b.date.localeCompare(a.date))[0];
 }
 
-export function farmers(): FarmerRecord[] {
-  return store.farmers;
+/** The farmers of one site; with no site, all of them (farmer-facing code that has no officer). A manager without a site sees none. */
+export function farmers(rawSite?: string | null): FarmerRecord[] {
+  const site = scopeOf(rawSite);
+  return site === undefined ? store.farmers : store.farmers.filter(f => site !== null && siteOfFarmer(f) === site);
 }
 
-export function callbacks(): CallbackRequest[] {
-  return store.callbacks;
+export function callbacks(rawSite?: string | null): CallbackRequest[] {
+  if (rawSite === undefined) return store.callbacks;
+  const ids = new Set(farmers(rawSite).map(f => f.id));
+  return store.callbacks.filter(c => ids.has(c.farmerId));
 }
 
 /**
@@ -258,9 +357,22 @@ export function planRequestForFarmer(farmerId: string, base: PlanOptionsRequest)
   return {
     ...base,
     landType: obs?.landType ?? farmer.landType,
+    landTypeAssumed: false,
     currentAmanCrop: obs?.currentAmanCrop ?? farmer.currentAmanCrop,
     farmerPriorities: obs ? { ...obs.priorities } : base.farmerPriorities,
+    defaultPriorities: obs ? false : base.defaultPriorities,
+    currentRotation: base.currentRotation ?? rotationFromCrops(farmer.crops),
   };
+}
+
+/** The register's crops this year as the farmer's rotation now: the monsoon crop, the winter crop, a summer crop. */
+export function rotationFromCrops(crops: string[] | undefined): PlanOptionsRequest['currentRotation'] {
+  if (!crops?.length) return undefined;
+  const season = (id: string) => CHOICE_CROPS.find(c => c.id === id)?.season;
+  const winter = crops.find(c => season(c) === 'Rabi');
+  if (!winter) return undefined;
+  const monsoon = crops.includes('aman') ? 'aman' : crops.find(c => season(c) === 'Kharif-2' || season(`${c}_k2`) === 'Kharif-2') ?? 'fallow';
+  return { monsoon, winter, summer: crops.find(c => season(c) === 'Kharif-1') ?? null };
 }
 
 export function verificationFor(farmerId: string): OfficerVerification | null {
@@ -286,8 +398,9 @@ export function requestCallback(farmerId: string, channel: CallbackRequest['chan
   return request;
 }
 
-export function resolveCallback(callbackId: string): CallbackRequest | null {
-  const request = store.callbacks.find(c => c.id === callbackId);
+/** Resolves a call-back. With `site`, only a call-back of that site's farmers can be resolved (another site's id is "not found"). */
+export function resolveCallback(callbackId: string, site?: string | null): CallbackRequest | null {
+  const request = callbacks(site).find(c => c.id === callbackId);
   if (!request) return null;
   request.status = 'done';
   save();
@@ -295,9 +408,10 @@ export function resolveCallback(callbackId: string): CallbackRequest | null {
 }
 
 /** Validates and stores an officer's field observation; returns an error message instead when invalid. */
-export function addObservation(officerId: string, body: any): { observation?: FieldObservation; error?: string } {
+export function addObservation(officerId: string, body: any, rawSite?: string | null): { observation?: FieldObservation; error?: string } {
+  const site = scopeOf(rawSite);
   const farmer = farmerById(String(body.farmerId ?? ''));
-  if (!farmer) return { error: 'Unknown farmer' };
+  if (!farmer || (site !== undefined && (site === null || siteOfFarmer(farmer) !== site))) return { error: 'Unknown farmer' };
   if (!LAND_TYPES.includes(body.landType)) return { error: 'landType must be one of ' + LAND_TYPES.join(', ') };
   if (!LOC.aman[body.currentAmanCrop]) return { error: 'currentAmanCrop must be a variety in the research release' };
   if (!IRRIGATION.includes(body.irrigation)) return { error: 'irrigation must be one of ' + IRRIGATION.join(', ') };
@@ -331,8 +445,8 @@ export function addObservation(officerId: string, body: any): { observation?: Fi
 }
 
 /** Farmers ranked by how much they need the officer now, with the reasons in Bangla and English. */
-export function queue(): OfficerQueueItem[] {
-  return store.farmers
+export function queue(site?: string | null): OfficerQueueItem[] {
+  return farmers(site)
     .map(farmer => {
       const obs = latestObservation(farmer.id);
       const reasons: OfficerQueueItem['reasons'] = [];
@@ -344,7 +458,7 @@ export function queue(): OfficerQueueItem[] {
         reasons.push({ bn: 'কৃষক কর্মকর্তার সাথে কথা বলতে চেয়েছেন (কিপ্যাড ৯)', en: 'Farmer asked for a call back (keypad 9)' });
       }
 
-      const fit = thisSeasonFit(obs?.currentAmanCrop ?? farmer.currentAmanCrop);
+      const fit = !farmer.crops || farmer.crops.includes('aman') ? thisSeasonFit(obs?.currentAmanCrop ?? farmer.currentAmanCrop) : null;
       if (fit) {
         const pulseOrOil = fit.crops.filter(c => c.cropEnglish === 'Lentil' || c.cropEnglish === 'Mustard');
         if (pulseOrOil.length && pulseOrOil.every(c => !c.fits)) {
@@ -373,4 +487,92 @@ export function queue(): OfficerQueueItem[] {
       return { farmerId: farmer.id, score, level, reasons, openCallbackId: callback?.id ?? null };
     })
     .sort((a, b) => b.score - a.score);
+}
+
+// ------------------------------------------------------------------ the register behind the advice calls
+const text = (v: unknown, max: number) => String(v ?? '').trim().replace(/\s+/g, ' ').slice(0, max);
+
+export function phoneOf(farmerId: string): string | null {
+  return store.phones?.[farmerId] ?? null;
+}
+
+export function farmerByPhone(phone: string): FarmerRecord | undefined {
+  const mobile = bdMobile(phone);
+  const id = mobile ? Object.entries(store.phones ?? {}).find(([, p]) => p === mobile)?.[0] : undefined;
+  return id ? farmerById(id) : undefined;
+}
+
+/** Farmers who agreed to the calls and have not stopped them. */
+export function callable(farmer: FarmerRecord): boolean {
+  return Boolean(farmer.consent) && !farmer.optedOut;
+}
+
+/**
+ * Registers a farmer for the advice calls, or returns why not. The farmer's agreement is required: the officer
+ * confirms they asked (in person, by phone), or the farmer agreed in the app.
+ */
+export function registerFarmer(officerId: string, body: any, officerSite?: string | null): { farmer?: FarmerRecord; error?: string } {
+  const nameBangla = text(body.nameBangla, 60);
+  if (!nameBangla) return { error: 'nameBangla is required' };
+  const phone = bdMobile(String(body.phone ?? ''));
+  if (!phone) return { error: 'phone must be a Bangladeshi mobile number (01XXXXXXXXX)' };
+  if (farmerByPhone(phone)) return { error: 'This phone number is already registered' };
+  const placeId = String(body.placeId ?? '');
+  if (!placeId || !placeFor(placeId)) return { error: 'placeId must be the pilot (talanda_tanore) or an upazila id (ADM3_...)' };
+  const unionBangla = text(body.unionBangla, 40);
+  if (!unionBangla) return { error: 'unionBangla is required' };
+  if (!LAND_TYPES.includes(body.landType)) return { error: 'landType must be one of ' + LAND_TYPES.join(', ') };
+  const crops = [...new Set((Array.isArray(body.crops) ? body.crops : String(body.crops ?? '').split(','))
+    .map((c: unknown) => String(c).trim()).filter(Boolean))] as string[];
+  if (!crops.length || crops.some(c => !REGISTER_CROPS.includes(c))) return { error: `crops must be some of ${REGISTER_CROPS.join(', ')}` };
+  const callSlot: CallSlot = CALL_SLOTS.includes(body.callSlot) ? body.callSlot : 'evening';
+  if (body.consent !== true || !CONSENT_METHODS.includes(body.consentMethod)) {
+    return { error: `The farmer must agree to the calls first: consent true and consentMethod one of ${CONSENT_METHODS.join(', ')}` };
+  }
+  const villageBangla = text(body.villageBangla, 60);
+  const banned = FORBIDDEN_TERMS.filter(term => `${nameBangla} ${villageBangla} ${unionBangla}`.includes(term));
+  if (banned.length) return { error: `Contains terms not allowed in farmer messages: ${banned.join(', ')}` };
+  const next = Math.max(0, ...store.farmers.map(f => Number(f.id.replace(/\D/g, '')) || 0)) + 1;
+  const now = new Date().toISOString();
+  const farmer: FarmerRecord = {
+    id: `F${String(next).padStart(2, '0')}`,
+    nameBangla,
+    nameEnglish: text(body.nameEnglish, 60) || nameBangla,
+    villageBangla,
+    villageEnglish: text(body.villageEnglish, 60) || villageBangla,
+    phoneMasked: `${phone.slice(0, 3)}XX-XXX${phone.slice(-3)}`,
+    landType: body.landType,
+    currentAmanCrop: LOC.aman[body.currentAmanCrop] ? body.currentAmanCrop : 'BRRI dhan49',
+    irrigation: IRRIGATION.includes(body.irrigation) ? body.irrigation : 'shallow_tube_well',
+    sample: false,
+    site: normalizeSite(officerSite) ?? DEFAULT_SITE,
+    placeId,
+    unionBangla,
+    unionEnglish: text(body.unionEnglish, 40) || unionBangla,
+    crops,
+    callSlot,
+    consent: { date: now, takenBy: officerId, method: body.consentMethod },
+    optedOut: null,
+    registeredAt: now,
+    registeredBy: officerId,
+  };
+  store.farmers.push(farmer);
+  store.phones![farmer.id] = phone;
+  save();
+  return { farmer };
+}
+
+/** Stops a farmer's calls (they told the officer), or starts them again with fresh consent. */
+export function setCalls(officerId: string, farmerId: string, on: boolean, how: string, site?: string | null): FarmerRecord | null {
+  const farmer = farmers(site).find(f => f.id === farmerId);
+  if (!farmer) return null;
+  const now = new Date().toISOString();
+  if (on) {
+    farmer.optedOut = null;
+    farmer.consent = { date: now, takenBy: officerId, method: CONSENT_METHODS.includes(how as FarmerConsent['method']) ? how as FarmerConsent['method'] : 'in_person' };
+  } else {
+    farmer.optedOut = { date: now, how: text(how, 40) || 'told the officer' };
+  }
+  save();
+  return farmer;
 }

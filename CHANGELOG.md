@@ -2,6 +2,247 @@
 
 What changed in Project EDEN, newest first, with who made each change and the branch it came from. Every branch below was merged into `main` on 1 October 2026.
 
+## 29 October 2026 · Two winter crops, a year slider, and income at market prices (Tasrif, `feature/field-shift-statement`)
+
+- **Mustard or potato, then Boro:** a late Boro is added to the crop replay with `--only`, which merges it and leaves other crops untouched.
+  - It is BRRI dhan28, transplanted 1 February-1 March, 40-day seedlings; the window is assumed from BRRI's patterns.
+  - The engine places it after the winter crop and labels it a winter crop.
+  - BRRI's Mustard- and Potato-Boro-T. Aman patterns now build: 147 upazilas grow them, and 25 grow them most.
+  - A farmer's "Boro" after their winter crop becomes the late Boro.
+- **A year slider on the map:** the "Year by year" group has five layers, 2001-2025, with play and pause, served by `GET /api/v1/map/years`.
+  - By district: groundwater storage against 2003-07 (NASA GLDAS-2.2), hot days, heavy-rain days and dry-season root-zone wetness.
+  - By upazila: MODIS crops per year.
+- **Income at market prices:** the WFP file (DAM's prices) was refreshed on 29 October, with data to July 2026.
+  - `research/explore/market_prices.py` measures each crop's price move since the year its value is priced in (2024-25 for BBS-priced crops, 2019 for census-priced ones), relative to the median food.
+  - The income score counts half of that move where 10 or more district markets (or 5 or more division series) carry it: lentil −17% and rice ±0.
+  - Potato fell 55% since 2024-25 and gets a check line.
+  - Costs are still estimates.
+- TEST 19 and the API check for the slider's data.
+
+## 29 October 2026 · Field Shift's full statement, line by line (Tasrif, `feature/field-shift-statement`)
+
+- **The statement mapped:** `docs/field-shift-statement.md` maps every requirement and suggestion of the full statement (released 28 October) to the product, with status and honest gaps.
+- **The farmer's rotation now:** the planner asks what the farmer grows (monsoon, winter, summer crop). That rotation is always among the options, and every option is compared with it. At least three options are guaranteed. A registered farmer's crops give their rotation automatically.
+- **The five questions for each option** (`packages/rotation-engine/src/review.ts`): why it was suggested, the evidence with sources, possible benefits, information gaps, and the risks to check locally. Also the crop roles (nitrogen-fixing, deep-rooting per FAO-56, little irrigation here, soil cover, fodder) and flags for the farmer's constraints (no machines, village market only), with crop needs in `data/crop_traits.ts`.
+- **Season calendar** (`research/explore/season_calendar.py` → `season_calendar.json`):
+  - Month-by-month data at the pilot and the 64 district points: hot, cold and near-frost days; heavy and soil-moving rain; dry days; ET0; ET; root-zone wetness. From NASA POWER with the station correction, and GPM IMERG, 2001-2025.
+  - MODIS NDVI by month for 518 upazilas (2021-25 against 2001-05).
+  - 25-year trends by two methods, called clear only at p < 0.05.
+  - Where the replay's nearest station has under three years of data, the nearest station within 50 km is used.
+- **On the dashboard:**
+  - A season-risk strip under each rotation's timeline (crop or bare, risks, NDVI).
+  - What-if sliders for rain and warming.
+  - The place's calendar and trend table on the evidence screen.
+  - A plain-language glossary and methods card (terms, satellite against ground, one grid, five methods compared, crop roles).
+  - Forage, heat and flood priority sliders.
+  - Four map layers of field risks.
+  - The disclaimer above the comparison.
+- **Engine and API:** `currentRotation`, `constraints` and `scenario` on `POST /api/v1/advice`. TEST 18 and the API checks cover them.
+- **ECOSTRESS around the pilot** (`research/explore/ecostress_pilot.py` → `ecostress_pilot.json`): daily ET and the evaporative stress index at 70 m, February-April 2019-2025, in an 11 x 11 km box around Talanda.
+  - Only daytime passes count; one scene listed under several builds counts once. That leaves 10 clear passes.
+  - The 188 MB of tiles are cached in the git-ignored `research/data/ecostress`.
+  - The pilot's season calendar shows it. It is not a score input: the share at ESI 0.8 or more does not match the Boro area.
+
+## 29 October 2026 · Real photos, a question box for farmers, and Tasin's work merged (Tasrif, `feature/latest`)
+
+- **Merged:** muhammadTasin's `integrations-audit` line (Supabase sign-in for managers, sites, the NASA POWER climate card, the data-sources card, no Talanda fertilizer doses outside the pilot, phone-app audit fixes) and `main` (the daily updates). The farmer calls follow the officer's site. A fresh daily NASA update was run with this branch's code.
+- **Photos:** openly licensed Wikimedia Commons photos of Bangladeshi fields and crops and NASA MODIS images (public domain), resized and cropped in `apps/saao-dashboard/public/img/`. The role picker opens with a harvest photo and a photo on each role; the overview shows the harvest beside a river; the evidence page shows Bangladesh from NASA MODIS; the farmer's Today shows a farmer in a BRRI Rajshahi paddy field; every rotation in Compare options and Today shows its crops as photos. Each photo's author, licence and source is in `img/credits.json`, on the data-quality screen and behind every credit link.
+- **Drawings:** a field with a NASA satellite and a farmer taking the advice call (`img/fields.svg`, `img/farmer-call.svg`), on the calls screen and the farmer's question card.
+- **Ask your officer:** the farmer's assistant tab has a question box; the question goes to the SAAO's list and the farmer sees its status (with the officer, answered, called) and the answer.
+- **Fixes:** the server sends photos as images (not text, not gzipped); the demo officer ID is shown as the sign-in hint.
+- **Phone app:** the dashboard's calm leaf-and-sky colours; Today shows each season's crop as a photo and the crop stage on a photo of a BRRI Rajshahi paddy field (no gradient); the assistant tab opens with "Ask your agriculture officer" (`GET`/`POST /api/v1/farmer/questions` with the farmer's sign-in), showing each question's status and answer; photo credits on My farm; the remaining "EDEN" names are Mati Kohon. It builds and its unit tests pass.
+
+## 29 October 2026 · Daily advice calls to registered farmers (Tasrif, `feature/farmer-calls`)
+
+- **Register:** the officer registers a farmer with union, upazila, land, crops and call time, only with the farmer's recorded consent; numbers stay on the server (masked on screen) and a farmer's calls stop when they ask. Six sample farmers, two of them on low haor land in Bajitpur.
+- **The day's list (`services/api/src/farmer_calls.ts`):** each farmer's most important call. The candidates are an answer to their question, this week's field alert for their land and crops, the date their low land will be free at this year's NISAR and OPERA drainage pace (with the Boro seedbed date), or a sowing window opening or closing for one of their crops. One call a day, two a week (emergencies and answers excepted), one a topic a week, never the same message twice.
+- **One-way scripts:** where the call is for, one reason, the action said twice, then how to ask (the SAAO or the Krishi Call Centre, 16123) and how to stop; under a minute, with an SMS of the action.
+- **Approve, send, follow up:** the SAAO reads, edits, removes or approves every call on the Calls and SMS screen. Sends go through SysTech in our Google voice (dry runs unless live; sample farmers never dialled). An unanswered call is retried in the evening with an SMS, and a second miss is flagged for the officer.
+- **Questions back:** questions taken by the officer, from the app, or by missed call (`POST /api/v1/calls/missed`, with `MISSED_CALL_KEY`); the engine drafts crop answers and the officer's answer becomes a call.
+- **Daily job:** `npm run calls:daily` builds the list, `--send --due` sends by slot, `--follow-up` reads the reports.
+- **Shared advice:** the request and advice helpers moved from `server.ts` to `services/api/src/advice.ts` so the call planner and the command line use the same code; the officer desk now advises each farmer at their own place.
+- **Tests:** consent, masked numbers, the reminder script, approval, dry-run sends, retry with SMS, not reached, the daily and weekly limits, questions and drafts, the banned-word filter, app questions, missed calls and stopping the calls (440 of 440 texts translated).
+
+## 27 October 2026 · A redesigned dashboard: Mati Kohon colours, a side rail, an overview in order (Tasrif, `feature/dashboard-redesign`)
+
+- **Palette, solid and calm:** `apps/saao-dashboard/public/brand.css`, loaded last, re-colours the whole dashboard with the leaf-and-sky palette (deep #054204, forest #1D6517, leaf #79B425, lime #C0DE7B, sky #55A6C3) in solid colours only: every gradient (57 rules in theme.css) is one flat colour. Large solid green surfaces tired the eye, so light surfaces carry the screen (white header and cards, a pale side rail, pale lime and sky panels for the banner and the evidence pages) and green is only an accent: the selected item's marker, icons, buttons and section marks. Every text on every screen for all three roles passes 4.5:1 contrast.
+- **Navigation by task:** the 12 numbered tabs become a side rail grouped by what each role does (officer: Work, Plan, Field, Data and evidence) with plain names and icons ("Farmer cases", "Calls and SMS", "Compare options"); on phones it is a scrolling bar.
+- **Overview in order:** the plan and the place first, then "What needs attention now" (today's alert, this week in the field, where to check for flood damage), then the map beside the place's soil, water and crops, then the officer's follow-ups. Before, everything after the first cards sat in the narrow right column and the left half of the page was empty.
+- **Product name:** EDEN becomes মাটি কহন / Mati Kohon in the header, title, role picker, keypad text and data policy. Emoji icons became Material Symbols; rotation names show a real arrow (→); small Bangla text is at least 12.5px.
+- **Lighter cards:** card headlines are larger and bold with a leaf mark and a divider. Long texts fold: each score's explanation in the comparison sits under "Why this score", each field alert shows its first sentence with "Read more", the planner shows three notes about the place and folds the rest, and source notes sit under "Source and method". The flood check list shows labelled numbers (Aman not green 45%, under water 9%...) instead of a sentence per upazila; text has more line spacing and shorter lines.
+- **Tests:** every new label has its English text (401 of 401).
+
+## 27 October 2026 · Calls in our own voice through SysTech (Tasrif, `feature/nisar`)
+
+- **SysTech calls:** `services/api/src/systech.ts` sends the advice call through SysTech's VoiceBlast portal or its Voice Broadcast REST API, playing our Google Cloud TTS recording converted to G.711 u-law (checked byte for byte against Python's `audioop`). Awaj still needs its support to enable Direct TTS; VoiceBlast works now.
+- **Choosing the route:** `CALL_PROVIDER` or `via` in `POST /api/v1/calls/advice`; `GET /api/v1/calls/status` reports each route without secrets. `npm run call:test -- --balance` reads all three accounts, and `--via voiceblast|broadcast` makes a dry run (a real call needs `--live` and the route's `*_LIVE=1`).
+- **Credentials:** in the git-ignored `.env` only, every live switch off; `.env.example` lists the names.
+- **Tests:** the u-law bytes match `audioop`; both SysTech routes are dry runs unless switched on, and Awaj stays the default.
+
+## 27 October 2026 · Flood water under cloud and how fast it drains: NASA-ISRO NISAR radar (Tasrif, `feature/nisar`)
+
+- **NISAR water:** `research/live/nisar_water.py` reads NASA-ISRO NISAR L-band radar (GCOV, PROVISIONAL, ASF DAAC), which sees through monsoon cloud. Only Bangladesh's rows of the 80 m HH layer are fetched from each 2-8 GB file (about 25 MB a frame; 0.6 GB for the first national cycle). The flood share uses the OPERA definition (water now on land not water in both December 2025 and February 2026, via `flood_now.py`'s new `dry_season()`).
+- **Calibration:** `research/explore/nisar_calibration.py` sets HH below -9 dB as open water against OPERA DSWx-HLS on 18 pairs within 2 days at 5 upazilas: 83% pixel agreement (kappa 0.67), within 2 points on haor water, about 13 points low on the coast (ponds and water under rice). Results in `research/floods/nisar_calibration.csv`.
+- **Drainage:** every reading goes into `water_history.json`; from October an upazila gets its fall in points a week since the season's peak and, within 45 days, the date its land is free at that pace. October's winter-crop alert carries it; from November, low and very low land get it against the plan's ready date, with Boro seedbed timing when this year's water is 10 or more days late.
+- **App:** the API uses whichever of OPERA and NISAR is newer (`sensor`, `drain` in the reading and in `local_context.fieldAlerts`), the alert names the satellite, and the officers' check list shows the sensor, pace and free-by date. The daily workflow reads new frames (needs the Earthdata secrets).
+- **On 2026-10-27:** 115 upazilas had 10% or more of their land under flood water, 39 had 25% or more, mostly haor (Itna 78%, Khaliajuri 76%, Sulla 72%); 76 were draining.
+- **Tests:** a NISAR reading is named as radar and carries the pace; Khaliajuri in November gets this year's drainage against the plan; a slow fall gives a pace but no date; the API uses NISAR when OPERA is missing.
+
+## 8 October 2026 · Where this year's Aman is missing: NASA HLS crop loss (Tasrif, `feature/crop-loss`)
+
+- **Crop loss:** `research/live/crop_loss.py` sets last year's Aman land (NASA HLS, green in September to early October 2025 and bare after the harvest) against this year's greenest clear look in the same weeks. It reads the share not green, under water and weaker per upazila, with each tile's composites cached.
+- **Results:** 301 upazilas have Aman on 5% or more of their land and enough of it seen. As of 2026-10-08 there is no widespread loss: the median upazila has 1.1% not green. 9 upazilas have 10% or more, mostly on the coast (in Paikgachha and Assasuni OPERA also sees flood water). The most are Maheshkhali (Cox's Bazar) 45%, Paikgachha (Khulna) 17%, Assasuni (Satkhira) 13%, Daulatkhan (Bhola) 11%, Pekua (Cox's Bazar) 11%.
+- **Where it shows:** the officers' check list (API and overview card) ranks the most Aman land not green first, beside OPERA's flood water. The map has an "Aman not green this year" layer.
+- **Tests:** a fixture checks the ranking, the 10% cut and the map field.
+- **Yield model:** it stays on MODIS. Two seasons of HLS cannot train it.
+
+## 8 October 2026 · Flood water now, groundwater budget and a yield-model test (Tasrif, `feature/field-alerts`)
+
+- **Flood water now:** `research/live/flood_now.py` reads NASA OPERA DSWx-HLS (Landsat and Sentinel-2), because OPERA's radar product over Bangladesh stops on 16 July 2026. It sets each pixel's latest clear look in the last 24 days against December 2025 and February 2026 (lasting water must be water in both, so Boro paddies do not count), and adds the same weeks of 2025 by radar.
+  - The advice gets a flood alert where Aman is grown. Up to 10 September: replant BR22, BR23, BRRI dhan46 or 54 by 15 September. After that: prepare the winter crop, with the 2025 drain date.
+  - Officers get `GET /api/v1/flood/upazilas`, a "Where to check first for flood damage" card and a "Flood water now" map layer.
+  - On 2026-10-08: 208 upazilas had 10% or more of their land under water where it is normally dry in winter, and 45 had 25% or more, mostly haor.
+- **Groundwater budget:** `research/explore/groundwater_budget.py` sets each district's NASA GLDAS-GRACE fall against its Boro area and the replay's net irrigation. Rajshahi would move about 4.7% of its Boro (3,183 ha) to lentil to stop the average fall.
+  - It applies in 31 districts.
+  - It is a floor, because Barind wells fall faster than the district average.
+  - It shows in the advice notes, the overview's groundwater line and a map layer.
+- **Yield model, tested:** `research/explore/yield_model.py` tries LightGBM and ridge on NASA NDVI and weather against BBS district yields, leave-one-season-out.
+  - Neither beats the district trend: Aman 0.129 vs 0.129 t/ha; Boro 0.187 vs 0.188 t/ha.
+  - BBS yield is per harvested hectare and barely moves in a disaster, so the outlook stays the trend.
+  - Results are in `research/pilots/`.
+- **Tests:** a flood in August says replant, and one in October says the winter crop. Rajshahi's budget is a few percent, and Sylhet gets none. Without an OPERA file the check list is empty.
+
+## 8 October 2026 · This week in the field: crop-stage alerts (Tasrif, `feature/field-alerts`)
+
+- **Field water and forecast:** `research/live/field_weather.py`, run by `daily_update.py`, adds a `field` record to every upazila.
+  - Reference ET is FAO-56 Penman-Monteith from NASA POWER, or Hargreaves on days POWER's sunshine has not arrived.
+  - Rain comes from GPM IMERG divided by the median Late/Final ratio, or from NASA POWER.
+  - A rainfed paddy's standing water uses the replay's water balance.
+  - The 7-day forecast is from Open-Meteo, which is a weather model, not NASA.
+- **Rules:** `packages/rotation-engine/src/field_alerts.ts` covers a dry spell at Aman flowering, heat at rice flowering, cold on Boro seedbeds, heat at wheat grain filling and Boro AWD (wait for forecast rain, keep water at flowering). Each fires only while its crop is at the stage it guards.
+  - "Clear" says plainly that no irrigation is needed.
+- **Where they show:**
+  - in the advice (`local_context.fieldAlerts`, hazards and the farmer line);
+  - in the overview's "This week in the field" card and alert card;
+  - in the call script and the SMS;
+  - in four new map layers: Aman dry spell, paddy water, heat at rice flowering and cold on Boro seedbeds.
+- **On 8 October:** 270 upazilas had an Aman variety at flowering with 5 or more dry days, 68 were on watch and 154 needed no irrigation. Tanore was on watch, with about 12 mm of water left and 18 mm of rain forecast.
+- **Tests:** each rule is checked with set weather: 7 dry days at dhan71 flowering; 8.5 °C on 11 January; 37 °C at Boro flowering; 25 mm of rain forecast during AWD; 31 °C at wheat grain filling; and nothing on 1 July. The map test reads field records added to the fixture.
+
+## 8 October 2026 · Our Bangla voice, Gemini wording and SMS (Tasrif, `feature/smap-opera-hls-android`)
+
+- **Voice:** `services/api/src/providers/tts.ts` speaks with Google Cloud Text-to-Speech (bn-BD) from a service-account key file named in `GOOGLE_TTS_CREDENTIALS`. It signs its own token, so no Google SDK is needed.
+  - It returns MP3 for browsers and apps, and 8 kHz WAV for calls. The generic `TTS_BASE_URL` endpoint still works.
+  - The dashboard's audio preview and voice-answer buttons now try the server voice first and fall back to the computer's Bangla voice. The web farmer portal already did.
+- **Gemini wording:** the LLM slot works with Gemini's OpenAI-compatible endpoint.
+  - The client never asks for fewer than `LLM_MAX_TOKENS` (default 800), because Bangla is token-heavy and reasoning models spend tokens thinking. At 120 tokens Gemini answered HTTP 503 and the narration fell back. It passes `LLM_REASONING_EFFORT`.
+  - With `gemini-flash-lite-latest` at low effort, the reworded call passes both gates in about 1.7 s.
+- **Calls:** with `AWAJ_VOICE_SOURCE=google` and a public `PUBLIC_BASE_URL`, the call script is synthesized in Google's voice, served at `/api/v1/audio/`, and played through Awaj's `/broadcasts/direct`. Otherwise, or if Google fails, Awaj reads it in its own voice.
+- **SMS:** `services/api/src/sms.ts` sends the advice SMS through the REVE gateway (`POST /api/v1/sms/advice`). It is a dry run with the keys masked until `SMS_LIVE=1`, and needs an officer sign-in when live.
+  - The SMS is plain Bangla sentences in four Unicode parts: the place, each crop with its sowing or transplanting date, the groundwater saved against Aman-Boro, this season's alert when short, and the officer to call. It has no symbols that a button phone may show as boxes.
+  - Two test SMS went out through REVE on 8 October and were sent.
+- **HLS:** the first full run of `research/acquire/hls_winter.py` is in `research/crops/hls_winter_upazila.csv`. It covers all 544 upazilas for the winters 2024-25 and 2025-26 from 48 tiles, and `upazila_profile.json` is regenerated with it.
+  - The upazila note now reads, for example, "7% of the land that grew Aman was green again with a winter crop in 2025-26" for Shyamnagar, where salty soil leaves most of it fallow. Tanore reads 88%.
+  - The median upazila was 87% in 2024-25 and 71% in 2025-26.
+- **Greeting:** the template greeting now says মাটি কহন (it said EDEN), in the API and in the app's default card.
+- **Tests:** the API tests check the SMS dry run and keep every outside service off.
+
+## 7 October 2026 · Fewer sprays: NASA disease weather (Tasrif, `feature/smap-opera-hls-android`)
+
+- **Rules:** `research/live/disease_weather.py` marks days whose NASA POWER weather favours the two diseases that draw the most fungicide. Both rules estimate the hours at 90% humidity from the day's minimum, maximum and dew point.
+  - Rice blast: leaves wet 10 hours or more at 15-26 °C, as in Japan's BLASTAM model and IRRI's guidance.
+  - Potato late blight: the Hutton criteria used for UK blight warnings.
+- **Typical season:** `research/explore/disease_climatology.py` counts those days in each crop's susceptible window, 2001-2025, for the pilot and all 64 districts (`disease_weather.json`).
+  - Aman meets about 8 blast days.
+  - Potato meets 21 (Khulna) to 40 (Bogra) late-blight days.
+  - The pest score takes 0.003 per day above Aman-Boro, so potato is marked down where blight weather is common.
+- **This week:** `daily_update.py` adds NASA's dew point and writes each upazila's blast and late-blight days in the last 7, as high, watch, low, or off outside the crop's season.
+  - The server passes this week's reading to the engine.
+  - Where the crop is in the field, the advice says to look at the field every 2-3 days and spray only when the officer confirms. When the weather does not favour the disease, it says no precautionary spray is needed this week.
+  - In the week to 4 October: no high blast weather anywhere, 21 upazilas on watch, 523 low.
+- **Dashboard:** the less-pesticide tab has a "Disease weather this week" card. Its comparison now shows each plan's PEST-CHEMGRIDS pesticide and its disease-weather days. The map has two new layers, rice blast and late-blight weather in the last 7 days.
+- **Pest-control steps:** IRRI's "no early spray" is added for Aman: no insecticide in the first 40 days after transplanting, which spares the natural enemies of planthoppers.
+- **HLS:** `research/acquire/hls_winter.py` is committed. Its first full run is still going, and its results will follow.
+
+## 6 October 2026 · OFFLINE=1 works on any computer
+
+- Server: `OFFLINE=1` now serves the newest cache entry for the site whatever day it was fetched, then the committed `services/api/fixtures/power-climate-fixture.json` (about 11 years of real POWER daily data for all five pilot sites, 8 parameters, 2 decimals, -999 = missing, under 1 MB), then a clear `no_data` error. It never calls the network. The response says whether `cache` or `fixture` served it, when it was downloaded (`fetchedAt`) and the real date range.
+- Dashboard: the climate card says "Sample data from NASA POWER, <date range>" (Bangla and English) when the data is not live.
+- Rebuild the fixture (online, no key): `node --experimental-strip-types services/api/scripts/build_power_fixture.ts`.
+
+## 6 October 2026 · Field Shift climate trend for managers
+
+- NASA POWER daily point data now powers a site-scoped climate summary: 30-day rainfall vs the same window's prior-ten-year normal, days above 35°C, longest below-1-mm dry spell and 14-day mean root-zone wetness. POWER fill values (`-999`) are excluded; rainfall comparisons require complete windows.
+- API: `GET /api/v1/manager/climate` uses only the verified manager's `app_metadata.site`, with the five pilot-site coordinates already in the repository. Responses include units, indicator date ranges, source, available data dates and `live` / `cache` / `fixture` provenance.
+- Server: POWER uses the configured NASA daily point URL, a bounded request with one retry, an ignored disk cache, and a no-network `OFFLINE=1` path. No API key or Earthdata login is needed.
+- Dashboard: mobile-first Bangla/English climate-trend card in the existing Data quality screen with text status, loading, retry/error and source/date/provenance lines.
+- Tests: hand-built indicator data including `-999`, manager API 401/403/200 and site scope, mocked POWER fetch/retry, cache reuse and offline no-network behavior.
+
+## 6 October 2026 · NASA data-sources card for managers
+
+- API: `GET /api/v1/manager/data-sources` (manager token: 401 without one, 403 for a non-manager) returns only the `set` / `unset` flags from `nasaConfigStatus()` and the offline flag; never a value.
+- Dashboard: a small read-only "NASA data sources" card at the top of the Data quality tab: NASA POWER (no key), Earthdata Login, NASA API key, ADS and FIRMS, each with an icon and a text badge, a help line plus sign-up link for what is not set up (the admin adds keys to the server's `.env`; nothing can be typed or stored in the browser), an offline badge, a loading skeleton, a retry on error and a return to sign-in on 401/403.
+- Tests: HTTP checks with a fake Supabase auth server (401 / 403 / 200) and an assertion that no fake secret value appears in the response.
+
+## 6 October 2026 · Real officer sign-in with Supabase Auth
+
+- Manager entry: the demo access code is replaced by Supabase Auth (User ID + `@` + `AUTH_EMAIL_DOMAIN`, password; the User ID is trimmed and lowercased). Wrong credentials, empty fields and network errors each get a clear Bangla/English message that never says which of the two was wrong. The session survives a refresh and the role chip and desk button sign out.
+- API: `requireManager` (`services/api/src/auth.ts`) guards every `/api/v1/officer/*` route and the real-call routes: 401 without or with an invalid token, 403 unless `app_metadata.role` is `manager`. The manager's `app_metadata.site` is exposed to routes (no location filtering yet). New `GET /api/v1/auth/config`; the browser client is served from `/vendor/supabase.js`.
+- Demo login: works only with `DEMO_MODE=true` and an `EDEN_OFFICER_CODE` you set; the built-in default password and its README mention are gone. The Android officer login follows the same rule.
+- Tests: `test_auth.ts` (role and site from `app_metadata` only, 401/403) and no-demo-mode checks in `test_server.js`.
+
+## 6 October 2026 · NASA SMAP today, OPERA drain dates and the app for any upazila (Tasrif, `feature/smap-opera-hls-android`)
+
+- **SMAP:** `research/live/smap_now.py` reads Bangladesh's rows of the newest NASA SMAP L4 file (SPL4SMGP v8, 9 km) and writes each upazila's root-zone soil moisture and its percentile to `services/api/data/live/smap_upazila.json`. It takes about a minute; the national AppEEARS request sat in NASA's queue for more than four hours.
+  - The API serves the reading alongside the daily file. While it is under a week old, the dry-start advice prefers SMAP's percentile (dry at or below the 20th), names it, and falls back to NASA POWER where SMAP gives none.
+  - On 2 October 2026 it read the 0th–13th percentile in all 471 upazilas where it is defined.
+  - The daily GitHub workflow runs it when Earthdata secrets are set.
+- **OPERA:** `research/explore/opera_water.py` turns the radar water counts (205 Sentinel-1 pass dates, February 2025 to January 2026) into each upazila's dry-season water, monsoon peak, and the dates by which 80% and 90% of the monsoon water had drained. Haor examples:
+  - Khaliajuri: 8% → 82% under water, 80% drained by 11 December.
+  - Itna: 27 November.
+  - Tahirpur: 23 December.
+
+  Where the monsoon water covered at least a tenth of the upazila, low land is free from the 80% date and very low land from the 90% date, kept between 1 November and 31 January. The advice names the radar evidence.
+- **Android:** the app asks the server for the engine's upazila nearest the location saved on the weather screen (`/api/v1/live/upazila?lat=&lon=`). It uses that for the farmer card and the voice assistant, and the Tanore pilot when none is saved. Android unit tests: 40 pass.
+
+## 5 October 2026 · Soil salinity, rain-only yields and NASA radar water (Tasrif, `feature/nasa-layers-yields-salinity`)
+
+- Salinity: `research/soil/srdi_salinity.py` reads SRDI's *Saline Soils of Bangladesh* (2010; May 2009 survey) into each coastal upazila's cultivated land by ECe class (99 of 102 upazilas matched). With FAO-61's salt tolerance (`research/crops/salt_tolerance.csv`; lentil, grass pea, mustard and jute assumed moderately sensitive), a place's own plans leave out winter and pre-monsoon crops that would lose half their yield, income moves by the yield left against the district's least saline upazila, and the advice names the salinity hazard with BRRI's salt-tolerant Boro.
+- Rain-only yields: `research/explore/rainfed_yield.py` runs FAO-56's root-zone soil-water balance on the replays' NASA weather (roots to the deep end of FAO-56 Table 22, FAO-33 yield response) for 16 upland crops at 65 places. The water card states each winter crop's rain-only yield. It is a lower bound: water a shallow water table feeds up to the roots is left out.
+- No irrigation: a request with `irrigation: 'none'` (planner select, or "সেচ নেই" / "no irrigation" in the farmer's words) leaves out Boro and Aus and scores water and income on the rain-only yield, against the district yield; lentil, chickpea, grass pea and sesame count as already rain-fed, since BARI gives them one irrigation at most.
+- NASA downloads started: `appeears_points.py --preset smap_national` (SMAP L4 root-zone moisture and its percentile for every upazila) and `research/acquire/opera_dswx.py` (OPERA DSWx-S1 radar water counted per upazila). Neither feeds the advice yet.
+
+## 5 October 2026 · Advice that fits each upazila (Tasrif, `feature/local-advice`)
+
+An audit found the engine gave all 544 upazilas the same plan (BRRI dhan71 then lentil, same dates) under every keypad key but one and every land type, with six of seven scores identical, while the repo held land, soil, cropping and yield data per place. Now:
+
+- Data: `research/export/upazila_profile.py` writes `upazila_profile.json`: each upazila's land type (NASA NASADEM and JRC Landsat surface water with BRRI's 2014-15 survey; repeated names matched through the BRRI region), its top cropping patterns and intensity, BBS district yields 2022-25 (HYV rows for rice and potato) with the lower tenth of district yields, each crop's worst harvest price of 2021-22 to 2024-25, and the haor's first upstream burst each spring (IMERG at Sohra). `crop_choice_replay.py` adds an early Boro (BRRI dhan88 on the BRRI calendar); every other crop's numbers are unchanged.
+- Engine: upazilas are planned from all 17 crops with land rules (`data/land.ts`: low land has no Aman, monsoon or summer crop and is free ~1 December; upland monsoon crops on high land only; haor crops harvested after the flash floods in 40% of springs or more are left out), Aman kept by default where it grows, Boro planned on low land, and the upazila's current BRRI pattern plus its summer-crop version added as plans. Plans are ranked on scores first and only the ones shown are written out, with one number formatter (about 20 ms an upazila, from 185). The pilot keeps its five researched rotations.
+- Scores: income moves with district yields and takes the middle of a typical and a bad price year (0.2 at 20,000 Tk/ha to 0.96 near 180,000); water weighs irrigation up to 1.5 times by NASA GLDAS groundwater decline; pest adds NASA SEDAC PEST-CHEMGRIDS; soil weighs legumes more where the SRDI atlas finds organic matter low; flood scores haor flash floods by harvest date and no longer counts a winter crop on low land as flooded. The fodder text names the place's district (it said Rajshahi everywhere).
+- Today's NASA soil: a dry reading from 1 September to 15 December counts the replay's 50 mm of residual soil water as irrigation for upland winter crops and adds a sowing step.
+- Advice and API: `local_context` (land type and evidence, current patterns, hazards with one alert each, notes); the request's land type defaults to the place's usual land (`landTypeAssumed`); the overview's land type, pattern, intensity and alert follow the place (it crashed on low land). Keypad: an optional land question (`AWAJ_LAND_QUESTION=1`, keys 1-4 by flood depth) and `landKey` on the simulated keypad.
+- Dashboard: the planner starts from the place's usual land (low and very low land added), stops sending Talanda's name for every place, shows "About this place" beside the results and marks the current practice.
+- Tests: TEST 17 and API checks for the land type, current practice and keypad land question.
+
+## 5 October 2026 · One server for the website and the app; role portals (Tasrif with muhammadTasin's Edith work, `feature/merge-edith-web`)
+
+- Server: muhammadTasin's Edith_Web_App_Connectivity (c922eec) merged in. `GET /api/v1/locations` (64 districts, 500 upazilas), `GET /api/v1/weather/forecast` (Open-Meteo) and `GET /api/v1/weather` (NASA POWER, coordinates required, explicit `provider_unavailable`), the cattle module (farm outlines, background jobs, THI advisory, Earth Engine worker that reports `configuration_required` until set up), `/api/v1/config`, `/api/v1/tts`, optional LLM and TTS adapters, the shared error envelope, CORS and an optional write token. Three-way merged against the shared 1 October base; our routes stay. The Android app's weather and cattle screens now work against this server.
+- Windows: the Earth Engine worker runs `python` on Windows and treats the Store shortcut as missing Python (Edith's own test failed there).
+- Dashboard: a role picker before the dashboard (visitor, farmer with the demo F01 sign-in, officer with the demo code); each role sees its own tabs, numbered 1, 2, 3…; a header chip changes role. The farmer screen is now the web farmer portal with the Android app's five tabs: today (the engine's plan for the place, the next 48 hours of rain, the soil-and-water tips, listen, ask for a call-back), weather, river erosion, the assistant (crop sentences get a plan, other questions the grounded assistant, and a mic) and my farm (the signed-in farmer's record). New weather tab (any of 500 upazilas or the device's location, 7-day forecast, NASA POWER, hourly cattle THI) and cattle tab (draw or upload a farm outline, run the analysis, THI advice, what cannot be said yet). All in the story site's look; `portals.js` holds the code.
+- Docs: `docs/api-contract.md`, `docs/SETUP.md`, `docs/cattle-aoi-ml-architecture.md` from Edith; `.env.example` merged.
+- Tests: `test_cattle.ts` and Edith's API checks run next to ours; the API tests use port 4317.
+
+## 4 October 2026 · A map of Bangladesh; NASA pesticide and waterlogging data; fewer gaps (Tasrif, `feature/map-and-pesticide-data`)
+
+- Dashboard: the overview's satellite card is a real map (Leaflet, NASA GIBS). 544 upazilas coloured by one of ten layers (MODIS crops a year, change and winter greenness; NASA replay Boro irrigation; GLDAS groundwater; IMERG 7-day rain; POWER 30-day rain and soil wetness; PEST-CHEMGRIDS rice pesticide; SRDI organic matter), NASA MODIS/VIIRS true colour and Blue Marble underneath, MODIS flood, IMERG, SMAP and NDVI on top; hover, click for facts and to plan, a district table. `research/export/map_export.py` thins the geoBoundaries outlines; `GET /api/v1/map/upazilas` serves the values; static text files go out gzipped.
+- Pesticide: `research/acquire/pest_chemgrids.py` downloads NASA SEDAC PEST-CHEMGRIDS v1.01 (2.27 GB, Earthdata; CMR's link is dead, the files are under `sedac-root`) and `research/explore/pesticide_load.py` turns it into crop-class rates per upazila (soil fumigants left out). The pesticide tip now gives grams of active ingredient per bigha a year against Aman-Boro.
+- Waterlogging: `crop_choice_replay.py` counts days with NASA POWER topsoil wetness (MERRA-2) of 0.9 or more for every crop; the flood score for monsoon upland crops falls with that share (Godagari mungbean 7 of 60 days, Sylhet 40 of 60). MODIS flood maps were tested and are ~98% cloud in the monsoon.
+- Jute uses the crop coefficients measured at ICAR-CRIJAF (Barman et al. 2014) instead of assumed values.
+- Income: chickpea, grass pea, sweet potato, mungbean and sesame get estimates from BBS 2024-25 harvest prices and yields (`research/explore/minor_crop_returns.py`); the income score lists its sources.
+- Android: Anek Bangla (headings) and Hind Siliguri (text) are bundled under the SIL Open Font License (texts in `assets/licenses`).
+- Daily update: a run without IMERG keeps the last reading for up to 7 days (`carriedForward`); IMERG for 3 October refreshed locally. API tests read a fixed day (`tests/fixtures/`).
+- Tests: TEST 16 and map API checks.
+
 ## 4 October 2026 · Any main crop, rice optional; soil-and-water tips; keypad calls; one look (Tasrif, `feature/crop-choice-and-calls`)
 
 - Engine: `heroCrop` (every plan holds it, the rest of the year is filled from every crop) and `avoidCrops` (`rice` leaves out Aman, Boro and Aus). The monsoon slot holds Aman, a non-rice crop (soybean, mungbean or sesame in the monsoon) or nothing; jute is modelled. Plugins count only the crops grown; a main crop's own season ranks first; summer crops that run into August show at the start of the timeline.

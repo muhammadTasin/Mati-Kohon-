@@ -1,0 +1,274 @@
+{
+ "generatedOn": "2026-10-29",
+ "source": "WFP Bangladesh food prices (HDX, CC BY-IGO), republishing DAM's market prices; retail, district markets",
+ "fileUpdated": "2026-10-25T18:09:51.180093",
+ "method": "For each crop with a market series this script compares the mean price of the latest twelve months the file holds\nwith the mean of the year the crop's value in the income score is priced in, market by market, and keeps the median\nratio: July 2024-June 2025 (the BBS 2024-25 crop year) for crops valued at BBS 2024-25 harvest prices, and 2019 for\ncrops valued from the Agriculture Census 2019 (rice, wheat, maize, potato, jute; before 2020 the file holds division\nseries, so fewer markets).\nCosts rise with prices in general (labour, fuel, fertilizer), so the income score uses each crop's move *relative* to\nthe median move of all well-covered foods: a crop whose price rose faster than food in general earns more, one that\nfell behind earns less, and general inflation changes nothing. Retail prices stand in for farm-gate prices (their\nmoves, not their level); mustard oil stands in for mustard seed and coarse rice for paddy.",
+ "general": {
+  "bbs2025": {
+   "label": "BBS 2024-25 crop year",
+   "from": "2024-07",
+   "to": "2025-06",
+   "ratio": 1.044,
+   "foods": 11,
+   "minMarkets": 40
+  },
+  "census2019": {
+   "label": "Agriculture Census 2019",
+   "from": "2019-01",
+   "to": "2019-12",
+   "ratio": 1.688,
+   "foods": 4,
+   "minMarkets": 5
+  }
+ },
+ "crops": {
+  "aman": {
+   "commodity": "Rice (coarse)",
+   "standsFor": "paddy, as coarse rice",
+   "bbs2025": {
+    "commodity": "Rice (coarse)",
+    "markets": 38,
+    "matched": true,
+    "refTk": 52.3,
+    "nowTk": 50.7,
+    "unit": "KG",
+    "ratio": 0.975,
+    "from": "2025-08",
+    "to": "2026-07",
+    "relative": 0.934
+   },
+   "census2019": {
+    "commodity": "Rice (coarse)",
+    "markets": 6,
+    "matched": false,
+    "refTk": 29.7,
+    "nowTk": 50.2,
+    "unit": "KG",
+    "ratio": 1.694,
+    "from": "2025-08",
+    "to": "2026-07",
+    "relative": 1.004
+   }
+  },
+  "boro": {
+   "commodity": "Rice (coarse)",
+   "standsFor": "paddy, as coarse rice",
+   "bbs2025": {
+    "commodity": "Rice (coarse)",
+    "markets": 38,
+    "matched": true,
+    "refTk": 52.3,
+    "nowTk": 50.7,
+    "unit": "KG",
+    "ratio": 0.975,
+    "from": "2025-08",
+    "to": "2026-07",
+    "relative": 0.934
+   },
+   "census2019": {
+    "commodity": "Rice (coarse)",
+    "markets": 6,
+    "matched": false,
+    "refTk": 29.7,
+    "nowTk": 50.2,
+    "unit": "KG",
+    "ratio": 1.694,
+    "from": "2025-08",
+    "to": "2026-07",
+    "relative": 1.004
+   }
+  },
+  "boro_early": {
+   "commodity": "Rice (coarse)",
+   "standsFor": "paddy, as coarse rice",
+   "bbs2025": {
+    "commodity": "Rice (coarse)",
+    "markets": 38,
+    "matched": true,
+    "refTk": 52.3,
+    "nowTk": 50.7,
+    "unit": "KG",
+    "ratio": 0.975,
+    "from": "2025-08",
+    "to": "2026-07",
+    "relative": 0.934
+   },
+   "census2019": {
+    "commodity": "Rice (coarse)",
+    "markets": 6,
+    "matched": false,
+    "refTk": 29.7,
+    "nowTk": 50.2,
+    "unit": "KG",
+    "ratio": 1.694,
+    "from": "2025-08",
+    "to": "2026-07",
+    "relative": 1.004
+   }
+  },
+  "boro_late": {
+   "commodity": "Rice (coarse)",
+   "standsFor": "paddy, as coarse rice",
+   "bbs2025": {
+    "commodity": "Rice (coarse)",
+    "markets": 38,
+    "matched": true,
+    "refTk": 52.3,
+    "nowTk": 50.7,
+    "unit": "KG",
+    "ratio": 0.975,
+    "from": "2025-08",
+    "to": "2026-07",
+    "relative": 0.934
+   },
+   "census2019": {
+    "commodity": "Rice (coarse)",
+    "markets": 6,
+    "matched": false,
+    "refTk": 29.7,
+    "nowTk": 50.2,
+    "unit": "KG",
+    "ratio": 1.694,
+    "from": "2025-08",
+    "to": "2026-07",
+    "relative": 1.004
+   }
+  },
+  "aus": {
+   "commodity": "Rice (coarse)",
+   "standsFor": "paddy, as coarse rice",
+   "bbs2025": {
+    "commodity": "Rice (coarse)",
+    "markets": 38,
+    "matched": true,
+    "refTk": 52.3,
+    "nowTk": 50.7,
+    "unit": "KG",
+    "ratio": 0.975,
+    "from": "2025-08",
+    "to": "2026-07",
+    "relative": 0.934
+   },
+   "census2019": {
+    "commodity": "Rice (coarse)",
+    "markets": 6,
+    "matched": false,
+    "refTk": 29.7,
+    "nowTk": 50.2,
+    "unit": "KG",
+    "ratio": 1.694,
+    "from": "2025-08",
+    "to": "2026-07",
+    "relative": 1.004
+   }
+  },
+  "lentil": {
+   "commodity": "Lentils (masur)",
+   "standsFor": "lentil",
+   "bbs2025": {
+    "commodity": "Lentils (masur)",
+    "markets": 52,
+    "matched": true,
+    "refTk": 109.1,
+    "nowTk": 93.7,
+    "unit": "KG",
+    "ratio": 0.862,
+    "from": "2025-08",
+    "to": "2026-07",
+    "relative": 0.826
+   },
+   "census2019": {
+    "commodity": "Lentils (masur)",
+    "markets": 6,
+    "matched": false,
+    "refTk": 59.6,
+    "nowTk": 93.8,
+    "unit": "KG",
+    "ratio": 1.575,
+    "from": "2025-08",
+    "to": "2026-07",
+    "relative": 0.933
+   }
+  },
+  "potato": {
+   "commodity": "Potatoes (Holland, white)",
+   "standsFor": "potato",
+   "bbs2025": {
+    "commodity": "Potatoes (Holland, white)",
+    "markets": 18,
+    "matched": true,
+    "refTk": 55.0,
+    "nowTk": 22.5,
+    "unit": "KG",
+    "ratio": 0.447,
+    "from": "2025-08",
+    "to": "2026-07",
+    "relative": 0.428
+   }
+  },
+  "mustard": {
+   "commodity": "Oil (mustard)",
+   "standsFor": "mustard seed, as mustard oil",
+   "bbs2025": {
+    "commodity": "Oil (mustard)",
+    "markets": 4,
+    "matched": true,
+    "refTk": 215.6,
+    "nowTk": 218.7,
+    "unit": "L",
+    "ratio": 1.034,
+    "from": "2025-06",
+    "to": "2026-05",
+    "relative": 0.99
+   }
+  },
+  "chickpea": {
+   "commodity": "Chickpeas",
+   "standsFor": "chickpea",
+   "bbs2025": {
+    "commodity": "Chickpeas",
+    "markets": 4,
+    "matched": true,
+    "refTk": 113.1,
+    "nowTk": 98.8,
+    "unit": "KG",
+    "ratio": 0.892,
+    "from": "2025-06",
+    "to": "2026-05",
+    "relative": 0.854
+   }
+  },
+  "mungbean": {
+   "commodity": "Beans (mung, large grain)",
+   "standsFor": "mungbean",
+   "bbs2025": {
+    "commodity": "Beans (mung, large grain)",
+    "markets": 4,
+    "matched": true,
+    "refTk": 135.4,
+    "nowTk": 129.6,
+    "unit": "KG",
+    "ratio": 0.94,
+    "from": "2025-06",
+    "to": "2026-05",
+    "relative": 0.9
+   }
+  },
+  "mungbean_k2": {
+   "commodity": "Beans (mung, large grain)",
+   "standsFor": "mungbean",
+   "bbs2025": {
+    "commodity": "Beans (mung, large grain)",
+    "markets": 4,
+    "matched": true,
+    "refTk": 135.4,
+    "nowTk": 129.6,
+    "unit": "KG",
+    "ratio": 0.94,
+    "from": "2025-06",
+    "to": "2026-05",
+    "relative": 0.9
+   }
+  }
+ }
+}

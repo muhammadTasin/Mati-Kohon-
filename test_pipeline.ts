@@ -4,6 +4,9 @@ import { TANORE_LEDGER_RESEARCH, TANORE_RABI_REPLAY } from './packages/rotation-
 import { DualGateNarrationValidator, type ILocalLLMClient } from './packages/narration-core/src/dual_gate_validator.ts';
 import { TemplateNarrator } from './packages/narration-core/src/template_narrator.ts';
 import { understandRequest } from './packages/rotation-engine/src/understand.ts';
+import { placeFor } from './packages/rotation-engine/src/data/location.ts';
+import { drainText } from './packages/rotation-engine/src/field_alerts.ts';
+import { ulawWav } from './services/api/src/systech.ts';
 
 const BN = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
 const bn = (v: unknown) => String(v).replace(/\d/g, d => BN[Number(d)]);
@@ -280,8 +283,361 @@ async function runTests() {
   console.log(`Lentil water tip: ${tips.find(t => t.kind === 'water')!.en}`);
   console.log('✓ TEST 15 PASSED: Soil-and-water tips carry numbers and sources.\n');
 
+  // TEST 16: NASA data behind the old limits: PEST-CHEMGRIDS pesticide, MERRA-2 waterlogging, measured jute Kc, prices
+  console.log('[TEST 16] Testing pesticide estimates, waterlogging, jute and the new crop incomes...');
+  const pestTip = (o: { stewardship?: Array<{ kind: string; en: string; source: string }> }) => o.stewardship!.find(t => t.kind === 'pesticide')!;
+  if (!pestTip(lentil).en.includes('PEST-CHEMGRIDS') || !/about \d+% less/.test(pestTip(lentil).en) || !pestTip(lentil).source.includes('PEST-CHEMGRIDS')) {
+    throw new Error('Aman then lentil must show less pesticide than Aman-Boro, from NASA SEDAC PEST-CHEMGRIDS');
+  }
+  const potato = engine.generateAdvice({ ...TALANDA, farmerPriorities: { water: 0.5, income: 0.3, soil: 0.2 }, preferredCrops: ['potato'] }).options[0];
+  if (!/% more/.test(pestTip(potato).en)) throw new Error('A potato plan must show more pesticide than Aman-Boro');
+  // Upland monsoon crops go on high land only (data/land.ts), so the waterlogging comparison is made there
+  const soaked = (place: string) => {
+    const opts = engine.generateAdvice({ ...TALANDA, unionId: place, landType: 'high', farmerPriorities: { water: 0.5, income: 0.3, soil: 0.2 }, heroCrop: 'wheat', avoidCrops: ['rice'] }).options;
+    const mung = opts.find(o => o.cropSequence.some(c => c.seasonType === 'Kharif-2' && c.crop === 'Mungbean'))!;
+    return { days: mung.dimensionDetails.flood.metrics.kharif2WaterloggedDays as number, score: mung.scores.flood };
+  };
+  const dry = soaked('ADM3_Godagari');
+  const wet = soaked('ADM3_SylhetSadar');
+  if (!(wet.days > dry.days && wet.score < dry.score)) {
+    throw new Error(`Monsoon mungbean must be wetter and riskier in Sylhet than in Godagari (${JSON.stringify({ dry, wet })})`);
+  }
+  const replay = JSON.parse(fs.readFileSync('packages/rotation-engine/src/data/crop_choice_replay.json', 'utf8'));
+  if (replay.crops.jute.kcAssumed || !replay.crops.jute.kcSource.includes('Barman')) throw new Error('Jute must use the measured crop coefficients');
+  const chickpea = engine.generateAdvice({ ...TALANDA, farmerPriorities: { water: 0.5, income: 0.3, soil: 0.2 }, preferredCrops: ['chickpea'] }).options[0];
+  if (!chickpea.dimensionDetails.income.provenance.source.includes('BBS 2024-25 harvest price')) {
+    throw new Error('Chickpea must get an income estimate from BBS prices and yields');
+  }
+  console.log(`Pesticide, lentil: ${pestTip(lentil).en.split('. ')[0]}`);
+  console.log(`Monsoon mungbean waterlogged days: Godagari ${dry.days} (flood ${dry.score}), Sylhet Sadar ${wet.days} (flood ${wet.score})`);
+  console.log('✓ TEST 16 PASSED: Pesticide, waterlogging, jute and crop incomes come from NASA and BBS data.\n');
+
+  // TEST 17: Advice that fits the place: land type, what farmers grow, flash floods, district yields, today's soil
+  console.log('[TEST 17] Testing advice that fits each upazila...');
+  const at = (unionId: string, extra: Record<string, unknown> = {}) => {
+    const place = placeFor(unionId)!;
+    return engine.generateAdvice({
+      unionId, unionNameBangla: place.nameBangla, upazila: place.upazila, district: place.district, landType: place.defaultLandType,
+      landTypeAssumed: true, season: '2026-aman', farmerPriorities: { water: 0.5, income: 0.3, soil: 0.2 }, ...extra,
+    } as Parameters<typeof engine.generateAdvice>[0]);
+  };
+  const winterOf = (o: typeof advice.options[number]) => o.cropSequence.find(p => p.seasonType === 'Rabi')!;
+  // Haor low land (NASA NASADEM + Landsat + BRRI survey): no Aman, Boro cut before the flash floods in most springs
+  const haor = at('ADM3_Khaliajuri');
+  if (haor.scope.land_type !== 'low' || haor.options.some(o => o.cropSequence[0].seasonType === 'Aman')) {
+    throw new Error('Khaliajuri is haor low land: no option may hold Aman');
+  }
+  const haorFlood = haor.options[0].dimensionDetails.flood.metrics;
+  if (winterOf(haor.options[0]).crop !== 'Boro rice' || (haorFlood.flashFloodCaught as number) / (haorFlood.flashFloodSeasons as number) >= 0.4
+    || !['flash_flood', 'deep_flooding'].every(h => haor.local_context!.hazards.includes(h))) {
+    throw new Error('Haor low land gets a Boro cut before the flash floods in most springs, with both hazards named');
+  }
+  // NASA OPERA radar: haor low land is free when 80% of the 2025 monsoon water had drained (11 Dec), not on a fixed date
+  const haorContext = JSON.stringify(haor.local_context);
+  if (!haorContext.includes('NASA OPERA radar (2025)') || !haorContext.includes('free from ~11 Dec')) {
+    throw new Error('Haor low land takes its free date from the OPERA radar drain date');
+  }
+  const higher = at('ADM3_Khaliajuri', { landType: 'medium_high', landTypeAssumed: false });
+  if (!higher.options.every(o => o.cropSequence[0].seasonType === 'Aman') || higher.local_context!.landTypeAssumed) {
+    throw new Error('When the farmer says the field is higher, Aman comes back');
+  }
+  // SRDI's salinity survey: Shyamnagar's saline land keeps barley and sunflower and leaves out salt-sensitive crops
+  const coast = at('ADM3_Shyamnagar');
+  const coastWinters = coast.options.map(o => winterOf(o).crop);
+  if (!coast.local_context!.hazards.includes('salinity') || !coast.stale_or_missing_inputs.some(s => s.dataset === 'Soil salinity')
+    || coastWinters.some(c => ['Lentil', 'Potato', 'Maize', 'Boro rice'].includes(c)) || !coastWinters.some(c => c === 'Barley' || c === 'Sunflower')) {
+    throw new Error(`Shyamnagar (99% saline, SRDI 2009) must name salinity and plan salt-tolerant winter crops (got ${coastWinters.join(', ')})`);
+  }
+  // District yields move income: Faridpur grows the most lentil, above the national yield
+  const faridpur = at('ADM3_FaridpurSadar');
+  const lentilPlan = faridpur.options.find(o => winterOf(o).crop === 'Lentil');
+  if (!lentilPlan || (lentilPlan.dimensionDetails.income.metrics.districtYieldTPerHa as number) <= (lentilPlan.dimensionDetails.income.metrics.nationalYieldTPerHa as number)) {
+    throw new Error('Faridpur must offer lentil, with its district yield above the national one');
+  }
+  // Different places, different plans
+  const sample = ['ADM3_FaridpurSadar', 'ADM3_MunshiganjSadar', 'ADM3_Khaliajuri', 'ADM3_Nachole', 'ADM3_Shyamnagar', 'ADM3_PanchagarhSadar', 'ADM3_Chatkhil', 'ADM3_SylhetSadar', 'ADM3_Godagari', 'ADM3_BholaSadar'];
+  const winters = new Set(sample.map(id => winterOf(at(id).options[0]).crop));
+  if (winters.size < 4) throw new Error(`Ten upazilas across the country should not share one winter crop (got ${[...winters].join(', ')})`);
+  // Today's NASA reading: a dry soil in October costs the replay's 50 mm of residual water; in March it does not
+  const drySoil = { date: '2026-10-01', soilStatus: 'dry', soilRank: 0, soilYears: 10, rain30PctOfNormal: 45, source: 'test' };
+  const october = at('ADM3_FaridpurSadar', { currentConditions: drySoil, today: '2026-10-05' });
+  const march = at('ADM3_FaridpurSadar', { currentConditions: drySoil, today: '2027-03-01' });
+  const lentilOct = october.options.find(o => winterOf(o).crop === 'Lentil')!;
+  const lentilMar = march.options.find(o => o.id === lentilOct.id)!;
+  if (lentilOct.dimensionDetails.water.metrics.dryStartExtraMm !== 50 || !lentilOct.approvedActionIds.includes('action_dry_start')
+    || !october.local_context!.hazards.includes('dry_start') || lentilMar.dimensionDetails.water.metrics.dryStartExtraMm !== undefined) {
+    throw new Error('A dry soil before the winter sowing adds 50 mm and a sowing step; in March it does not');
+  }
+  // NASA SMAP's root-zone percentile, when it is the reading, is named with its percentile
+  const smapDry = at('ADM3_FaridpurSadar', { currentConditions: { date: '2026-10-02', soilStatus: 'dry', soilPercentile: 0.4, sensor: 'SMAP', rain30PctOfNormal: 57, source: 'test' }, today: '2026-10-05' });
+  const smapNote = JSON.stringify(smapDry.local_context);
+  const smapWater = JSON.stringify(smapDry.options.find(o => winterOf(o).crop === 'Lentil')!.dimensionDetails.water);
+  if (!smapNote.includes('SMAP satellite') || !smapNote.includes('0th percentile') || smapNote.includes("reading (POWER") || !smapWater.includes('(NASA SMAP)')) {
+    throw new Error(`A SMAP reading is named as SMAP with its percentile (got: ${smapNote.slice(0, 160)})`);
+  }
+  // NASA GLDAS groundwater: irrigation weighs more where the aquifer falls fastest (Barind), never less on the coast
+  const barindWeight = at('ADM3_Nachole').options[0].dimensionDetails.water.metrics.groundwaterWeight as number;
+  const coastWeight = coast.options[0].dimensionDetails.water.metrics.groundwaterWeight as number;
+  if (!(barindWeight > 1.3 && coastWeight === 1)) throw new Error(`GLDAS weights: Barind ${barindWeight}, coast ${coastWeight}`);
+  // NASA SEDAC PEST-CHEMGRIDS in the pest score: potato takes more pesticide than Aman-Boro, lentil less
+  const munshiganj = at('ADM3_MunshiganjSadar');
+  const potatoPest = munshiganj.options.find(o => winterOf(o).crop === 'Potato')!.dimensionDetails.pest.metrics;
+  const lentilPest = lentilPlan.dimensionDetails.pest.metrics;
+  if (!((potatoPest.pesticideKgHa as number) > (potatoPest.pesticideAmanBoroKgHa as number) && (lentilPest.pesticideKgHa as number) < (lentilPest.pesticideAmanBoroKgHa as number))) {
+    throw new Error('PEST-CHEMGRIDS: potato above Aman-Boro, lentil below');
+  }
+  console.log(`Khaliajuri: ${haor.options[0].nameEnglish}; flash floods before harvest in ${haorFlood.flashFloodCaught} of ${haorFlood.flashFloodSeasons} springs`);
+  console.log(`Top winter crops in ten upazilas: ${[...winters].join(', ')}; GLDAS weight Barind ${barindWeight}, coast ${coastWeight}`);
+  // Without irrigation: no Boro or Aus, and each dry-season upland crop carries its rain-only yield (FAO-56 root zone)
+  const noWater = at('ADM3_Nachole', { irrigation: 'none' });
+  if (noWater.options.some(o => o.cropSequence.some(p => /Boro|Aus/.test(p.crop)))
+    || !noWater.options.every(o => typeof o.dimensionDetails.water.metrics.rainfedYieldTypical === 'number' && o.dimensionDetails.water.metrics.irrigationAvailable === false)) {
+    throw new Error('A field without irrigation gets no Boro or Aus, and every plan states its rain-only yield');
+  }
+  if (understandRequest('আমার জমিতে সেচ নেই').irrigation !== 'none') throw new Error('"সেচ নেই" means no irrigation');
+  // NASA POWER disease weather: a quiet week says no precautionary spray; a blast week says look first; potato meets late blight
+  const blast = (status: string, days7: number) => ({ date: '2026-10-04', soilStatus: 'normal', source: 'test',
+    disease: { date: '2026-10-04', riceBlast: { days7, status, season: 'aman' }, lateBlight: { days7: 0, status: 'off', season: null } } });
+  const quiet = at('ADM3_FaridpurSadar', { currentConditions: blast('low', 0), today: '2026-10-07' });
+  const quietText = JSON.stringify(quiet.local_context);
+  if (!quietText.includes('no precautionary fungicide spray is needed on Aman this week') || quiet.local_context!.hazards.includes('disease_weather')
+    || !(quiet.local_context as any).diseaseWeather?.rules?.length) {
+    throw new Error('A week without blast weather tells the farmer no precautionary spray is needed');
+  }
+  const blastWeek = at('ADM3_FaridpurSadar', { currentConditions: blast('high', 4), today: '2026-10-07' });
+  if (!blastWeek.local_context!.hazards.includes('disease_weather') || !JSON.stringify(blastWeek.local_context).includes('Walk the Aman field')) {
+    throw new Error('A week of blast weather raises a disease-weather alert that says to look before spraying');
+  }
+  const potatoPlan = at('ADM3_RangpurSadar', {
+    heroCrop: 'potato', today: '2026-12-20',
+    currentConditions: { date: '2026-12-18', soilStatus: 'normal', source: 'test',
+      disease: { date: '2026-12-18', riceBlast: { days7: 0, status: 'off', season: null }, lateBlight: { days7: 4, status: 'high', season: 'potato' } } },
+  });
+  const pm = potatoPlan.options[0].dimensionDetails.pest.metrics as Record<string, number>;
+  if (!potatoPlan.local_context!.hazards.includes('disease_weather') || !(pm.diseaseWeatherDays > pm.diseaseWeatherAmanBoroDays)) {
+    throw new Error(`Potato meets more late-blight weather than Aman-Boro, and a blight week is flagged (got ${pm.diseaseWeatherDays} vs ${pm.diseaseWeatherAmanBoroDays})`);
+  }
+  if (!quiet.options[0].ipmActions.some(t => t.en.startsWith('No insecticide in the first 40 days'))) {
+    throw new Error("Aman plans carry IRRI's no-early-spray step");
+  }
+  // NASA HLS (30 m): the salty coast leaves most Aman land fallow in winter; the Barind grows a winter crop on most of it
+  const hlsShare = (id: string) => Number(/NASA HLS satellites \(30 m\): (\d+)% of the land that grew Aman/.exec(JSON.stringify(at(id).local_context))?.[1]);
+  const coastHls = hlsShare('ADM3_Shyamnagar'), barindHls = hlsShare('ADM3_Tanore');
+  if (!(coastHls < 30 && barindHls > 70)) throw new Error(`HLS winter cropping: Shyamnagar low, Tanore high (got ${coastHls}% and ${barindHls}%)`);
+  console.log(`NASA HLS: Aman land green again in winter 2025-26, Shyamnagar ${coastHls}%, Tanore ${barindHls}%`);
+  // This week in the field (field_alerts.ts): a dry spell at Aman flowering, cold on Boro seedbeds, heat at Boro
+  // flowering, AWD that waits for forecast rain, and heat at wheat grain filling
+  const days = (v: number) => Array(7).fill(v);
+  const fw = (from: string, over: Record<string, unknown> = {}) => ({
+    through: from, observedTo: from, rainSource: 'IMERG+POWER', rain7: 2, rain14: 10, et0Mm7: 4, tmax3: 31, tmin3: 22, paddyWaterMm: 20,
+    paddyDry14: '00000000000000', paddyDryNext7: '0000000', forecast: { from, tmax: days(31), tmin: days(22), rain: days(0), et0: days(4) }, ...over,
+  });
+  const cc = (field: unknown) => ({ date: '2026-10-05', soilStatus: 'normal', source: 'test', field });
+  const alertsOf = (a: ReturnType<typeof at>) => a.local_context!.fieldAlerts!.alerts;
+  const dryAman = at('ADM3_Tanore', { today: '2026-10-08', currentConditions: cc(fw('2026-10-08', { paddyWaterMm: -12, paddyDry14: '00000001111111', paddyDryNext7: '1111111' })) });
+  const dryAlert = alertsOf(dryAman).find(x => x.id === 'aman_dry_spell');
+  if (dryAlert?.level !== 'high' || !dryAman.local_context!.hazards.includes('aman_dry_spell') || !dryAman.farmer_summary_bangla.includes('একবার সেচ দিন')) {
+    throw new Error('Seven dry days at Aman flowering raise a rescue-irrigation alert that reaches the farmer line');
+  }
+  const wetAman = at('ADM3_Tanore', { today: '2026-10-08', currentConditions: cc(fw('2026-10-08', { paddyWaterMm: 60 })) });
+  if (alertsOf(wetAman).find(x => x.id === 'aman_dry_spell')?.level !== 'clear' || wetAman.local_context!.hazards.includes('aman_dry_spell')) {
+    throw new Error('A paddy with standing water is told no irrigation is needed this week');
+  }
+  const winterDay = (today: string, hero: string, over: Record<string, unknown>) => at('ADM3_Tanore', { heroCrop: hero, today, currentConditions: cc(fw(today, over)) });
+  const cold = alertsOf(winterDay('2027-01-10', 'boro', { tmin3: 12, forecast: { from: '2027-01-10', tmax: days(20), tmin: [11, 8.5, 9, 12, 12, 13, 13], rain: days(0), et0: days(2) } }));
+  const hotBoro = alertsOf(winterDay('2027-04-10', 'boro', { tmax3: 34, forecast: { from: '2027-04-10', tmax: [35, 36.4, 37, 34, 33, 33, 32], tmin: days(25), rain: days(0), et0: days(5) } }));
+  const awd = alertsOf(winterDay('2027-03-01', 'boro', { forecast: { from: '2027-03-01', tmax: days(30), tmin: days(19), rain: [12, 10, 3, 0, 0, 0, 0], et0: days(4) } }));
+  const hotWheat = alertsOf(winterDay('2027-02-15', 'wheat', { tmax3: 29, forecast: { from: '2027-02-15', tmax: [29, 30.5, 31, 31, 30, 29, 29], tmin: days(16), rain: days(0), et0: days(3.5) } }));
+  if (cold.find(x => x.id === 'cold_seedbed')?.level !== 'high' || cold.find(x => x.id === 'cold_seedbed')?.numbers.tminC !== 8.5) {
+    throw new Error('A night at 8.5 C in January puts Boro seedbeds on a cold alert');
+  }
+  if (hotBoro.find(x => x.id === 'rice_heat')?.level !== 'high' || !hotBoro.find(x => x.id === 'rice_heat')!.textEnglish.includes('5-7 cm')
+    || !hotBoro.find(x => x.id === 'boro_awd')?.textEnglish.includes('no alternate wetting and drying now')) {
+    throw new Error('37 C at Boro flowering says keep 5-7 cm of water, and AWD pauses at flowering');
+  }
+  if (!awd.find(x => x.id === 'boro_awd')?.titleEnglish.startsWith('Rain coming') || hotWheat.find(x => x.id === 'wheat_heat')?.level !== 'watch') {
+    throw new Error('AWD holds the irrigation for 25 mm of forecast rain; 31 C at wheat grain filling is a watch');
+  }
+  if (alertsOf(at('ADM3_Tanore', { today: '2026-07-01', currentConditions: cc(fw('2026-07-01')) })).length) {
+    throw new Error('No crop is at a sensitive stage on 1 July, so no field alert');
+  }
+  // NASA OPERA flood water now: replant late Aman until 10 September, then the winter crop as the land drains
+  const flooded = (today: string) => at('ADM3_Tanore', { today, currentConditions: { date: today, soilStatus: 'normal', source: 'test',
+    flood: { date: today, seenShare: 0.6, floodShare: 0.3, waterNow: 0.35, waterDry: 0.05 } } });
+  const floodAug = flooded('2026-08-20').local_context!;
+  const floodOct = flooded('2026-10-08').local_context!;
+  const augustFlood = floodAug.fieldAlerts!.alerts.find(x => x.id === 'flood_now');
+  if (augustFlood?.level !== 'high' || !augustFlood.textEnglish.includes('BR22, BR23, BRRI dhan46 or 54 by 15 September') || floodAug.hazards[0] !== 'flood_now') {
+    throw new Error('30% of the land under water in August says replant BR22/BR23/dhan46/54 by 15 September, first among the hazards');
+  }
+  if (!floodOct.fieldAlerts!.alerts.find(x => x.id === 'flood_now')?.textEnglish.includes('Sow the winter crop as each field drains')) {
+    throw new Error('Flood water in October says sow the winter crop as the land drains');
+  }
+  // Flood on low land and a dry paddy at the district point: irrigate only the higher fields, as a watch
+  const wetAndDry = at('ADM3_Tanore', { today: '2026-10-08', currentConditions: { date: '2026-10-08', soilStatus: 'normal', source: 'test',
+    field: fw('2026-10-08', { paddyWaterMm: -12, paddyDry14: '00000001111111', paddyDryNext7: '1111111' }),
+    flood: { date: '2026-09-20', seenShare: 0.9, floodShare: 0.4, waterNow: 0.5, waterDry: 0.1, lastYearRadar: 0.01 } } }).local_context!;
+  const softened = wetAndDry.fieldAlerts!.alerts.find(x => x.id === 'aman_dry_spell');
+  if (softened?.level !== 'watch' || !softened.textEnglish.includes('irrigate only the higher fields')) {
+    throw new Error('Where OPERA sees flood water the dry-spell alert drops to a watch for the higher fields');
+  }
+  // NASA-ISRO NISAR radar: the alert names the satellite, and October's winter-crop advice gives this year's drain pace
+  const drain = { from: { date: '2026-09-28', floodShare: 0.77, sensor: 'opera' }, to: { date: '2026-10-18', floodShare: 0.47, sensor: 'nisar' }, perWeek: 0.105, freeBy: '2027-01-14' };
+  const radarFlood = at('ADM3_Tanore', { today: '2026-10-20', currentConditions: { date: '2026-10-20', soilStatus: 'normal', source: 'test',
+    flood: { date: '2026-10-18', seenShare: 0.9, floodShare: 0.47, waterNow: 0.6, waterDry: 0.1, sensor: 'nisar', drain } } }).local_context!;
+  const radarAlert = radarFlood.fieldAlerts!.alerts.find(x => x.id === 'flood_now');
+  if (!radarAlert?.textEnglish.startsWith('NASA-ISRO NISAR radar (18 Oct)') || !radarAlert.textBangla.startsWith('নাসা-ইসরোর NISAR রাডারে')
+    || !radarAlert.textEnglish.includes('about 11 points a week; at that pace the land is free around 14 Jan') || radarFlood.fieldAlerts!.floodSensor !== 'nisar') {
+    throw new Error(`A NISAR flood reading is named as radar and carries this year's drain pace (got: ${radarAlert?.textEnglish})`);
+  }
+  // November on Khaliajuri's low land: the flood alert is over, and the plan's ready date (2025 drainage) meets this
+  // year's, a month later, so the Boro seedbed is timed to it
+  const haorNov = at('ADM3_Khaliajuri', { landType: 'low', today: '2026-11-10', currentConditions: { date: '2026-11-10', soilStatus: 'normal', source: 'test',
+    flood: { date: '2026-11-08', seenShare: 0.95, floodShare: 0.6, waterNow: 0.7, waterDry: 0.15, sensor: 'nisar', drain: { ...drain, to: { date: '2026-11-08', floodShare: 0.6, sensor: 'nisar' } } } } }).local_context!;
+  const haorNote = haorNov.notesEnglish.find(n => n.startsWith('This year (NASA OPERA and NISAR) the water has fallen'));
+  if (!haorNote || !/about \d+ days after the date this plan assumes/.test(haorNote) || haorNov.fieldAlerts!.alerts.some(x => x.id === 'flood_now')) {
+    throw new Error(`In November low land gets this year's drainage against the plan's ready date (got: ${haorNote})`);
+  }
+  // Haor water leaving slowly in October has a pace but no date yet; land already free says so
+  const slow = drainText({ ...drain, from: { date: '2026-09-27', floodShare: 0.8, sensor: 'nisar' }, to: { date: '2026-10-18', floodShare: 0.74, sensor: 'nisar' }, perWeek: 0.02, freeBy: null });
+  const free = drainText({ ...drain, to: { date: '2026-10-18', floodShare: 0.03, sensor: 'nisar' }, perWeek: null, freeBy: '2026-10-18' });
+  if (!slow?.en.includes('about 2 points a week, too slowly yet to say when the land will be free') || !slow.en.startsWith('This year (NASA-ISRO NISAR radar)')
+    || !free?.en.includes('the extra water had left the land by 18 Oct')) {
+    throw new Error(`A slow fall gives a pace without a date, and drained land says so (got: ${slow?.en} / ${free?.en})`);
+  }
+  console.log(`NISAR: ${radarAlert.textEnglish.slice(0, 60)}...; Khaliajuri in November: ${haorNote.slice(-120)}`);
+  // SysTech calls want G.711 u-law: the 8 kHz 16-bit TTS audio converts byte for byte as Python's audioop.lin2ulaw
+  const samples = [0, 1, -1, 1000, -1000, 5000, -5000, 32767, -32768, 132, -133];
+  const wav16 = Buffer.alloc(44 + samples.length * 2);
+  wav16.write('RIFF', 0); wav16.writeUInt32LE(36 + samples.length * 2, 4); wav16.write('WAVEfmt ', 8); wav16.writeUInt32LE(16, 16);
+  wav16.writeUInt16LE(1, 20); wav16.writeUInt16LE(1, 22); wav16.writeUInt32LE(8000, 24); wav16.writeUInt32LE(16000, 28);
+  wav16.writeUInt16LE(2, 32); wav16.writeUInt16LE(16, 34); wav16.write('data', 36); wav16.writeUInt32LE(samples.length * 2, 40);
+  samples.forEach((s, i) => wav16.writeInt16LE(s, 44 + i * 2));
+  const ulaw = ulawWav(wav16);
+  if (ulaw.readUInt16LE(20) !== 7 || ulaw.readUInt32LE(24) !== 8000 || [...ulaw.subarray(46)].join() !== '255,255,126,206,78,171,43,128,0,239,111') {
+    throw new Error(`G.711 u-law WAV for SysTech calls matches audioop (got ${[...ulaw.subarray(46)].join()})`);
+  }
+  console.log(`Field alerts: Aman dry spell ${dryAlert.level}, Boro seedbed cold ${cold[0].level}, Boro flowering heat ${hotBoro[0].level}, AWD "${awd[0].titleEnglish}"`);
+  // Groundwater budget (NASA GRACE via GLDAS, BBS Boro area): Rajshahi needs a few percent of its Boro moved to stop the
+  // fall; Sylhet's Boro is watered mostly from rivers and beels, so the budget is not given there
+  const rajshahiBudget = at('ADM3_Tanore').local_context!;
+  const sylhetBudget = at('ADM3_Balaganj').local_context!;
+  const moveRajshahi = rajshahiBudget.groundwaterBudget?.moveShareToLentil ?? 0;
+  if (!rajshahiBudget.groundwaterBudget?.applies || !(moveRajshahi > 0.02 && moveRajshahi < 0.1)
+    || !rajshahiBudget.notesEnglish.some(n => n.startsWith('NASA GRACE (GLDAS-2.2): groundwater under Rajshahi district falls about 7.7 mm'))) {
+    throw new Error(`Rajshahi's groundwater budget moves a few percent of its Boro to lentil (got ${moveRajshahi})`);
+  }
+  if (sylhetBudget.groundwaterBudget?.applies || sylhetBudget.notesEnglish.some(n => n.startsWith('NASA GRACE'))) {
+    throw new Error('Sylhet falls under 4 mm a year, so no groundwater budget is given');
+  }
+  console.log(`Groundwater budget: Rajshahi moves ${(moveRajshahi * 100).toFixed(1)}% of its Boro (${rajshahiBudget.groundwaterBudget!.moveHaToLentil} ha) to lentil`);
+  console.log('✓ TEST 17 PASSED: Land type, current patterns, flash floods, district yields and today\'s soil shape each upazila\'s plan.\n');
+
+  // TEST 18: Field Shift's full statement (28 Oct 2026): at least three rotations with the farmer's own among them;
+  // for each, why it was suggested, its evidence, benefits, information gaps and the risks to check locally; the
+  // season calendar (bare months, vulnerable months); constraints; and a what-if for a drier, warmer year
+  console.log('[TEST 18] Testing the existing rotation, the five-part review, the season risk and the what-if...');
+  const priorities = { water: 0.5, income: 0.3, soil: 0.2 };
+  const fs18 = engine.generateAdvice({ ...TALANDA, farmerPriorities: priorities, currentAmanCrop: 'BRRI dhan49', currentRotation: { monsoon: 'aman', winter: 'boro' },
+    constraints: { machinery: 'hand', market: 'village' }, scenario: { rainPct: -20, warmingC: 2 } });
+  const mine18 = fs18.options.filter(o => o.farmerCurrent);
+  if (fs18.options.length < 3 || mine18.length !== 1 || mine18[0].id !== 'rot_dhan49_boro_conventional' || fs18.reference_option_id !== mine18[0].id) {
+    throw new Error(`The farmer's Aman-Boro must be one marked option and the reference among 3+ (got ${fs18.options.length}, ${mine18.map(o => o.id)}, ref ${fs18.reference_option_id})`);
+  }
+  for (const o of fs18.options) {
+    const r = o.review!;
+    if (!r || !r.why.length || !r.evidence.length || !r.benefits.length || !r.gaps.length || !r.checks.length || r.referenceId !== mine18[0].id) {
+      throw new Error(`${o.id}: every option needs why, evidence, benefits, gaps and checks against the farmer's rotation`);
+    }
+    if (r.evidence.some(l => !l.source) || [...r.why, ...r.evidence, ...r.benefits, ...r.gaps, ...r.checks].some(l => !l.bn || !l.en)) {
+      throw new Error(`${o.id}: every review line is in Bangla and English, and every evidence line names its source`);
+    }
+  }
+  const lentil18 = fs18.options.find(o => o.id === 'rot_dhan71_lentil')!;
+  if (!lentil18.review!.roles.some(x => x.id === 'nitrogen' && x.cropIds.includes('lentil'))
+    || !fs18.options.find(o => o.id === 'rot_dhan71_mustard')!.review!.roles.some(x => x.id === 'deep_root')) {
+    throw new Error('Lentil is nitrogen-fixing and mustard deep-rooted (FAO-56)');
+  }
+  if (!lentil18.review!.benefits.some(l => /less groundwater pumped/.test(l.en))) throw new Error('Lentil after Aman pumps less groundwater than the farmer\'s Boro');
+  const wheat18 = fs18.options.find(o => o.cropIds?.includes('wheat'))!;
+  if (!wheat18.review!.constraintFlags.some(l => /thresher/.test(l.en)) || lentil18.review!.constraintFlags.length) {
+    throw new Error('Without machines wheat (a thresher) is flagged and lentil is not');
+  }
+  if (!fs18.disclaimer?.en.includes('does not replace')) throw new Error('The advice says the tool supports and does not replace the farmer');
+  // The season risk: Boro meets the spring heat at Talanda; the bare days agree with the ledger
+  const boro18 = mine18[0].seasonRisk!;
+  const boroCrop = boro18.crops.find(c => c.id === 'boro')!;
+  if (!boroCrop.months.includes(3) || boroCrop.hotDays < 10) throw new Error(`Boro at Talanda meets April heat (got months ${boroCrop.months}, ${boroCrop.hotDays} hot days)`);
+  for (const o of fs18.options) {
+    if (o.seasonRisk!.months.length !== 12 || Math.abs(o.seasonRisk!.bareDays - o.ledger!.bareDays) > 3) {
+      throw new Error(`${o.id}: twelve months, and the calendar's bare days (${o.seasonRisk!.bareDays}) match the ledger's (${o.ledger!.bareDays})`);
+    }
+  }
+  if (!lentil18.seasonRisk!.months.some(m => m.flags.includes('bare_rain'))) throw new Error('Lentil leaves the field bare in the pre-monsoon storms');
+  // The what-if: less rain and more heat raise irrigation and hot days, and less rain lowers soil-moving rain
+  const w18 = fs18.what_if!;
+  if (!w18 || w18.rainPct !== -20 || w18.warmingC !== 2 || w18.options.length !== fs18.options.length
+    || w18.options.some(x => x.irrigationMmScenario < x.irrigationMm || x.hotDaysInFieldScenario < x.hotDaysInField || x.bareErosiveRainDaysScenario > x.bareErosiveRainDays)) {
+    throw new Error('A drier, warmer year needs more irrigation, has more hot days and less soil-moving rain');
+  }
+  // The season calendar and its trends: a trend is clear only at p < 0.05
+  const cal18 = fs18.season_calendar!;
+  if (!cal18 || cal18.months.hotDays.length !== 12 || !cal18.greenness || cal18.trends.some(t => t.clear !== (t.p < 0.05))) {
+    throw new Error('The season calendar has twelve months, the satellite\'s greenness and honest trends');
+  }
+  // NASA ECOSTRESS (70 m) checks the pilot's dry season field by field; other places have none
+  const eco18 = cal18.ecostress;
+  if (!eco18 || eco18.overpasses < 5 || !eco18.monthly['4'] || eco18.monthly['4'].etMedian < eco18.monthly['2'].etMedian) {
+    throw new Error('ECOSTRESS around the pilot: clear daytime passes, and April uses more water than February');
+  }
+  // A rotation the engine does not list (Aman, potato) is added, marked and ranked; a summer crop that does not fit is
+  // left out with a note; a year with no winter crop is explained
+  const potato18 = engine.generateAdvice({ ...TALANDA, farmerPriorities: priorities, currentRotation: { monsoon: 'aman', winter: 'potato' } });
+  if (!potato18.options.some(o => o.farmerCurrent && o.cropIds?.join() === 'aman,potato')) throw new Error('The farmer\'s Aman-potato is added to the options');
+  const mung18 = engine.generateAdvice({ ...TALANDA, farmerPriorities: priorities, currentAmanCrop: 'BRRI dhan71', currentRotation: { monsoon: 'aman', winter: 'boro', summer: 'mungbean' } });
+  if (!mung18.options.some(o => o.farmerCurrent && o.cropIds?.includes('boro')) || !/shown without it/.test(mung18.current_rotation_note?.en ?? '')) {
+    throw new Error('A summer crop that does not fit is left out of the farmer\'s rotation, with a note');
+  }
+  const none18 = engine.generateAdvice({ ...TALANDA, farmerPriorities: priorities, currentRotation: { monsoon: 'aman', winter: 'fallow' } });
+  if (none18.options.some(o => o.farmerCurrent) || !none18.current_rotation_note || none18.reference_option_id !== 'rot_dhan49_boro_conventional') {
+    throw new Error('A year with no winter crop is explained, and the usual Boro rotation becomes the reference');
+  }
+  // Outside the pilot: no soil card is a stated gap; a registered farmer's crops give their rotation
+  const godagari18 = at('ADM3_Godagari', { currentRotation: { monsoon: 'aman', winter: 'mustard' } });
+  if (godagari18.options.length < 3 || !godagari18.options.every(o => o.review!.gaps.some(l => /No SRDI soil card/.test(l.en))) || godagari18.season_calendar?.ecostress) {
+    throw new Error('Outside the pilot every option states the missing soil card, and there is no ECOSTRESS block');
+  }
+  console.log(`Farmer's Aman-Boro ranks ${mine18[0].rank} of ${fs18.options.length}; lentil saves ${Math.round((mine18[0].ledger!.groundwaterPumpedM3PerHa - lentil18.ledger!.groundwaterPumpedM3PerHa) / 100) * 100} m3/ha; Boro meets ${boroCrop.hotDays} hot days; 20% less rain and +2 C: Boro irrigation ${w18.options.find(x => x.id === mine18[0].id)!.irrigationMm} -> ${w18.options.find(x => x.id === mine18[0].id)!.irrigationMmScenario} mm`);
+  console.log('✓ TEST 18 PASSED: The farmer\'s rotation, the five-part review, the season risk and the what-if follow the Field Shift statement.\n');
+
+  // TEST 19: Two winter crops (Mustard-Boro-T.Aman), and income moved by today's market prices
+  console.log('[TEST 19] Testing the late Boro after a winter crop and the market-price move in income...');
+  const mb19 = engine.generateAdvice({ ...TALANDA, farmerPriorities: priorities, currentAmanCrop: 'BRRI dhan71', currentRotation: { monsoon: 'aman', winter: 'mustard', summer: 'boro' } });
+  const mine19 = mb19.options.find(o => o.farmerCurrent);
+  if (!mine19 || mine19.cropIds?.join() !== 'aman,mustard,boro_late' || mine19.cropSequence[2]?.seasonType !== 'Rabi' || mb19.current_rotation_note) {
+    throw new Error(`The farmer's Aman-Mustard-Boro is modelled with a late Boro as the second winter crop (got ${mine19?.cropIds})`);
+  }
+  if (!(mine19.ledger!.groundwaterPumpedM3PerHa > 7000)) throw new Error(`Mustard then Boro pumps Boro's water (got ${mine19.ledger!.groundwaterPumpedM3PerHa} m3/ha)`);
+  // Where BRRI's survey makes Potato-Boro-T. Aman the usual pattern, it is the reference rotation
+  const bogra19 = at('ADM3_BograSadar');
+  const usual19 = bogra19.options.find(o => o.currentPractice);
+  if (!usual19 || usual19.cropIds?.join() !== 'aman,potato,boro_late' || bogra19.reference_option_id !== usual19.id) {
+    throw new Error(`Bogra Sadar's usual Potato-Boro-T. Aman must be the reference (got ${usual19?.cropIds})`);
+  }
+  // Market prices (DAM via WFP): lentil's fall against food prices since 2024-25 lowers its margin; rice moved with food
+  const lentil19 = fs18.options.find(o => o.id === 'rot_dhan71_lentil')!.dimensionDetails.income;
+  if (!((lentil19.metrics.marketAdjustmentBdtPerHa as number) < -5000) || !/Market prices now \(DAM via WFP/.test(lentil19.summaryEnglish) || !/DAM via WFP/.test(lentil19.provenance.source)) {
+    throw new Error(`Lentil's income carries the market move (got ${lentil19.metrics.marketAdjustmentBdtPerHa})`);
+  }
+  const boro19 = fs18.options.find(o => o.id === 'rot_dhan49_boro_conventional')!.dimensionDetails.income.metrics.marketAdjustmentBdtPerHa as number;
+  if (Math.abs(boro19) > 2000) throw new Error(`Rice moved with food prices since 2019, so little changes (got ${boro19})`);
+  const potato19 = bogra19.options.find(o => o.cropIds?.includes('potato'))!;
+  if (!potato19.review!.checks.some(l => /market price .* Tk\/kg in 2024-25/.test(l.en))) throw new Error('A crop whose price swung hard (potato) gets a market check');
+  console.log(`Farmer's Aman-Mustard-Boro ranks ${mine19.rank}; Bogra Sadar's usual ${usual19.nameEnglish}; lentil market move ${lentil19.metrics.marketAdjustmentBdtPerHa} Tk/ha, Boro ${boro19}`);
+  console.log('✓ TEST 19 PASSED: Mustard or potato then Boro is modelled, and income follows the market where the data allow.\n');
+
   console.log('========================================================');
-  console.log('  ALL 15 CORE TESTS PASSED SUCCESSFULLY!                ');
+  console.log('  ALL 19 CORE TESTS PASSED SUCCESSFULLY!                ');
   console.log('========================================================');
 }
 
