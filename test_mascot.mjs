@@ -41,11 +41,15 @@ for (const g of Object.keys(GESTURES)) {
   finite(`gesture ${g}`);
 }
 const path = (u) => ({ x: Math.sin(u * 6.28) * 1.2, y: 0.8, z: 0.5 });
-const runs = {
-  hop: {}, walkTo: { x: 1, z: 0.2 }, fly: { path, duration: 3 }, dive: {}, backflip: {}, spin: {}, celebrate: {},
-  sit: { until: (t) => t > 1.5 }, sleep: { until: (t) => t > 2 },
-};
-for (const [name, opts] of Object.entries(runs)) {
+let glideFrames = 0;
+const runs = [
+  ['hop', {}], ['walkTo', { x: 1, z: 0.2 }], ['fly', { path, duration: 3 }], ['dive', {}], ['backflip', {}], ['spin', {}], ['celebrate', {}],
+  ['sit', { until: (t) => t > 1.5 }], ['sleep', { until: (t) => t > 2 }],
+  // the dashboard: gliding while the page carries his window, hiding under the soil and coming back up
+  ['glide', { heading: () => ({ x: 420, y: -60 }), until: () => ++glideFrames > 90 }],
+  ['dive', { stay: true }], ['emerge', {}],
+];
+for (const [name, opts] of runs) {
   let done = false;
   m.act(ACTIONS[name](opts)).then(() => { done = true; });
   step(12);
@@ -56,4 +60,4 @@ for (const [name, opts] of Object.entries(runs)) {
 if (model.clipPlane.constant !== 1000) fail('the dive left the ground clipped');
 step(3);
 if (Math.abs(applied.rootY) > 0.02 || Math.abs(applied.rootPitch) > 0.02) fail(`Rongu did not come back to his feet (y ${applied.rootY}, pitch ${applied.rootPitch})`);
-console.log(`✓ ${Object.keys(GESTURES).length} gestures and ${Object.keys(runs).length} moves play through and land him back on his feet`);
+console.log(`✓ ${Object.keys(GESTURES).length} gestures and ${runs.length} moves play through and land him back on his feet`);

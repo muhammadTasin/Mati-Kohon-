@@ -357,8 +357,59 @@ export const ACTIONS = {
     } };
   },
 
-  // Dive into the ground (the map, the soil) and pop back out.
-  dive({ splash = 'soil' } = {}) {
+  // Glide: fly on the satellite backpack while the page carries his whole window. heading() gives the window's
+  // speed on screen in px/s ({x, y}): he turns to where he goes and leans into it. until() says when to land.
+  glide({ heading = () => ({ x: 0, y: 0 }), until = () => true, height = 0.26 } = {}) {
+    const T0 = 0.3, T1 = 0.45; // crouch, lift off
+    let landAt = null;
+    return { update(t, P, m) {
+      P.backpack = 1; P.tablet = 0;
+      if (t < T0) {
+        const k = smooth(0, T0, t);
+        P.hipsY -= 0.05 * k; P.kneeL += 0.4 * k; P.kneeR += 0.4 * k; P.thrust = 0.35 * k;
+        return false;
+      }
+      if (landAt === null && t > T0 + T1 && until()) landAt = t;
+      const lift = easeOut(clamp((t - T0) / T1, 0, 1));
+      const down = landAt === null ? 0 : smooth(landAt, landAt + 0.45, t);
+      const cruise = smooth(T0, T0 + T1, t) * (1 - down);
+      const v = heading();
+      P.rootY = height * lift * (1 - easeIn(down)) + 0.03 * Math.sin(t * 5) * cruise;
+      P.rootYaw = lerp(P.rootYaw, clamp(v.x / 420, -1, 1) * 1.3, cruise);
+      P.rootPitch = clamp(Math.abs(v.x) / 1500, 0, 0.45) * cruise;
+      P.rootRoll = clamp(-(m.springs.rootYaw.vel || 0) * 0.25, -0.45, 0.45) * cruise;
+      P.thrust = down > 0.6 ? 0.3 : 0.8 + 0.2 * Math.sin(t * 9);
+      const kick = Math.sin(t * TAU * 1.4);
+      P.legLSwing -= 0.22 * cruise + 0.12 * kick * cruise; P.legRSwing -= 0.22 * cruise - 0.12 * kick * cruise;
+      P.kneeL += 0.45 * lift; P.kneeR += (0.45 + 0.2 * cruise) * lift;
+      P.armLOut += 0.25; P.armLRaise += 2.5 * cruise; P.elbowL = lerp(P.elbowL, 0.15, cruise); P.handL = cruise > 0.5 ? 'fist' : 'open';
+      P.armROut += 0.5; P.armRRaise = 0.1; P.elbowR = 0.5; P.handR = 'open';
+      P.headX -= 0.3 * cruise; P.mouthSmile = 1.7; P.mouthOpen = 0.2 * cruise;
+      P.tailCurl = lerp(1, 0.3, cruise); P.tailWag = 0.25; P.tailSpeed = 5; P.tailLift = 0.6 * cruise;
+      if (landAt !== null && t > landAt + 0.42 && !this.landed) { this.landed = true; m.emit('dust', { x: P.rootX, z: P.rootZ }); }
+      if (landAt !== null && t > landAt + 0.42 && t < landAt + 0.56) P.squash = 0.86;
+      return landAt !== null && t > landAt + 0.62;
+    } };
+  },
+
+  // Come up out of the ground: his first appearance, or back from hiding.
+  emerge({ splash = 'soil' } = {}) {
+    return { update(t, P, m) {
+      const plane = m.model.clipPlane;
+      P.tablet = 0;
+      if (t < 0.06) { m.snap('rootY', -2.4); m.snap('rootPitch', 0); plane.constant = 0; P.rootY = -2.4; P.shadow = 0; return false; }
+      const k = clamp((t - 0.06) / 0.6, 0, 1);
+      P.rootY = -2.4 + 2.4 * easeOut(Math.min(1, k * 1.15)) + 0.35 * Math.sin(Math.PI * k);
+      P.armLOut += 1.6 * (1 - k); P.armROut += 1.6 * (1 - k); P.handL = 'open'; P.handR = 'open';
+      P.mouthSmile = 1.8; P.mouthOpen = 0.35 * (1 - k); P.shadow = k;
+      if (k > 0.1 && !this.popped) { this.popped = true; m.emit('splash', { kind: splash, x: m.springs.rootX.v, z: m.springs.rootZ.v }); }
+      if (k >= 1) { plane.constant = 1000; P.squash = 0.86; m.emit('dust', { x: m.springs.rootX.v, z: m.springs.rootZ.v }); return true; }
+      return false;
+    } };
+  },
+
+  // Dive into the ground (the map, the soil) and pop back out; stay: true ends underground (to hide him).
+  dive({ splash = 'soil', stay = false } = {}) {
     return { update(t, P, m) {
       const plane = m.model.clipPlane;
       P.tablet = 0;
@@ -382,7 +433,7 @@ export const ACTIONS = {
       }
       if (t < 2.4) { // underground: turn upright where nobody sees
         P.rootY = -2.4; P.rootPitch = 0; m.snap('rootPitch', 0); m.snap('rootY', -2.4); P.shadow = 0;
-        return false;
+        return stay && t > 1.95;
       }
       const k = clamp((t - 2.4) / 0.6, 0, 1);
       P.rootY = -2.4 + 2.4 * easeOut(Math.min(1, k * 1.15)) + 0.35 * Math.sin(Math.PI * k);
@@ -463,14 +514,15 @@ export const ACTIONS = {
   },
 
   // Held by the cursor: he dangles and swings, then drops and lands.
-  dangle({ target, until }) {
+  // roll() can set the swing directly (when the host moves his whole window, his target stays put).
+  dangle({ target, until, roll = null }) {
     let vx = 0, last = null;
     return { update(t, P, m, dt) {
       const p = target();
       P.rootX = p.x; P.rootY = p.y; P.rootZ = p.z;
       if (last) vx = lerp(vx, (p.x - last.x) / Math.max(dt, 1e-3), 0.2);
       last = { ...p };
-      P.rootRoll = clamp(-vx * 0.35, -0.7, 0.7);
+      P.rootRoll = roll ? roll() : clamp(-vx * 0.35, -0.7, 0.7);
       P.legLSwing = 0.15 * Math.sin(t * 7); P.legRSwing = -0.15 * Math.sin(t * 7 + 0.5); P.kneeL = 0.35; P.kneeR = 0.45;
       P.armLOut = 1.1; P.armROut = 1.1; P.elbowL = 0.6; P.elbowR = 0.6; P.handL = 'open'; P.handR = 'open'; P.tablet = 0;
       P.lidLUp = -0.05; P.lidRUp = -0.05; P.mouthOpen = 0.45; P.mouthWidth = 0.5; P.mouthSmile = 0.6;

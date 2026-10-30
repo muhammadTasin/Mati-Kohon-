@@ -153,6 +153,7 @@ const FRAMINGS = {
   full: { fov: 26, pos: [0, 1.2, 6.4], look: [0, 1.02, 0] },
   portrait: { fov: 24, pos: [0, 1.55, 4.0], look: [0, 1.32, 0] },
   stage: { fov: 34, pos: [0, 1.6, 7.6], look: [0, 1.0, 0] },
+  dock: { fov: 30, pos: [0, 1.3, 6.4], look: [0, 1.25, 0] }, // his corner of the dashboard: room above for hops
 };
 
 export async function createRongu(canvas, opts = {}) {
@@ -250,15 +251,17 @@ export async function createRongu(canvas, opts = {}) {
   const onVis = () => { if (!document.hidden) kick(); };
   document.addEventListener('visibilitychange', onVis);
 
-  let slowFrames = 0, frameAvg = 16;
+  let slowFrames = 0, frameAvg = 16, minFrameMs = 0;
   const frame = (now) => {
     raf = 0;
     if (!running || !visible || document.hidden) return;
+    // a frame-rate cap (an idle companion needs fewer frames); the 1.5 ms slack keeps 30 fps from dropping to 20
+    if (minFrameMs && now - last < minFrameMs - 1.5) { raf = requestAnimationFrame(frame); return; }
     const dt = Math.min(0.05, (now - last) / 1000) * slow;
-    frameAvg = frameAvg * 0.95 + (now - last) * 0.05;
+    if (!minFrameMs) frameAvg = frameAvg * 0.95 + (now - last) * 0.05;
     last = now;
     // keep it smooth: if frames run long, render fewer pixels
-    if (frameAvg > 26 && renderer.getPixelRatio() > 1) { if (++slowFrames > 90) { renderer.setPixelRatio(1); resize(); slowFrames = 0; } } else slowFrames = 0;
+    if (!minFrameMs && frameAvg > 26 && renderer.getPixelRatio() > 1) { if (++slowFrames > 90) { renderer.setPixelRatio(1); resize(); slowFrames = 0; } } else slowFrames = 0;
     if (!pointerTarget) motion.lookAt(lookViewer ? camera.position : null);
     motion.update(dt);
     // the key light and its shadow follow him around
@@ -289,11 +292,38 @@ export async function createRongu(canvas, opts = {}) {
   let followPointer = opts.followPointer ?? true, drag = null, petStrokes = [], lastClick = 0;
   let pointerTarget = null, lookViewer = opts.lookAtViewer ?? true;
   motion.home.yaw = opts.restYaw ?? -0.62; // a three-quarter stance, like the drawing
+  // passThrough: the canvas takes no pointer events, so clicks on the empty space around him reach the page;
+  // the window's events are read instead, and only a press on his body is kept. His eyes follow the pointer
+  // anywhere on the page. carry: a drag moves his whole window (the host listens for 'carry'), he dangles in it.
+  const passThrough = !!opts.passThrough, carry = !!opts.carry;
+  const setHover = (on) => {
+    if (passThrough) document.documentElement.classList.toggle('rongu-hover', on);
+    else canvas.style.cursor = on ? 'grab' : '';
+  };
+  let carryVx = 0, carryAt = 0;
+  const carryRoll = () => {
+    const now = performance.now();
+    carryVx *= Math.exp(-(now - carryAt) / 120); carryAt = now; // eases off once the pointer stops
+    return Math.max(-0.6, Math.min(0.6, -carryVx * 0.0005));
+  };
 
   const onMove = (e) => {
     toNdc(e);
-    if (drag) { drag.point = onPlane(drag.z); if (!drag.moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) > 6) startDrag(); return; }
+    if (drag) {
+      if (carry) {
+        const now = performance.now(), dtm = Math.max(8, now - (drag.lastT || now - 16));
+        carryVx = carryVx * 0.6 + 0.4 * ((e.clientX - (drag.lastX ?? e.clientX)) / dtm) * 1000;
+        carryAt = now; drag.lastX = e.clientX; drag.lastT = now;
+        if (drag.moved) emit('carry', { x: e.clientX, y: e.clientY, dx: e.clientX - drag.x0, dy: e.clientY - drag.y0 });
+      } else drag.point = onPlane(drag.z);
+      if (!drag.moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) > 6) startDrag();
+      return;
+    }
     if (followPointer) { pointerTarget = onPlane(2.4); motion.lookAt(pointerTarget); }
+    if (passThrough) {
+      const r = canvas.getBoundingClientRect();
+      if (e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) { setHover(false); return; }
+    }
     // petting: quick strokes back and forth over his head
     const h = hits()[0];
     if (h && /head|lid|eye|frame|temple|bridge/.test(h.object.name)) {
@@ -303,28 +333,47 @@ export async function createRongu(canvas, opts = {}) {
       for (let i = 2; i < petStrokes.length; i++) if ((petStrokes[i].x - petStrokes[i - 1].x) * (petStrokes[i - 1].x - petStrokes[i - 2].x) < 0) turns++;
       if (turns >= 3) { petStrokes = []; pet(); }
     }
-    canvas.style.cursor = h ? 'grab' : '';
+    setHover(!!h);
   };
-  const onLeave = () => { if (!drag) pointerTarget = null; };
+  const onLeave = () => { if (!drag) { pointerTarget = null; setHover(false); } };
   const onDown = (e) => {
+    if (passThrough) {
+      const r = canvas.getBoundingClientRect();
+      if (e.button > 0 || e.clientX < r.left || e.clientX > r.right || e.clientY < r.top || e.clientY > r.bottom) return;
+    }
     toNdc(e);
     if (!hits().length) return;
+    if (passThrough) { e.preventDefault(); e.stopPropagation(); }
     drag = { x0: e.clientX, y0: e.clientY, z: model.root.position.z, moved: false, point: onPlane(model.root.position.z) };
-    canvas.setPointerCapture?.(e.pointerId);
+    if (!passThrough) canvas.setPointerCapture?.(e.pointerId);
   };
   const startDrag = () => {
     drag.moved = true;
-    canvas.style.cursor = 'grabbing';
+    if (passThrough) document.documentElement.classList.add('rongu-grabbing'); else canvas.style.cursor = 'grabbing';
     motion.stopActions();
+    if (carry) {
+      emit('carry-start', { x: drag.x0, y: drag.y0 });
+      motion.act(ACTIONS.dangle({ target: () => ({ x: motion.home.x, y: 0.14, z: motion.home.z }), roll: carryRoll, until: () => !drag }))
+        .then(() => motion.act(ACTIONS.drop()));
+      return;
+    }
     motion.act(ACTIONS.dangle({ target: () => ({ x: drag ? drag.point.x : model.root.position.x, y: Math.max(0.05, (drag ? drag.point.y : 1.2) - 1.75), z: drag ? drag.z : 0 }), until: () => !drag }))
       .then(() => motion.act(ACTIONS.drop()));
+  };
+  // after a press on him the page must not see the click that follows
+  const swallowClick = () => {
+    const stop = (ev) => { ev.preventDefault(); ev.stopPropagation(); };
+    window.addEventListener('click', stop, { capture: true, once: true });
+    setTimeout(() => window.removeEventListener('click', stop, { capture: true }), 400);
   };
   const onUp = (e) => {
     if (!drag) return;
     const wasDrag = drag.moved;
     drag = null;
-    canvas.style.cursor = '';
-    if (wasDrag) return;
+    if (passThrough) { e.preventDefault?.(); e.stopPropagation?.(); swallowClick(); document.documentElement.classList.remove('rongu-grabbing'); }
+    else canvas.style.cursor = '';
+    if (wasDrag) { if (carry) emit('carry-end', { x: e.clientX, y: e.clientY }); return; }
+    if (e.type === 'pointercancel') return;
     const now = performance.now();
     if (now - lastClick < 320) { motion.stopActions(); motion.act(ACTIONS.backflip()); lastClick = 0; emit('poke', 'backflip'); return; }
     lastClick = now;
@@ -342,7 +391,15 @@ export async function createRongu(canvas, opts = {}) {
     setTimeout(() => setMood(before === 'shy' ? 'calm' : before), 2200);
     emit('poke', 'pet');
   };
-  if (opts.interactive !== false) {
+  const onOut = (e) => { if (!e.relatedTarget) onLeave(); }; // the pointer left the window
+  if (opts.interactive !== false && passThrough) {
+    canvas.style.pointerEvents = 'none';
+    window.addEventListener('pointermove', onMove, { passive: true });
+    window.addEventListener('pointerdown', onDown, { capture: true });
+    window.addEventListener('pointerup', onUp, { capture: true });
+    window.addEventListener('pointercancel', onUp, { capture: true });
+    document.addEventListener('pointerout', onOut);
+  } else if (opts.interactive !== false) {
     canvas.addEventListener('pointermove', onMove);
     canvas.addEventListener('pointerleave', onLeave);
     canvas.addEventListener('pointerdown', onDown);
@@ -350,13 +407,14 @@ export async function createRongu(canvas, opts = {}) {
     canvas.style.touchAction = 'none';
   }
 
-  // where on screen his head is (for speech bubbles)
-  const headScreen = () => {
-    const p = new THREE.Vector3(); model.head.getWorldPosition(p); p.y += 0.62;
+  // where on screen his head is (for speech bubbles), and where his feet stand
+  const toScreen = (p) => {
     p.project(camera);
     const r = canvas.getBoundingClientRect();
     return { x: r.left + (p.x + 1) / 2 * r.width, y: r.top + (1 - p.y) / 2 * r.height };
   };
+  const headScreen = () => { const p = new THREE.Vector3(); model.head.getWorldPosition(p); p.y += 0.62; return toScreen(p); };
+  const footScreen = () => toScreen(new THREE.Vector3(motion.home.x, 0, motion.home.z));
 
   const controller = {
     THREE, scene, camera, renderer, model, motion, framing: 'full',
@@ -371,7 +429,29 @@ export async function createRongu(canvas, opts = {}) {
     mood: setMood,
     get moodName() { return moodName; },
     lookAt: (p) => motion.lookAt(p ? new THREE.Vector3(p.x, p.y, p.z) : null),
+    // look at a point on the page (client pixels), even far outside his canvas; null gives the eyes back to the pointer
+    lookAtScreen(x, y) {
+      if (x == null) { pointerTarget = null; return; }
+      const r = canvas.getBoundingClientRect();
+      ndc.set(((x - r.left) / r.width) * 2 - 1, -((y - r.top) / r.height) * 2 + 1);
+      pointerTarget = onPlane(2.4); motion.lookAt(pointerTarget);
+    },
     followPointer(on) { followPointer = on; if (!on) pointerTarget = null; },
+    get busy() { return motion.busy || motion.gestures.length > 0 || motion.t < motion.speakUntil; },
+    // fewer frames while nothing much happens (60 = no cap)
+    setFrameRate(fps) { minFrameMs = fps >= 60 ? 0 : 1000 / fps; },
+    footScreen,
+    worldToScreen: (x, y, z) => toScreen(new THREE.Vector3(x, y, z)),
+    // a small picture of his face (for a button when he is tucked away)
+    portrait(size = 96) {
+      renderer.render(scene, camera);
+      // headScreen() sits just above his eyes: a square around it holds the casque, the glasses and the smile
+      const h = headScreen(), r = canvas.getBoundingClientRect(), k = canvas.width / r.width;
+      const side = r.width * 0.5, cx = (h.x - r.left) * k, cy = (h.y - r.top + side * 0.06) * k;
+      const out = document.createElement('canvas'); out.width = out.height = size;
+      out.getContext('2d').drawImage(canvas, cx - side * k / 2, cy - side * k / 2, side * k, side * k, 0, 0, size, size);
+      return out.toDataURL('image/png');
+    },
     lookAtViewer(on) { lookViewer = on; },
     say(text, { seconds } = {}) {
       const s = seconds ?? Math.min(9, 0.9 + text.length / 15);
@@ -385,9 +465,11 @@ export async function createRongu(canvas, opts = {}) {
     // advance time by hand (tests and screenshots, when the page is throttled)
     step(seconds) {
       for (let s = 0; s < seconds; s += 1 / 60) {
+        if (!pointerTarget) motion.lookAt(lookViewer ? camera.position : null);
         motion.update(1 / 60);
         if (moodWave) { moodWave.t += 1 / 60; model.shared.uWave.value = -0.1 + 1.3 * Math.min(1, moodWave.t / moodWave.d); if (moodWave.t >= moodWave.d) moodWave = null; }
         fx.update(1 / 60, camera);
+        emit('frame', 1 / 60); // whatever follows him (the dashboard's window, bubble, spotlight) steps too
       }
       renderer.render(scene, camera);
     },
@@ -399,6 +481,11 @@ export async function createRongu(canvas, opts = {}) {
     destroy() {
       running = false; cancelAnimationFrame(raf); ro.disconnect(); io.disconnect();
       document.removeEventListener('visibilitychange', onVis);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerdown', onDown, { capture: true });
+      window.removeEventListener('pointerup', onUp, { capture: true });
+      window.removeEventListener('pointercancel', onUp, { capture: true });
+      document.removeEventListener('pointerout', onOut);
       renderer.dispose();
     },
   };
