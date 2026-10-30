@@ -770,6 +770,7 @@ async function run() {
   console.log('✓ Site scope: own desk only, another site cannot read, resolve, write or reset; area ids validated; pilot-only overview parts stay with the pilot');
 
   await checkDemoModeOff();
+  await checkGuestMode();
 
   console.log('\n===========================================');
   console.log('  ALL ENDPOINTS TESTED & VERIFIED!          ');
@@ -803,7 +804,9 @@ async function checkDemoModeOff() {
     const desk = await fetch(`${base}/api/v1/officer/desk`);
     check(desk.status === 401, 'officer desk needs a token');
     const config = await (await fetch(`${base}/api/v1/auth/config`)).json();
-    check(config.demoMode === false && Object.keys(config).sort().join() === 'demoMode,emailDomain,supabaseAnonKey,supabaseUrl', 'auth config exposes only the URL, the anon key, the email domain and the demo flag');
+    check(config.demoMode === false && config.guestMode === false && config.accountSignIn === false && Object.keys(config).sort().join() === 'accountSignIn,demoMode,emailDomain,guestMode,supabaseAnonKey,supabaseUrl', 'auth config exposes only the URL, the anon key, the email domain and the sign-in flags');
+    const noGuest = await fetch(`${base}/api/v1/auth/guest`, { method: 'POST', headers: json, body: '{}' });
+    check(noGuest.status === 403, `the guest manager must be closed without GUEST_MODE, got ${noGuest.status}`);
     // nothing configured: the manager sees "unset" and the demo NASA key
     const unset = await (await fetch(`${base}/api/v1/manager/data-sources`, { headers: { Authorization: 'Bearer mgr-token' } })).json();
     const { integrations: unsetIntegrations, ...unsetFlags } = unset;
@@ -814,6 +817,83 @@ async function checkDemoModeOff() {
   } finally {
     proc.kill();
     fs.rmSync(store, { force: true });
+  }
+}
+
+/** A third server with GUEST_MODE=true: sign-in is optional, the guest works on the sample desk and can never go live. */
+async function checkGuestMode() {
+  console.log('Testing the optional sign-in: the guest manager ...');
+  const port = String(Number(PORT) + 2);
+  const base = `http://localhost:${port}`;
+  const store = path.join(os.tmpdir(), `eden-officer-test-guest-${process.pid}.json`);
+  const callStore = path.join(os.tmpdir(), `eden-calls-test-guest-${process.pid}.json`);
+  const env = { ...process.env, PORT: port, GUEST_MODE: 'true', SUPABASE_URL: FAKE_SUPABASE_URL, SUPABASE_ANON_KEY: 'fake-anon-key', AUTH_EMAIL_DOMAIN: 'example.test',
+    EDEN_OFFICER_STORE: store, EDEN_CALL_STORE: callStore, CATTLE_STORE_PATH: CATTLE_STORE, LLM_BASE_URL: '', TTS_BASE_URL: '', API_WRITE_TOKEN: '', AWAJ_LIVE: '0', OFFLINE: '1',
+    SMS_LIVE: '1', SMS_API_KEY: 'fake-sms-key', SMS_SECRET_KEY: 'fake-sms-secret', SMS_SENDER_ID: 'fake', // a live SMS gateway on paper: the guest must be refused before anything is sent
+    EDEN_LIVE_FILE: path.resolve('tests/fixtures/live_conditions_2026-10-01.json') };
+  delete env.DEMO_MODE;
+  delete env.EDEN_OFFICER_CODE;
+  const proc = spawn('node', ['--experimental-strip-types', 'services/api/src/server.ts'], { stdio: 'ignore', env });
+  try {
+    let up = false;
+    for (let i = 0; i < 50 && !up; i++) {
+      try { up = (await fetch(`${base}/api/v1/overview`)).ok; } catch { await new Promise((r) => setTimeout(r, 100)); }
+    }
+    check(up, 'the guest-mode server did not start');
+    const json = { 'Content-Type': 'application/json' };
+    const as = (token) => ({ headers: { Authorization: `Bearer ${token}` } });
+    const post = (route, body, token) => fetch(`${base}${route}`, { method: 'POST', headers: token ? { ...json, Authorization: `Bearer ${token}` } : json, body: JSON.stringify(body ?? {}) });
+
+    const config = await (await fetch(`${base}/api/v1/auth/config`)).json();
+    check(config.guestMode === true && config.demoMode === false && config.accountSignIn === true, 'auth config reports guest mode on, demo off, and account sign-in set up');
+
+    const guestRes = await post('/api/v1/auth/guest');
+    check(guestRes.status === 200, `guest sign-in status ${guestRes.status}`);
+    const guest = await guestRes.json();
+    check(guest.token && guest.guest === true && guest.officer?.guest === true && guest.officer.site === 'talanda', 'the guest session is marked and belongs to the pilot site');
+    const session = await (await fetch(`${base}/api/v1/auth/session`, as(guest.token))).json();
+    check(session.user?.role === 'officer', 'the guest session can be checked again after a refresh');
+
+    const guestDesk = await (await fetch(`${base}/api/v1/officer/desk`, as(guest.token))).json();
+    check(guestDesk.officer?.guest === true && guestDesk.farmers.length === 6 && guestDesk.farmers.every((f) => f.farmer.sample), 'the guest sees the six sample farmers and the desk knows it is a guest');
+    check((await fetch(`${base}/api/v1/officer/knowledge`, as(guest.token))).status === 200, 'the guest reads the knowledge pack');
+    const sources = await fetch(`${base}/api/v1/manager/data-sources`, as(guest.token));
+    check(sources.status === 200, 'the guest reads the data-sources status (flags only)');
+    const area = await (await fetch(`${base}/api/v1/manager/area`, as(guest.token))).json();
+    check(area.siteId === 'talanda', 'the guest has the pilot site as the home area');
+    check((await fetch(`${base}/api/v1/officer/desk`)).status === 401, 'the desk still needs a token');
+    check((await fetch(`${base}/api/v1/officer/desk`, as('not-a-guest-token'))).status === 401, 'an unknown token is refused');
+
+    // a guest registers a sample farmer: never dialled, and the phone number is not kept anywhere
+    const farmerBody = { nameBangla: 'অতিথির কৃষক', phone: '01712345678', placeId: 'talanda_tanore', unionBangla: 'তালন্দ', landType: 'medium_high', crops: ['lentil', 'wheat'], callSlot: 'morning', consentMethod: 'in_person', consent: true };
+    const reg = await (await post('/api/v1/officer/farmers', farmerBody, guest.token)).json();
+    check(reg.farmer?.sample === true && reg.farmer.phoneMasked === '017XX-XXX678', 'a guest registers a sample farmer with a masked number');
+    check(!fs.readFileSync(store, 'utf8').includes('01712345678'), 'the guest\'s phone number is not written to the store');
+    // the call list: a guest can plan, approve and "send", and it is always a dry run
+    check((await post('/api/v1/officer/calls/plan', {}, guest.token)).status === 200, 'the guest builds the call list');
+    check((await post('/api/v1/officer/calls/approve-all', {}, guest.token)).status === 200, 'the guest approves it');
+    const sent = await (await post('/api/v1/officer/calls/send', {}, guest.token)).json();
+    check(sent.result?.live === false, 'a guest\'s send is never live');
+    // the gate for a real SMS: a guest is refused before anything is sent, no token is refused, the dry-run SMS route is not asked here
+    const smsBody = { phone: '01712345678', crops: ['wheat'] };
+    check((await post('/api/v1/sms/advice', smsBody, guest.token)).status === 403, 'a guest cannot send a real SMS');
+    check((await post('/api/v1/sms/advice', smsBody)).status === 401, 'no token cannot send a real SMS');
+
+    // a guest may restore the sample desk, but not wipe one that holds a real manager's registrations
+    check((await post('/api/v1/officer/reset', {}, guest.token)).status === 200, 'a guest restores the sample desk');
+    const real = await post('/api/v1/officer/farmers', farmerBody, 'h.talanda.s');
+    check(real.status === 200 && (await real.json()).farmer?.sample === false, 'a manager account registers a real farmer, even with the number a guest used');
+    const blocked = await post('/api/v1/officer/reset', {}, guest.token);
+    check(blocked.status === 403, `a guest must not reset a desk with real registrations, got ${blocked.status}`);
+    check((await post('/api/v1/officer/reset', {}, 'h.talanda.s')).status === 200, 'the manager account may still reset its own desk');
+
+    check((await post('/api/v1/auth/logout', {}, guest.token)).status === 200, 'the guest signs out');
+    check((await fetch(`${base}/api/v1/officer/desk`, as(guest.token))).status === 401, 'a signed-out guest token is refused');
+    console.log('✓ Optional sign-in: the guest manager opens the sample desk in one click, never goes live, keeps no phone number and cannot wipe real records');
+  } finally {
+    proc.kill();
+    fs.rmSync(store, { force: true });
+    fs.rmSync(callStore, { force: true });
   }
 }
 

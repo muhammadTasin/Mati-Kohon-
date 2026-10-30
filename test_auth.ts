@@ -4,11 +4,19 @@
  */
 import assert from 'node:assert/strict';
 import type http from 'node:http';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { ApiError } from './services/api/src/errors.ts';
 
+// the guest tests register a farmer: this run keeps its own desk store, never the developer's
+const STORE = path.join(os.tmpdir(), `eden-auth-test-store-${process.pid}.json`);
+process.env.EDEN_OFFICER_STORE = STORE;
+
 delete process.env.DEMO_MODE;
+delete process.env.GUEST_MODE;
 delete process.env.EDEN_OFFICER_CODE;
-const { managerFromUser, managerSite, requireManager, authConfig } = await import('./services/api/src/auth.ts');
+const { managerFromUser, managerSite, requireManager, requireRealManager, authConfig } = await import('./services/api/src/auth.ts');
 const desk = await import('./services/api/src/officer_desk.ts');
 
 console.log('========================================================');
@@ -65,7 +73,7 @@ delete process.env.SUPABASE_ANON_KEY;
 await assert.rejects(requireManager(request('Bearer something')), (e: any) => e instanceof ApiError && e.status === 503);
 await assert.rejects(requireManager(request()), (e: any) => e instanceof ApiError && e.status === 401);
 delete process.env.AUTH_EMAIL_DOMAIN;
-assert.deepEqual(authConfig(), { supabaseUrl: '', supabaseAnonKey: '', emailDomain: '', demoMode: false });
+assert.deepEqual(authConfig(), { supabaseUrl: '', supabaseAnonKey: '', emailDomain: '', demoMode: false, guestMode: false, accountSignIn: false });
 process.env.AUTH_EMAIL_DOMAIN = ' @Marvel.com ';
 assert.equal(authConfig().emailDomain, 'marvel.com', 'the domain is trimmed, lowercased and loses a leading @');
 delete process.env.AUTH_EMAIL_DOMAIN;
@@ -88,6 +96,43 @@ process.env.DEMO_MODE = 'false';
 await assert.rejects(requireManager(request(`Bearer ${demoSession.token}`), verify), (e: any) => e instanceof ApiError && e.status === 401, 'the demo token stops working when demo mode is off');
 console.log('✓ TEST 4 PASSED: the demo login works only behind DEMO_MODE=true.\n');
 
+// TEST 5: sign-in is optional: the one-click guest manager exists only behind GUEST_MODE=true, works on the sample desk, and never
+// passes the gate that every real call or SMS goes through
+assert.equal(desk.guestLogin(), null, 'no guest session unless GUEST_MODE=true');
+assert.equal(authConfig().guestMode, false);
+assert.equal(authConfig().accountSignIn, false, 'account sign-in is reported as not set up when Supabase is not configured');
+process.env.GUEST_MODE = 'true';
+assert.equal(authConfig().guestMode, true);
+const guest = desk.guestLogin()!;
+assert.ok(guest.token && guest.guest === true && guest.officer.guest === true && guest.officer.site === 'talanda', 'a guest works on the pilot site and is marked as a guest');
+const asGuest = await requireManager(request(`Bearer ${guest.token}`), verify);
+assert.equal(asGuest.guest, true, 'the guest token passes requireManager (the desk)');
+assert.equal(managerSite(request(`Bearer ${guest.token}`)), undefined);
+await assert.rejects(requireRealManager(request(`Bearer ${guest.token}`), verify), (e: any) => e instanceof ApiError && e.status === 403, 'a guest never passes the gate for a real call or SMS');
+assert.equal((await requireRealManager(request('Bearer good'), verify)).id, 'u-1', 'a real manager passes the same gate');
+assert.equal(desk.userForToken(`Bearer ${guest.token}`)?.role, 'officer', 'the guest session can be restored after a page refresh');
+// the account of a guest cannot be told from a manager account by its name alone: only the flag says so, and the farmer register keeps no number
+const sampleOnly = desk.registerFarmer(guest.officer.id, { nameBangla: 'অতিথির কৃষক', phone: '01712345678', placeId: 'talanda_tanore', unionBangla: 'তালন্দ', landType: 'medium_high', crops: ['lentil'], consent: true, consentMethod: 'in_person' }, 'talanda', true);
+assert.equal(sampleOnly.farmer?.sample, true, 'a guest registers a sample farmer');
+assert.equal(desk.hasRealFarmers('talanda'), false, 'a guest\'s farmer is not a real registration');
+desk.resetDesk('talanda');
+// expiry and the cap
+const expired = desk.guestLogin(Date.now() - 13 * 60 * 60 * 1000)!;
+await assert.rejects(requireManager(request(`Bearer ${expired.token}`), verify), (e: any) => e instanceof ApiError && e.status === 401, 'a guest session ends after twelve hours');
+assert.equal(desk.userForToken(`Bearer ${expired.token}`), null);
+assert.equal(desk.logout(`Bearer ${guest.token}`), true);
+await assert.rejects(requireManager(request(`Bearer ${guest.token}`), verify), (e: any) => e instanceof ApiError && e.status === 401, 'signing out ends the guest session');
+const first = desk.guestLogin()!;
+for (let i = 0; i < 520; i++) desk.guestLogin();
+assert.equal(desk.userForToken(`Bearer ${first.token}`), null, 'the oldest guest sessions are dropped past 500');
+const last = desk.guestLogin()!;
+assert.ok(desk.userForToken(`Bearer ${last.token}`), 'the newest guest session works');
+await assert.rejects(requireManager(request('Bearer a-token-from-before-a-restart')), (e: any) => e instanceof ApiError && e.status === 401, 'on a guest server with no account backend an unknown token is a plain 401, so the browser goes back to the picker');
+process.env.GUEST_MODE = 'false';
+await assert.rejects(requireManager(request(`Bearer ${last.token}`), verify), (e: any) => e instanceof ApiError && e.status === 401, 'every guest token stops working when guest mode is turned off');
+await assert.rejects(requireManager(request('Bearer a-token-from-before-a-restart')), (e: any) => e instanceof ApiError && e.status === 503, 'with neither guest nor demo mode, a server with no account backend still says it is not configured');
+console.log('✓ TEST 5 PASSED: the guest manager works only behind GUEST_MODE=true, never passes the real-call gate, expires and is capped.\n');
+
 // Sign-in field: the browser helper that turns what was typed into the User ID (apps/saao-dashboard/public/auth-client.js)
 const { resolveUserId } = await import('./apps/saao-dashboard/public/auth-client.js');
 const domain = 'desk.example.test';
@@ -107,6 +152,7 @@ assert.equal(resolveUserId('', domain), null);
 assert.equal(resolveUserId(undefined, domain), null);
 console.log('✓ Sign-in field: a plain User ID or an email with the server\'s own domain works; every other form is refused.\n');
 
+fs.rmSync(STORE, { force: true });
 console.log('========================================================');
 console.log('  ALL MANAGER AUTHENTICATION TESTS PASSED               ');
 console.log('========================================================\n');

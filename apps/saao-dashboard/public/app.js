@@ -23,7 +23,7 @@ let lastPlanBody = null; // the last plan's request, so the what-if sliders can 
 let whatIfAdvice = null; // the advice for the what-if year, when a slider is off zero
 let whatIfTimer = null;
 let officers = [];
-let officerSession = null; // { source: 'supabase' | 'demo', officer, token (demo only) }
+let officerSession = null; // { source: 'supabase' | 'demo' | 'guest', officer, token (demo and guest only) }
 let homeArea = null; // the manager's own area from the verified token site: { siteId, placeId, nameBangla, nameEnglish, district }
 let homeAreaApplied = false; // the page switched to the manager's own area once after sign-in
 let demoMode = false; // the server runs with DEMO_MODE=true: the demo officer login is offered
@@ -1136,8 +1136,11 @@ function renderOfficerSelect() {
 }
 
 /** The token for officer API calls: the demo token in a demo session, otherwise the Supabase access token (kept fresh by Supabase). */
+/** A demo or guest session keeps its own server token; a Supabase session is kept (and refreshed) by Supabase. */
+const hasOwnToken = (session) => session?.source === 'demo' || session?.source === 'guest';
+
 async function officerToken() {
-  if (officerSession?.source === 'demo') return officerSession.token;
+  if (hasOwnToken(officerSession)) return officerSession.token;
   return accessToken();
 }
 
@@ -1149,7 +1152,8 @@ async function officerFetch(url, options = {}) {
   if (res.status === 403 && (await res.clone().json().catch(() => null))?.error?.code === 'site_required') {
     return res; // a signed-in manager whose account has no site: refused, but still signed in; the caller shows the message
   }
-  if (res.status === 401 || res.status === 403) {
+  // a guest's 403 is "not allowed here" (a real call, a desk with real records): the guest session itself is fine
+  if (res.status === 401 || (res.status === 403 && officerSession?.source !== 'guest')) {
     await window.officerSignOut();
     throw new OfficerAccessError(res.status);
   }
@@ -1189,6 +1193,10 @@ window.officerSignIn = async function(event) {
 };
 
 window.officerSignOut = async function() {
+  // a guest or demo token is also ended on the server (best effort)
+  if (hasOwnToken(officerSession) && officerSession.token) {
+    fetch('/api/v1/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${officerSession.token}` } }).catch(() => {});
+  }
   officerSession = null;
   homeArea = null;
   homeAreaApplied = false;
@@ -1239,7 +1247,9 @@ function renderProfile() {
   const o = officerSession?.officer;
   if (o) {
     setText('saaoName', tr(o.nameBangla, o.nameEnglish));
-    setText('saaoRole', tr(`SAAO, ${o.blockBangla} • প্রবেশ করেছেন`, `SAAO, ${o.blockEnglish} • signed in`));
+    setText('saaoRole', o.guest
+      ? tr(`${o.blockBangla} • নমুনা তথ্য`, `${o.blockEnglish} • sample data`)
+      : tr(`SAAO, ${o.blockBangla} • প্রবেশ করেছেন`, `SAAO, ${o.blockEnglish} • signed in`));
   } else {
     setText('saaoName', tr('নমুনা কর্মকর্তা', 'Sample officer'));
     setText('saaoRole', tr('SAAO, তালন্দ ব্লক', 'SAAO, Talanda block'));
@@ -1864,11 +1874,12 @@ function startPortals() {
     officers: () => officers,
     loadOfficers,
     officerSignedIn: () => Boolean(officerSession),
-    /** Starts an officer session ({ source: 'supabase' } or a demo { source: 'demo', token, officer }) and loads the desk: 'ok' | 'denied' | 'unavailable'. */
+    officerSource: () => officerSession?.source ?? null,
+    /** Starts an officer session ({ source: 'supabase' }, a demo { source: 'demo', token, officer } or a guest { source: 'guest', token, officer }) and loads the desk: 'ok' | 'denied' | 'unavailable'. */
     async setOfficerSession(session) {
       officerSession = session;
-      if (session.source === 'demo') {
-        // only the demo token is kept here; a Supabase session is kept (and refreshed) by Supabase itself
+      if (hasOwnToken(session)) {
+        // only the demo or guest token is kept here; a Supabase session is kept (and refreshed) by Supabase itself
         try {
           sessionStorage.setItem('eden.officer', JSON.stringify(session));
         } catch {
@@ -1903,7 +1914,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const saved = localStorage.getItem('eden.lang');
     if (saved === 'en' || saved === 'bn') lang = saved;
     const session = sessionStorage.getItem('eden.officer');
-    if (session) officerSession = { ...JSON.parse(session), source: 'demo' };
+    if (session) {
+      const saved = JSON.parse(session);
+      officerSession = { ...saved, source: saved.source === 'guest' ? 'guest' : 'demo' };
+    }
   } catch {
     // storage blocked: start in Bangla, signed out
   }

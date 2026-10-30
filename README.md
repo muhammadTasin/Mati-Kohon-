@@ -33,7 +33,7 @@ npm run call:test -- --to 01XXXXXXXXX --crops sunflower,lentil   # the Bangla ca
 - **Place:** pick a district and upazila at the top of the overview; the advice, replay, alerts and rain follow it, and the browser remembers it. Rajshahi → Tanore is the detailed Talanda pilot.
 
 - **Language:** the বাংলা / EN buttons in the dashboard header switch every text; the browser remembers the choice.
-- **Krishi officer desk:** tab ৬ / 6. Managers sign in with a Supabase account (see [Manager sign-in](#manager-sign-in-supabase)). **Restore sample data** resets the sample farmers before a recording. For a local demo without Supabase, set `DEMO_MODE=true` and an `EDEN_OFFICER_CODE` in `.env`: the officer list and the shared code then work as before.
+- **Krishi officer desk:** tab ৬ / 6. Sign-in is optional: with `GUEST_MODE=true` anyone opens the desk as a guest in one click (see [Hackathon access](#hackathon-access-no-sign-in-needed)); managers with an account sign in with Supabase (see [Manager sign-in](#manager-sign-in-supabase)). **Restore sample data** resets the sample farmers before a recording. For a local demo without Supabase, set `DEMO_MODE=true` and an `EDEN_OFFICER_CODE` in `.env`: the officer list and the shared code then work as before.
 - **Farmer sign-in (app):** a farmer ID or phone number with the demo PIN `1234`. This is a demo gate, not real authentication.
 - **Outside services (keys in the git-ignored `.env`; see `.env.example`):**
   - **Gemini** rewords the advice through its OpenAI-compatible endpoint. Every number is checked against the advice, and the fixed template takes over on any doubt.
@@ -284,7 +284,8 @@ Do not commit secrets, local environment files, dependency folders, generated AP
 | GET/POST | `/api/v1/cattle/jobs` (`/:id`, `/:id/retry`), `/api/v1/cattle/readiness`, `/api/v1/cattle/models/train` | Background jobs (forecast, NASA POWER, Earth Engine when set up), readiness, and the training gate that refuses to train without labelled data |
 | GET | `/api/v1/erosion` | Riverbank erosion risk for the Jamuna corridor from BWDB/FFWC station records and IMERG basin rain |
 | POST | `/api/v1/ai/ask` | Bangla assistant that answers only from the project's evidence and refuses out-of-scope questions such as loans or pesticide brands; rules-based, with no outside AI service |
-| GET | `/api/v1/auth/config` | What the website needs to sign managers in: `supabaseUrl`, `supabaseAnonKey` (public by design) and `demoMode` |
+| GET | `/api/v1/auth/config` | What the website needs to sign in: `supabaseUrl`, `supabaseAnonKey` (public by design), `emailDomain`, `demoMode`, `guestMode` and `accountSignIn` (Supabase is set up) |
+| POST | `/api/v1/auth/guest` | One-click guest manager (`{ token, officer, user, guest: true }`); **403** unless `GUEST_MODE=true`. Sample data only, never a real call or SMS |
 | POST | `/api/v1/auth/login` | Farmer (ID or phone and PIN) demo sign-in, returns a session token; the demo desk login only in `DEMO_MODE` |
 | GET | `/api/v1/auth/session` | The signed-in user for a Bearer token |
 | POST | `/api/v1/auth/logout` | Ends the session |
@@ -347,7 +348,31 @@ Online, the weather check reads NASA POWER live; offline, the API serves a fixed
 - **Add a scoring dimension:** write a plugin in `packages/rotation-engine/src/plugins/`, register it in `registry.ts`, add its name to `DIMENSIONS` in `app.js`, and add a bar colour in `styles.css`.
 - **Demo desk login (recordings only):** set `DEMO_MODE=true` and your own `EDEN_OFFICER_CODE` in `.env`; the demo user ID is `saao_talanda_01`. Without `DEMO_MODE=true` the demo login does not work at all.
 
+## Hackathon access (no sign-in needed)
+
+For judges and first-time visitors nothing below needs an account:
+
+| Who | How in | What they see |
+|---|---|---|
+| Visitor | one click, no sign-in | the map, overview, weather and the story with Rongu |
+| Farmer | one click: the sample farmer (F01), no phone number or OTP | the farmer portal with sample data; a notice bar says it is a demo. The Android app works without signing in and has a one-tap sample farmer |
+| Manager | one click: **Enter as a guest** | the full manager desk on sample farmers; a notice bar says it is sample data |
+
+Guest manager, switched on by the person who runs the server: put `GUEST_MODE=true` in `.env` (it is `false` by default). A guest
+
+- sees the sample desk of the pilot site and can try everything on it: the call-back queue, field observations, the farmer register, the call list;
+- can **never** place a real call or SMS: the send routes run as dry runs for a guest, and the routes behind `AWAJ_LIVE`, `SMS_LIVE` and the SysTech switches answer 403;
+- registers **sample** farmers only, and the phone number typed in is not kept anywhere;
+- may restore the sample desk, but not reset a desk that holds real registrations;
+- lasts twelve hours (the server holds at most 500 guest sessions; a restart ends them, and the browser goes back to the picker).
+
+Account sign-in stays available and optional: the manager card shows *I have an account* under the guest button, and only when this server has Supabase set up (a server with neither shows the guest button alone, and a server without `GUEST_MODE` shows the account form first). Never turn `GUEST_MODE` on for a server that holds real farmers' records: the server prints a warning at start-up if the desk holds registered (non-sample) farmers. For the hackathon use a fresh `EDEN_OFFICER_STORE`.
+
+**Checklist before the judging:** `GUEST_MODE=true`; `AWAJ_LIVE`, `SMS_LIVE`, `VOICEBLAST_LIVE`, `BROADCAST_LIVE` left at `0` (calls and SMS stay dry runs); `DEMO_MODE=false`; a fresh `EDEN_OFFICER_STORE`; open the site in a private window and try all three roles once.
+
 ## Manager sign-in (Supabase)
+
+*Optional: the guest manager above needs none of this. Set it up when real SAAOs should sign in with their own accounts.*
 
 Managers sign in with a real account (Supabase Auth). The website signs in with `signInWithPassword` and sends the access token to the API; every desk route (`/api/v1/officer/*`, and the real-call routes) checks it with `supabase.auth.getUser(token)` and answers **401** for no or an invalid token and **403** when the account is not a manager (`app_metadata.role` must be `manager`). The role and the site are read from `app_metadata` only; `user_metadata` can be edited by the user and is never trusted.
 

@@ -5,6 +5,7 @@ import type { VerifyToken } from './auth.ts';
 import { getPowerClimate } from './power.ts';
 import type { PowerClientOptions, PowerClimateResult } from './power.ts';
 import { areaFor, managerSiteConfig } from './sites.ts';
+import { officerForToken } from './officer_desk.ts';
 
 export interface ManagerClimateOptions {
   verify?: VerifyToken;
@@ -17,14 +18,24 @@ export interface ManagerClimateResult extends PowerClimateResult {
   area: { id: string; nameBangla: string; nameEnglish: string; district: string | null; isHome: boolean };
 }
 
-/** The manager's verified token, or an ApiError. Demo tokens are not Supabase JWTs and carry no app_metadata.site. */
+/**
+ * The manager's verified token, or an ApiError. Demo tokens are not Supabase JWTs and carry no app_metadata.site, so they
+ * are refused here; the guest manager (GUEST_MODE) is let in for the pilot site, as this is public NASA weather.
+ */
 async function verifiedManagerSite(req: http.IncomingMessage, verify?: VerifyToken) {
-  const token = /^Bearer\s+(.+)$/i.exec(String(req.headers.authorization ?? ''))?.[1]?.trim() ?? '';
-  if (token.split('.').length !== 3 || token.split('.').some(part => !part)) {
-    throw new ApiError('unauthorized', 'A Supabase manager session is required for site climate data');
+  const header = String(req.headers.authorization ?? '');
+  const token = /^Bearer\s+(.+)$/i.exec(header)?.[1]?.trim() ?? '';
+  const guest = officerForToken(header);
+  let siteId: string | undefined;
+  if (guest?.guest) {
+    siteId = guest.site;
+  } else {
+    if (token.split('.').length !== 3 || token.split('.').some(part => !part)) {
+      throw new ApiError('unauthorized', 'A Supabase manager session is required for site climate data');
+    }
+    await requireManager(req, verify);
+    siteId = managerSite(req);
   }
-  await requireManager(req, verify);
-  const siteId = managerSite(req);
   if (!siteId) throw new ApiError('site_required', 'This manager account has no site in app_metadata');
   const site = managerSiteConfig(siteId);
   if (!site) throw new ApiError('forbidden', 'Climate data is not configured for this manager site');

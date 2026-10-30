@@ -53,6 +53,10 @@ import org.projecteden.farmermobile.theme.Surface
 import org.projecteden.farmermobile.theme.SurfaceContainerHigh
 import org.projecteden.farmermobile.theme.SurfaceContainerLowest
 
+/** The server's demo farmer: sample data, the sign-in needs no real number (the same one the website's one-click entry uses). */
+private const val SAMPLE_FARMER_ID = "F01"
+private const val SAMPLE_FARMER_PIN = "1234"
+
 @Composable
 fun LoginDialog(
     onDismiss: () -> Unit,
@@ -94,6 +98,31 @@ fun LoginDialog(
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold,
                         color = OnSurface
+                    )
+                }
+
+                // Sign-in is optional: the app shows advice, weather and the assistant without it
+                Text(
+                    text = "সাইন-ইন ঐচ্ছিক: না করলেও পরামর্শ ও আবহাওয়া দেখা যায়।",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = OnSurfaceVariant
+                )
+
+                // One tap, no ID and no PIN to remember (judges, first-time users): the sample farmer, sample data
+                if (selectedRole == "farmer") {
+                    Button(
+                        onClick = { onLogin("farmer", SAMPLE_FARMER_ID, SAMPLE_FARMER_PIN) },
+                        enabled = !isLoading,
+                        colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary),
+                        shape = EdenShape,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("নমুনা কৃষক (০১) হিসেবে দেখুন")
+                    }
+                    Text(
+                        text = "নমুনা তথ্য, কোনো আসল কল বা এসএমএস নয়। অথবা নিজের আইডি দিন:",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = OnSurfaceVariant
                     )
                 }
 

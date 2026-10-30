@@ -13,7 +13,7 @@ import { IPM_AMAN, IPM_BY_RABI, IPM_GENERAL } from '../../../packages/rotation-e
 import { bnDate, bnDateOf, bnDigits, bnOf, enDate, patternBangla } from '../../../packages/rotation-engine/src/bn.ts';
 import * as desk from './officer_desk.ts';
 import * as calls from './farmer_calls.ts';
-import { authConfig, requireManager } from './auth.ts';
+import { authConfig, requireManager, requireRealManager } from './auth.ts';
 import { nasaConfigStatus } from './config.ts';
 import { integrationStatuses } from './integrations.ts';
 import { managerArea, managerClimate } from './manager_climate.ts';
@@ -641,7 +641,7 @@ const server = http.createServer(async (req, res) => {
     if (pathname === '/api/v1/calls/advice' && req.method === 'POST') {
       const body = await parseBody(req);
       // A real, billed call needs a signed-in officer; a dry run shows what would be sent
-      if (awajConfig().live) await requireManager(req);
+      if (awajConfig().live) await requireRealManager(req);
       const phone = bdMobile(String(body.phone ?? ''));
       if (!phone) return sendJSON(res, 400, { error: 'phone must be a Bangladeshi mobile number (01XXXXXXXXX)' });
       const answer = body.text ? voiceAnswer(body) : { reply: replyFor(adviseWithNarration(planRequest(body), body.farmerId)) };
@@ -649,7 +649,7 @@ const server = http.createServer(async (req, res) => {
       // SysTech (VoiceBlast portal or the Voice Broadcast API) plays our Google recording; Awaj otherwise
       const via: CallRoute | null = body.via === 'voiceblast' || body.via === 'broadcast' ? body.via : body.via === 'awaj' ? null : systechConfig().provider;
       if (via) {
-        if (systechConfig()[via].live) await requireManager(req);
+        if (systechConfig()[via].live) await requireRealManager(req);
         let audio: Buffer | null = null, voiceNote: string | null = null;
         if (ttsStatus().provider === 'google') {
           try {
@@ -689,7 +689,7 @@ const server = http.createServer(async (req, res) => {
     // The advice as a Bangla SMS through the REVE gateway (a dry run until SMS_LIVE=1)
     if (pathname === '/api/v1/sms/advice' && req.method === 'POST') {
       const body = await parseBody(req);
-      if (smsConfig().live) await requireManager(req);
+      if (smsConfig().live) await requireRealManager(req);
       const phone = bdMobile(String(body.phone ?? ''));
       if (!phone) return sendJSON(res, 400, { error: 'phone must be a Bangladeshi mobile number (01XXXXXXXXX)' });
       const answer = body.text ? voiceAnswer(body) : { reply: replyFor(adviseWithNarration(planRequest(body), body.farmerId)) };
@@ -707,7 +707,7 @@ const server = http.createServer(async (req, res) => {
     // The keypad call: the farmer hears the recorded crop menu and presses keys; Awaj posts them to the webhook
     if (pathname === '/api/v1/calls/keypad' && req.method === 'POST') {
       const body = await parseBody(req);
-      if (awajConfig().live) await requireManager(req);
+      if (awajConfig().live) await requireRealManager(req);
       const phones = (Array.isArray(body.phones) ? body.phones : [body.phone]).map((p: unknown) => bdMobile(String(p ?? ''))).filter(Boolean) as string[];
       if (!phones.length) return sendJSON(res, 400, { error: 'phone must be a Bangladeshi mobile number (01XXXXXXXXX)' });
       const cfg = awajConfig();
@@ -985,6 +985,12 @@ const server = http.createServer(async (req, res) => {
       if (!session) throw new ApiError('unauthorized', 'Invalid login credentials');
       return sendJSON(res, 200, session);
     }
+    // Optional sign-in: one click as the guest manager (GUEST_MODE=true). Sample data only; never a real call or SMS.
+    if (pathname === '/api/v1/auth/guest' && req.method === 'POST') {
+      const session = desk.guestLogin();
+      if (!session) throw new ApiError('forbidden', 'Guest mode is not turned on on this server');
+      return sendJSON(res, 200, session);
+    }
     if (pathname === '/api/v1/auth/session' && req.method === 'GET') {
       const user = desk.userForToken(req.headers.authorization);
       if (!user) throw new ApiError('unauthorized', 'No active session');
@@ -1045,6 +1051,8 @@ const server = http.createServer(async (req, res) => {
       if (pathname === '/api/v1/officer/reset' && req.method === 'POST') {
         const site = normalizeSite(officer.site);
         if (!site) throw new ApiError('site_required', 'This manager account has no site in app_metadata');
+        // a guest may restore the sample desk, but never wipe a desk that holds real registrations
+        if (officer.guest && desk.hasRealFarmers(site)) throw new ApiError('forbidden', 'This desk holds real registrations: a guest cannot reset it');
         calls.resetCalls(desk.farmers(site).map(f => f.id)); // the site's calls and questions, before its farmers are re-seeded
         desk.resetDesk(site); // only this manager's own site
         return sendJSON(res, 200, { ok: true });
@@ -1059,7 +1067,7 @@ const server = http.createServer(async (req, res) => {
         if (!call || !mine().includes(call.farmerId)) throw new ApiError('not_found', 'Unknown call');
       };
       if (pathname === '/api/v1/officer/farmers' && req.method === 'POST') {
-        const got = desk.registerFarmer(officer.id, await parseBody(req), site);
+        const got = desk.registerFarmer(officer.id, await parseBody(req), site, officer.guest === true);
         if (got.error) throw new ApiError('invalid_input', got.error);
         return sendJSON(res, 200, { farmer: got.farmer });
       }
@@ -1094,14 +1102,14 @@ const server = http.createServer(async (req, res) => {
       if (pathname === '/api/v1/officer/calls/send' && req.method === 'POST') {
         const body = await parseBody(req);
         const day = typeof body.date === 'string' && body.date ? body.date : calls.dhakaToday();
-        // A signed-in officer may place real calls; they are real only when the provider's *_LIVE switch is on too
-        const sent = await calls.sendApproved({ date: day, allowLive: true, farmerIds: mine() });
+        // A signed-in officer may place real calls (a guest never); they are real only when the provider's *_LIVE switch is on too
+        const sent = await calls.sendApproved({ date: day, allowLive: !officer.guest, farmerIds: mine() });
         logCall({ kind: 'call_list', date: day, calls: sent.sent.length, live: sent.live });
         return sendJSON(res, 200, { result: sent, ...callScreen(day, site) });
       }
       if (pathname === '/api/v1/officer/calls/follow-up' && req.method === 'POST') {
         const body = await parseBody(req);
-        const result = await calls.followUp({ allowLive: true, farmerIds: mine() });
+        const result = await calls.followUp({ allowLive: !officer.guest, farmerIds: mine() });
         return sendJSON(res, 200, { result, ...callScreen(typeof body.date === 'string' ? body.date : null, site) });
       }
       const callReview = /^\/api\/v1\/officer\/calls\/([^/]+)\/(review|outcome)$/.exec(pathname);
@@ -1109,7 +1117,7 @@ const server = http.createServer(async (req, res) => {
         const body = await parseBody(req);
         const id = decodeURIComponent(callReview[1]);
         ownCall(id);
-        const got = callReview[2] === 'review' ? calls.reviewCall(officer.id, id, body) : await calls.markOutcome(id, String(body.outcome ?? ''), true);
+        const got = callReview[2] === 'review' ? calls.reviewCall(officer.id, id, body) : await calls.markOutcome(id, String(body.outcome ?? ''), !officer.guest);
         if (got.error) throw new ApiError('invalid_input', got.error);
         return sendJSON(res, 200, { call: got.call, ...callScreen(got.call!.date, site) });
       }

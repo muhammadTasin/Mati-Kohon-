@@ -78,6 +78,11 @@
     </div>
   </header>
 
+  <!-- Shown to a guest manager and to the demo farmer: what is real here and what is not (text set in portals.js) -->
+  <div class="demo-bar" id="demoBar" role="status" hidden>
+    <span class="material-symbols-outlined" aria-hidden="true">science</span>
+    <span id="demoBarText"></span>
+  </div>
 
   <!-- ROLE PICKER: shown before the dashboard; each role sees only its own tabs -->
   <section class="entry-screen" id="entryScreen" aria-labelledby="entryTitle">
@@ -114,12 +119,13 @@
             <span class="role-icon"><span class="material-symbols-outlined" aria-hidden="true">shield_person</span></span>
             <span class="role-name" data-i18n="entry.officer.name">ম্যানেজার</span>
             <span class="role-desc" data-i18n="entry.officer.desc">ম্যানেজার ডেস্ক: কৃষকের কেস, তুলনা, কল, গবাদিপশু ও ডেটার মান।</span>
-            <span class="role-tag tag-open" data-i18n="entry.officer.tag">লগইন লাগবে</span>
+            <span class="role-tag tag-open" id="roleTagOfficer" data-i18n="entry.officer.tag">লগইন লাগবে</span>
+            <span class="role-tag tag-demo" id="roleTagGuest" hidden data-i18n="entry.officer.tagGuest">অতিথি হিসেবে দেখুন</span>
           </button>
         </div>
         <p class="entry-foot">
           <span class="material-symbols-outlined" aria-hidden="true">info</span>
-          <span data-i18n="entry.foot">কৃষকের প্রবেশ এখানে ডেমো, নিরাপদ বা যাচাই করা লগইন নয়। ম্যানেজাররা নিজের অ্যাকাউন্টে প্রবেশ করেন।</span>
+          <span data-i18n="entry.foot">কৃষক ও অতিথি প্রবেশ এখানে ডেমো: নমুনা তথ্য, নিরাপদ বা যাচাই করা লগইন নয়, কোনো কল বা এসএমএস যায় না। আসল ম্যানেজাররা নিজের অ্যাকাউন্টে প্রবেশ করেন।</span>
         </p>
       </div>
 
@@ -155,6 +161,20 @@
             <h2 id="entryOfficerTitle" data-i18n="entry.officer.formTitle">ম্যানেজার প্রবেশ</h2>
           </div>
         </div>
+        <!-- Guest: no ID and no password (the server runs with GUEST_MODE=true) -->
+        <div class="entry-guest" id="entryGuest" hidden>
+          <p class="entry-explain" data-i18n="entry.guest.explain">অতিথি হিসেবে ম্যানেজারের ডেস্ক ঘুরে দেখুন: নমুনা কৃষক ও নমুনা তথ্য। কোনো আসল কল বা এসএমএস পাঠানো হয় না।</p>
+          <button class="btn btn-primary btn-block" type="button" id="entryGuestBtn" onclick="guestManagerSignIn()">
+            <span class="material-symbols-outlined" aria-hidden="true">login</span>
+            <span data-i18n="entry.guest.enter">অতিথি হিসেবে প্রবেশ করুন</span>
+          </button>
+          <p class="entry-error" id="entryGuestError" role="alert" hidden></p>
+        </div>
+
+        <!-- An account is optional: only offered when this server has account sign-in (or the demo login) set up -->
+        <details class="entry-account" id="entryAccount">
+          <summary><span data-i18n="entry.account.summary">আমার অ্যাকাউন্ট আছে (ঐচ্ছিক)</span></summary>
+        <div id="entryAccountForm">
         <p class="entry-explain" data-i18n="entry.officer.help">আপনার অফিস থেকে পাওয়া ইউজার আইডি ও পাসওয়ার্ড দিন।</p>
         <form class="entry-form" onsubmit="entryOfficerSignIn(event)" novalidate>
           <div class="form-group">
@@ -172,6 +192,7 @@
           </button>
           <p class="entry-error" id="entryOfficerError" role="alert" hidden></p>
         </form>
+        </div>
 
         <!-- The old demo login: shown only when the server runs with DEMO_MODE=true -->
         <div id="entryOfficerDemo" hidden>
@@ -200,6 +221,8 @@
             <p class="entry-error" id="entryDemoError" role="alert" hidden></p>
           </form>
         </div>
+        </details>
+        <p class="entry-notice" id="entryNoSignIn" hidden data-i18n="entry.none">এই সার্ভারে ম্যানেজার প্রবেশ চালু করা নেই।</p>
       </div>
     </div>
   </section>

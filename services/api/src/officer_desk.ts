@@ -10,8 +10,10 @@
  *    land, crops and call time only after the farmer agrees to the calls; a farmer can stop them at any time. Phone
  *    numbers stay in the store's `phones` map and never leave the server; screens get the masked number.
  *
- * Real officer sign-in is Supabase Auth (auth.ts). The shared access code below is the demo login: it works only when
- * DEMO_MODE=true and EDEN_OFFICER_CODE is set (there is no built-in default). The store is a JSON file under
+ * Real officer sign-in is Supabase Auth (auth.ts), and it is optional: with GUEST_MODE=true anyone can open the desk as
+ * the guest manager in one click (hackathon judges, first-time visitors); a guest sees the sample desk, can never place a
+ * real call or SMS, and registers sample farmers only (see guestLogin below). The shared access code is the older demo
+ * login: it works only when DEMO_MODE=true and EDEN_OFFICER_CODE is set (there is no built-in default). The store is a JSON file under
  * services/api/.data/ (git-ignored). Farmers here are sample records, not real people.
  */
 import crypto from 'node:crypto';
@@ -45,6 +47,11 @@ export function demoEnabled(): boolean {
   return process.env.DEMO_MODE === 'true';
 }
 
+/** The one-click guest manager is off unless GUEST_MODE=true (a hackathon or demo server, never one that holds real records). */
+export function guestEnabled(): boolean {
+  return process.env.GUEST_MODE === 'true';
+}
+
 /** The shared demo access code, or '' when none is configured (then the demo login stays closed). */
 function demoAccessCode(): string {
   return process.env.EDEN_OFFICER_CODE ?? '';
@@ -74,11 +81,18 @@ export interface Officer {
   blockBangla: string;
   blockEnglish: string;
   site?: string;
+  /** The guest manager: sample data only, never a real call or SMS. */
+  guest?: boolean;
 }
 
 export const OFFICERS: Officer[] = [
   { id: 'saao_talanda_01', nameBangla: 'নমুনা কর্মকর্তা (SAAO)', nameEnglish: 'Sample officer (SAAO)', blockBangla: 'তালন্দ ব্লক', blockEnglish: 'Talanda block', site: 'talanda' },
 ];
+
+export const GUEST_OFFICER: Officer = {
+  id: 'guest_manager', nameBangla: 'অতিথি ম্যানেজার', nameEnglish: 'Guest manager',
+  blockBangla: 'তালন্দ ব্লক', blockEnglish: 'Talanda block', site: 'talanda', guest: true,
+};
 
 export const PEST_NAMES: Record<PestSeen, { bn: string; en: string }> = {
   none: { bn: 'দেখা যায়নি', en: 'none seen' },
@@ -247,6 +261,42 @@ export function login(officerId: string, accessCode: string): { token: string; o
   return { token, officer };
 }
 
+const GUEST_TTL_MS = 12 * 60 * 60 * 1000; // a guest session lasts half a day
+const GUEST_MAX = 500; // and the server keeps at most this many at once, oldest dropped first
+const guestSessions = new Map<string, number>(); // token -> expires at (ms)
+
+function liveGuest(token: string, now = Date.now()): boolean {
+  const until = guestSessions.get(token);
+  if (until === undefined) return false;
+  if (until > now && guestEnabled()) return true;
+  guestSessions.delete(token);
+  userSessions.delete(token);
+  return false;
+}
+
+/**
+ * The guest manager: no ID, no password. Null unless GUEST_MODE=true. A guest works on the sample desk of the pilot site
+ * but can never place a real call or SMS (the routes check Officer.guest), and registers sample farmers only.
+ */
+export function guestLogin(now = Date.now()): { token: string; officer: Officer; user: AuthUser; guest: true } | null {
+  if (!guestEnabled()) return null;
+  for (const [token, until] of guestSessions) if (until <= now) { guestSessions.delete(token); userSessions.delete(token); }
+  while (guestSessions.size >= GUEST_MAX) {
+    const oldest = guestSessions.keys().next().value as string;
+    guestSessions.delete(oldest);
+    userSessions.delete(oldest);
+  }
+  const token = crypto.randomUUID();
+  guestSessions.set(token, now + GUEST_TTL_MS);
+  const user: AuthUser = {
+    id: GUEST_OFFICER.id, role: 'officer',
+    nameBangla: GUEST_OFFICER.nameBangla, nameEnglish: GUEST_OFFICER.nameEnglish,
+    titleBangla: 'অতিথি (নমুনা তথ্য)', blockOrVillageBangla: GUEST_OFFICER.blockBangla,
+  };
+  userSessions.set(token, user);
+  return { token, officer: GUEST_OFFICER, user, guest: true };
+}
+
 export function loginUser(body: { role?: string; officerId?: string; accessCode?: string; farmerId?: string; phone?: string; pin?: string }): { token: string; user: AuthUser } | null {
   if (body.role === 'officer' || body.officerId) {
     const officerId = body.officerId || 'saao_talanda_01';
@@ -290,6 +340,7 @@ export function loginUser(body: { role?: string; officerId?: string; accessCode?
 export function userForToken(authorization: string | undefined): AuthUser | null {
   const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : '';
   if (!token) return null;
+  if (guestSessions.has(token) && !liveGuest(token)) return null;
   const user = userSessions.get(token);
   if (user) return user;
   const officerId = sessions.get(token);
@@ -314,14 +365,28 @@ export function logout(authorization: string | undefined): boolean {
   if (!token) return false;
   sessions.delete(token);
   userSessions.delete(token);
+  guestSessions.delete(token);
   return true;
 }
 
 export function officerForToken(authorization: string | undefined): Officer | null {
-  if (!demoEnabled()) return null;
   const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : '';
+  if (token && liveGuest(token)) return GUEST_OFFICER;
+  if (!demoEnabled()) return null;
   const officerId = token ? sessions.get(token) : undefined;
   return officerId ? OFFICERS.find(o => o.id === officerId) ?? null : null;
+}
+
+/** True when the site's desk holds farmers a real manager registered (not sample records and not a guest's). */
+export function hasRealFarmers(rawSite?: string | null): boolean {
+  return farmers(rawSite).some(f => !f.sample);
+}
+
+if (guestEnabled()) {
+  const real = store.farmers.filter(f => !f.sample).length;
+  console.warn(real
+    ? `GUEST_MODE=true and the desk holds ${real} registered (non-sample) farmer(s): a guest can read them. Turn GUEST_MODE off, or point EDEN_OFFICER_STORE at a fresh file.`
+    : 'GUEST_MODE=true: anyone can open the manager desk as a guest (sample data, no real calls or SMS).');
 }
 
 export function farmerById(farmerId: string): FarmerRecord | undefined {
@@ -511,12 +576,12 @@ export function callable(farmer: FarmerRecord): boolean {
  * Registers a farmer for the advice calls, or returns why not. The farmer's agreement is required: the officer
  * confirms they asked (in person, by phone), or the farmer agreed in the app.
  */
-export function registerFarmer(officerId: string, body: any, officerSite?: string | null): { farmer?: FarmerRecord; error?: string } {
+export function registerFarmer(officerId: string, body: any, officerSite?: string | null, guest = false): { farmer?: FarmerRecord; error?: string } {
   const nameBangla = text(body.nameBangla, 60);
   if (!nameBangla) return { error: 'nameBangla is required' };
   const phone = bdMobile(String(body.phone ?? ''));
   if (!phone) return { error: 'phone must be a Bangladeshi mobile number (01XXXXXXXXX)' };
-  if (farmerByPhone(phone)) return { error: 'This phone number is already registered' };
+  if (!guest && farmerByPhone(phone)) return { error: 'This phone number is already registered' };
   const placeId = String(body.placeId ?? '');
   if (!placeId || !placeFor(placeId)) return { error: 'placeId must be the pilot (talanda_tanore) or an upazila id (ADM3_...)' };
   const unionBangla = text(body.unionBangla, 40);
@@ -544,7 +609,7 @@ export function registerFarmer(officerId: string, body: any, officerSite?: strin
     landType: body.landType,
     currentAmanCrop: LOC.aman[body.currentAmanCrop] ? body.currentAmanCrop : 'BRRI dhan49',
     irrigation: IRRIGATION.includes(body.irrigation) ? body.irrigation : 'shallow_tube_well',
-    sample: false,
+    sample: guest, // a guest's farmer is a sample record: never dialled, and the number is not kept
     site: normalizeSite(officerSite) ?? DEFAULT_SITE,
     placeId,
     unionBangla,
@@ -557,7 +622,7 @@ export function registerFarmer(officerId: string, body: any, officerSite?: strin
     registeredBy: officerId,
   };
   store.farmers.push(farmer);
-  store.phones![farmer.id] = phone;
+  if (!guest) store.phones![farmer.id] = phone;
   save();
   return { farmer };
 }

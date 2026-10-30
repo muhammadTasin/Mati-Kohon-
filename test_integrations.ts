@@ -159,7 +159,7 @@ const example = fs.readFileSync('.env.example', 'utf8');
 const documented = new Set([...example.matchAll(/^#?\s*([A-Z][A-Z0-9_]+)=/gm)].map(match => match[1]));
 const missing = [...used, ...names].filter(name => !documented.has(name));
 assert.deepEqual([...new Set(missing)], [], `variables the code reads that .env.example does not list: ${[...new Set(missing)].join(', ')}`);
-const placeholders = example.split('\n').filter(line => /^[A-Z][A-Z0-9_]+=\S/.test(line) && !/^(PORT|AWAJ_VOICE|AWAJ_LIVE|AWAJ_LAND_QUESTION|VOICEBLAST_LIVE|BROADCAST_LIVE|SMS_LIVE|DEMO_MODE|SEED_DEMO_DATA|LLM_TIMEOUT_MS|CATTLE_JOB_TIMEOUT_MS|EE_IMERG_COLLECTION|OFFLINE)=/.test(line));
+const placeholders = example.split('\n').filter(line => /^[A-Z][A-Z0-9_]+=\S/.test(line) && !/^(PORT|AWAJ_VOICE|AWAJ_LIVE|AWAJ_LAND_QUESTION|VOICEBLAST_LIVE|BROADCAST_LIVE|SMS_LIVE|DEMO_MODE|GUEST_MODE|SEED_DEMO_DATA|LLM_TIMEOUT_MS|CATTLE_JOB_TIMEOUT_MS|EE_IMERG_COLLECTION|OFFLINE)=/.test(line));
 assert.deepEqual(placeholders, [], `.env.example holds a value that is not a placeholder: ${placeholders.map(line => line.split('=')[0]).join(', ')}`);
 const docs = fs.readFileSync('docs/integrations.md', 'utf8');
 for (const provider of PROVIDERS) assert.ok(docs.includes(`\`${provider.id}\``), `docs/integrations.md does not list ${provider.id}`);
