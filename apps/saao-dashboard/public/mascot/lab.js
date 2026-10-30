@@ -70,7 +70,7 @@ for (const [name, [hex]] of Object.entries(MOODS)) {
   swatches.push(b);
 }
 
-const VIEWS = { 'Three-quarter': -0.5, Front: 0, Side: -Math.PI / 2, Back: Math.PI };
+const VIEWS = { 'Three-quarter': -0.62, Front: 0, Side: -Math.PI / 2, Back: Math.PI };
 for (const [label, yaw] of Object.entries(VIEWS)) button('views', label, () => {
   rongu.motion.home.yaw = yaw;
   const facing = Math.abs(yaw) < 0.5;

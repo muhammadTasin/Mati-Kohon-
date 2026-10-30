@@ -26,7 +26,9 @@ uniform float uScaleFreq;
 uniform float uBump;
 uniform float uShimmer;
 uniform float uTime;
-varying vec2 vMood;
+uniform float uGlow;
+uniform float uRim;
+varying vec3 vMood;
 varying vec3 vRest;
 vec3 rgHash(vec3 p) {
   p = fract(p * vec3(0.1031, 0.1030, 0.0973));
@@ -58,7 +60,7 @@ function injectSkin(material, shared) {
   material.onBeforeCompile = (shader) => {
     Object.assign(shader.uniforms, shared);
     shader.vertexShader = shader.vertexShader
-      .replace('#include <common>', '#include <common>\nattribute vec2 aMood;\nattribute vec3 aRest;\nvarying vec2 vMood;\nvarying vec3 vRest;')
+      .replace('#include <common>', '#include <common>\nattribute vec3 aMood;\nattribute vec3 aRest;\nvarying vec3 vMood;\nvarying vec3 vRest;')
       .replace('#include <begin_vertex>', '#include <begin_vertex>\nvMood = aMood;\nvRest = aRest;');
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', '#include <common>\n' + SKIN_GLSL)
@@ -66,7 +68,8 @@ function injectSkin(material, shared) {
   vec3 scaleP = vRest * uScaleFreq;
   float scaleAA = clamp(1.6 - length(fwidth(scaleP)) * 2.2, 0.0, 1.0);
   float scaleH = smoothstep(0.18, 0.62, rgScales(scaleP));
-  diffuseColor.rgb *= 1.0 - 0.1 * scaleH * scaleAA;
+  scaleAA *= vMood.z;
+  diffuseColor.rgb *= 1.0 - 0.07 * scaleH * scaleAA;
   float moodWave = smoothstep(vMood.x - 0.07, vMood.x + 0.07, uWave);
   vec4 mood = mix(uMoodFrom, uMoodTo, moodWave);
   float skinLum = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
@@ -75,7 +78,11 @@ function injectSkin(material, shared) {
   float band = smoothstep(0.1, 0.0, abs(fract(vMood.x * 3.0 - uTime * 0.9) - 0.5) - 0.38);
   diffuseColor.rgb = mix(diffuseColor.rgb, rgHue(fract(vMood.x * 2.0 + uTime * 0.3)) * (skinLum * 1.6 + 0.08), uShimmer * band * vMood.y * 0.55);`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
-  normal = rgPerturb(-vViewPosition, normal, vec2(dFdx(scaleH), dFdy(scaleH)) * uBump * scaleAA, faceDirection);`);
+  normal = rgPerturb(-vViewPosition, normal, vec2(dFdx(scaleH), dFdy(scaleH)) * uBump * scaleAA, faceDirection);`)
+      // a soft glow, brightest at the edges: light passing through soft vinyl (a cheap subsurface look)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+  float rgFres = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 2.2);
+  totalEmissiveRadiance += diffuseColor.rgb * (uGlow + uRim * rgFres);`);
   };
   material.customProgramCacheKey = () => 'rongu-skin';
 }
@@ -99,22 +106,22 @@ function injectFace(material, shared) {
       .replace('#include <color_fragment>', `#include <color_fragment>
   vec2 f = vFace;
   float px = max(fwidth(f.y), 0.0008) * 1.1;
-  float w = 0.84 * uWidth;
+  float w = 0.6 * uWidth;
   float u = f.x / w;
-  float lineY = 1.373 + (0.024 + 0.024 * uSmile) * u * u - 0.005 * uSmile;
+  float lineY = 1.372 + (0.018 + 0.03 * uSmile) * u * u + 0.012 * uSmile * smoothstep(0.7, 1.0, abs(u)) - 0.006 * uSmile;
   float lowY = lineY - uOpen * 0.08 * max(0.0, 1.0 - u * u) * (0.7 + 0.3 * uWidth);
   float inside = step(abs(u), 1.0) * smoothstep(lowY - px, lowY + px, f.y) * smoothstep(lineY + px, lineY - px, f.y) * step(0.002, uOpen);
-  float line = (1.0 - smoothstep(0.0058, 0.0058 + px, abs(f.y - lineY))) * smoothstep(1.03, 0.95, abs(u));
+  float line = (1.0 - smoothstep(0.0052, 0.0052 + px, abs(f.y - lineY))) * smoothstep(1.06, 0.97, abs(u));
   float tongue = 1.0 - smoothstep(0.85, 1.0, length(vec2(u / 0.42, (f.y - lowY - 0.008) / max(0.022 * uOpen, 0.001))));
   vec3 col = vec3(0.0);
   float alpha = 0.0;
-  float bd = length(vec2((abs(f.x) - 0.74) / 0.15, (f.y - 1.405) / 0.028));
-  float blush = (1.0 - smoothstep(0.3, 1.0, bd)) * (0.62 + 0.35 * uBlush);
-  col = mix(col, vec3(0.93, 0.36, 0.38), step(0.001, blush)); alpha = max(alpha, blush);
+  float bd = length(vec2((abs(f.x) - 0.6) / 0.115, (f.y - 1.402) / 0.038));
+  float blush = (1.0 - smoothstep(0.15, 1.0, bd)) * (0.72 + 0.25 * uBlush);
+  col = mix(col, vec3(0.95, 0.45, 0.42), step(0.001, blush)); alpha = max(alpha, blush);
   float nd = length(vec2((abs(f.x) - 0.105) / 0.03, (f.y - 1.494) / 0.0085));
   float nostril = 1.0 - smoothstep(0.75, 1.0, nd);
   col = mix(col, vec3(0.1, 0.2, 0.06), nostril); alpha = max(alpha, nostril * 0.85);
-  col = mix(col, vec3(0.11, 0.2, 0.05), line); alpha = max(alpha, line);
+  col = mix(col, vec3(0.1, 0.22, 0.07), line); alpha = max(alpha, line);
   vec3 mouthCol = mix(vec3(0.22, 0.03, 0.06), vec3(0.85, 0.32, 0.4), tongue * inside);
   col = mix(col, mouthCol, inside); alpha = max(alpha, inside);
   diffuseColor = vec4(col, alpha);`);
@@ -184,7 +191,7 @@ function partGeometry(p) {
   g.setAttribute('position', pos);
   g.setAttribute('normal', new THREE.BufferAttribute(p.normals, 3));
   if (p.colors) g.setAttribute('color', new THREE.BufferAttribute(p.colors, 3));
-  if (p.mood) g.setAttribute('aMood', new THREE.BufferAttribute(p.mood, 2));
+  if (p.mood) g.setAttribute('aMood', new THREE.BufferAttribute(p.mood, 3));
   if (p.uvs) g.setAttribute('uv', new THREE.BufferAttribute(p.uvs, 2));
   g.setAttribute('aRest', pos);
   g.setIndex(new THREE.BufferAttribute(p.indices, 1));
@@ -193,12 +200,12 @@ function partGeometry(p) {
 }
 
 // Give a plain three.js geometry the skin attributes (one colour, a place on the body).
-function skinned(g, hex, bodyT, tint = 1) {
+function skinned(g, hex, bodyT, tint = 1, scales = 0.3) {
   const n = g.attributes.position.count, c = lin(hex);
-  const col = new Float32Array(n * 3), mood = new Float32Array(n * 2);
-  for (let i = 0; i < n; i++) { col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; mood[i * 2] = bodyT; mood[i * 2 + 1] = tint; }
+  const col = new Float32Array(n * 3), mood = new Float32Array(n * 3);
+  for (let i = 0; i < n; i++) { col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; mood[i * 3] = bodyT; mood[i * 3 + 1] = tint; mood[i * 3 + 2] = scales; }
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-  g.setAttribute('aMood', new THREE.BufferAttribute(mood, 2));
+  g.setAttribute('aMood', new THREE.BufferAttribute(mood, 3));
   g.setAttribute('aRest', g.attributes.position);
   return g;
 }
@@ -234,7 +241,7 @@ class Tail {
     const rings = this.N + 1, n = rings * this.M + 1;
     this.positions = new Float32Array(n * 3);
     this.normals = new Float32Array(n * 3);
-    const rest = new Float32Array(n * 3), col = new Float32Array(n * 3), mood = new Float32Array(n * 2);
+    const rest = new Float32Array(n * 3), col = new Float32Array(n * 3), mood = new Float32Array(n * 3);
     const idx = [];
     for (let i = 0; i < rings; i++) {
       const t = i / this.N, c = tailColor(t);
@@ -242,7 +249,7 @@ class Tail {
         const v = i * this.M + j, a = (j / this.M) * Math.PI * 2;
         rest.set([Math.cos(a) * 0.06, Math.sin(a) * 0.06, t * this.L], v * 3);
         col.set([c.r, c.g, c.b], v * 3);
-        mood.set([0.55 + 0.45 * t, 0.35], v * 2);
+        mood.set([0.55 + 0.45 * t, 0.35, 0.9], v * 3);
         if (i < this.N) {
           const a0 = v, a1 = i * this.M + ((j + 1) % this.M), b0 = a0 + this.M, b1 = a1 + this.M;
           idx.push(a0, b0, b1, a0, b1, a1);
@@ -250,17 +257,18 @@ class Tail {
       }
     }
     const tip = rings * this.M, ct = tailColor(1);
-    rest.set([0, 0, this.L + 0.01], tip * 3); col.set([ct.r, ct.g, ct.b], tip * 3); mood.set([1, 0.35], tip * 2);
+    rest.set([0, 0, this.L + 0.01], tip * 3); col.set([ct.r, ct.g, ct.b], tip * 3); mood.set([1, 0.35, 0.9], tip * 3);
     for (let j = 0; j < this.M; j++) idx.push(this.N * this.M + j, tip, this.N * this.M + ((j + 1) % this.M));
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(this.positions, 3).setUsage(THREE.DynamicDrawUsage));
     g.setAttribute('normal', new THREE.BufferAttribute(this.normals, 3).setUsage(THREE.DynamicDrawUsage));
     g.setAttribute('aRest', new THREE.BufferAttribute(rest, 3));
     g.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    g.setAttribute('aMood', new THREE.BufferAttribute(mood, 2));
+    g.setAttribute('aMood', new THREE.BufferAttribute(mood, 3));
     g.setIndex(idx);
     this.mesh = new THREE.Mesh(g, material);
     this.mesh.frustumCulled = false;
+    this.mesh.castShadow = true; this.mesh.receiveShadow = true;
     this.mesh.name = 'tail';
     this.u = new THREE.Vector3(1, 0, -0.42).normalize();
     this.v = new THREE.Vector3(0, 1, 0);
@@ -308,6 +316,8 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
     uScaleFreq: { value: 40 },
     uBump: { value: 0.3 },
     uShimmer: { value: 0 },
+    uGlow: { value: 0.04 },
+    uRim: { value: 0.24 },
     uTime: { value: 0 },
   };
   const faceUniforms = { uOpen: { value: 0 }, uSmile: { value: 1 }, uWidth: { value: 1 }, uBlush: { value: 0 }, uTongue: { value: 0 } };
@@ -315,8 +325,8 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
   const clipping = [clipPlane];
 
   const skin = new THREE.MeshPhysicalMaterial({
-    vertexColors: true, roughness: 0.5, clearcoat: 0.45, clearcoatRoughness: 0.32,
-    sheen: 0.2, sheenRoughness: 0.5, sheenColor: lin('#E6FFC2'), envMapIntensity: envIntensity, clippingPlanes: clipping,
+    vertexColors: true, roughness: 0.58, clearcoat: 0.22, clearcoatRoughness: 0.45,
+    sheen: 0.3, sheenRoughness: 0.75, sheenColor: lin('#D8F0B8'), envMapIntensity: envIntensity, clippingPlanes: clipping,
   });
   injectSkin(skin, shared);
   const cloth = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.82, sheen: 1, sheenRoughness: 0.45, sheenColor: lin('#7C9BEA'), envMapIntensity: envIntensity * 0.6, clippingPlanes: clipping });
@@ -334,7 +344,7 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
   const tongueMat = new THREE.MeshPhysicalMaterial({ color: lin('#EA7F93'), roughness: 0.35, clearcoat: 0.6, clippingPlanes: clipping });
   const materials = [skin, cloth, canvas, eyeWhite, pupil, sparkle, frame, lens, badgeMat, faceMat, metal, gold, tongueMat];
 
-  const mesh = (geom, mat, name) => { const m = new THREE.Mesh(geom, mat); m.name = name; return m; };
+  const mesh = (geom, mat, name) => { const m = new THREE.Mesh(geom, mat); m.name = name; m.castShadow = !mat.transparent; m.receiveShadow = true; return m; };
   const at = (obj, world, parentWorld) => { obj.position.set(world[0] - parentWorld[0], world[1] - parentWorld[1], world[2] - parentWorld[2]); return obj; };
 
   // hierarchy
@@ -346,14 +356,14 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
   chest.add(mesh(partGeometry(parts.shirt), cloth, 'shirt'));
   chest.add(mesh(partGeometry(parts.badge), badgeMat, 'badge'));
   const neck = at(new THREE.Group(), RIG.neck, RIG.chest); chest.add(neck);
-  const head = new THREE.Group(); neck.add(head);
+  const head = new THREE.Group(); head.scale.setScalar(1.08); neck.add(head); // a slightly bigger head reads cuter
   head.add(mesh(partGeometry(parts.head), skin, 'head'));
   const face = mesh(partGeometry(parts.face), faceMat, 'face'); face.renderOrder = 2; head.add(face);
 
   // eyes, lids and catchlights
   const eyes = {};
   const eyeGeo = new THREE.SphereGeometry(RIG.eye.r, 40, 28);
-  const pupilGeo = new THREE.SphereGeometry(RIG.eye.r + 0.0012, 40, 12, 0, Math.PI * 2, 0, 0.47).rotateX(Math.PI / 2);
+  const pupilGeo = new THREE.SphereGeometry(RIG.eye.r + 0.0012, 40, 12, 0, Math.PI * 2, 0, 0.5).rotateX(Math.PI / 2);
   const lidUpGeo = skinned(new THREE.SphereGeometry(RIG.eye.r + 0.0026, 36, 14, 0, Math.PI * 2, 0, Math.PI / 2), COLORS.skin, 0.12);
   const lidLowGeo = skinned(new THREE.SphereGeometry(RIG.eye.r + 0.0024, 36, 14, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), COLORS.skin, 0.12);
   const sparkGeo = new THREE.SphereGeometry(0.021, 16, 10).scale(1, 0.8, 0.35);
@@ -377,20 +387,20 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
 
   // glasses
   const glasses = new THREE.Group(); glasses.name = 'glasses';
-  at(glasses, [0, RIG.eye.y, 0.428], RIG.neck); head.add(glasses);
-  const W = 0.4, H = 0.35, ring = roundedRect(W, H, 0.09);
+  at(glasses, [0, RIG.eye.y - 0.06, 0.445], RIG.neck); head.add(glasses);
+  const W = 0.42, H = 0.345, ring = roundedRect(W, H, 0.09);
   const hole = roundedRect(W - 0.084, H - 0.084, 0.06);
   ring.holes.push(hole);
   const ringGeo = new THREE.ExtrudeGeometry(ring, { depth: 0.026, bevelEnabled: true, bevelThickness: 0.011, bevelSize: 0.01, bevelSegments: 4, curveSegments: 14 }).translate(0, 0, -0.013);
   const lensGeo = new THREE.ShapeGeometry(roundedRect(W - 0.08, H - 0.08, 0.058), 12);
   for (const sx of [1, -1]) {
     const g = new THREE.Group();
-    g.position.set(sx * 0.226, 0, 0); g.rotation.y = sx * 0.13;
+    g.position.set(sx * 0.234, 0, 0); g.rotation.y = sx * 0.13;
     g.add(mesh(ringGeo, frame, 'frame'));
     const l = mesh(lensGeo, lens, 'lens'); l.position.z = 0.004; l.renderOrder = 3; g.add(l);
     glasses.add(g);
     const temple = mesh(new THREE.CapsuleGeometry(0.014, 0.4, 4, 10).rotateX(Math.PI / 2), frame, 'temple');
-    temple.position.set(sx * 0.415, 0.05, -0.21); temple.rotation.y = -sx * 0.07; glasses.add(temple);
+    temple.position.set(sx * 0.438, 0.05, -0.21); temple.rotation.y = -sx * 0.07; glasses.add(temple);
   }
   const bridge = mesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(new THREE.Vector3(-0.035, 0.07, 0.006), new THREE.Vector3(0, 0.105, 0.03), new THREE.Vector3(0.035, 0.07, 0.006)), 12, 0.016, 10), frame, 'bridge');
   glasses.add(bridge);
@@ -398,7 +408,7 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
 
   // tongue (shoots out to tap things)
   const tongue = new THREE.Group(); tongue.name = 'tongue';
-  at(tongue, [0, 1.37, 0.34], RIG.neck); head.add(tongue);
+  at(tongue, [0, 1.37, 0.36], RIG.neck); head.add(tongue);
   const tongueRod = mesh(new THREE.CylinderGeometry(0.017, 0.021, 1, 12, 1, true).rotateX(Math.PI / 2).translate(0, 0, 0.5), tongueMat, 'tongueRod');
   const tongueTip = mesh(new THREE.SphereGeometry(0.034, 18, 12), tongueMat, 'tongueTip');
   tongue.add(tongueRod, tongueTip); tongue.visible = false;
@@ -433,14 +443,14 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
     const knee = new THREE.Group(); knee.position.y = -RIG.thigh; hip.add(knee);
     knee.add(mesh(shinGeo, skin, 'shin' + side));
     const ankle = new THREE.Group(); ankle.position.y = -RIG.shin; knee.add(ankle);
-    const shoe = mesh(shoeGeo, canvas, 'shoe' + side); shoe.rotation.y = sx * 0.08; shoe.scale.setScalar(1.2); shoe.position.y = 0.024; ankle.add(shoe);
+    const shoe = mesh(shoeGeo, canvas, 'shoe' + side); shoe.rotation.y = sx * 0.08; shoe.scale.setScalar(1.3); shoe.position.y = 0.036; ankle.add(shoe);
     legs[side] = { hip, knee, ankle, sx };
   }
 
   // tail
   const tailSkin = skin.clone();
   tailSkin.clippingPlanes = clipping; // clone() copies the plane; the tail must share the dive's
-  tailSkin.clearcoat = 0.18; tailSkin.sheen = 0; tailSkin.envMapIntensity = envIntensity * 0.55;
+  tailSkin.clearcoat = 0.15; tailSkin.sheen = 0.2; tailSkin.envMapIntensity = envIntensity * 0.5;
   injectSkin(tailSkin, shared);
   materials.push(tailSkin);
   const tail = new Tail(tailSkin);

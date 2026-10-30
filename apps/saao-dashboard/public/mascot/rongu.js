@@ -5,7 +5,7 @@ import * as THREE from './vendor/three-rongu.min.js';
 import { createModel, MOODS } from './rongu-model.js';
 import { Motion, ACTIONS, GESTURES } from './rongu-motion.js';
 
-const MODEL_VERSION = 'rongu-2';
+const MODEL_VERSION = 'rongu-7';
 
 // ---------- meshes: from the browser's cache, else sculpted in a worker ----------
 function idb() {
@@ -164,18 +164,35 @@ export async function createRongu(canvas, opts = {}) {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio || 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.NeutralToneMapping;
-  renderer.toneMappingExposure = opts.exposure ?? 1.0;
+  renderer.toneMappingExposure = opts.exposure ?? 0.94;
   renderer.localClippingEnabled = true;
   renderer.setClearColor(0x000000, 0);
 
   const scene = new THREE.Scene();
   const pmrem = new THREE.PMREMGenerator(renderer);
   scene.environment = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
-  scene.environmentIntensity = opts.environment ?? 0.75;
-  scene.add(new THREE.HemisphereLight('#DDF3FF', '#A6CC7A', 1.0));
-  const key = new THREE.DirectionalLight('#FFF6E8', 2.1); key.position.set(-2.2, 3.6, 3.4); scene.add(key);
-  const rim = new THREE.DirectionalLight('#DDF4FF', 1.7); rim.position.set(2.8, 2.4, -3.2); scene.add(rim);
-  const fill = new THREE.DirectionalLight('#FFFFFF', 0.55); fill.position.set(2.6, 0.9, 2.6); scene.add(fill);
+  scene.environmentIntensity = opts.environment ?? 0.5;
+  // a bright, soft studio: big pastel ambient, one soft key that casts shadows, a cool rim
+  scene.add(new THREE.HemisphereLight('#EAF6FF', '#CFE6B4', 1.0));
+  const key = new THREE.DirectionalLight('#FFFCF4', 2.5);
+  const KEY_OFFSET = new THREE.Vector3(-2.0, 3.8, 3.2);
+  key.position.copy(KEY_OFFSET); scene.add(key, key.target);
+  const shadows = opts.shadows ?? !lowPower;
+  if (shadows) {
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFShadowMap;
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    Object.assign(key.shadow.camera, { left: -1.6, right: 1.6, top: 1.9, bottom: -1.4, near: 0.5, far: 12 });
+    key.shadow.radius = 3; key.shadow.blurSamples = 8;
+    key.shadow.bias = -0.0004; key.shadow.normalBias = 0.025;
+  }
+  const rim = new THREE.DirectionalLight('#E2F6FF', 1.35); rim.position.set(2.8, 2.6, -3.2); scene.add(rim);
+  const fill = new THREE.DirectionalLight('#FFFFFF', 0.4); fill.position.set(2.6, 0.9, 2.6); scene.add(fill);
+  // the floor only shows his shadow
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(14, 14).rotateX(-Math.PI / 2), new THREE.ShadowMaterial({ color: '#2E5A3A', opacity: 0.16 }));
+  floor.receiveShadow = true; floor.position.y = 0.001;
+  if (shadows) scene.add(floor);
 
   const camera = new THREE.PerspectiveCamera(26, 1, 0.05, 60);
   const setFraming = (name) => {
@@ -244,6 +261,9 @@ export async function createRongu(canvas, opts = {}) {
     if (frameAvg > 26 && renderer.getPixelRatio() > 1) { if (++slowFrames > 90) { renderer.setPixelRatio(1); resize(); slowFrames = 0; } } else slowFrames = 0;
     if (!pointerTarget) motion.lookAt(lookViewer ? camera.position : null);
     motion.update(dt);
+    // the key light and its shadow follow him around
+    key.target.position.set(model.root.position.x, 0.9, model.root.position.z);
+    key.position.copy(key.target.position).add(KEY_OFFSET);
     if (moodWave) {
       moodWave.t += dt;
       model.shared.uWave.value = -0.1 + 1.3 * Math.min(1, moodWave.t / moodWave.d);
@@ -268,7 +288,7 @@ export async function createRongu(canvas, opts = {}) {
   const hits = () => { ray.setFromCamera(ndc, camera); return ray.intersectObjects(hitTargets, false); };
   let followPointer = opts.followPointer ?? true, drag = null, petStrokes = [], lastClick = 0;
   let pointerTarget = null, lookViewer = opts.lookAtViewer ?? true;
-  motion.home.yaw = opts.restYaw ?? -0.5; // a three-quarter stance, like the drawing
+  motion.home.yaw = opts.restYaw ?? -0.62; // a three-quarter stance, like the drawing
 
   const onMove = (e) => {
     toNdc(e);

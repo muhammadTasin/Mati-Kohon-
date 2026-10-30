@@ -7,8 +7,8 @@ export {
   AdditiveBlending, BoxGeometry, BufferAttribute, BufferGeometry, CanvasTexture, CapsuleGeometry, CircleGeometry, Color,
   ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide, DynamicDrawUsage, Euler, ExtrudeGeometry, Group,
   HemisphereLight, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshPhysicalMaterial, NeutralToneMapping,
-  PMREMGenerator, PerspectiveCamera, Plane, PlaneGeometry, QuadraticBezierCurve3, Quaternion, Raycaster, SRGBColorSpace,
-  Scene, Shape, ShapeGeometry, SphereGeometry, Sprite, SpriteMaterial, TorusGeometry, TubeGeometry, Vector2, Vector3,
+  PCFShadowMap, PMREMGenerator, PerspectiveCamera, Plane, PlaneGeometry, QuadraticBezierCurve3, Quaternion, Raycaster, SRGBColorSpace,
+  Scene, ShadowMaterial, Shape, ShapeGeometry, SphereGeometry, Sprite, SpriteMaterial, TorusGeometry, TubeGeometry, Vector2, Vector3,
   Vector4, WebGLRenderer,
 } from 'three';
 export { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
