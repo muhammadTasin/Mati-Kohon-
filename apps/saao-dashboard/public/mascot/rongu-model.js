@@ -388,22 +388,22 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
 
   // glasses
   const glasses = new THREE.Group(); glasses.name = 'glasses';
-  at(glasses, [0, RIG.eye.y - 0.06, 0.445], RIG.neck); head.add(glasses);
-  const W = 0.42, H = 0.345, ring = roundedRect(W, H, 0.09);
-  const hole = roundedRect(W - 0.05, H - 0.05, 0.072);
+  at(glasses, [0, RIG.eye.y, 0.438], RIG.neck); head.add(glasses);
+  const W = 0.36, H = 0.32, ring = roundedRect(W, H, 0.08);
+  const hole = roundedRect(W - 0.046, H - 0.046, 0.064);
   ring.holes.push(hole);
   const ringGeo = new THREE.ExtrudeGeometry(ring, { depth: 0.018, bevelEnabled: true, bevelThickness: 0.006, bevelSize: 0.005, bevelSegments: 3, curveSegments: 16 }).translate(0, 0, -0.009);
-  const lensGeo = new THREE.ShapeGeometry(roundedRect(W - 0.046, H - 0.046, 0.07), 12);
+  const lensGeo = new THREE.ShapeGeometry(roundedRect(W - 0.042, H - 0.042, 0.062), 12);
   for (const sx of [1, -1]) {
     const g = new THREE.Group();
-    g.position.set(sx * 0.234, 0, 0); g.rotation.y = sx * 0.13;
+    g.position.set(sx * RIG.eye.x, 0, 0); g.rotation.y = sx * 0.13;
     g.add(mesh(ringGeo, frame, 'frame'));
     const l = mesh(lensGeo, lens, 'lens'); l.position.z = 0.004; l.renderOrder = 3; g.add(l);
     glasses.add(g);
     const temple = mesh(new THREE.CapsuleGeometry(0.0095, 0.4, 4, 10).rotateX(Math.PI / 2), frame, 'temple');
-    temple.position.set(sx * 0.438, 0.05, -0.21); temple.rotation.y = -sx * 0.07; glasses.add(temple);
+    temple.position.set(sx * (RIG.eye.x + W / 2 + 0.006), 0.04, -0.21); temple.rotation.y = -sx * 0.07; glasses.add(temple);
   }
-  const bridge = mesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(new THREE.Vector3(-0.035, 0.07, 0.006), new THREE.Vector3(0, 0.105, 0.03), new THREE.Vector3(0.035, 0.07, 0.006)), 12, 0.011, 10), frame, 'bridge');
+  const bridge = mesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(new THREE.Vector3(-0.04, 0.05, 0.004), new THREE.Vector3(0, 0.08, 0.026), new THREE.Vector3(0.04, 0.05, 0.004)), 12, 0.011, 10), frame, 'bridge');
   glasses.add(bridge);
   const glassesRest = glasses.position.clone();
 
