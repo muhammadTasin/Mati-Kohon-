@@ -1,5 +1,7 @@
 package org.projecteden.farmermobile.ui.screens.erosion
 
+import org.projecteden.farmermobile.theme.NeoShapes
+
 import org.projecteden.farmermobile.theme.EdenShape
 
 import androidx.compose.foundation.background
@@ -99,7 +101,7 @@ fun RiverErosionScreen(
             ).forEach { (id, label) ->
                 val isSelected = selectedRiver == id
                 Surface(
-                    shape = RoundedCornerShape(2.dp),
+                    shape = NeoShapes.card,
                     color = if (isSelected) Primary else Surface,
                     border = if (isSelected) null else androidx.compose.foundation.BorderStroke(1.dp, Primary.copy(alpha = 0.3f)),
                     modifier = Modifier
@@ -173,7 +175,7 @@ private fun ErosionContent(
         // River Corridor Header Banner
         Surface(
             color = PrimaryContainer,
-            shape = RoundedCornerShape(2.dp),
+            shape = NeoShapes.card,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
@@ -199,7 +201,7 @@ private fun ErosionContent(
                     }
                     Surface(
                         color = Color(0xFFBA1A1A),
-                        shape = RoundedCornerShape(2.dp)
+                        shape = NeoShapes.card
                     ) {
                         Text(
                             text = data.overallRisk,
@@ -229,7 +231,7 @@ private fun ErosionContent(
         // Upstream Basin Rain Card
         Surface(
             color = SurfaceContainerLow,
-            shape = RoundedCornerShape(2.dp),
+            shape = NeoShapes.card,
             modifier = Modifier.fillMaxWidth()
         ) {
             Row(
@@ -275,7 +277,7 @@ private fun ErosionContent(
         // Agricultural Guidelines in Erosion-Prone Areas
         Surface(
             color = SurfaceContainerLow,
-            shape = RoundedCornerShape(2.dp),
+            shape = NeoShapes.card,
             modifier = Modifier.fillMaxWidth()
         ) {
             Column(
@@ -310,7 +312,7 @@ private fun ErosionContent(
         // Caveats & Data Limitations
         Surface(
             color = SurfaceContainerHigh,
-            shape = RoundedCornerShape(2.dp),
+            shape = NeoShapes.card,
             border = androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBA1A1A).copy(alpha = 0.3f)),
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -350,7 +352,7 @@ private fun ErosionContent(
 private fun StationCard(station: RemoteRiverStation) {
     Surface(
         color = SurfaceContainerLow,
-        shape = RoundedCornerShape(2.dp),
+        shape = NeoShapes.card,
         modifier = Modifier.fillMaxWidth()
     ) {
         Column(
@@ -382,7 +384,7 @@ private fun StationCard(station: RemoteRiverStation) {
                         "উচ্চ ঝুঁকি" -> Color(0xFFC04B00)
                         else -> Primary
                     },
-                    shape = RoundedCornerShape(2.dp)
+                    shape = NeoShapes.card
                 ) {
                     Text(
                         text = station.riskLevel,
@@ -398,7 +400,7 @@ private fun StationCard(station: RemoteRiverStation) {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .background(SurfaceContainerHigh.copy(alpha = 0.5f), RoundedCornerShape(2.dp))
+                    .background(SurfaceContainerHigh.copy(alpha = 0.5f), NeoShapes.md)
                     .padding(10.dp),
                 horizontalArrangement = Arrangement.SpaceAround
             ) {

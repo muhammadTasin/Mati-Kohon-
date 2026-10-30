@@ -11,12 +11,12 @@ const gibs = (layer, time, matrix, ext) =>
 
 // Ramps, light to dark, in the story site's hues; each passes the dataviz ordinal checks (one hue, monotone lightness,
 // steps >= 0.06 apart). The diverging scales put the warm (dry, fewer) arm and the cool or green arm around a neutral.
-const GREEN = ['#E6EFE2', '#C7DDC1', '#A2C69E', '#78AB7A', '#4F8C5C', '#2F6B48', '#1D4A31'];
+const GREEN = ['#E3EFEC', '#C2DDD7', '#9CC6BE', '#72ABA3', '#4A8B85', '#2A6B69', '#0E4A4F']; // teal, like the rest of the page
 const BLUE = ['#E2ECF7', '#BCD4EE', '#8FB5E0', '#6497CF', '#3F79BD', '#2B5E9C', '#1C4272'];
 const AMBER = ['#F5EBDC', '#EBD3B0', '#DFB680', '#D19956', '#C77B26', '#9A5A14', '#6E3C10'];
 const NEUTRAL = '#E4DED4';
 const DRY_WET = ['#7E470F', '#C77B26', '#E5C397', NEUTRAL, '#A9C7E8', '#4F86C4', '#1F4F86'];
-const FEWER_MORE = ['#9A5A14', '#DFB680', NEUTRAL, '#A2C69E', '#2F6B48'];
+const FEWER_MORE = ['#9A5A14', '#DFB680', NEUTRAL, '#9CC6BE', '#2A6B69'];
 const NO_DATA = '#D8D2C8';
 
 const GROUPS = {

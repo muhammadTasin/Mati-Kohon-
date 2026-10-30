@@ -1,6 +1,8 @@
 package org.projecteden.farmermobile.ui.components
 
-import org.projecteden.farmermobile.theme.bevel
+import org.projecteden.farmermobile.theme.NeoShapes
+
+import org.projecteden.farmermobile.theme.neoRaised
 
 import android.util.Log
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -50,6 +52,7 @@ import org.projecteden.farmermobile.theme.PrimaryContainer
 import org.projecteden.farmermobile.theme.Surface
 import org.projecteden.farmermobile.theme.SurfaceContainer
 import org.projecteden.farmermobile.theme.SurfaceContainerHigh
+import org.projecteden.farmermobile.theme.SurfaceContainerLowest
 
 @Composable
 fun EdenTopAppBar(
@@ -60,9 +63,10 @@ fun EdenTopAppBar(
     isOffline: Boolean = true
 ) {
     Surface(
-        color = Surface.copy(alpha = 0.95f),
-        shadowElevation = 2.dp,
-        modifier = Modifier.bevel().fillMaxWidth()
+        color = SurfaceContainerLowest,
+        shape = NeoShapes.barBottom,
+        shadowElevation = 0.dp,
+        modifier = Modifier.neoRaised(NeoShapes.barBottom).fillMaxWidth()
     ) {
         Column(
             modifier = Modifier
@@ -108,7 +112,7 @@ fun EdenTopAppBar(
                     // Cache Sync Status Pill
                     Row(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(2.dp))
+                            .clip(NeoShapes.md)
                             .background(SurfaceContainerHigh)
                             .padding(horizontal = 8.dp, vertical = 3.dp),
                         verticalAlignment = Alignment.CenterVertically,

@@ -1,14 +1,5 @@
-/* Rongu on the dashboard: his window, the spotlight, the speech bubble and the "bring him back" button.
-   His colours: shirt cobalt #2B4C9A, body lime #A0C477, leaf #75A457, glasses ink #1D272B. Flat fills and sharp
-   2px corners like the rest of the dashboard; the bubble is a raised white slab. */
-
-:root {
-  --rongu-cobalt: #2B4C9A;
-  --rongu-leaf: #75A457;
-  --rongu-lime: #C1E294;
-  --rongu-ink: #1D272B;
-  --rongu-dim: rgba(9, 28, 14, .44);
-}
+/* Rongu on the dashboard: his window, the spotlight, the speech bubble and the "bring him back" button, on the soft
+   cream-and-teal tokens of neo.css (raised bubble, pill buttons, a teal ring on the lit part). */
 
 /* his window: it takes no clicks itself (the page reads them, see rongu.js passThrough) */
 .rongu-dock {
@@ -24,24 +15,24 @@
 html.rongu-hover, html.rongu-hover * { cursor: grab !important; }
 html.rongu-grabbing, html.rongu-grabbing * { cursor: grabbing !important; user-select: none !important; }
 
-/* the spotlight: everything dims except one part of the page */
+/* the spotlight: everything dims except one part of the page, which gets a teal ring */
 .rongu-spot {
   position: fixed; left: 0; top: 0; z-index: 1150;
   width: 0; height: 0;
-  border-radius: 3px;
+  border-radius: var(--r-lg) !important;
   pointer-events: none;
-  box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 5px var(--rongu-cobalt), 0 0 0 200vmax var(--rongu-dim);
+  box-shadow: 0 0 0 3px var(--face-hi), 0 0 0 5px var(--teal-700), 0 0 0 200vmax rgba(48, 38, 22, .42);
   opacity: 0; visibility: hidden;
   transition: opacity .35s ease, visibility 0s linear .35s;
 }
 .rongu-spot.on { opacity: 1; visibility: visible; transition: opacity .35s ease, visibility 0s; }
-.rongu-spot.closed { box-shadow: 0 0 0 200vmax var(--rongu-dim); }
+.rongu-spot.closed { box-shadow: 0 0 0 200vmax rgba(48, 38, 22, .42); }
 
-/* the speech bubble */
+/* the speech bubble: a raised cream panel */
 .rongu-bubble {
   position: fixed; left: 0; top: 0; z-index: 1170;
   width: min(352px, calc(100vw - 20px));
-  color: var(--rongu-ink);
+  color: var(--ink);
   pointer-events: none;
   opacity: 0;
   transition: opacity .2s ease;
@@ -49,11 +40,10 @@ html.rongu-grabbing, html.rongu-grabbing * { cursor: grabbing !important; user-s
 .rongu-bubble.on { opacity: 1; pointer-events: auto; }
 .rongu-bubble .rb-in {
   position: relative; z-index: 1;
-  padding: 10px 14px 12px;
-  background: #FFFFFF;
-  border: 2px solid var(--rongu-cobalt);
-  border-radius: 2px;
-  box-shadow: inset 1px 1px 0 #FFFFFF, 0 2px 4px rgba(9, 28, 14, .12), 0 16px 32px -16px rgba(9, 28, 14, .5);
+  padding: 12px 16px 14px;
+  background: var(--face);
+  border-radius: var(--r-xl) !important;
+  box-shadow: var(--e4);
   transform: scale(.94) translateY(4px);
   transform-origin: var(--tx, 50%) 100%;
   transition: transform .26s cubic-bezier(.2, .9, .3, 1.25);
@@ -65,103 +55,109 @@ html.rongu-grabbing, html.rongu-grabbing * { cursor: grabbing !important; user-s
 
 /* the tail points at his head */
 .rongu-bubble .rb-tail {
-  position: absolute; z-index: 2; width: 14px; height: 14px;
-  background: #FFFFFF;
-  border: 2px solid var(--rongu-cobalt);
-  border-width: 0 2px 2px 0;
+  position: absolute; z-index: 2; width: 16px; height: 16px;
+  background: var(--face);
+  border-radius: 3px !important;
+  box-shadow: 4px 4px 8px rgba(122, 98, 62, .18);
   left: var(--tx, 50%); top: 100%;
-  transform: translate(-50%, -8px) rotate(45deg);
+  transform: translate(-50%, -9px) rotate(45deg);
 }
-.rongu-bubble[data-side="below"] .rb-tail { top: 0; transform: translate(-50%, -6px) rotate(-135deg); }
-.rongu-bubble[data-side="left"] .rb-tail { left: 100%; top: var(--ty, 50%); transform: translate(-8px, -50%) rotate(-45deg); }
-.rongu-bubble[data-side="right"] .rb-tail { left: 0; top: var(--ty, 50%); transform: translate(-6px, -50%) rotate(135deg); }
+.rongu-bubble[data-side="below"] .rb-tail { top: 0; transform: translate(-50%, -7px) rotate(45deg); box-shadow: -3px -3px 7px rgba(255, 255, 255, .8); }
+.rongu-bubble[data-side="left"] .rb-tail { left: 100%; top: var(--ty, 50%); transform: translate(-9px, -50%) rotate(45deg); }
+.rongu-bubble[data-side="right"] .rb-tail { left: 0; top: var(--ty, 50%); transform: translate(-7px, -50%) rotate(45deg); box-shadow: -4px 4px 8px rgba(122, 98, 62, .14); }
 
 /* on a phone, tours put the bubble along the bottom of the screen and Rongu stands on it */
 .rongu-bubble.sheet { width: calc(100vw - 20px); }
 .rongu-bubble.sheet .rb-tail { display: none; }
 .rongu-bubble.sheet .rb-in { transform-origin: 50% 100%; }
 
-.rb-head { display: flex; align-items: center; gap: 8px; min-height: 26px; margin-bottom: 2px; }
+.rb-head { display: flex; align-items: center; gap: 8px; min-height: 28px; margin-bottom: 2px; }
 .rb-kicker {
   flex: 1; min-width: 0;
-  font: 600 13px/1.3 "Anek Bangla", "Hind Siliguri", system-ui, sans-serif;
-  color: #2A6E88; letter-spacing: .01em;
+  font: 650 13px/1.3 "Anek Bangla", "Hind Siliguri", system-ui, sans-serif;
+  color: var(--teal-700); letter-spacing: .01em;
   overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .rb-x {
   display: grid; place-items: center; flex: none;
-  width: 28px; height: 28px; margin: -2px -6px 0 0; padding: 0;
-  border: 0; border-radius: 2px; background: transparent; color: #5E6F5C; cursor: pointer;
+  width: 32px; height: 32px; margin: -4px -6px 0 0; padding: 0;
+  border: 0; border-radius: 50% !important; background: transparent; color: var(--muted-ink); cursor: pointer;
+  transition: background .2s ease, box-shadow .2s ease;
 }
-.rb-x:hover { background: #EEF5E2; color: var(--rongu-ink); }
-.rb-x .material-symbols-outlined { font-size: 20px; }
+.rb-x:hover { background: var(--face-hi); box-shadow: var(--e2); color: var(--ink); }
+.rb-x .material-symbols-outlined { font-size: var(--icon-md); }
 
 .rb-text {
-  margin: 0 0 10px;
+  margin: 0 0 12px;
   font: 400 16px/1.62 "Hind Siliguri", system-ui, sans-serif;
-  color: var(--rongu-ink);
+  color: var(--ink);
 }
 html[lang="en"] .rb-text { font-size: 15.5px; line-height: 1.55; }
 .rongu-bubble.reveal.on .rb-text .w { display: inline-block; animation: rongu-word .34s cubic-bezier(.2, .8, .3, 1) both; }
 @keyframes rongu-word { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
 
-.rb-actions { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.rb-actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
 .rb-actions .btn { display: inline-flex; align-items: center; gap: 4px; margin: 0; }
-.rb-actions .btn .material-symbols-outlined { font-size: 18px; }
-.rb-actions .btn.rb-quiet { background: transparent; box-shadow: none; border-color: transparent; color: #1D6517; }
-.rb-actions .btn.rb-quiet:hover { background: #EEF5E2; transform: none; }
+.rb-actions .btn .material-symbols-outlined { font-size: var(--icon-md); }
+.rb-actions .btn.rb-quiet { background: transparent; box-shadow: none; color: var(--teal-700); }
+.rb-actions .btn.rb-quiet:hover { background: var(--sunk); box-shadow: var(--inset); transform: none; }
 .rb-actions .btn-primary { margin-left: auto; }
 .rb-actions .btn-primary:only-child { margin-left: 0; }
 
-.rb-progress { display: flex; gap: 3px; margin-top: 10px; }
-.rb-progress span { flex: 1; height: 4px; background: #DDE5D8; }
-.rb-progress span.done { background: var(--rongu-leaf); }
-.rb-progress span.now { background: var(--rongu-cobalt); }
+/* progress: the steps of the story */
+.rb-progress { display: flex; gap: 4px; margin-top: 12px; }
+.rb-progress span { flex: 1; height: 6px; background: var(--sunk); box-shadow: var(--inset); border-radius: var(--r-pill) !important; }
+.rb-progress span.done { background: var(--teal-500); box-shadow: none; }
+.rb-progress span.now { background: var(--teal-700); box-shadow: none; }
 
 /* the chapter list */
-.rb-list { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; margin: 4px 0 10px; }
+.rb-list { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin: 6px 0 12px; }
 .rb-chapter {
   display: flex; align-items: center; gap: 8px;
-  padding: 7px 8px; text-align: left;
-  font: 500 14.5px/1.3 "Hind Siliguri", system-ui, sans-serif; color: var(--rongu-ink);
-  background: #F7FAF5; border: 1px solid #DDE5D8; border-radius: 2px; cursor: pointer;
+  padding: 8px 10px; text-align: left;
+  font: 500 14.5px/1.3 "Hind Siliguri", system-ui, sans-serif; color: var(--ink);
+  background: var(--face-hi); border: 0; border-radius: var(--r-md) !important; cursor: pointer;
+  box-shadow: var(--e2);
+  transition: box-shadow .2s ease, background .2s ease;
 }
-.rb-chapter:hover { background: #EEF5E2; border-color: var(--rongu-lime); }
-.rb-chapter.now { border-color: var(--rongu-cobalt); box-shadow: inset 0 0 0 1px var(--rongu-cobalt); }
+.rb-chapter:hover { background: var(--face); box-shadow: var(--e3); }
+.rb-chapter.now { background: var(--sunk); box-shadow: var(--inset), inset 0 0 0 2px var(--teal-700); }
 .rb-chapter-n {
-  display: grid; place-items: center; flex: none; width: 22px; height: 22px;
-  font: 600 12.5px "IBM Plex Mono", monospace; color: #FFFFFF; background: var(--rongu-leaf); border-radius: 2px;
+  display: grid; place-items: center; flex: none; width: 24px; height: 24px;
+  font: 650 12.5px "IBM Plex Mono", monospace; color: var(--face-hi); background: var(--teal-500); border-radius: 50% !important;
 }
-.rb-chapter.now .rb-chapter-n { background: var(--rongu-cobalt); }
+.rb-chapter.now .rb-chapter-n { background: var(--teal-700); }
 
 /* for keyboards: a "talk to Rongu" button that shows itself only when it has focus */
 .rongu-talk {
   position: fixed; left: 0; top: 0; z-index: 1171;
-  padding: 6px 10px;
-  font: 600 14px "Hind Siliguri", system-ui, sans-serif; color: #FFFFFF;
-  background: var(--rongu-cobalt); border: 0; border-radius: 2px;
+  padding: 8px 14px;
+  font: 650 14px "Hind Siliguri", system-ui, sans-serif; color: var(--face-hi);
+  background: var(--teal-700); border: 0; border-radius: var(--r-pill) !important;
   opacity: 0; pointer-events: none;
 }
-.rongu-talk:focus-visible { opacity: 1; pointer-events: auto; outline: 3px solid #55A6C3; outline-offset: 2px; }
+.rongu-talk:focus-visible { opacity: 1; pointer-events: auto; outline: 3px solid var(--sky); outline-offset: 2px; }
 
-/* tucked away: his face on a small button in the corner */
+/* tucked away: his face on a small raised pill in the corner */
 .rongu-pill {
-  position: fixed; right: 14px; bottom: 14px; z-index: 1160;
+  position: fixed; right: 16px; bottom: 16px; z-index: 1160;
   display: inline-flex; align-items: center; gap: 8px;
-  padding: 4px 14px 4px 4px;
-  font: 600 15px "Anek Bangla", "Hind Siliguri", system-ui, sans-serif; color: #054204;
-  background: #FFFFFF; border: 1px solid #DDE5D8; border-radius: 2px; cursor: pointer;
-  box-shadow: inset 1px 1px 0 #FFFFFF, 0 1px 2px rgba(5, 66, 4, .08), 6px 8px 18px -12px rgba(5, 66, 4, .3);
+  padding: 5px 16px 5px 5px;
+  font: 650 15px "Anek Bangla", "Hind Siliguri", system-ui, sans-serif; color: var(--teal-900);
+  background: var(--face); border: 0; border-radius: var(--r-pill) !important; cursor: pointer;
+  box-shadow: var(--e3);
   opacity: 0; transform: translateY(8px);
-  transition: opacity .25s ease, transform .25s ease;
+  transition: opacity .25s ease, transform .25s ease, box-shadow .25s ease;
 }
 .rongu-pill.on { opacity: 1; transform: none; }
-.rongu-pill:hover { background: #F7FAF5; }
+.rongu-pill:hover { box-shadow: var(--e4); }
+.rongu-pill:active { box-shadow: var(--inset-pressed); background: var(--pressed); }
 .rongu-pill-face {
   display: grid; place-items: center;
   width: 40px; height: 40px;
-  background: #E5F3D3 center / cover no-repeat; border-radius: 2px;
-  color: var(--rongu-leaf); font-size: 24px;
+  background: var(--teal-50) center / cover no-repeat; border-radius: 50% !important;
+  box-shadow: inset 2px 2px 4px rgba(122, 98, 62, .2);
+  color: var(--teal-700); font-size: 24px;
 }
 
 .rongu-pill[hidden], .rongu-bubble [hidden] { display: none !important; }

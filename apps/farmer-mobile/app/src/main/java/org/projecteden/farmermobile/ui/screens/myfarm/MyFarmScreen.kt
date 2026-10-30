@@ -1,5 +1,7 @@
 package org.projecteden.farmermobile.ui.screens.myfarm
 
+import org.projecteden.farmermobile.theme.NeoShapes
+
 import org.projecteden.farmermobile.ui.components.PHOTO_CREDITS
 import org.projecteden.farmermobile.theme.EdenShape
 
@@ -221,7 +223,7 @@ fun MyFarmScreen(
                 // 1. Session / Authentication Card
                 Surface(
                     color = SurfaceContainerHigh,
-                    shape = RoundedCornerShape(2.dp),
+                    shape = NeoShapes.card,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -277,7 +279,7 @@ fun MyFarmScreen(
                             is AuthState.Authenticated -> {
                                 OutlinedButton(
                                     onClick = { viewModel.logout() },
-                                    shape = RoundedCornerShape(2.dp)
+                                    shape = NeoShapes.card
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Logout,
@@ -292,7 +294,7 @@ fun MyFarmScreen(
                                 Button(
                                     onClick = { showLoginDialog = true },
                                     colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary),
-                                    shape = RoundedCornerShape(2.dp)
+                                    shape = NeoShapes.card
                                 ) {
                                     Icon(
                                         imageVector = Icons.Default.Login,
@@ -310,8 +312,8 @@ fun MyFarmScreen(
                 // 2. Farm Identification Banner
                 Surface(
                     color = PrimaryContainer,
-                    shape = RoundedCornerShape(2.dp),
-                    shadowElevation = 2.dp,
+                    shape = NeoShapes.card,
+                    shadowElevation = 0.dp,
                     modifier = Modifier.bevel().fillMaxWidth()
                 ) {
                     Row(
@@ -328,7 +330,7 @@ fun MyFarmScreen(
                             Box(
                                 modifier = Modifier
                                     .size(44.dp)
-                                    .clip(RoundedCornerShape(2.dp))
+                                    .clip(NeoShapes.md)
                                     .background(PrimaryFixed.copy(alpha = 0.25f)),
                                 contentAlignment = Alignment.Center
                             ) {
@@ -353,7 +355,7 @@ fun MyFarmScreen(
                                     )
                                     Box(
                                         modifier = Modifier
-                                            .clip(RoundedCornerShape(2.dp))
+                                            .clip(NeoShapes.md)
                                             .background(PrimaryFixed.copy(alpha = 0.2f))
                                             .padding(horizontal = 6.dp, vertical = 2.dp)
                                     ) {
@@ -375,7 +377,7 @@ fun MyFarmScreen(
 
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(2.dp))
+                                .clip(NeoShapes.md)
                                 .background(Color.White.copy(alpha = 0.15f))
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
@@ -400,7 +402,7 @@ fun MyFarmScreen(
                             containerColor = Primary,
                             contentColor = OnPrimary
                         ),
-                        shape = RoundedCornerShape(2.dp),
+                        shape = NeoShapes.card,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp)
@@ -421,7 +423,7 @@ fun MyFarmScreen(
                     val currentDraft = draftProfile ?: farmProfile
                     Surface(
                         color = SurfaceContainerLow,
-                        shape = RoundedCornerShape(2.dp),
+                        shape = NeoShapes.card,
                         border = androidx.compose.foundation.BorderStroke(1.dp, Primary.copy(alpha = 0.5f)),
                         modifier = Modifier.fillMaxWidth()
                     ) {
@@ -467,7 +469,7 @@ fun MyFarmScreen(
                                 OutlinedButton(
                                     onClick = { viewModel.cancelEditing() },
                                     enabled = !isUpdating,
-                                    shape = RoundedCornerShape(2.dp),
+                                    shape = NeoShapes.card,
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(44.dp)
@@ -481,7 +483,7 @@ fun MyFarmScreen(
                                     onClick = { viewModel.saveDraft() },
                                     enabled = !isUpdating,
                                     colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary),
-                                    shape = RoundedCornerShape(2.dp),
+                                    shape = NeoShapes.card,
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(44.dp)
@@ -545,7 +547,7 @@ fun MyFarmScreen(
                                 OutlinedButton(
                                     onClick = { viewModel.cancelEditing() },
                                     enabled = !isUpdating,
-                                    shape = RoundedCornerShape(2.dp),
+                                    shape = NeoShapes.card,
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(48.dp)
@@ -559,7 +561,7 @@ fun MyFarmScreen(
                                     onClick = { viewModel.saveDraft() },
                                     enabled = !isUpdating,
                                     colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary),
-                                    shape = RoundedCornerShape(2.dp),
+                                    shape = NeoShapes.card,
                                     modifier = Modifier
                                         .weight(1f)
                                         .height(48.dp)
@@ -586,7 +588,7 @@ fun MyFarmScreen(
                 // 4. Farm Location Card
                 Surface(
                     color = SurfaceContainerLow,
-                    shape = RoundedCornerShape(2.dp),
+                    shape = NeoShapes.card,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
@@ -653,7 +655,7 @@ fun MyFarmScreen(
                 // 5. Plot & Agro Info Card
                 Surface(
                     color = SurfaceContainerLow,
-                    shape = RoundedCornerShape(2.dp),
+                    shape = NeoShapes.card,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(modifier = Modifier.fillMaxWidth()) {
@@ -713,7 +715,7 @@ fun MyFarmScreen(
                 // 6. Consent & Data Integrity Ledger
                 Surface(
                     color = SurfaceContainerLow,
-                    shape = RoundedCornerShape(2.dp),
+                    shape = NeoShapes.card,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -772,7 +774,7 @@ fun MyFarmScreen(
             ) {
                 Surface(
                     color = InverseSurface,
-                    shape = RoundedCornerShape(2.dp),
+                    shape = NeoShapes.card,
                     shadowElevation = 6.dp
                 ) {
                     Row(
@@ -806,7 +808,7 @@ fun MyFarmScreen(
             ) {
                 Surface(
                     color = MaterialTheme.colorScheme.errorContainer,
-                    shape = RoundedCornerShape(2.dp),
+                    shape = NeoShapes.card,
                     shadowElevation = 6.dp
                 ) {
                     Row(
@@ -878,7 +880,7 @@ private fun FarmEditField(
             unfocusedBorderColor = Outline,
             cursorColor = Primary
         ),
-        shape = RoundedCornerShape(2.dp),
+        shape = NeoShapes.card,
         modifier = Modifier.fillMaxWidth()
     )
 }

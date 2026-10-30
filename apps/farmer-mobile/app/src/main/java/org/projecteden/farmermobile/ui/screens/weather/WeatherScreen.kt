@@ -1,5 +1,7 @@
 package org.projecteden.farmermobile.ui.screens.weather
 
+import org.projecteden.farmermobile.theme.NeoShapes
+
 import org.projecteden.farmermobile.theme.EdenShape
 
 import android.Manifest
@@ -171,7 +173,7 @@ private fun LocationNoticeBanner(notice: LocationNotice?, onDismiss: () -> Unit)
     }
     Surface(
         color = SurfaceContainerHigh,
-        shape = RoundedCornerShape(2.dp),
+        shape = NeoShapes.card,
         border = BorderStroke(1.dp, Tertiary.copy(alpha = 0.3f)),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -206,7 +208,7 @@ private fun LocationCard(
     onRetryCatalog: () -> Unit,
 ) {
     val target = state.target
-    Surface(color = PrimaryContainer, shape = RoundedCornerShape(2.dp), modifier = Modifier.fillMaxWidth()) {
+    Surface(color = PrimaryContainer, shape = NeoShapes.card, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -245,7 +247,7 @@ private fun LocationCard(
                     Button(
                         onClick = onRefresh,
                         enabled = !loading,
-                        shape = RoundedCornerShape(2.dp),
+                        shape = NeoShapes.card,
                         colors = ButtonDefaults.buttonColors(containerColor = PrimaryFixed, contentColor = Primary)
                     ) {
                         if (loading) {
@@ -273,7 +275,7 @@ private fun LocationCard(
 
             Button(
                 onClick = onUseGps,
-                shape = RoundedCornerShape(2.dp),
+                shape = NeoShapes.card,
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryFixed, contentColor = Primary)
             ) {
                 Icon(Icons.Default.MyLocation, contentDescription = null, modifier = Modifier.size(16.dp))
@@ -348,14 +350,14 @@ private fun ForecastContent(forecast: ForecastResponse, stale: Boolean = false) 
             detail = "তথ্যসূত্র: ${forecast.source.provider} • আপডেট: ${forecast.source.fetchedAt?.take(16)?.replace('T', ' ') ?: "—"} • পূর্বাভাসের সময় (স্থানীয়): ${current.time.replace('T', ' ')}",
         )
 
-        Surface(color = SurfaceContainerLow, shape = RoundedCornerShape(2.dp), modifier = Modifier.fillMaxWidth()) {
+        Surface(color = SurfaceContainerLow, shape = NeoShapes.card, modifier = Modifier.fillMaxWidth()) {
             Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                         Icon(conditionIcon(current.weatherCode), contentDescription = null, tint = Primary, modifier = Modifier.size(26.dp))
                         Text("বর্তমান আবহাওয়া অনুমান", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = OnSurface)
                     }
-                    Surface(color = Primary.copy(alpha = 0.1f), shape = RoundedCornerShape(2.dp)) {
+                    Surface(color = Primary.copy(alpha = 0.1f), shape = NeoShapes.card) {
                         Text(
                             WeatherCodes.labelBangla(current.weatherCode),
                             style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Primary,
@@ -385,7 +387,7 @@ private fun ForecastContent(forecast: ForecastResponse, stale: Boolean = false) 
 
         val upcoming = forecast.hourly.filter { it.time >= current.time.take(13) }.take(24)
         if (upcoming.isNotEmpty()) {
-            Surface(color = SurfaceContainerLow, shape = RoundedCornerShape(2.dp), modifier = Modifier.fillMaxWidth()) {
+            Surface(color = SurfaceContainerLow, shape = NeoShapes.card, modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("আগামী ২৪ ঘণ্টার আবহাওয়া ধারা", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = OnSurface)
                     Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
@@ -396,7 +398,7 @@ private fun ForecastContent(forecast: ForecastResponse, stale: Boolean = false) 
         }
 
         if (forecast.daily.isNotEmpty()) {
-            Surface(color = SurfaceContainerLow, shape = RoundedCornerShape(2.dp), modifier = Modifier.fillMaxWidth()) {
+            Surface(color = SurfaceContainerLow, shape = NeoShapes.card, modifier = Modifier.fillMaxWidth()) {
                 Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(10.dp)) {
                     Text("আগামী ৭ দিনের পূর্বাভাস", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = OnSurface)
                     forecast.daily.forEach { DailyRow(it) }
@@ -424,7 +426,7 @@ private fun DailyRow(day: ForecastDay) {
 
 @Composable
 private fun HourlyTile(hour: ForecastHour) {
-    Surface(color = SurfaceContainerHigh, shape = RoundedCornerShape(2.dp), modifier = Modifier.width(72.dp)) {
+    Surface(color = SurfaceContainerHigh, shape = NeoShapes.card, modifier = Modifier.width(72.dp)) {
         Column(modifier = Modifier.padding(8.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text(hour.time.substringAfter('T').take(5), style = MaterialTheme.typography.labelSmall, fontSize = 10.sp, color = OnSurfaceVariant)
             Icon(conditionIcon(hour.weatherCode), contentDescription = null, modifier = Modifier.size(20.dp), tint = Primary)
@@ -438,7 +440,7 @@ private fun HourlyTile(hour: ForecastHour) {
 @Composable
 private fun HourlyThiCard(forecast: ForecastResponse) {
     val hourly = remember(forecast) { CattleThi.hourly(forecast) }
-    Surface(color = SurfaceContainerLow, shape = RoundedCornerShape(2.dp), modifier = Modifier.fillMaxWidth()) {
+    Surface(color = SurfaceContainerLow, shape = NeoShapes.card, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text("গরুর তাপ চাপ সূচক (THI) — ঘণ্টাভিত্তিক", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = OnSurface)
             Text(
@@ -450,7 +452,7 @@ private fun HourlyThiCard(forecast: ForecastResponse) {
             } else {
                 Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     hourly.hours.forEach { h ->
-                        Surface(color = thiColor(h.category), shape = RoundedCornerShape(2.dp), modifier = Modifier.width(66.dp)) {
+                        Surface(color = thiColor(h.category), shape = NeoShapes.card, modifier = Modifier.width(66.dp)) {
                             Column(modifier = Modifier.padding(6.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(h.time.substringAfter('T').take(5), fontSize = 10.sp, color = OnSurfaceVariant)
                                 Text(fmt(h.thi, "", 0), fontWeight = FontWeight.Bold, color = OnSurface)
@@ -511,7 +513,7 @@ private fun ObservationsContent(obs: ObservationResponse, stale: Boolean = false
         },
         detail = "সর্বশেষ পর্যবেক্ষণ: ${obs.latestObservationDate} (সাধারণত ২–৩ দিন বিলম্ব) • সময়কাল ${obs.windowStart} – ${obs.windowEnd}, ${obs.daysWithData} দিনের উপাত্ত",
     )
-    Surface(color = SurfaceContainerLow, shape = RoundedCornerShape(2.dp), modifier = Modifier.fillMaxWidth()) {
+    Surface(color = SurfaceContainerLow, shape = NeoShapes.card, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("সর্বশেষ দিন (${obs.latest.date})", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = Primary)
             Text(
@@ -524,7 +526,7 @@ private fun ObservationsContent(obs: ObservationResponse, stale: Boolean = false
             )
         }
     }
-    Surface(color = SurfaceContainerHigh, shape = RoundedCornerShape(2.dp), modifier = Modifier.fillMaxWidth()) {
+    Surface(color = SurfaceContainerHigh, shape = NeoShapes.card, modifier = Modifier.fillMaxWidth()) {
         Text(
             "মাটির আর্দ্রতা (SMAP): এই উৎসে পাওয়া যায় না। ${obs.soilMoistureUnavailableReason.orEmpty()}",
             style = MaterialTheme.typography.bodySmall, color = OnSurfaceVariant, modifier = Modifier.padding(12.dp)
@@ -592,7 +594,7 @@ private fun JobStatusCard(job: CattleJob) {
         "blocked" -> "আটকে আছে — কনফিগারেশন বা উপাত্ত প্রয়োজন" to Color(0xFFFEF3C7)
         else -> "চলমান" to SurfaceContainerHigh
     }
-    Surface(color = color, shape = RoundedCornerShape(2.dp), modifier = Modifier.fillMaxWidth()) {
+    Surface(color = color, shape = NeoShapes.card, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
             Text("সর্বশেষ কাজের অবস্থা: $label", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = OnSurface)
             Text(job.stageMessageBangla.ifBlank { job.stageMessage }, style = MaterialTheme.typography.bodySmall, color = OnSurface)
@@ -605,7 +607,7 @@ private fun JobStatusCard(job: CattleJob) {
 @Composable
 private fun AdvisoryContent(a: CattleAdvisory) {
     val category = ThiCategory.fromApi(a.thiCategory)
-    Surface(color = SurfaceContainerLow, shape = RoundedCornerShape(2.dp), modifier = Modifier.fillMaxWidth()) {
+    Surface(color = SurfaceContainerLow, shape = NeoShapes.card, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(14.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(a.farmLabel, style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = OnSurface)
 
@@ -619,7 +621,7 @@ private fun AdvisoryContent(a: CattleAdvisory) {
             )
 
             Text("গণনা করা মান", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Primary)
-            Surface(color = thiColor(category), shape = RoundedCornerShape(2.dp)) {
+            Surface(color = thiColor(category), shape = NeoShapes.card) {
                 Text(
                     "THI ${fmt(a.thiCurrent, "", 1)} — ${category.labelBangla}",
                     fontWeight = FontWeight.Bold, color = OnSurface, modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp)
@@ -629,7 +631,7 @@ private fun AdvisoryContent(a: CattleAdvisory) {
             if (a.hourly.isNotEmpty()) {
                 Row(modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()), horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                     a.hourly.forEach { h ->
-                        Surface(color = thiColor(ThiCategory.fromApi(h.category)), shape = RoundedCornerShape(2.dp), modifier = Modifier.width(62.dp)) {
+                        Surface(color = thiColor(ThiCategory.fromApi(h.category)), shape = NeoShapes.card, modifier = Modifier.width(62.dp)) {
                             Column(modifier = Modifier.padding(5.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text(h.time.substringAfter('T').take(5), fontSize = 10.sp, color = OnSurfaceVariant)
                                 Text(fmt(h.thi, "", 0), fontWeight = FontWeight.Bold, color = OnSurface)
@@ -661,7 +663,7 @@ private fun AdvisoryContent(a: CattleAdvisory) {
 
 @Composable
 private fun LoadingCard(text: String) {
-    Surface(color = SurfaceContainerLow, shape = RoundedCornerShape(2.dp), modifier = Modifier.fillMaxWidth()) {
+    Surface(color = SurfaceContainerLow, shape = NeoShapes.card, modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.padding(14.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(10.dp)) {
             CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp, color = Primary)
             Text(text, style = MaterialTheme.typography.bodyMedium, color = OnSurfaceVariant)
@@ -671,7 +673,7 @@ private fun LoadingCard(text: String) {
 
 @Composable
 private fun ErrorCard(message: String, onRetry: () -> Unit) {
-    Surface(color = MaterialTheme.colorScheme.errorContainer, shape = RoundedCornerShape(2.dp), modifier = Modifier.fillMaxWidth()) {
+    Surface(color = MaterialTheme.colorScheme.errorContainer, shape = NeoShapes.card, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Icon(Icons.Default.Info, contentDescription = null, tint = MaterialTheme.colorScheme.error, modifier = Modifier.size(20.dp))
@@ -688,7 +690,7 @@ private fun ErrorCard(message: String, onRetry: () -> Unit) {
 
 @Composable
 private fun InfoCard(text: String) {
-    Surface(color = SurfaceContainerHigh, shape = RoundedCornerShape(2.dp), modifier = Modifier.fillMaxWidth()) {
+    Surface(color = SurfaceContainerHigh, shape = NeoShapes.card, modifier = Modifier.fillMaxWidth()) {
         Row(modifier = Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             Icon(Icons.Default.Info, contentDescription = null, tint = Tertiary, modifier = Modifier.size(20.dp))
             Text(text, style = MaterialTheme.typography.bodySmall, color = OnSurface)
@@ -700,7 +702,7 @@ private fun InfoCard(text: String) {
 private fun SourceBanner(title: String, detail: String) {
     Surface(
         color = SurfaceContainerHigh,
-        shape = RoundedCornerShape(2.dp),
+        shape = NeoShapes.card,
         border = BorderStroke(1.dp, Tertiary.copy(alpha = 0.3f)),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -716,7 +718,7 @@ private fun SourceBanner(title: String, detail: String) {
 
 @Composable
 private fun AttributionCard() {
-    Surface(color = SurfaceContainerHigh, shape = RoundedCornerShape(2.dp), modifier = Modifier.fillMaxWidth()) {
+    Surface(color = SurfaceContainerHigh, shape = NeoShapes.card, modifier = Modifier.fillMaxWidth()) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Text("উপাত্তের উৎস ও সীমাবদ্ধতা:", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, color = OnSurface)
             Text("• পূর্বাভাস: Open-Meteo — সংখ্যাভিত্তিক আবহাওয়া মডেলের অনুমান, স্থানীয় স্টেশনের মাপ নয়।", style = MaterialTheme.typography.bodySmall, color = OnSurfaceVariant, fontSize = 11.sp)
@@ -728,7 +730,7 @@ private fun AttributionCard() {
 
 @Composable
 private fun MetricTile(icon: ImageVector, title: String, value: String, subtitle: String, modifier: Modifier = Modifier) {
-    Surface(color = SurfaceContainerLow, shape = RoundedCornerShape(2.dp), modifier = modifier) {
+    Surface(color = SurfaceContainerLow, shape = NeoShapes.card, modifier = modifier) {
         Column(modifier = Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
                 Icon(icon, contentDescription = null, tint = Primary, modifier = Modifier.size(18.dp))

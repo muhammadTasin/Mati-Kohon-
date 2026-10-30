@@ -81,9 +81,9 @@ export function reviewHtml(opt, { tr, escapeHtml }) {
 /** NDVI as a green shade: under 0.35 the land is bare, flooded or just planted. */
 function ndviStyle(v) {
   if (v === null || v === undefined) return 'background:var(--surface-3, #E4DED4)';
-  const ramp = ['#EBD3B0', '#E6EFE2', '#C7DDC1', '#A2C69E', '#78AB7A', '#4F8C5C', '#2F6B48'];
+  const ramp = ['#EBD3B0', '#E3EFEC', '#C2DDD7', '#9CC6BE', '#72ABA3', '#3C7F7A', '#2A6B69'];
   const i = v < 0.35 ? 0 : Math.min(ramp.length - 1, 1 + Math.floor((v - 0.35) / 0.1));
-  return `background:${ramp[i]};color:${i >= 5 ? '#fff' : 'inherit'}`;
+  return `background:${ramp[i]};color:${i >= 5 ? '#fff' : '#1F2B2A'}`;
 }
 
 /** The season risk of the chosen option, month by month (July to June), under the timeline. */

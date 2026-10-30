@@ -1,5 +1,7 @@
 package org.projecteden.farmermobile.ui.components
 
+import org.projecteden.farmermobile.theme.NeoShapes
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -34,7 +36,8 @@ import org.projecteden.farmermobile.theme.OnPrimary
 import org.projecteden.farmermobile.theme.OnSurfaceVariant
 import org.projecteden.farmermobile.theme.Primary
 import org.projecteden.farmermobile.theme.PrimaryContainer
-import org.projecteden.farmermobile.theme.Surface
+import org.projecteden.farmermobile.theme.SurfaceContainerLowest
+import org.projecteden.farmermobile.theme.neoRaised
 
 enum class EdenTab(
     val titleBangla: String,
@@ -54,10 +57,12 @@ fun EdenBottomNavBar(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        color = Surface.copy(alpha = 0.95f),
-        shadowElevation = 8.dp,
+        color = SurfaceContainerLowest,
+        shape = NeoShapes.barTop,
+        shadowElevation = 0.dp,
         modifier = modifier
             .fillMaxWidth()
+            .neoRaised(NeoShapes.barTop)
             .navigationBarsPadding()
     ) {
         Row(
@@ -82,8 +87,8 @@ fun EdenBottomNavBar(
                     Box(
                         modifier = Modifier
                             .size(width = 46.dp, height = 28.dp)
-                            .clip(RoundedCornerShape(2.dp))
-                            .background(if (isSelected) PrimaryContainer else androidx.compose.ui.graphics.Color.Transparent),
+                            .clip(NeoShapes.pill)
+                            .background(if (isSelected) Primary else androidx.compose.ui.graphics.Color.Transparent),
                         contentAlignment = Alignment.Center
                     ) {
                         Icon(

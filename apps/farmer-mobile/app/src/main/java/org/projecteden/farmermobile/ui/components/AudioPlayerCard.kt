@@ -1,5 +1,7 @@
 package org.projecteden.farmermobile.ui.components
 
+import org.projecteden.farmermobile.theme.NeoShapes
+
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -92,7 +94,7 @@ fun AudioPlayerCard(
                 containerColor = Primary,
                 contentColor = OnPrimary
             ),
-            shape = RoundedCornerShape(2.dp),
+            shape = NeoShapes.card,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(54.dp)
@@ -129,7 +131,7 @@ fun AudioPlayerCard(
 
             Surface(
                 color = SurfaceContainerHigh,
-                shape = RoundedCornerShape(2.dp),
+                shape = NeoShapes.card,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -182,7 +184,7 @@ fun AudioPlayerCard(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(6.dp)
-                                .clip(RoundedCornerShape(2.dp)),
+                                .clip(NeoShapes.md),
                             color = PrimaryContainer,
                             trackColor = SurfaceDim
                         )
@@ -196,7 +198,7 @@ fun AudioPlayerCard(
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(2.dp))
+                    .clip(NeoShapes.md)
                     .background(SurfaceContainerHigh)
                     .padding(horizontal = 12.dp, vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically,

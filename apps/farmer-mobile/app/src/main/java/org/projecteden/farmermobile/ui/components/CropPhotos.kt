@@ -1,5 +1,7 @@
 package org.projecteden.farmermobile.ui.components
 
+import org.projecteden.farmermobile.theme.NeoShapes
+
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
@@ -43,8 +45,8 @@ fun CropPhoto(cropBangla: String, modifier: Modifier = Modifier, size: Dp = 48.d
         contentScale = ContentScale.Crop,
         modifier = modifier
             .size(size)
-            .clip(RoundedCornerShape(2.dp))
-            .border(1.dp, OutlineVariant, RoundedCornerShape(2.dp))
+            .clip(NeoShapes.md)
+            .border(1.dp, OutlineVariant, NeoShapes.md)
     )
 }
 

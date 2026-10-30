@@ -1,5 +1,7 @@
 package org.projecteden.farmermobile.ui.screens.ai
 
+import org.projecteden.farmermobile.theme.NeoShapes
+
 import android.app.Activity
 import android.content.ActivityNotFoundException
 import android.content.Intent
@@ -171,7 +173,7 @@ fun AiAssistantScreen(
         ) {
             viewModel.promptSuggestions.forEach { prompt ->
                 Surface(
-                    shape = RoundedCornerShape(2.dp),
+                    shape = NeoShapes.card,
                     color = SurfaceContainerLow,
                     border = androidx.compose.foundation.BorderStroke(1.dp, Primary.copy(alpha = 0.3f)),
                     modifier = Modifier.clickable {
@@ -224,7 +226,7 @@ fun AiAssistantScreen(
                     enabled = !isLoading,
                     modifier = Modifier
                         .size(44.dp)
-                        .clip(RoundedCornerShape(2.dp))
+                        .clip(NeoShapes.md)
                         .background(SurfaceContainerHigh)
                 ) {
                     Icon(
@@ -240,7 +242,7 @@ fun AiAssistantScreen(
                     onValueChange = viewModel::updateInputDraft,
                     placeholder = { Text("আপনার প্রশ্ন এখানে লিখুন...", color = OnSurfaceVariant) },
                     maxLines = 3,
-                    shape = RoundedCornerShape(2.dp),
+                    shape = NeoShapes.card,
                     textStyle = MaterialTheme.typography.bodyMedium.copy(
                         color = OnSurface,
                         fontWeight = FontWeight.Normal
@@ -290,7 +292,7 @@ private fun ChatBubble(message: ChatMessage) {
         ) {
             Surface(
                 color = Primary,
-                shape = RoundedCornerShape(2.dp),
+                shape = NeoShapes.card,
                 modifier = Modifier.fillMaxWidth(0.82f)
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
@@ -319,7 +321,7 @@ private fun ChatBubble(message: ChatMessage) {
         ) {
             Surface(
                 color = SurfaceContainerLow,
-                shape = RoundedCornerShape(2.dp),
+                shape = NeoShapes.card,
                 border = if (message.isInsufficientEvidence) androidx.compose.foundation.BorderStroke(1.dp, Color(0xFFBA1A1A).copy(alpha = 0.4f)) else null,
                 modifier = Modifier.fillMaxWidth(0.92f)
             ) {
@@ -361,7 +363,7 @@ private fun ChatBubble(message: ChatMessage) {
                     if (message.sources.isNotEmpty()) {
                         Surface(
                             color = SurfaceContainerHigh.copy(alpha = 0.6f),
-                            shape = RoundedCornerShape(2.dp),
+                            shape = NeoShapes.card,
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Column(modifier = Modifier.padding(8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {

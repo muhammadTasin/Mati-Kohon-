@@ -954,7 +954,7 @@ export function initPortals(ctx) {
     if (aoiLayer) cattleMap.removeLayer(aoiLayer);
     if (aoiMarker) cattleMap.removeLayer(aoiMarker);
     try {
-      aoiLayer = window.L.geoJSON(aoi.geometry, { style: { color: '#1D4A31', weight: 3, opacity: 0.95, fillColor: '#78AB7A', fillOpacity: 0.35 } }).addTo(cattleMap);
+      aoiLayer = window.L.geoJSON(aoi.geometry, { style: { color: '#063A3F', weight: 3, opacity: 0.95, fillColor: '#72ABA3', fillOpacity: 0.35 } }).addTo(cattleMap);
       const [lon, lat] = aoi.centroid;
       aoiMarker = window.L.circleMarker([lat, lon], { radius: 6, fillColor: '#C77B26', color: '#FAF8F5', weight: 2, fillOpacity: 1 })
         .addTo(cattleMap).bindTooltip(`${escapeHtml(aoi.farmLabel)}${aoi.nearestUpazila ? `, ${escapeHtml(aoi.nearestUpazila)}` : ''}`);

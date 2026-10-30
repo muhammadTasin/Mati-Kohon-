@@ -1,5 +1,7 @@
 package org.projecteden.farmermobile.ui.screens.ai
 
+import org.projecteden.farmermobile.theme.NeoShapes
+
 import android.app.Application
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -122,7 +124,7 @@ fun AskOfficerCard(
 
     Surface(
         color = SurfaceContainerLowest,
-        shape = RoundedCornerShape(2.dp),
+        shape = NeoShapes.card,
         border = androidx.compose.foundation.BorderStroke(1.dp, OutlineVariant),
         modifier = Modifier.fillMaxWidth()
     ) {
@@ -155,7 +157,7 @@ fun AskOfficerCard(
                 Button(
                     onClick = viewModel::send,
                     enabled = draft.isNotBlank() && !sending,
-                    shape = RoundedCornerShape(2.dp),
+                    shape = NeoShapes.card,
                     colors = ButtonDefaults.buttonColors(containerColor = Primary)
                 ) { Text(if (sending) "পাঠানো হচ্ছে…" else "কর্মকর্তার কাছে পাঠান") }
             }
@@ -178,7 +180,7 @@ private fun QuestionRow(q: RemoteFarmerQuestion) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(2.dp))
+            .clip(NeoShapes.md)
             .background(SurfaceContainerLowest)
             .padding(vertical = 4.dp),
         verticalArrangement = Arrangement.spacedBy(4.dp)
@@ -188,7 +190,7 @@ private fun QuestionRow(q: RemoteFarmerQuestion) {
             style = MaterialTheme.typography.labelSmall,
             color = fg,
             fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.clip(RoundedCornerShape(2.dp)).background(bg).padding(horizontal = 8.dp, vertical = 2.dp)
+            modifier = Modifier.clip(NeoShapes.md).background(bg).padding(horizontal = 8.dp, vertical = 2.dp)
         )
         Text(q.textBangla, style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold, color = OnSurface)
         q.answerBangla?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = OnSurfaceVariant, lineHeight = 17.sp) }

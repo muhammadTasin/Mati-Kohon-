@@ -1,5 +1,7 @@
 package org.projecteden.farmermobile.ui.components
 
+import org.projecteden.farmermobile.theme.NeoShapes
+
 import org.projecteden.farmermobile.theme.EdenShape
 
 import androidx.compose.foundation.background
@@ -65,7 +67,7 @@ fun LoginDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(2.dp),
+            shape = NeoShapes.card,
             color = Surface,
             tonalElevation = 6.dp,
             modifier = Modifier.fillMaxWidth()
@@ -99,7 +101,7 @@ fun LoginDialog(
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(2.dp))
+                        .clip(NeoShapes.md)
                         .background(SurfaceContainerHigh)
                         .padding(4.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -108,7 +110,7 @@ fun LoginDialog(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(2.dp))
+                            .clip(NeoShapes.md)
                             .background(if (isFarmer) Primary else androidx.compose.ui.graphics.Color.Transparent)
                             .clickable {
                                 selectedRole = "farmer"
@@ -129,7 +131,7 @@ fun LoginDialog(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(2.dp))
+                            .clip(NeoShapes.md)
                             .background(if (!isFarmer) Primary else androidx.compose.ui.graphics.Color.Transparent)
                             .clickable {
                                 selectedRole = "officer"
@@ -167,7 +169,7 @@ fun LoginDialog(
                     ) {
                         listOf("F01" to "কৃষক ০১", "F02" to "কৃষক ০২", "F04" to "কৃষক ০৪").forEach { (fid, label) ->
                             Surface(
-                                shape = RoundedCornerShape(2.dp),
+                                shape = NeoShapes.card,
                                 color = if (idInput == fid) PrimaryContainer else SurfaceContainerHigh,
                                 modifier = Modifier.clickable {
                                     idInput = fid
@@ -185,7 +187,7 @@ fun LoginDialog(
                     }
                 } else {
                     Surface(
-                        shape = RoundedCornerShape(2.dp),
+                        shape = NeoShapes.card,
                         color = PrimaryContainer,
                         modifier = Modifier.clickable {
                             idInput = "saao_talanda_01"
@@ -275,7 +277,7 @@ fun LoginDialog(
                         onClick = { onLogin(selectedRole, idInput, pinOrCodeInput) },
                         enabled = !isLoading && idInput.isNotBlank() && pinOrCodeInput.isNotBlank(),
                         colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary),
-                        shape = RoundedCornerShape(2.dp)
+                        shape = NeoShapes.card
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(
