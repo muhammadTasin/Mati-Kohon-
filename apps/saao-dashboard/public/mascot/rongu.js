@@ -1,0 +1,390 @@
+// Rongu, the Mati Kohon companion: one call puts him on a canvas and hands back his controls.
+//   const rongu = await createRongu(canvas, { framing: 'full' });
+//   rongu.gesture('wave'); rongu.say('নমস্কার!'); rongu.mood('heat'); rongu.fly(...); rongu.dive();
+import * as THREE from './vendor/three-rongu.min.js';
+import { createModel, MOODS } from './rongu-model.js';
+import { Motion, ACTIONS, GESTURES } from './rongu-motion.js';
+
+const MODEL_VERSION = 'rongu-2';
+
+// ---------- meshes: from the browser's cache, else sculpted in a worker ----------
+function idb() {
+  return new Promise((resolve) => {
+    try {
+      const req = indexedDB.open('mati-kohon-rongu', 1);
+      req.onupgradeneeded = () => req.result.createObjectStore('parts');
+      req.onsuccess = () => resolve(req.result);
+      req.onerror = () => resolve(null);
+    } catch { resolve(null); }
+  });
+}
+async function cached(key) {
+  const db = await idb();
+  if (!db) return null;
+  return new Promise((resolve) => {
+    try {
+      const r = db.transaction('parts').objectStore('parts').get(key);
+      r.onsuccess = () => resolve(r.result || null);
+      r.onerror = () => resolve(null);
+    } catch { resolve(null); }
+  });
+}
+async function store(key, parts) {
+  const db = await idb();
+  try { db?.transaction('parts', 'readwrite').objectStore('parts').put(parts, key); } catch { /* storage is optional */ }
+}
+async function buildParts(quality) {
+  const key = `${MODEL_VERSION}-q${quality}`;
+  const hit = await cached(key);
+  if (hit) return hit;
+  let parts;
+  try {
+    parts = await new Promise((resolve, reject) => {
+      const w = new Worker(new URL('./rongu-worker.js', import.meta.url), { type: 'module' });
+      w.onmessage = (e) => { resolve(e.data.parts); w.terminate(); };
+      w.onerror = (e) => { reject(e); w.terminate(); };
+      w.postMessage({ quality });
+    });
+  } catch {
+    const { buildRongu } = await import('./rongu-shapes.js');
+    parts = buildRongu(quality);
+  }
+  store(key, parts);
+  return parts;
+}
+
+// ---------- small effects: confetti, dust, splashes, sleepy z's ----------
+function dotTexture(color) {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d');
+  g.fillStyle = color; g.beginPath(); g.arc(32, 32, 28, 0, Math.PI * 2); g.fill();
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+function letterTexture(ch) {
+  const c = document.createElement('canvas'); c.width = c.height = 64;
+  const g = c.getContext('2d');
+  g.font = '700 48px "Anek Bangla", system-ui, sans-serif'; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.lineWidth = 6; g.strokeStyle = '#FFFFFF'; g.strokeText(ch, 32, 34); g.fillStyle = '#2B4C9A'; g.fillText(ch, 32, 34);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+
+class Effects {
+  constructor(scene) {
+    this.scene = scene;
+    this.items = [];
+    const n = 140;
+    this.confetti = new THREE.InstancedMesh(new THREE.PlaneGeometry(0.04, 0.07), new THREE.MeshBasicMaterial({ side: THREE.DoubleSide, toneMapped: false }), n);
+    this.confetti.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    this.confetti.count = 0; this.confetti.frustumCulled = false;
+    const rainbow = ['#78D270', '#40BC8A', '#3BA5D4', '#5E88DE', '#8887E6', '#F34F6A', '#F9614D', '#F79E35', '#FAD853'];
+    for (let i = 0; i < n; i++) this.confetti.setColorAt(i, new THREE.Color(rainbow[i % rainbow.length]));
+    scene.add(this.confetti);
+    this.bits = [];
+    this.textures = { soil: dotTexture('#A57C52'), water: dotTexture('#8FD3E6'), dust: dotTexture('#E8E2D2'), z: letterTexture('z') };
+    this.portal = new THREE.Mesh(new THREE.CircleGeometry(0.62, 48).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: '#4A3826', transparent: true, opacity: 0, depthWrite: false }));
+    this.portal.position.y = 0.004; this.portal.scale.set(1, 1, 0.55);
+    scene.add(this.portal);
+    this.portalLife = 0;
+  }
+  burstConfetti(origin) {
+    const n = this.confetti.count = 140;
+    this.bits = [];
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, up = 2.6 + Math.random() * 2.2, out = 0.6 + Math.random() * 1.6;
+      this.bits.push({ p: new THREE.Vector3(origin.x, origin.y, origin.z), v: new THREE.Vector3(Math.cos(a) * out, up, Math.sin(a) * out * 0.6 + 0.4), r: new THREE.Euler(Math.random() * 6, Math.random() * 6, 0), w: (Math.random() - 0.5) * 18, life: 2.4 + Math.random() * 0.8 });
+    }
+  }
+  puff(kind, x, z, count = 14) {
+    const tex = this.textures[kind] || this.textures.dust;
+    for (let i = 0; i < count; i++) {
+      const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, toneMapped: false }));
+      const a = (i / count) * Math.PI * 2;
+      s.position.set(x + Math.cos(a) * 0.18, 0.05, z + Math.sin(a) * 0.12);
+      s.scale.setScalar(0.06 + Math.random() * 0.06);
+      this.scene.add(s);
+      this.items.push({ s, v: new THREE.Vector3(Math.cos(a) * (0.7 + Math.random()), kind === 'dust' ? 0.25 : 1.4 + Math.random() * 1.2, Math.sin(a) * 0.5), life: 0.9, age: 0, gravity: kind === 'dust' ? 0 : 6, grow: kind === 'dust' ? 0.25 : 0.02 });
+    }
+  }
+  zzz(origin) {
+    const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: this.textures.z, transparent: true, depthWrite: false, toneMapped: false }));
+    s.position.copy(origin); s.scale.setScalar(0.12);
+    this.scene.add(s);
+    this.items.push({ s, v: new THREE.Vector3(0.12, 0.35, 0), life: 2.2, age: 0, gravity: 0, grow: 0.06, wobble: Math.random() * 6 });
+  }
+  openPortal(x, z) { this.portal.position.x = x; this.portal.position.z = z; this.portalLife = 2.6; }
+  update(dt, camera) {
+    if (this.bits.length) {
+      const m = new THREE.Matrix4(), q = new THREE.Quaternion(), one = new THREE.Vector3(1, 1, 1);
+      let alive = 0;
+      this.bits.forEach((b, i) => {
+        b.life -= dt;
+        b.v.y -= 5.2 * dt; b.v.multiplyScalar(1 - 1.4 * dt); b.p.addScaledVector(b.v, dt);
+        b.r.x += b.w * dt; b.r.y += b.w * 0.7 * dt;
+        q.setFromEuler(b.r);
+        m.compose(b.p, q, one.setScalar(b.life > 0 && b.p.y > 0 ? Math.min(1, b.life * 2) : 0));
+        this.confetti.setMatrixAt(i, m);
+        if (b.life > 0) alive++;
+      });
+      this.confetti.instanceMatrix.needsUpdate = true;
+      if (!alive) { this.bits = []; this.confetti.count = 0; }
+    }
+    this.items = this.items.filter((it) => {
+      it.age += dt;
+      it.v.y -= it.gravity * dt;
+      it.s.position.addScaledVector(it.v, dt);
+      if (it.wobble !== undefined) it.s.position.x += Math.sin(it.age * 3 + it.wobble) * 0.004;
+      it.s.scale.addScalar(it.grow * dt);
+      it.s.material.opacity = Math.max(0, 1 - it.age / it.life);
+      if (it.age >= it.life || it.s.position.y < -0.05) { this.scene.remove(it.s); it.s.material.dispose(); return false; }
+      return true;
+    });
+    if (this.portalLife > 0) {
+      this.portalLife -= dt;
+      const k = Math.min(1, Math.min(2.6 - this.portalLife, this.portalLife) * 3.5);
+      this.portal.material.opacity = 0.85 * k;
+      const s = 0.2 + 0.8 * k; this.portal.scale.set(s, 1, s * 0.55);
+    } else this.portal.material.opacity = 0;
+    void camera;
+  }
+}
+
+// ---------- the controller ----------
+const FRAMINGS = {
+  full: { fov: 26, pos: [0, 1.2, 6.4], look: [0, 1.02, 0] },
+  portrait: { fov: 24, pos: [0, 1.55, 4.0], look: [0, 1.32, 0] },
+  stage: { fov: 34, pos: [0, 1.6, 7.6], look: [0, 1.0, 0] },
+};
+
+export async function createRongu(canvas, opts = {}) {
+  const reduced = opts.reducedMotion ?? matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const lowPower = (navigator.hardwareConcurrency || 8) <= 4 || (navigator.deviceMemory || 8) <= 4;
+  const quality = opts.quality ?? (lowPower ? 0.75 : 1);
+
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, powerPreference: 'default' });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, opts.maxPixelRatio || 2));
+  renderer.outputColorSpace = THREE.SRGBColorSpace;
+  renderer.toneMapping = THREE.NeutralToneMapping;
+  renderer.toneMappingExposure = opts.exposure ?? 1.0;
+  renderer.localClippingEnabled = true;
+  renderer.setClearColor(0x000000, 0);
+
+  const scene = new THREE.Scene();
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new THREE.RoomEnvironment(), 0.04).texture;
+  scene.environmentIntensity = opts.environment ?? 0.75;
+  scene.add(new THREE.HemisphereLight('#DDF3FF', '#A6CC7A', 1.0));
+  const key = new THREE.DirectionalLight('#FFF6E8', 2.1); key.position.set(-2.2, 3.6, 3.4); scene.add(key);
+  const rim = new THREE.DirectionalLight('#DDF4FF', 1.7); rim.position.set(2.8, 2.4, -3.2); scene.add(rim);
+  const fill = new THREE.DirectionalLight('#FFFFFF', 0.55); fill.position.set(2.6, 0.9, 2.6); scene.add(fill);
+
+  const camera = new THREE.PerspectiveCamera(26, 1, 0.05, 60);
+  const setFraming = (name) => {
+    const f = FRAMINGS[name] || FRAMINGS.full;
+    camera.fov = f.fov; camera.position.set(...f.pos); camera.lookAt(...f.look); camera.updateProjectionMatrix();
+    controller.framing = name;
+  };
+
+  const parts = await buildParts(quality);
+  const model = createModel(parts, { envIntensity: 1 });
+  scene.add(model.root, model.shadow);
+  const motion = new Motion(model, { reducedMotion: reduced });
+  const fx = new Effects(scene);
+
+  const listeners = {};
+  const emit = (ev, data) => { for (const fn of listeners[ev] || []) fn(data); };
+
+  // moods ripple from his head to the tip of his tail
+  const moodVec = (name) => { const [hex, a] = MOODS[name] || MOODS.calm; const c = new THREE.Color(hex); return new THREE.Vector4(c.r, c.g, c.b, a); };
+  let moodName = 'calm', moodWave = null, shimmer = 0;
+  const setMood = (name) => {
+    if (!MOODS[name] || name === moodName) return;
+    model.shared.uMoodFrom.value.copy(model.shared.uMoodTo.value);
+    model.shared.uMoodTo.value.copy(moodVec(name));
+    model.shared.uWave.value = -0.1;
+    moodWave = { t: 0, d: reduced ? 0.01 : 1.25 };
+    moodName = name;
+    emit('mood', name);
+  };
+  model.shared.uMoodTo.value.copy(moodVec('calm'));
+  model.shared.uMoodFrom.value.copy(moodVec('calm'));
+
+  motion.on('confetti', () => {
+    const p = model.root.position;
+    fx.burstConfetti({ x: p.x, y: p.y + 0.9, z: p.z + 0.1 });
+    shimmer = 1.6;
+  });
+  motion.on('dust', ({ x, z }) => fx.puff('dust', x, z, 10));
+  motion.on('splash', ({ kind, x, z }) => { fx.puff(kind === 'water' ? 'water' : 'soil', x, z, 18); fx.openPortal(x, z); });
+  motion.on('zzz', () => {
+    const head = new THREE.Vector3(); model.head.getWorldPosition(head);
+    fx.zzz(head.add(new THREE.Vector3(0.25, 0.35, 0.1)));
+  });
+
+  // ---------- size, visibility, the loop ----------
+  let visible = true, running = true, raf = 0, last = performance.now(), slow = 1;
+  const resize = () => {
+    const w = canvas.clientWidth || 1, h = canvas.clientHeight || 1;
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h; camera.updateProjectionMatrix();
+  };
+  const ro = new ResizeObserver(resize); ro.observe(canvas);
+  const io = new IntersectionObserver((entries) => { visible = entries.some(e => e.isIntersecting); if (visible) kick(); });
+  io.observe(canvas);
+  const onVis = () => { if (!document.hidden) kick(); };
+  document.addEventListener('visibilitychange', onVis);
+
+  let slowFrames = 0, frameAvg = 16;
+  const frame = (now) => {
+    raf = 0;
+    if (!running || !visible || document.hidden) return;
+    const dt = Math.min(0.05, (now - last) / 1000) * slow;
+    frameAvg = frameAvg * 0.95 + (now - last) * 0.05;
+    last = now;
+    // keep it smooth: if frames run long, render fewer pixels
+    if (frameAvg > 26 && renderer.getPixelRatio() > 1) { if (++slowFrames > 90) { renderer.setPixelRatio(1); resize(); slowFrames = 0; } } else slowFrames = 0;
+    if (!pointerTarget) motion.lookAt(lookViewer ? camera.position : null);
+    motion.update(dt);
+    if (moodWave) {
+      moodWave.t += dt;
+      model.shared.uWave.value = -0.1 + 1.3 * Math.min(1, moodWave.t / moodWave.d);
+      if (moodWave.t >= moodWave.d) moodWave = null;
+    }
+    if (shimmer > 0) shimmer = Math.max(0, shimmer - dt);
+    model.shared.uShimmer.value = Math.min(1, shimmer);
+    fx.update(dt, camera);
+    renderer.render(scene, camera);
+    emit('frame', dt);
+    raf = requestAnimationFrame(frame);
+  };
+  const kick = () => { if (!raf && running) { last = performance.now(); raf = requestAnimationFrame(frame); } };
+
+  // ---------- pointer: he watches you, giggles when poked, dangles when dragged ----------
+  const ray = new THREE.Raycaster();
+  const ndc = new THREE.Vector2();
+  const hitTargets = [];
+  model.root.traverse((o) => { if (o.isMesh && o.name !== 'face' && o.name !== 'lens') hitTargets.push(o); });
+  const toNdc = (e) => { const r = canvas.getBoundingClientRect(); ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1); };
+  const onPlane = (z) => { ray.setFromCamera(ndc, camera); const p = new THREE.Vector3(); ray.ray.intersectPlane(new THREE.Plane(new THREE.Vector3(0, 0, 1), -z), p); return p; };
+  const hits = () => { ray.setFromCamera(ndc, camera); return ray.intersectObjects(hitTargets, false); };
+  let followPointer = opts.followPointer ?? true, drag = null, petStrokes = [], lastClick = 0;
+  let pointerTarget = null, lookViewer = opts.lookAtViewer ?? true;
+  motion.home.yaw = opts.restYaw ?? -0.5; // a three-quarter stance, like the drawing
+
+  const onMove = (e) => {
+    toNdc(e);
+    if (drag) { drag.point = onPlane(drag.z); if (!drag.moved && Math.hypot(e.clientX - drag.x0, e.clientY - drag.y0) > 6) startDrag(); return; }
+    if (followPointer) { pointerTarget = onPlane(2.4); motion.lookAt(pointerTarget); }
+    // petting: quick strokes back and forth over his head
+    const h = hits()[0];
+    if (h && /head|lid|eye|frame|temple|bridge/.test(h.object.name)) {
+      petStrokes.push({ x: e.clientX, t: performance.now() });
+      petStrokes = petStrokes.filter(s => performance.now() - s.t < 900);
+      let turns = 0;
+      for (let i = 2; i < petStrokes.length; i++) if ((petStrokes[i].x - petStrokes[i - 1].x) * (petStrokes[i - 1].x - petStrokes[i - 2].x) < 0) turns++;
+      if (turns >= 3) { petStrokes = []; pet(); }
+    }
+    canvas.style.cursor = h ? 'grab' : '';
+  };
+  const onLeave = () => { if (!drag) pointerTarget = null; };
+  const onDown = (e) => {
+    toNdc(e);
+    if (!hits().length) return;
+    drag = { x0: e.clientX, y0: e.clientY, z: model.root.position.z, moved: false, point: onPlane(model.root.position.z) };
+    canvas.setPointerCapture?.(e.pointerId);
+  };
+  const startDrag = () => {
+    drag.moved = true;
+    canvas.style.cursor = 'grabbing';
+    motion.stopActions();
+    motion.act(ACTIONS.dangle({ target: () => ({ x: drag ? drag.point.x : model.root.position.x, y: Math.max(0.05, (drag ? drag.point.y : 1.2) - 1.75), z: drag ? drag.z : 0 }), until: () => !drag }))
+      .then(() => motion.act(ACTIONS.drop()));
+  };
+  const onUp = (e) => {
+    if (!drag) return;
+    const wasDrag = drag.moved;
+    drag = null;
+    canvas.style.cursor = '';
+    if (wasDrag) return;
+    const now = performance.now();
+    if (now - lastClick < 320) { motion.stopActions(); motion.act(ACTIONS.backflip()); lastClick = 0; emit('poke', 'backflip'); return; }
+    lastClick = now;
+    setTimeout(() => { if (lastClick === now && !motion.busy) poke(); }, 330);
+    void e;
+  };
+  const poke = () => {
+    const r = ['giggle', 'giggle', 'surprise', 'thumbsUp', 'spin', 'hop'][Math.floor(Math.random() * 6)];
+    if (r === 'spin' || r === 'hop') motion.act(ACTIONS[r]()); else motion.gesture(r);
+    emit('poke', r);
+  };
+  const pet = () => {
+    motion.gesture('giggle'); shimmer = 1.8;
+    const before = moodName; setMood('shy');
+    setTimeout(() => setMood(before === 'shy' ? 'calm' : before), 2200);
+    emit('poke', 'pet');
+  };
+  if (opts.interactive !== false) {
+    canvas.addEventListener('pointermove', onMove);
+    canvas.addEventListener('pointerleave', onLeave);
+    canvas.addEventListener('pointerdown', onDown);
+    canvas.addEventListener('pointerup', onUp);
+    canvas.style.touchAction = 'none';
+  }
+
+  // where on screen his head is (for speech bubbles)
+  const headScreen = () => {
+    const p = new THREE.Vector3(); model.head.getWorldPosition(p); p.y += 0.62;
+    p.project(camera);
+    const r = canvas.getBoundingClientRect();
+    return { x: r.left + (p.x + 1) / 2 * r.width, y: r.top + (1 - p.y) / 2 * r.height };
+  };
+
+  const controller = {
+    THREE, scene, camera, renderer, model, motion, framing: 'full',
+    on(ev, fn) { (listeners[ev] ||= []).push(fn); return () => { listeners[ev] = listeners[ev].filter(f => f !== fn); }; },
+    gesture: (name, o) => motion.gesture(name, o),
+    act: (name, o) => (ACTIONS[name] ? motion.act(ACTIONS[name](o)) : Promise.resolve()),
+    fly: (o) => (reduced ? Promise.resolve() : motion.act(ACTIONS.fly(o))),
+    dive: (o) => (reduced ? motion.gesture('nod') : motion.act(ACTIONS.dive(o))),
+    sleep() { motion.stopActions(); let woke = false; this._wake = () => { woke = true; }; motion.expression('neutral'); return motion.act(ACTIONS.sleep({ until: () => woke })); },
+    wake() { if (this._wake) { this._wake(); this._wake = null; motion.gesture('stretch'); } },
+    expression: (name) => motion.expression(name),
+    mood: setMood,
+    get moodName() { return moodName; },
+    lookAt: (p) => motion.lookAt(p ? new THREE.Vector3(p.x, p.y, p.z) : null),
+    followPointer(on) { followPointer = on; if (!on) pointerTarget = null; },
+    lookAtViewer(on) { lookViewer = on; },
+    say(text, { seconds } = {}) {
+      const s = seconds ?? Math.min(9, 0.9 + text.length / 15);
+      motion.speak(s);
+      emit('say', { text, seconds: s });
+      return new Promise(r => setTimeout(r, s * 1000));
+    },
+    headScreen,
+    setFraming,
+    setSlowMotion(f) { slow = f; },
+    // advance time by hand (tests and screenshots, when the page is throttled)
+    step(seconds) {
+      for (let s = 0; s < seconds; s += 1 / 60) {
+        motion.update(1 / 60);
+        if (moodWave) { moodWave.t += 1 / 60; model.shared.uWave.value = -0.1 + 1.3 * Math.min(1, moodWave.t / moodWave.d); if (moodWave.t >= moodWave.d) moodWave = null; }
+        fx.update(1 / 60, camera);
+      }
+      renderer.render(scene, camera);
+    },
+    setTablet(mode, data) { model.tablet.userData.draw(mode, data); },
+    get gestures() { return Object.keys(GESTURES); },
+    get actions() { return Object.keys(ACTIONS); },
+    pause() { running = false; },
+    resume() { running = true; kick(); },
+    destroy() {
+      running = false; cancelAnimationFrame(raf); ro.disconnect(); io.disconnect();
+      document.removeEventListener('visibilitychange', onVis);
+      renderer.dispose();
+    },
+  };
+  setFraming(opts.framing || 'full');
+  resize();
+  kick();
+  emit('ready');
+  return controller;
+}

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Rongu lab</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wdth,wght@75..125,300..800&family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --sky: #C9E9F3; --sky-ink: #1F5F78; --lime: #C1E294; --leaf: #A0C477; --deep: #44783A;
+      --cobalt: #2B4C9A; --ink: #1D272B; --muted: #4F5B57; --paper: #F6FBEF; --line: #D6E6C4;
+    }
+    * { box-sizing: border-box; }
+    html, body { margin: 0; height: 100%; background: var(--paper); color: var(--ink); font-family: "Hind Siliguri", "Anek Bangla", system-ui, sans-serif; }
+    .lab { display: grid; grid-template-columns: minmax(0, 1fr) 340px; height: 100vh; }
+    .stage { position: relative; background: var(--sky); overflow: hidden; }
+    .stage canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+    .loading { position: absolute; inset: 0; display: grid; place-items: center; font: 600 18px "Anek Bangla", sans-serif; color: var(--sky-ink); }
+    .bubble { position: absolute; max-width: 280px; padding: 10px 14px; background: #fff; border: 2px solid var(--cobalt); border-radius: 2px; font-size: 17px; line-height: 1.5; color: var(--ink); transform: translate(-50%, -100%); pointer-events: none; opacity: 0; transition: opacity .25s; }
+    .bubble::after { content: ""; position: absolute; left: 50%; bottom: -10px; width: 16px; height: 16px; background: #fff; border-right: 2px solid var(--cobalt); border-bottom: 2px solid var(--cobalt); transform: translateX(-50%) rotate(45deg); }
+    .bubble.on { opacity: 1; }
+    .hint { position: absolute; left: 16px; bottom: 14px; font-size: 14px; color: var(--sky-ink); }
+    aside { overflow: auto; padding: 18px 18px 40px; border-left: 1px solid var(--line); background: #fff; }
+    h1 { font: 700 24px "Anek Bangla", sans-serif; margin: 0 0 2px; }
+    .sub { margin: 0 0 14px; color: var(--muted); font-size: 14px; }
+    h2 { font: 600 13px "Hind Siliguri", sans-serif; text-transform: uppercase; letter-spacing: .06em; color: var(--deep); margin: 18px 0 8px; }
+    .row { display: flex; flex-wrap: wrap; gap: 6px; }
+    button { font: 500 14px "Hind Siliguri", sans-serif; padding: 6px 10px; border: 1px solid #B9D59A; background: var(--paper); color: var(--ink); border-radius: 2px; cursor: pointer; box-shadow: inset 0 1px 0 #fff, 0 1px 0 #D3E4BF; }
+    button:hover { background: var(--lime); }
+    button:active { box-shadow: inset 0 1px 2px rgba(0,0,0,.15); }
+    button:focus-visible { outline: 2px solid var(--cobalt); outline-offset: 1px; }
+    .swatch { width: 34px; height: 34px; padding: 0; border: 2px solid #fff; box-shadow: 0 0 0 1px var(--line); }
+    .swatch.on { box-shadow: 0 0 0 2px var(--cobalt); }
+    label.toggle { display: flex; gap: 8px; align-items: center; font-size: 14px; margin: 4px 0; }
+    .say { display: flex; gap: 6px; }
+    .say input { flex: 1; min-width: 0; font: 15px "Hind Siliguri", sans-serif; padding: 6px 8px; border: 1px solid #B9D59A; border-radius: 2px; }
+    details { margin-top: 18px; }
+    summary { cursor: pointer; font-weight: 600; color: var(--deep); }
+    .pose { display: grid; grid-template-columns: 110px 1fr 44px; gap: 2px 6px; align-items: center; font: 12px "IBM Plex Mono", monospace; margin-top: 8px; }
+    .pose input { width: 100%; }
+    .solo .lab { grid-template-columns: 1fr; }
+    .solo aside, .solo .hint { display: none; }
+    @media (max-width: 820px) {
+      .lab { grid-template-columns: 1fr; grid-template-rows: 62vh auto; height: auto; }
+      aside { border-left: 0; border-top: 1px solid var(--line); }
+    }
+  </style>
+</head>
+<body>
+  <div class="lab">
+    <div class="stage" id="stage">
+      <canvas id="rongu" aria-label="Rongu, the Mati Kohon companion"></canvas>
+      <div class="loading" id="loading">রঙ্গু আসছে…</div>
+      <div class="bubble" id="bubble" role="status" aria-live="polite"></div>
+      <div class="hint">Move your pointer: he watches. Click him, double-click, drag him, or stroke his head.</div>
+    </div>
+    <aside>
+      <h1>রঙ্গু · Rongu</h1>
+      <p class="sub">The Mati Kohon companion. One eye on the sky, one on the soil.</p>
+
+      <h2>Moves</h2>
+      <div class="row" id="moves"></div>
+      <h2>Gestures</h2>
+      <div class="row" id="gestures"></div>
+      <h2>Face</h2>
+      <div class="row" id="faces"></div>
+      <h2>Colour moods</h2>
+      <div class="row" id="moods"></div>
+      <h2>Turn around</h2>
+      <div class="row" id="views"></div>
+      <h2>Say something</h2>
+      <div class="say"><input id="sayText" value="নমস্কার! আমি রঙ্গু। এক চোখ আকাশে, এক চোখ মাটিতে।"><button id="sayBtn">Say</button></div>
+      <h2>Options</h2>
+      <label class="toggle"><input type="checkbox" id="follow" checked> Watch the pointer</label>
+      <label class="toggle"><input type="checkbox" id="fidget" checked> Little idle moves</label>
+      <label class="toggle"><input type="checkbox" id="slow"> Slow motion (¼ speed)</label>
+      <details>
+        <summary>Pose channels (for tuning)</summary>
+        <div class="pose" id="pose"></div>
+      </details>
+    </aside>
+  </div>
+  <script type="module" src="mascot/lab.js"></script>
+</body>
+</html>
