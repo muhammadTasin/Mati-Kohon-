@@ -48,7 +48,7 @@ const MOVES = {
 };
 for (const [label, fn] of Object.entries(MOVES)) button('moves', label, fn);
 
-const GESTURE_LABELS = { wave: 'Wave', salam: 'Salam', point: 'Point', think: 'Think', shrug: 'Shrug', nod: 'Nod', shake: 'Shake head', adjustGlasses: 'Adjust glasses', thumbsUp: 'Thumbs up', clap: 'Clap', cheer: 'Cheer', readTablet: 'Read notebook', showTablet: 'Show notebook', wink: 'Wink', happy: 'Happy', giggle: 'Giggle', surprise: 'Surprise', oops: 'Oops', skySoil: 'Sky and soil eyes', stretch: 'Stretch' };
+const GESTURE_LABELS = { wave: 'Wave', salam: 'Salam', point: 'Point', think: 'Think', shrug: 'Shrug', nod: 'Nod', shake: 'Shake head', adjustGlasses: 'Adjust glasses', thumbsUp: 'Thumbs up', clap: 'Clap', cheer: 'Cheer', readTablet: 'Read tablet', showTablet: 'Show tablet', giggle: 'Giggle', surprise: 'Surprise', oops: 'Oops', skySoil: 'Sky and soil eyes', stretch: 'Stretch' };
 for (const g of rongu.gestures) button('gestures', GESTURE_LABELS[g] || g, () => {
   if (g === 'showTablet') rongu.setTablet('chart', { title: 'Groundwater' });
   rongu.gesture(g);

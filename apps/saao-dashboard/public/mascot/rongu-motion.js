@@ -21,7 +21,6 @@ const CHANNELS = {
   eyeLYaw: [0, 32, 1], eyeLPitch: [0, 32, 1], eyeRYaw: [0, 32, 1], eyeRPitch: [0, 32, 1],
   lidLUp: [0.06, 48, 1], lidLLow: [0, 48, 1], lidRUp: [0.06, 48, 1], lidRLow: [0, 48, 1],
   mouthOpen: [0, 24, 0.9], mouthSmile: [1, 10, 1], mouthWidth: [1, 14, 1], blush: [0, 4, 1],
-  browL: [0, 14, 0.75], browR: [0, 14, 0.75], browTiltL: [0, 12, 0.8], browTiltR: [0, 12, 0.8],
   armLOut: [0, 9, 0.78], armLRaise: [0, 9, 0.78], armLTwist: [0, 9, 0.9], elbowL: [0.3, 10, 0.8], wristLX: [0, 12, 0.8], wristLZ: [0, 12, 0.8], wristLTwist: [0, 12, 0.9],
   armROut: [0, 9, 0.78], armRRaise: [0, 9, 0.78], armRTwist: [0, 9, 0.9], elbowR: [0.3, 10, 0.8], wristRX: [0, 12, 0.8], wristRZ: [0, 12, 0.8], wristRTwist: [0, 12, 0.9],
   legLSwing: [0, 11, 0.85], legLOut: [0, 9, 1], kneeL: [0.06, 11, 0.85], ankleL: [0, 11, 1],
@@ -49,7 +48,7 @@ class Spring {
 export const GESTURES = {
   wave: { d: 2.4, fn: (t) => {
     const o = Math.sin(t * TAU * 2.1);
-    return { armLOut: 1.32, armLRaise: 0.18, armLTwist: 1.5, elbowL: 1.45 + 0.38 * o, wristLX: 0.1, wristLTwist: 0.2, handL: 'open', '+headZ': -0.12, '+headY': 0.08, mouthSmile: 1.7, mouthOpen: 0.45, lidLLow: 0.28, lidRLow: 0.28, blush: 0.5, browL: 0.6, browR: 0.6, browTiltL: 0.2, browTiltR: 0.2, '+tailWag': 0.12 };
+    return { armLOut: 1.32, armLRaise: 0.18, armLTwist: 1.5, elbowL: 1.45 + 0.38 * o, wristLX: 0.1, wristLTwist: 0.2, handL: 'open', '+headZ': -0.12, '+headY': 0.08, mouthSmile: 1.6, mouthOpen: 0.22, lidLLow: 0.28, lidRLow: 0.28, blush: 0.5, '+tailWag': 0.12 };
   } },
   salam: { d: 2.6, fn: (t, d) => {
     const bow = smooth(0.4, 0.9, t) * smooth(d - 0.3, d - 0.9, t);
@@ -57,7 +56,7 @@ export const GESTURES = {
   } },
   point: { d: 1.8, fn: () => ({ armLOut: 0.55, armLRaise: 1.35, armLTwist: 0.2, elbowL: 0.15, wristLX: -0.1, handL: 'point', mouthSmile: 1.2, '+headZ': -0.05 }) },
   // hand on his cheek, head resting on it, eyes up
-  think: { d: 3.2, fn: (t) => ({ armLOut: 0.6, armLRaise: 1.0, armLTwist: 1.2, elbowL: 1.8, wristLX: 0.1, handL: 'relaxed', '+headZ': -0.15, '+headX': -0.06, eyeLPitch: 0.38, eyeRPitch: 0.38, eyeLYaw: 0.22, eyeRYaw: 0.22, mouthSmile: 0.2, mouthWidth: 0.6, browL: 0.75, browR: -0.25, browTiltL: 0.35, browTiltR: -0.4, tailCurl: 1.18, '+chestZ': 0.03 * Math.sin(t * 3) }) },
+  think: { d: 3.2, fn: (t) => ({ armLOut: 0.6, armLRaise: 1.0, armLTwist: 1.2, elbowL: 1.8, wristLX: 0.1, handL: 'relaxed', '+headZ': -0.15, '+headX': -0.06, eyeLPitch: 0.38, eyeRPitch: 0.38, eyeLYaw: 0.22, eyeRYaw: 0.22, mouthSmile: 0.2, mouthWidth: 0.6, tailCurl: 1.18, '+chestZ': 0.03 * Math.sin(t * 3) }) },
   shrug: { d: 1.5, fn: () => ({ armLOut: 0.45, armLRaise: 0.35, armLTwist: 1.3, elbowL: 1.25, armROut: 0.45, armRRaise: 0.35, armRTwist: 1.3, elbowR: 1.25, handL: 'open', handR: 'open', tablet: 0, '+headZ': 0.18, mouthSmile: -0.3, mouthWidth: 0.7, '+chestX': -0.04, '+hipsY': 0.01 }) },
   nod: { d: 1.0, fn: (t) => ({ '+headX': 0.22 * Math.sin(t * TAU * 2) * smooth(0, 0.15, t), mouthSmile: 1.3 }) },
   shake: { d: 1.1, fn: (t) => ({ '+headY': 0.32 * Math.sin(t * TAU * 2.2), mouthSmile: 0.1 }) },
@@ -67,9 +66,7 @@ export const GESTURES = {
     const push = smooth(0.75, 0.9, t);
     return { glassesY: -0.03 * slip * (1 - push) + 0.012 * push * smooth(1.6, 1.2, t), tongue: 0.3 * lick, tonguePitch: 1.16, mouthOpen: 0.28 * Math.min(1, lick * 3), mouthWidth: 0.55, '+headX': -0.06, lidLUp: 0.35 * slip * (1 - push) + 0.06, lidRUp: 0.35 * slip * (1 - push) + 0.06, eyeLPitch: 0.25 * lick, eyeRPitch: 0.25 * lick, mouthSmile: 1.2 };
   } },
-  thumbsUp: { d: 1.8, fn: () => ({ armLOut: 0.1, armLRaise: 0.55, armLTwist: 0.0, elbowL: 1.35, wristLX: 0.0, handL: 'thumbsUp', lidLUp: 0.95, mouthSmile: 1.7, mouthOpen: 0.12, blush: 0.6, browL: -0.3, browR: 0.5, '+headZ': -0.12 }) },
-  wink: { d: 1.4, fn: () => ({ lidLUp: 1, lidLLow: 0.45, browL: -0.35, browR: 0.45, browTiltR: 0.3, mouthSmile: 1.8, mouthOpen: 0.1, blush: 0.7, '+headZ': -0.1 }) },
-  happy: { d: 1.8, fn: (t) => ({ lidLUp: 0.93, lidRUp: 0.93, lidLLow: 0.55, lidRLow: 0.55, mouthOpen: 0.5, mouthSmile: 1.9, browL: 0.5, browR: 0.5, browTiltL: 0.3, browTiltR: 0.3, blush: 0.9, '+hipsY': 0.012 * Math.abs(Math.sin(t * 7)), '+headZ': 0.06 * Math.sin(t * 5) }) },
+  thumbsUp: { d: 1.8, fn: () => ({ armLOut: 0.1, armLRaise: 0.55, armLTwist: 0.0, elbowL: 1.35, wristLX: 0.0, handL: 'thumbsUp', lidLUp: 0.95, mouthSmile: 1.7, mouthOpen: 0.12, blush: 0.6, '+headZ': -0.12 }) },
   clap: { d: 1.7, fn: (t) => {
     const o = Math.max(0, Math.sin(t * TAU * 3.2));
     return { armLOut: -0.05, armLRaise: 0.95, armLTwist: -0.9, elbowL: 1.0 + 0.35 * o, armROut: -0.05, armRRaise: 0.95, armRTwist: -0.9, elbowR: 1.0 + 0.35 * o, handL: 'open', handR: 'open', tablet: 0, mouthSmile: 1.7, mouthOpen: 0.3, lidLLow: 0.3, lidRLow: 0.3 };
@@ -81,8 +78,8 @@ export const GESTURES = {
   readTablet: { d: 3.5, fn: (t) => ({ ...HOLD_TABLET, armRRaise: 0.62, armRTwist: -0.25, elbowR: 1.9, wristRTwist: 0.9, armLOut: -0.1, armLRaise: 0.62, armLTwist: -0.6, elbowL: 1.85 + 0.08 * Math.max(0, Math.sin(t * TAU * 1.6)), handL: 'point', '+headX': 0.28, '+headZ': -0.08, eyeLPitch: -0.3, eyeRPitch: -0.3, eyeLYaw: -0.15, eyeRYaw: -0.15, mouthWidth: 0.75 }) },
   showTablet: { d: 2.6, fn: () => ({ armROut: 0.08, armRRaise: 1.05, armRTwist: -1.35, elbowR: 0.85, wristRX: -0.2, wristRTwist: 0.0, mouthSmile: 1.5, mouthOpen: 0.15, '+headY': 0.1, '+headZ': 0.08 }) },
   giggle: { d: 1.1, fn: (t) => ({ '+chestZ': 0.06 * Math.sin(t * TAU * 9), '+headZ': 0.05 * Math.sin(t * TAU * 9 + 1), lidLLow: 0.5, lidRLow: 0.5, lidLUp: 0.35, lidRUp: 0.35, mouthOpen: 0.25 + 0.15 * Math.abs(Math.sin(t * TAU * 6)), mouthSmile: 1.9, blush: 1, '+squash': 0.02 * Math.sin(t * TAU * 9) }) },
-  surprise: { d: 1.1, fn: () => ({ browL: 1, browR: 1, lidLUp: -0.05, lidRUp: -0.05, mouthOpen: 0.55, mouthWidth: 0.42, mouthSmile: 0, armLOut: 0.5, armROut: 0.5, elbowL: 0.9, elbowR: 1.6, handL: 'open', '+headX': -0.12, '+chestX': -0.06 }) },
-  oops: { d: 1.8, fn: () => ({ browTiltL: -0.6, browTiltR: -0.6, browL: 0.2, browR: 0.2, '+headX': 0.25, '+headZ': 0.12, mouthSmile: -0.8, mouthWidth: 0.6, tailCurl: 0.75, tailDroop: -0.35, '+chestX': 0.08, armLOut: -0.05, elbowL: 0.4 }) },
+  surprise: { d: 1.1, fn: () => ({ lidLUp: -0.05, lidRUp: -0.05, mouthOpen: 0.55, mouthWidth: 0.42, mouthSmile: 0, armLOut: 0.5, armROut: 0.5, elbowL: 0.9, elbowR: 1.6, handL: 'open', '+headX': -0.12, '+chestX': -0.06 }) },
+  oops: { d: 1.8, fn: () => ({ '+headX': 0.25, '+headZ': 0.12, mouthSmile: -0.8, mouthWidth: 0.6, tailCurl: 0.75, tailDroop: -0.35, '+chestX': 0.08, armLOut: -0.05, elbowL: 0.4 }) },
   skySoil: { d: 2.8, fn: (t, d) => {
     const k = smooth(0.15, 0.5, t) * smooth(d, d - 0.4, t);
     return { eyeLPitch: 0.62 * k, eyeLYaw: 0.2 * k, eyeRPitch: -0.55 * k, eyeRYaw: -0.15 * k, '+headZ': 0.06 * k, mouthSmile: 1.3 };
@@ -254,10 +251,10 @@ export class Motion {
 
 export const EXPRESSIONS = {
   neutral: {},
-  happy: { mouthSmile: 1.6, lidLLow: 0.3, lidRLow: 0.3, blush: 0.35, browL: 0.35, browR: 0.35 },
-  surprised: { lidLUp: -0.05, lidRUp: -0.05, mouthOpen: 0.45, mouthWidth: 0.45, mouthSmile: 0.2, browL: 1, browR: 1 },
-  worried: { mouthSmile: -0.5, mouthWidth: 0.7, '+headZ': 0.1, lidLUp: 0.22, lidRUp: 0.22, browTiltL: -0.6, browTiltR: -0.6, browL: 0.2, browR: 0.2 },
-  sleepy: { lidLUp: 0.62, lidRUp: 0.62, mouthSmile: 0.6, browL: -0.3, browR: -0.3 },
+  happy: { mouthSmile: 1.6, lidLLow: 0.3, lidRLow: 0.3, blush: 0.35 },
+  surprised: { lidLUp: -0.05, lidRUp: -0.05, mouthOpen: 0.45, mouthWidth: 0.45, mouthSmile: 0.2 },
+  worried: { mouthSmile: -0.5, mouthWidth: 0.7, '+headZ': 0.1, lidLUp: 0.22, lidRUp: 0.22 },
+  sleepy: { lidLUp: 0.62, lidRUp: 0.62, mouthSmile: 0.6 },
   hot: { mouthOpen: 0.25, mouthWidth: 0.8, mouthSmile: 0.3, lidLUp: 0.35, lidRUp: 0.35 },
 };
 

@@ -1,8 +1,7 @@
 // Rongu in three.js: materials, the rig, and the parts that move on their own
-// (eyes, brows, lids, mouth, glasses, the tail, the notebook, the backpack and its satellite wings, the tongue).
+// (eyes, lids, mouth, glasses, the rainbow tail, the tablet, the satellite backpack, the tongue).
 import * as THREE from './vendor/three-rongu.min.js';
-import { RIG, COLORS, FACE, shirtSdf, headSdf, upperSdf } from './rongu-shapes.js';
-import { rayHit, gradient } from './sdf.js';
+import { RIG, COLORS, FACE } from './rongu-shapes.js';
 
 const V3 = (a) => new THREE.Vector3(a[0], a[1], a[2]);
 const lin = (hex) => new THREE.Color(hex); // three converts sRGB hex to linear
@@ -23,7 +22,8 @@ const SKIN_GLSL = `
 uniform vec4 uMoodFrom;
 uniform vec4 uMoodTo;
 uniform float uWave;
-uniform float uSpotFreq;
+uniform float uScaleFreq;
+uniform float uBump;
 uniform float uShimmer;
 uniform float uTime;
 uniform float uGlow;
@@ -35,18 +35,38 @@ vec3 rgHash(vec3 p) {
   p += dot(p, p.yxz + 33.33);
   return fract((p.xxy + p.yxx) * p.zyx);
 }
-// Soft dark spots of different sizes, as in the character sheet: about two cells in three carry one.
-float rgSpots(vec3 p) {
+// Packed, pillow-shaped beads (like a honeycomb): every point belongs to a bead, each bead is flat on top and
+// rolls down into a thin groove at its edge. Returns the gradient (xyz, pattern space) and height (w).
+vec4 rgBeads(vec3 p) {
   vec3 i = floor(p), f = fract(p);
-  float aa = max(length(fwidth(p)) * 0.6, 0.02);
-  float s = 0.0;
+  float d1 = 8.0, d2 = 8.0;
+  vec3 r1 = vec3(0.0), r2 = vec3(0.0);
   for (int x = -1; x <= 1; x++) for (int y = -1; y <= 1; y++) for (int z = -1; z <= 1; z++) {
     vec3 g = vec3(float(x), float(y), float(z));
-    vec3 h = rgHash(i + g);
-    float rad = (0.11 + 0.21 * h.z) * step(0.36, h.y);
-    s = max(s, 1.0 - smoothstep(rad - aa, rad + aa, length(g + h - f)));
+    vec3 r = g + 0.5 + (rgHash(i + g) - 0.5) * 0.8 - f; // from p to this cell's centre
+    float d = dot(r, r);
+    if (d < d1) { d2 = d1; r2 = r1; d1 = d; r1 = r; } else if (d < d2) { d2 = d; r2 = r; }
   }
-  return s;
+  vec3 n = normalize(r2 - r1);
+  float e = dot(0.5 * (r1 + r2), n); // distance to the edge shared with the nearest neighbour
+  const float E = 0.32;              // how wide the rounded edge is
+  float t = clamp(e / E, 0.0, 1.0);
+  float pillow = 1.0 - (1.0 - t) * (1.0 - t) * (1.0 - t);
+  vec3 gPillow = -3.0 * (1.0 - t) * (1.0 - t) / E * n;
+  // a gentle dome from the bead's centre makes each one puffy rather than flat
+  const float R = 0.62;
+  float q = min(sqrt(d1) / R, 1.0);
+  float dome = 1.0 - q * q;
+  vec3 gDome = q < 1.0 ? 2.0 * r1 / (R * R) : vec3(0.0);
+  return vec4(0.7 * gPillow + 0.3 * gDome, 0.7 * pillow + 0.3 * dome);
+}
+
+vec3 rgPerturb(vec3 surfPos, vec3 surfNorm, vec2 dHdxy, float faceDir) {
+  vec3 sx = dFdx(surfPos), sy = dFdy(surfPos);
+  vec3 r1 = cross(sy, surfNorm), r2 = cross(surfNorm, sx);
+  float det = dot(sx, r1) * faceDir;
+  vec3 grad = sign(det) * (dHdxy.x * r1 + dHdxy.y * r2);
+  return normalize(abs(det) * surfNorm - grad);
 }
 vec3 rgHue(float h) {
   return clamp(abs(mod(h * 6.0 + vec3(0.0, 4.0, 2.0), 6.0) - 3.0) - 1.0, 0.0, 1.0);
@@ -61,9 +81,10 @@ function injectSkin(material, shared) {
     shader.fragmentShader = shader.fragmentShader
       .replace('#include <common>', '#include <common>\n' + SKIN_GLSL)
       .replace('#include <color_fragment>', `#include <color_fragment>
-  vec3 spotP = vRest * uSpotFreq;
-  float spotFade = clamp(1.8 - length(fwidth(spotP)) * 1.6, 0.0, 1.0) * vMood.z;
-  diffuseColor.rgb *= 1.0 - 0.36 * rgSpots(spotP) * spotFade; // a darker shade of whatever colour is under the spot
+  vec3 scaleP = vRest * uScaleFreq;
+  float scaleAA = clamp(1.6 - length(fwidth(scaleP)) * 2.0, 0.0, 1.0) * vMood.z;
+  vec4 bead = rgBeads(scaleP);
+  diffuseColor.rgb *= mix(1.0, 0.82 + 0.2 * bead.w, scaleAA); // darker grooves, lighter bead tops
   float moodWave = smoothstep(vMood.x - 0.07, vMood.x + 0.07, uWave);
   vec4 mood = mix(uMoodFrom, uMoodTo, moodWave);
   float skinLum = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
@@ -71,6 +92,9 @@ function injectSkin(material, shared) {
   diffuseColor.rgb = mix(diffuseColor.rgb, mood.rgb * (skinLum / moodLum), mood.a * vMood.y);
   float band = smoothstep(0.1, 0.0, abs(fract(vMood.x * 3.0 - uTime * 0.9) - 0.5) - 0.38);
   diffuseColor.rgb = mix(diffuseColor.rgb, rgHue(fract(vMood.x * 2.0 + uTime * 0.3)) * (skinLum * 1.6 + 0.08), uShimmer * band * vMood.y * 0.55);`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+  vec3 beadGrad = bead.xyz * uScaleFreq * uBump * scaleAA; // height change per model unit
+  normal = rgPerturb(-vViewPosition, normal, vec2(dot(beadGrad, dFdx(vRest)), dot(beadGrad, dFdy(vRest))), faceDirection);`)
       // a soft glow, brightest at the edges: light passing through soft vinyl (a cheap subsurface look)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
   float rgFres = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 2.2);
@@ -162,19 +186,6 @@ export function drawBadge(ctx, s) {
   ctx.beginPath(); ctx.arc(c, c, s * 0.425, 0, Math.PI * 2); ctx.strokeStyle = '#8FB8C6'; ctx.lineWidth = s * 0.008; ctx.stroke();
 }
 
-// a little sprout, for the shoes' tongues and the backpack
-function drawSprout(ctx, s, background) {
-  ctx.clearRect(0, 0, s, s);
-  if (background) { ctx.fillStyle = background; ctx.beginPath(); ctx.roundRect(s * 0.06, s * 0.06, s * 0.88, s * 0.88, s * 0.16); ctx.fill(); }
-  ctx.strokeStyle = '#7CC243'; ctx.fillStyle = '#7CC243'; ctx.lineWidth = s * 0.07; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(s * 0.5, s * 0.78); ctx.lineTo(s * 0.5, s * 0.46); ctx.stroke();
-  for (const dir of [-1, 1]) {
-    ctx.beginPath(); ctx.moveTo(s * 0.5, s * 0.5);
-    ctx.quadraticCurveTo(s * (0.5 + dir * 0.06), s * 0.24, s * (0.5 + dir * 0.32), s * 0.26);
-    ctx.quadraticCurveTo(s * (0.5 + dir * 0.3), s * 0.5, s * 0.5, s * 0.5); ctx.fill();
-  }
-}
-
 function solarCells(ctx, w, h) {
   ctx.fillStyle = '#C9CED6'; ctx.fillRect(0, 0, w, h);
   ctx.fillStyle = '#1E3F8F'; ctx.fillRect(6, 6, w - 12, h - 12);
@@ -224,10 +235,11 @@ function roundedRect(w, h, r) {
   return s;
 }
 
-// ---------- the tail: a tube whose curl is integrated from its curvature every frame ----------
+// ---------- the rainbow tail: a tube whose curl is integrated from its curvature every frame ----------
 const TAIL_STOPS = [
-  [0, '#8AC84E'], [0.12, '#62BE8E'], [0.27, '#4CB6D2'], [0.43, '#58A6E6'], [0.56, '#86C8EC'], [0.68, '#F3B66E'],
-  [0.82, '#F28A35'], [1, '#F6A04C'],
+  [0, '#96C85C'], [0.1, '#4CC3A6'], [0.2, '#7BD36E'], [0.28, '#F0E45E'], [0.35, '#F9B13C'], [0.42, '#F9614D'],
+  [0.49, '#F2507A'], [0.56, '#8E86E6'], [0.63, '#5A8BE0'], [0.7, '#3BA8D6'], [0.77, '#3CBFA0'], [0.85, '#6CD06E'],
+  [0.93, '#B8E05A'], [1, '#F2E35C'],
 ].map(([t, h]) => [t, lin(h)]);
 function tailColor(t) {
   for (let i = 1; i < TAIL_STOPS.length; i++) {
@@ -318,7 +330,8 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
     uMoodFrom: { value: new THREE.Vector4(0, 0, 0, 0) },
     uMoodTo: { value: new THREE.Vector4(0, 0, 0, 0) },
     uWave: { value: 1 },
-    uSpotFreq: { value: 17 },
+    uScaleFreq: { value: 32 },
+    uBump: { value: 0.0048 }, // bead height, in model units
     uShimmer: { value: 0 },
     uGlow: { value: 0.04 },
     uRim: { value: 0.24 },
@@ -337,7 +350,7 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
   const rubber = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.55, clearcoat: 0.2, clearcoatRoughness: 0.5, envMapIntensity: envIntensity * 0.7, clippingPlanes: clipping });
   const canvas = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.82, sheen: 0.6, sheenRoughness: 0.6, sheenColor: lin('#6E7682'), clearcoat: 0.1, envMapIntensity: envIntensity * 0.7, clippingPlanes: clipping });
   const eyeWhite = new THREE.MeshPhysicalMaterial({ color: lin('#FBFBF4'), roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: envIntensity * 0.8, clippingPlanes: clipping });
-  const pupil = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.14, clearcoat: 1, clearcoatRoughness: 0.03, clippingPlanes: clipping });
+  const pupil = new THREE.MeshPhysicalMaterial({ color: lin('#0A0E10'), roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.03, clippingPlanes: clipping });
   const sparkle = new THREE.MeshBasicMaterial({ color: 0xffffff, clippingPlanes: clipping });
   const frame = new THREE.MeshPhysicalMaterial({ color: lin('#14181A'), roughness: 0.26, clearcoat: 1, clearcoatRoughness: 0.1, envMapIntensity: envIntensity, clippingPlanes: clipping });
   const lens = new THREE.MeshPhysicalMaterial({ color: lin('#EAF8FF'), transparent: true, opacity: 0.1, roughness: 0.03, clearcoat: 1, depthWrite: false, envMapIntensity: envIntensity * 1.8, clippingPlanes: clipping });
@@ -347,19 +360,7 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
   const metal = new THREE.MeshPhysicalMaterial({ color: lin('#C9CED6'), metalness: 0.8, roughness: 0.3, envMapIntensity: envIntensity * 1.2, clippingPlanes: clipping });
   const gold = new THREE.MeshPhysicalMaterial({ color: lin('#E3B44E'), metalness: 0.85, roughness: 0.32, clearcoat: 0.4, envMapIntensity: envIntensity * 1.3, clippingPlanes: clipping });
   const tongueMat = new THREE.MeshPhysicalMaterial({ color: lin('#EA7F93'), roughness: 0.35, clearcoat: 0.6, clippingPlanes: clipping });
-  const browMat = new THREE.MeshPhysicalMaterial({ color: lin('#3E6E2A'), roughness: 0.6, clearcoat: 0.2, clippingPlanes: clipping });
-  const shortsMat = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.86, sheen: 0.8, sheenRoughness: 0.5, sheenColor: lin('#F3E8CF'), envMapIntensity: envIntensity * 0.5, clippingPlanes: clipping });
-  const cordMat = new THREE.MeshPhysicalMaterial({ color: lin('#4A70D8'), roughness: 0.7, sheen: 0.6, sheenColor: lin('#9DB4F0'), clippingPlanes: clipping });
-  const tipMat = new THREE.MeshPhysicalMaterial({ color: lin('#1C2D6B'), roughness: 0.4, clearcoat: 0.5, clippingPlanes: clipping });
-  const packMat = new THREE.MeshPhysicalMaterial({ color: lin('#26292F'), roughness: 0.72, sheen: 0.5, sheenRoughness: 0.6, sheenColor: lin('#5A6270'), clearcoat: 0.08, envMapIntensity: envIntensity * 0.6, clippingPlanes: clipping });
-  const leafMat = new THREE.MeshPhysicalMaterial({ color: lin('#7CC243'), roughness: 0.35, clearcoat: 0.8, clippingPlanes: clipping });
-  const paperMat = new THREE.MeshPhysicalMaterial({ color: lin('#FBF6EA'), roughness: 0.9, clippingPlanes: clipping });
-  const coverMat = new THREE.MeshPhysicalMaterial({ color: lin('#EEF1F5'), roughness: 0.5, clearcoat: 0.3, clippingPlanes: clipping });
-  const spineMat = new THREE.MeshPhysicalMaterial({ color: lin('#3C5568'), roughness: 0.55, clippingPlanes: clipping });
-  const sproutTex = canvasTexture(128, 128, (c, w) => drawSprout(c, w, '#1E2126'));
-  const sproutBareTex = canvasTexture(128, 128, (c, w) => drawSprout(c, w, null));
-  const logoMat = (tex) => new THREE.MeshPhysicalMaterial({ map: tex, transparent: true, alphaTest: 0.3, roughness: 0.5, polygonOffset: true, polygonOffsetFactor: -2, clippingPlanes: clipping });
-  const materials = [skin, cloth, canvas, rubber, eyeWhite, pupil, sparkle, frame, lens, badgeMat, faceMat, metal, gold, tongueMat, browMat, shortsMat, cordMat, tipMat, packMat, leafMat, paperMat, coverMat, spineMat];
+  const materials = [skin, cloth, canvas, rubber, eyeWhite, pupil, sparkle, frame, lens, badgeMat, faceMat, metal, gold, tongueMat];
 
   const mesh = (geom, mat, name) => { const m = new THREE.Mesh(geom, mat); m.name = name; m.castShadow = !mat.transparent; m.receiveShadow = true; return m; };
   const at = (obj, world, parentWorld) => { obj.position.set(world[0] - parentWorld[0], world[1] - parentWorld[1], world[2] - parentWorld[2]); return obj; };
@@ -369,27 +370,9 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
   const body = new THREE.Group(); root.add(body); // squash and stretch happen here
   const hips = at(new THREE.Group(), RIG.hips, [0, 0, 0]); body.add(hips);
   hips.add(mesh(partGeometry(parts.pelvis), skin, 'pelvis'));
-  hips.add(mesh(partGeometry(parts.shortsHips), shortsMat, 'shorts'));
   const chest = at(new THREE.Group(), RIG.chest, RIG.hips); hips.add(chest);
   chest.add(mesh(partGeometry(parts.shirt), cloth, 'shirt'));
   chest.add(mesh(partGeometry(parts.badge), badgeMat, 'badge'));
-  // the hoodie's drawstrings, lying on the chest
-  const onShirt = (x, y, z, dir, lift) => {
-    const d = new THREE.Vector3(...dir).normalize();
-    const hit = rayHit(shirtSdf, x + d.x * 0.6, y + d.y * 0.6, z + d.z * 0.6, -d.x, -d.y, -d.z, 1.5);
-    if (!hit) return new THREE.Vector3(x - RIG.chest[0], y - RIG.chest[1], z - RIG.chest[2]);
-    const n = gradient(shirtSdf, hit[0], hit[1], hit[2], 0.003);
-    return new THREE.Vector3(hit[0] + n[0] * lift - RIG.chest[0], hit[1] + n[1] * lift - RIG.chest[1], hit[2] + n[2] * lift - RIG.chest[2]);
-  };
-  for (const sx of [1, -1]) {
-    const pts = [1.17, 1.13, 1.09, 1.05, 1.01, 0.985].map((y, i) => onShirt(sx * (0.055 + i * 0.003), y, 0.1, [0, 0, 1], 0.009));
-    const curve = new THREE.CatmullRomCurve3(pts);
-    chest.add(mesh(new THREE.TubeGeometry(curve, 24, 0.0075, 6), cordMat, 'drawstring'));
-    const end = pts[pts.length - 1], dir = end.clone().sub(pts[pts.length - 2]).normalize();
-    const tip = mesh(new THREE.CapsuleGeometry(0.0095, 0.024, 4, 8), tipMat, 'aglet');
-    tip.position.copy(end).addScaledVector(dir, 0.012); tip.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir);
-    chest.add(tip);
-  }
   const neck = at(new THREE.Group(), RIG.neck, RIG.chest); chest.add(neck);
   const head = new THREE.Group(); head.scale.setScalar(1.08); neck.add(head); // a slightly bigger head reads cuter
   head.add(mesh(partGeometry(parts.head), skin, 'head'));
@@ -398,19 +381,7 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
   // eyes, lids and catchlights
   const eyes = {};
   const eyeGeo = new THREE.SphereGeometry(RIG.eye.r, 40, 28);
-  // the iris: a black pupil inside a green ring with a dark rim (colours by angle from the eye's axis)
-  const irisR = RIG.eye.r + 0.0012, pupilGeo = new THREE.SphereGeometry(irisR, 48, 24, 0, Math.PI * 2, 0, 0.62);
-  {
-    const pos = pupilGeo.attributes.position, col = new Float32Array(pos.count * 3);
-    const black = lin('#0B0F0C'), inner = lin('#A8D862'), outer = lin('#4E9530'), rim = lin('#22431A');
-    for (let i = 0; i < pos.count; i++) {
-      const th = Math.acos(Math.max(-1, Math.min(1, pos.getY(i) / irisR)));
-      const c = th < 0.31 ? black : th < 0.585 ? inner.clone().lerp(outer, (th - 0.31) / 0.275) : rim;
-      col.set([c.r, c.g, c.b], i * 3);
-    }
-    pupilGeo.setAttribute('color', new THREE.BufferAttribute(col, 3));
-    pupilGeo.rotateX(Math.PI / 2);
-  }
+  const pupilGeo = new THREE.SphereGeometry(RIG.eye.r + 0.0012, 40, 12, 0, Math.PI * 2, 0, 0.5).rotateX(Math.PI / 2);
   const lidUpGeo = skinned(new THREE.SphereGeometry(RIG.eye.r + 0.0026, 36, 14, 0, Math.PI * 2, 0, Math.PI / 2), COLORS.skin, 0.12);
   const lidLowGeo = skinned(new THREE.SphereGeometry(RIG.eye.r + 0.0024, 36, 14, 0, Math.PI * 2, Math.PI / 2, Math.PI / 2), COLORS.skin, 0.12);
   const sparkGeo = new THREE.SphereGeometry(0.021, 16, 10).scale(1, 0.8, 0.35);
@@ -453,20 +424,6 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
   glasses.add(bridge);
   const glassesRest = glasses.position.clone();
 
-  // eyebrows: small dark-green arcs on the eye domes, just above the frames
-  const brows = {};
-  const browGeo = new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(new THREE.Vector3(-0.065, -0.006, 0), new THREE.Vector3(0, 0.022, 0), new THREE.Vector3(0.065, -0.006, 0)), 16, 0.0125, 8);
-  for (const side of ['L', 'R']) {
-    const sx = side === 'L' ? 1 : -1;
-    const hit = rayHit(headSdf, sx * 0.2, 1.895, 1.2, 0, 0, -1, 2) || [sx * 0.2, 1.895, 0.18];
-    const n = gradient(headSdf, hit[0], hit[1], hit[2], 0.003);
-    const brow = new THREE.Group();
-    brow.position.set(hit[0] + n[0] * 0.01 - RIG.neck[0], hit[1] + n[1] * 0.01 - RIG.neck[1], hit[2] + n[2] * 0.01 - RIG.neck[2]);
-    const m = mesh(browGeo, browMat, 'brow' + side); m.rotation.x = -0.2; brow.add(m);
-    head.add(brow);
-    brows[side] = { brow, rest: brow.position.clone(), sx };
-  }
-
   // tongue (shoots out to tap things)
   const tongue = new THREE.Group(); tongue.name = 'tongue';
   at(tongue, [0, 1.37, 0.36], RIG.neck); head.add(tongue);
@@ -496,29 +453,17 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
   // legs
   const legs = {};
   const thighGeo = partGeometry(parts.thigh), shinGeo = partGeometry(parts.shin);
-  const shoeGeos = ['shoeUpper', 'shoeSole', 'shoeLaces'].map((k) => [k, partGeometry(parts[k])]);
-  const shortsLegGeo = partGeometry(parts.shortsLeg);
-  // the sprout logo on each shoe's tongue
-  const tongueHit = rayHit(upperSdf, 0, 0.122, 0.5, 0, 0, -1, 1) || [0, 0.122, 0.04];
-  const tongueN = gradient(upperSdf, tongueHit[0], tongueHit[1], tongueHit[2], 0.003);
-  const shoeLogoGeo = new THREE.PlaneGeometry(0.052, 0.052);
+  const shoeGeos = ['shoeUpper', 'shoeSole', 'shoeCap', 'shoeLaces'].map((k) => [k, partGeometry(parts[k])]);
   for (const side of ['L', 'R']) {
     const sx = side === 'L' ? 1 : -1;
     const hip = at(new THREE.Group(), [sx * RIG.hip[0], RIG.hip[1], RIG.hip[2]], RIG.hips);
     hip.rotation.order = 'ZXY'; hips.add(hip);
     hip.add(mesh(thighGeo, skin, 'thigh' + side));
-    const shortsLeg = mesh(shortsLegGeo, shortsMat, 'shortsLeg' + side);
-    if (sx < 0) shortsLeg.scale.x = -1; // the cargo pocket stays on the outside
-    hip.add(shortsLeg);
     const knee = new THREE.Group(); knee.position.y = -RIG.thigh; hip.add(knee);
     knee.add(mesh(shinGeo, skin, 'shin' + side));
     const ankle = new THREE.Group(); ankle.position.y = -RIG.shin; knee.add(ankle);
     const shoe = new THREE.Group(); shoe.name = 'shoe' + side;
     for (const [k, g] of shoeGeos) shoe.add(mesh(g, k === 'shoeUpper' ? canvas : rubber, k + side));
-    const logo = mesh(shoeLogoGeo, logoMat(sproutTex), 'shoeLogo' + side);
-    logo.position.set(tongueHit[0] + tongueN[0] * 0.003, tongueHit[1] + tongueN[1] * 0.003, tongueHit[2] + tongueN[2] * 0.003);
-    logo.lookAt(logo.position.clone().add(new THREE.Vector3(...tongueN)));
-    shoe.add(logo);
     shoe.rotation.y = sx * 0.08; shoe.scale.setScalar(1.3); shoe.position.y = 0.036; ankle.add(shoe);
     legs[side] = { hip, knee, ankle, sx };
   }
@@ -533,81 +478,55 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
   const tailRoot = at(new THREE.Group(), RIG.tailRoot, RIG.hips); hips.add(tailRoot);
   tailRoot.add(tail.mesh);
 
-  // his notebook (in his right hand); its cover shows a drawing that can change
-  const tablet = new THREE.Group(); tablet.name = 'notebook';
-  const BW = 0.27, BH = 0.36;
-  const coverGeo = new THREE.ExtrudeGeometry(roundedRect(BW, BH, 0.014), { depth: 0.004, bevelEnabled: true, bevelThickness: 0.002, bevelSize: 0.002, bevelSegments: 2, curveSegments: 6 });
-  const backCover = mesh(coverGeo, coverMat, 'backCover'); backCover.position.z = -0.024;
-  const frontCover = mesh(coverGeo, coverMat, 'frontCover'); frontCover.position.z = 0.016;
-  const pages = mesh(new THREE.BoxGeometry(BW - 0.012, BH - 0.012, 0.036), paperMat, 'pages');
-  const spine = mesh(new THREE.BoxGeometry(0.014, BH + 0.004, 0.05), spineMat, 'spine'); spine.position.x = -BW / 2;
+  // tablet (in his right hand)
+  const tablet = new THREE.Group(); tablet.name = 'tablet';
+  const tabShape = roundedRect(0.31, 0.43, 0.034);
+  const tabBody = mesh(new THREE.ExtrudeGeometry(tabShape, { depth: 0.008, bevelEnabled: true, bevelThickness: 0.004, bevelSize: 0.004, bevelSegments: 3, curveSegments: 8 }).translate(0, 0, -0.004), metal, 'tabletBody');
   const screenTex = canvasTexture(256, 352, (ctx, w, h) => drawScreen(ctx, w, h, 'home'));
-  const screen = mesh(new THREE.PlaneGeometry(BW - 0.03, BH - 0.03), new THREE.MeshPhysicalMaterial({ map: screenTex, roughness: 0.6, polygonOffset: true, polygonOffsetFactor: -2, clippingPlanes: clipping }), 'cover');
-  screen.position.z = 0.0225;
-  tablet.add(backCover, frontCover, pages, spine, screen);
+  const screen = mesh(new THREE.PlaneGeometry(0.288, 0.408), new THREE.MeshBasicMaterial({ map: screenTex, toneMapped: false, clippingPlanes: clipping }), 'screen');
+  screen.position.z = 0.0091;
+  const bezel = mesh(new THREE.ShapeGeometry(roundedRect(0.302, 0.422, 0.028), 8), new THREE.MeshPhysicalMaterial({ color: lin('#101316'), roughness: 0.08, clearcoat: 1, clippingPlanes: clipping }), 'bezel');
+  bezel.position.z = 0.0086;
+  const cam = mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.006, 16).rotateX(Math.PI / 2), frame, 'tabletCamera');
+  cam.position.set(-0.11, 0.175, -0.0095);
+  tablet.add(tabBody, bezel, screen, cam);
   tablet.userData = { screenTex, draw: (mode, data) => { drawScreen(screenTex.image.getContext('2d'), 256, 352, mode, data); screenTex.needsUpdate = true; } };
   const tabletMount = new THREE.Group(); arms.R.hand.add(tabletMount); tabletMount.add(tablet);
   tablet.position.set(0.016, -0.17, 0.15); tablet.rotation.set(0.12, Math.PI / 2 + 0.3, 0.12);
 
-  // the black backpack: always on his back. To fly, solar panels unfold from its sides as wings,
-  // a dish pops up on top and a thruster below.
+  // the satellite backpack (solar panels become wings)
   const pack = new THREE.Group(); pack.name = 'backpack';
-  at(pack, [0, 0.88, -0.365], RIG.chest); chest.add(pack);
-  pack.add(mesh(new THREE.ExtrudeGeometry(roundedRect(0.34, 0.42, 0.09), { depth: 0.1, bevelEnabled: true, bevelThickness: 0.03, bevelSize: 0.03, bevelSegments: 4, curveSegments: 10 }).translate(0, 0, -0.05), packMat, 'packBody'));
-  const pocket = mesh(new THREE.ExtrudeGeometry(roundedRect(0.25, 0.16, 0.05), { depth: 0.025, bevelEnabled: true, bevelThickness: 0.014, bevelSize: 0.014, bevelSegments: 3, curveSegments: 8 }), packMat, 'packPocket');
-  pocket.position.set(0, -0.08, -0.105); pocket.rotation.y = Math.PI; pack.add(pocket);
-  const packLogo = mesh(new THREE.PlaneGeometry(0.12, 0.12), logoMat(sproutBareTex), 'packLogo');
-  packLogo.position.set(0, -0.075, -0.146); packLogo.rotation.y = Math.PI; pack.add(packLogo);
-  const handle = mesh(new THREE.TorusGeometry(0.035, 0.009, 8, 16, Math.PI), packMat, 'packHandle');
-  handle.position.set(0, 0.235, -0.02); pack.add(handle);
-  // shoulder straps: over the shoulders, down the chest, round to the bottom of the pack
-  for (const sx of [1, -1]) {
-    const toPack = (x, y, z) => new THREE.Vector3(x - RIG.chest[0], y - RIG.chest[1], z - RIG.chest[2]);
-    const pts = [
-      toPack(sx * 0.1, 1.07, -0.3),
-      onShirt(sx * 0.15, 1.15, -0.2, [0, 0.6, -0.8], 0.03),
-      onShirt(sx * 0.19, 1.19, -0.03, [0, 1, 0], 0.03),
-      onShirt(sx * 0.2, 1.1, 0.15, [0, 0.55, 0.85], 0.03),
-      onShirt(sx * 0.21, 0.97, 0.24, [0.05, 0, 1], 0.03),
-      onShirt(sx * 0.235, 0.86, 0.25, [0.2, 0, 1], 0.03),
-      onShirt(sx * 0.28, 0.76, 0.19, [0.6, 0, 1], 0.03),
-      onShirt(sx * 0.31, 0.72, 0.02, [1, 0, 0.1], 0.03),
-      onShirt(sx * 0.25, 0.72, -0.18, [0.7, 0, -0.7], 0.03),
-      toPack(sx * 0.13, 0.7, -0.3),
-    ];
-    chest.add(mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts), 96, 0.03, 10), packMat, 'strap'));
-  }
-  // a leaf keychain on his left side; it swings as he moves
-  const charm = new THREE.Group(); charm.position.set(0.19, 0.02, -0.01); pack.add(charm);
-  const keyRing = mesh(new THREE.TorusGeometry(0.014, 0.0042, 8, 16), gold, 'charmRing'); keyRing.rotation.y = Math.PI / 2; charm.add(keyRing);
-  const leaf = mesh(new THREE.SphereGeometry(0.036, 18, 12).scale(0.62, 1, 0.24), leafMat, 'charmLeaf'); leaf.position.y = -0.052; charm.add(leaf);
-  const vein = mesh(new THREE.CylinderGeometry(0.0025, 0.0025, 0.06, 5), new THREE.MeshBasicMaterial({ color: lin('#4F8F2A') }), 'charmVein'); vein.position.set(0, -0.052, 0.009); charm.add(vein);
-  const charmState = { x: 0, z: 0, vx: 0, vz: 0, t: null, px: 0, py: 0, pz: 0 };
-  // satellite parts, hidden until he flies
-  const sat = new THREE.Group(); pack.add(sat);
+  at(pack, [0, 0.93, -0.29], RIG.chest); chest.add(pack);
+  const box = mesh(new THREE.ExtrudeGeometry(roundedRect(0.19, 0.22, 0.03), { depth: 0.1, bevelEnabled: true, bevelThickness: 0.01, bevelSize: 0.01, bevelSegments: 2 }).translate(0, 0, -0.05), gold, 'packBody');
+  pack.add(box);
   const cellTex = canvasTexture(256, 112, solarCells);
   const cellMat = new THREE.MeshPhysicalMaterial({ map: cellTex, roughness: 0.25, metalness: 0.3, clearcoat: 1, clippingPlanes: clipping });
   const panels = [];
   for (const sx of [1, -1]) {
-    const hinge = new THREE.Group(); hinge.position.set(sx * 0.17, 0.04, -0.02); sat.add(hinge);
+    const hinge = new THREE.Group(); hinge.position.set(sx * 0.105, 0.02, -0.02); pack.add(hinge);
     const panel = mesh(new THREE.BoxGeometry(0.34, 0.15, 0.012), [metal, metal, metal, metal, cellMat, cellMat], 'panel');
     panel.position.x = sx * 0.18; hinge.add(panel);
     panels.push({ hinge, sx });
   }
   const dish = mesh(new THREE.SphereGeometry(0.05, 20, 8, 0, Math.PI * 2, 0, 1.1).rotateX(Math.PI), metal, 'dish');
-  dish.position.set(0.08, 0.27, -0.02); sat.add(dish);
-  const rod = mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.09, 6), frame, 'antenna'); rod.position.set(0.08, 0.29, -0.02); sat.add(rod);
-  const nozzle = mesh(new THREE.CylinderGeometry(0.03, 0.045, 0.05, 16), frame, 'nozzle'); nozzle.position.set(0, -0.26, -0.02); sat.add(nozzle);
+  dish.position.set(0, 0.17, -0.02); pack.add(dish);
+  const rod = mesh(new THREE.CylinderGeometry(0.005, 0.005, 0.09, 6), frame, 'antenna'); rod.position.set(0, 0.19, -0.02); pack.add(rod);
+  const nozzle = mesh(new THREE.CylinderGeometry(0.03, 0.045, 0.05, 16), frame, 'nozzle'); nozzle.position.set(0, -0.14, -0.02); pack.add(nozzle);
   const flame = mesh(new THREE.ConeGeometry(0.04, 0.22, 16, 1, true).rotateX(Math.PI).translate(0, -0.11, 0), new THREE.MeshBasicMaterial({ color: lin('#FFC65A'), transparent: true, opacity: 0.85, blending: THREE.AdditiveBlending, depthWrite: false, toneMapped: false }), 'flame');
-  flame.position.set(0, -0.285, -0.02); sat.add(flame);
-  sat.scale.setScalar(0.0001); sat.visible = false;
+  flame.position.set(0, -0.165, -0.02); pack.add(flame);
+  const straps = [];
+  for (const sx of [1, -1]) {
+    const strap = mesh(new THREE.TorusGeometry(0.11, 0.013, 8, 24, Math.PI * 1.15), frame, 'strap');
+    strap.position.set(sx * 0.15, 0.12, 0.0); strap.rotation.set(0, Math.PI / 2, Math.PI * 0.42); pack.add(strap); straps.push(strap);
+  }
+  pack.scale.setScalar(0.0001); pack.visible = false;
 
   // soft contact shadow
   const shadow = new THREE.Mesh(new THREE.PlaneGeometry(1.25, 0.8).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: canvasTexture(128, 128, blobShadow), transparent: true, depthWrite: false, toneMapped: false }));
   shadow.position.y = 0.003; shadow.renderOrder = -1;
 
   const model = {
-    root, body, hips, chest, neck, head, eyes, brows, glasses, arms, legs, tail, tailRoot, tablet, tabletMount, pack, sat, panels, flame, charm, tongue, shadow,
+    root, body, hips, chest, neck, head, eyes, glasses, arms, legs, tail, tailRoot, tablet, tabletMount, pack, panels, flame, tongue, shadow,
     materials, shared, faceUniforms, clipPlane,
     setHand(side, pose) {
       const a = arms[side];
@@ -641,30 +560,13 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
         l.ankle.rotation.x = -p['ankle' + side];
       }
       glasses.position.copy(glassesRest); glasses.position.y += p.glassesY;
-      for (const side of ['L', 'R']) {
-        const b = brows[side];
-        b.brow.position.copy(b.rest); b.brow.position.y += 0.022 * p['brow' + side];
-        b.brow.rotation.z = b.sx * 0.32 * p['browTilt' + side];
-      }
-      // the keychain hangs down and swings behind his movements
-      const dt = charmState.t === null ? 0 : Math.min(0.05, Math.max(0, time - charmState.t));
-      if (dt > 0) {
-        const vx = (p.rootX + p.hipsX - charmState.px) / dt, vy = (p.rootY + p.hipsY - charmState.py) / dt, vz = (p.rootZ - charmState.pz) / dt;
-        const gx = -(p.rootPitch + p.hipsTilt + p.chestX) + vz * 0.25, gz = -(p.rootRoll + p.hipsRoll + p.chestZ) - vx * 0.35 + vy * 0.05;
-        for (const [k, g] of [['x', gx], ['z', gz]]) {
-          const a = 90 * (g - charmState[k]) - 4 * charmState['v' + k];
-          charmState['v' + k] += a * dt; charmState[k] += charmState['v' + k] * dt;
-        }
-        charm.rotation.set(charmState.x, 0, charmState.z);
-      }
-      charmState.t = time; charmState.px = p.rootX + p.hipsX; charmState.py = p.rootY + p.hipsY; charmState.pz = p.rootZ;
       faceUniforms.uOpen.value = p.mouthOpen; faceUniforms.uSmile.value = p.mouthSmile; faceUniforms.uWidth.value = p.mouthWidth; faceUniforms.uBlush.value = p.blush;
       tail.update({ curl: p.tailCurl, wag: p.tailWag, phase: p.tailPhase, droop: p.tailDroop, lift: p.tailLift, helix: 0.1 });
       tabletMount.scale.setScalar(Math.max(0.0001, p.tablet));
       tabletMount.visible = p.tablet > 0.02;
       const deploy = p.backpack;
-      sat.visible = deploy > 0.02;
-      sat.scale.setScalar(Math.max(0.0001, Math.min(1, deploy * 1.6)));
+      pack.visible = deploy > 0.02;
+      pack.scale.setScalar(Math.max(0.0001, Math.min(1, deploy * 1.6)));
       const unfold = Math.max(0, Math.min(1, (deploy - 0.4) / 0.6));
       for (const { hinge, sx } of panels) { hinge.rotation.y = sx * (1 - unfold) * -1.5; hinge.rotation.z = sx * unfold * 0.12; }
       flame.visible = p.thrust > 0.02;
@@ -685,30 +587,29 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
   return model;
 }
 
-// What the notebook's cover shows: a sprout in soil, or a simple chart. Flat drawings in the project's colours.
+// What the tablet shows. Simple, flat drawings in the project's colours.
 export function drawScreen(ctx, w, h, mode = 'home', data = {}) {
-  ctx.fillStyle = '#F7F3E6'; ctx.fillRect(0, 0, w, h);
-  ctx.fillStyle = '#2F57C6'; ctx.font = '600 22px "Hind Siliguri", system-ui, sans-serif';
-  ctx.fillText(data.title || 'Mati Kohon', 18, 40);
+  ctx.fillStyle = '#F3F9EA'; ctx.fillRect(0, 0, w, h);
+  ctx.fillStyle = '#C1E294'; ctx.fillRect(0, 0, w, 54);
+  ctx.fillStyle = '#1D272B'; ctx.font = '600 22px "Hind Siliguri", system-ui, sans-serif';
+  ctx.fillText(data.title || 'Mati Kohon', 16, 35);
   if (mode === 'chart') {
     const vals = data.values || [0.35, 0.5, 0.42, 0.7, 0.62, 0.85];
     vals.forEach((v, i) => {
-      ctx.fillStyle = i === vals.length - 1 ? '#F28A35' : '#7CC243';
+      ctx.fillStyle = i === vals.length - 1 ? '#2B4C9A' : '#75A457';
       const bw = (w - 48) / vals.length;
       ctx.fillRect(24 + i * bw + 4, h - 40 - v * (h - 130), bw - 8, v * (h - 130));
     });
-    ctx.fillStyle = '#3E6E2A'; ctx.fillRect(20, h - 40, w - 40, 3);
+    ctx.fillStyle = '#44783A'; ctx.fillRect(20, h - 40, w - 40, 3);
     return;
   }
-  ctx.fillStyle = '#8A5A34';
-  ctx.beginPath(); ctx.ellipse(w / 2, h * 0.78, w * 0.36, h * 0.09, 0, Math.PI, 0); ctx.fill();
-  ctx.strokeStyle = '#4E9530'; ctx.lineWidth = 8; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(w / 2, h * 0.72); ctx.quadraticCurveTo(w / 2 - 6, h * 0.58, w / 2 + 2, h * 0.47); ctx.stroke();
-  ctx.fillStyle = '#7CC243';
-  for (const dir of [-1, 1]) {
-    ctx.beginPath(); ctx.moveTo(w / 2, h * 0.52);
-    ctx.quadraticCurveTo(w / 2 + dir * 20, h * 0.36, w / 2 + dir * 70, h * 0.4);
-    ctx.quadraticCurveTo(w / 2 + dir * 60, h * 0.53, w / 2, h * 0.52); ctx.fill();
+  ctx.fillStyle = '#B7E1ED'; ctx.fillRect(16, 72, w - 32, 120);
+  ctx.fillStyle = '#75A457'; ctx.fillRect(16, 152, w - 32, 40);
+  ctx.fillStyle = '#FAD853'; ctx.beginPath(); ctx.arc(60, 108, 18, 0, Math.PI * 2); ctx.fill();
+  ctx.fillStyle = '#1D272B'; ctx.fillRect(170, 92, 16, 16);
+  ctx.fillStyle = '#6EC4D9'; ctx.fillRect(140, 95, 26, 10); ctx.fillRect(190, 95, 26, 10);
+  for (let i = 0; i < 3; i++) {
+    ctx.fillStyle = ['#A0C477', '#C1E294', '#6EC4D9'][i];
+    ctx.fillRect(16, 212 + i * 44, (w - 32) * [0.82, 0.6, 0.72][i], 30);
   }
-
 }
