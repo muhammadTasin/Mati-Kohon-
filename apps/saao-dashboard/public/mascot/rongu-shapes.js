@@ -19,7 +19,7 @@ export const RIG = {
   hip: [0.13, 0.5, 0],
   thigh: 0.2,
   shin: 0.18,
-  tailRoot: [0.03, 0.54, -0.17],
+  tailRoot: [0, 0.55, -0.12],
   armRest: 0.32, // the arms hang slightly out from the body, clear of the shirt
 };
 
@@ -83,7 +83,7 @@ function headColor(x, y, z, nx, ny) {
     if (d < s.r + 0.014) c = mixRgb(c, C.spine, smoothstep(s.r + 0.014, s.r + 0.002, d));
   }
   // pale throat under the jaw
-  c = mixRgb(c, C.throat, smoothstep(-0.2, -0.7, ny) * smoothstep(1.45, 1.33, y));
+  c = mixRgb(c, C.throat, smoothstep(-0.2, -0.7, ny) * smoothstep(1.45, 1.33, y) * smoothstep(-0.02, 0.14, z));
   // a slightly deeper lip around each eye socket
   const ed = Math.sqrt((Math.abs(x) - RIG.eye.x) ** 2 + (y - RIG.eye.y) ** 2 + (z - RIG.eye.z) ** 2);
   c = mixRgb(c, C.skinDeep, smoothstep(0.175, 0.142, ed) * 0.45);
@@ -103,6 +103,7 @@ export function shirtSdf(x, y, z) {
   d = smin(d, ellipsoid(x, y, z, 0, 0.72, 0.02, 0.31, 0.2, 0.26), 0.12);
   d = smin(d, ellipsoid(x, y, z, 0, 0.625, 0.01, 0.325, 0.06, 0.275), 0.06); // a little flare at the hem
   d = smin(d, sphere(Math.abs(x), y, z, 0.27, 1.035, -0.02, 0.112), 0.09);
+  d = smin(d, ellipsoid(x, y, z, 0, 1.1, -0.1, 0.25, 0.13, 0.18), 0.08); // the yoke across the upper back
   d = smax(d, 0.585 - y, 0.028);
   d = smax(d, -capsule(x, y, z, 0, 1.32, -0.04, 0, 1.05, -0.04, 0.168), 0.02);
   d = smax(d, y - 1.2, 0.025);
@@ -123,7 +124,7 @@ export function pelvisSdf(x, y, z) {
   if (bound > 0.08) return bound;
   let d = ellipsoid(x, y, z, 0, 0.585, 0, 0.28, 0.155, 0.232);
   d = smin(d, sphere(Math.abs(x), y, z, 0.13, 0.5, 0, 0.098), 0.08);
-  d = smin(d, capsule(x, y, z, 0, 0.56, -0.1, 0.05, 0.52, -0.21, 0.1, 0.09), 0.06);
+  d = smin(d, capsule(x, y, z, 0, 0.56, -0.08, 0.056, 0.507, -0.173, 0.1, 0.098), 0.07);
   return d;
 }
 function pelvisColor(x, y, z, nx, ny, nz) {

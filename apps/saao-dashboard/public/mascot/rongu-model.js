@@ -35,19 +35,32 @@ vec3 rgHash(vec3 p) {
   p += dot(p, p.yxz + 33.33);
   return fract((p.xxy + p.yxx) * p.zyx);
 }
-float rgBeads(vec3 p) {
+// Packed, pillow-shaped beads (like a honeycomb): every point belongs to a bead, each bead is flat on top and
+// rolls down into a thin groove at its edge. Returns the gradient (xyz, pattern space) and height (w).
+vec4 rgBeads(vec3 p) {
   vec3 i = floor(p), f = fract(p);
   float d1 = 8.0, d2 = 8.0;
+  vec3 r1 = vec3(0.0), r2 = vec3(0.0);
   for (int x = -1; x <= 1; x++) for (int y = -1; y <= 1; y++) for (int z = -1; z <= 1; z++) {
     vec3 g = vec3(float(x), float(y), float(z));
-    vec3 r = g + 0.5 + (rgHash(i + g) - 0.5) * 0.45 - f;
+    vec3 r = g + 0.5 + (rgHash(i + g) - 0.5) * 0.8 - f; // from p to this cell's centre
     float d = dot(r, r);
-    if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d;
+    if (d < d1) { d2 = d1; r2 = r1; d1 = d; r1 = r; } else if (d < d2) { d2 = d; r2 = r; }
   }
-  float edge = sqrt(d2) - sqrt(d1); // 0 on the crease between two beads
-  float h = smoothstep(0.0, 0.42, edge);
-  return 1.0 - (1.0 - h) * (1.0 - h); // a rounded dome
+  vec3 n = normalize(r2 - r1);
+  float e = dot(0.5 * (r1 + r2), n); // distance to the edge shared with the nearest neighbour
+  const float E = 0.32;              // how wide the rounded edge is
+  float t = clamp(e / E, 0.0, 1.0);
+  float pillow = 1.0 - (1.0 - t) * (1.0 - t) * (1.0 - t);
+  vec3 gPillow = -3.0 * (1.0 - t) * (1.0 - t) / E * n;
+  // a gentle dome from the bead's centre makes each one puffy rather than flat
+  const float R = 0.62;
+  float q = min(sqrt(d1) / R, 1.0);
+  float dome = 1.0 - q * q;
+  vec3 gDome = q < 1.0 ? 2.0 * r1 / (R * R) : vec3(0.0);
+  return vec4(0.7 * gPillow + 0.3 * gDome, 0.7 * pillow + 0.3 * dome);
 }
+
 vec3 rgPerturb(vec3 surfPos, vec3 surfNorm, vec2 dHdxy, float faceDir) {
   vec3 sx = dFdx(surfPos), sy = dFdy(surfPos);
   vec3 r1 = cross(sy, surfNorm), r2 = cross(surfNorm, sx);
@@ -69,10 +82,9 @@ function injectSkin(material, shared) {
       .replace('#include <common>', '#include <common>\n' + SKIN_GLSL)
       .replace('#include <color_fragment>', `#include <color_fragment>
   vec3 scaleP = vRest * uScaleFreq;
-  float scaleAA = clamp(1.6 - length(fwidth(scaleP)) * 2.2, 0.0, 1.0);
-  float scaleH = rgBeads(scaleP);
-  scaleAA *= vMood.z;
-  diffuseColor.rgb *= mix(1.0, 0.7 + 0.36 * scaleH, scaleAA); // darker creases, slightly lighter bead tops
+  float scaleAA = clamp(1.6 - length(fwidth(scaleP)) * 2.0, 0.0, 1.0) * vMood.z;
+  vec4 bead = rgBeads(scaleP);
+  diffuseColor.rgb *= mix(1.0, 0.82 + 0.2 * bead.w, scaleAA); // darker grooves, lighter bead tops
   float moodWave = smoothstep(vMood.x - 0.07, vMood.x + 0.07, uWave);
   vec4 mood = mix(uMoodFrom, uMoodTo, moodWave);
   float skinLum = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
@@ -81,7 +93,8 @@ function injectSkin(material, shared) {
   float band = smoothstep(0.1, 0.0, abs(fract(vMood.x * 3.0 - uTime * 0.9) - 0.5) - 0.38);
   diffuseColor.rgb = mix(diffuseColor.rgb, rgHue(fract(vMood.x * 2.0 + uTime * 0.3)) * (skinLum * 1.6 + 0.08), uShimmer * band * vMood.y * 0.55);`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
-  normal = rgPerturb(-vViewPosition, normal, vec2(dFdx(scaleH), dFdy(scaleH)) * uBump * scaleAA, faceDirection);`)
+  vec3 beadGrad = bead.xyz * uScaleFreq * uBump * scaleAA; // height change per model unit
+  normal = rgPerturb(-vViewPosition, normal, vec2(dot(beadGrad, dFdx(vRest)), dot(beadGrad, dFdy(vRest))), faceDirection);`)
       // a soft glow, brightest at the edges: light passing through soft vinyl (a cheap subsurface look)
       .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
   float rgFres = pow(1.0 - clamp(dot(normal, normalize(vViewPosition)), 0.0, 1.0), 2.2);
@@ -274,7 +287,7 @@ class Tail {
     this.mesh.frustumCulled = false;
     this.mesh.castShadow = true; this.mesh.receiveShadow = true;
     this.mesh.name = 'tail';
-    this.u = new THREE.Vector3(1, 0, -0.42).normalize();
+    this.u = new THREE.Vector3(0.75, 0, -0.66).normalize();
     this.v = new THREE.Vector3(0, 1, 0);
     this.w = new THREE.Vector3().crossVectors(this.u, this.v);
   }
@@ -317,8 +330,8 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
     uMoodFrom: { value: new THREE.Vector4(0, 0, 0, 0) },
     uMoodTo: { value: new THREE.Vector4(0, 0, 0, 0) },
     uWave: { value: 1 },
-    uScaleFreq: { value: 30 },
-    uBump: { value: 0.0075 }, // bead height, in model units
+    uScaleFreq: { value: 32 },
+    uBump: { value: 0.0048 }, // bead height, in model units
     uShimmer: { value: 0 },
     uGlow: { value: 0.04 },
     uRim: { value: 0.24 },

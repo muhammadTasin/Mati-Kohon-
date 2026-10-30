@@ -5,7 +5,7 @@ import * as THREE from './vendor/three-rongu.min.js';
 import { createModel, MOODS } from './rongu-model.js';
 import { Motion, ACTIONS, GESTURES } from './rongu-motion.js';
 
-const MODEL_VERSION = 'rongu-15';
+const MODEL_VERSION = 'rongu-16';
 
 // ---------- meshes: from the browser's cache, else sculpted in a worker ----------
 function idb() {
