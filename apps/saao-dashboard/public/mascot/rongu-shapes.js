@@ -46,7 +46,7 @@ for (let i = 0; i < 9; i++) {
   SPINES.push({ y: CASQUE.y + ly * ca + lz * sa, z: CASQUE.z - ly * sa + lz * ca, r: 0.036 - i * 0.0018 });
 }
 
-export function headSdf(x, y, z) {
+function headNoDorsal(x, y, z) {
   const bound = ellipsoid(x, y, z, 0, 1.64, -0.08, 0.58, 0.66, 0.6);
   if (bound > 0.08) return bound;
   const ax = Math.abs(x);
@@ -60,8 +60,33 @@ export function headSdf(x, y, z) {
   const taper = 1 - 0.45 * clamp((y - 1.8) / 0.3, 0, 1);
   d = smin(d, ellipsoid(x / taper, ly, lz, 0, 0, 0, CASQUE.rx, CASQUE.ry, CASQUE.rz) * taper, 0.08);
   for (const s of SPINES) d = smin(d, sphere(x, y, z, 0, s.y, s.z, s.r), 0.016);
+  return d;
+}
+
+// A girgiti's crest: a row of spikes along the casque's back edge and down the back of the head to the
+// collar, swept back, shrinking towards the neck. Placed on the surface by marching rays at it.
+const DORSAL = [];
+for (let i = 0; i < 13; i++) {
+  const a = (28 + i * 10.5) * Math.PI / 180, oy = 1.6, oz = -0.05;
+  const dy = Math.cos(a), dz = -Math.sin(a);
+  const hit = rayHit(headNoDorsal, 0, oy + dy * 0.9, oz + dz * 0.9, 0, -dy, -dz, 1.4);
+  if (!hit || hit[1] < 1.3) continue; // below this the shirt covers the neck
+  const n = gradient(headNoDorsal, hit[0], hit[1], hit[2], 0.003);
+  let ay = n[1] - 0.1, az = n[2] - 0.2; // swept a little back and down, like a lizard's
+  const al = Math.hypot(ay, az); ay /= al; az /= al;
+  const k = i / 12, len = 0.115 - 0.05 * k, r = 0.036 - 0.014 * k;
+  const b = [0, hit[1] - n[1] * 0.012, hit[2] - n[2] * 0.012];
+  DORSAL.push({ b, t: [0, b[1] + ay * len, b[2] + az * len], r, len });
+}
+const dorsalSdf = (x, y, z, s) => capsule(x * 1.3, y, z, ...s.b, ...s.t, s.r, 0.004) / 1.3;
+
+export function headSdf(x, y, z) {
+  const bound = ellipsoid(x, y, z, 0, 1.64, -0.08, 0.58, 0.66, 0.6);
+  if (bound > 0.08) return bound;
+  let d = headNoDorsal(x, y, z);
+  for (const s of DORSAL) d = smin(d, dorsalSdf(x, y, z, s), 0.012);
   // sockets for the eyeballs, with a soft lip
-  d = smax(d, -sphere(ax, y, z, RIG.eye.x, RIG.eye.y, RIG.eye.z, RIG.eye.r + 0.004), 0.016);
+  d = smax(d, -sphere(Math.abs(x), y, z, RIG.eye.x, RIG.eye.y, RIG.eye.z, RIG.eye.r + 0.004), 0.016);
   return d;
 }
 
@@ -81,6 +106,13 @@ function headColor(x, y, z, nx, ny) {
   for (const s of SPINES) {
     const d = Math.sqrt(x * x + (y - s.y) ** 2 + (z - s.z) ** 2);
     if (d < s.r + 0.014) c = mixRgb(c, C.spine, smoothstep(s.r + 0.014, s.r + 0.002, d));
+  }
+  for (const s of DORSAL) {
+    const d = dorsalSdf(x, y, z, s);
+    if (d < 0.01) {
+      const along = clamp(((y - s.b[1]) * (s.t[1] - s.b[1]) + (z - s.b[2]) * (s.t[2] - s.b[2])) / (s.len * s.len), 0, 1);
+      c = mixRgb(c, C.rim, smoothstep(0.35, 0.95, along) * smoothstep(0.01, 0.0, d));
+    }
   }
   // pale throat under the jaw
   c = mixRgb(c, C.throat, smoothstep(-0.2, -0.7, ny) * smoothstep(1.45, 1.33, y) * smoothstep(-0.02, 0.14, z));

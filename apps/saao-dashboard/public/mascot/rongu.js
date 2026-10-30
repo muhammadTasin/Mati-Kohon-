@@ -5,7 +5,7 @@ import * as THREE from './vendor/three-rongu.min.js';
 import { createModel, MOODS } from './rongu-model.js';
 import { Motion, ACTIONS, GESTURES } from './rongu-motion.js';
 
-const MODEL_VERSION = 'rongu-17';
+const MODEL_VERSION = 'rongu-22'; // skip 18-20: the reverted redesign may sit in browsers' caches under them
 
 // ---------- meshes: from the browser's cache, else sculpted in a worker ----------
 function idb() {
