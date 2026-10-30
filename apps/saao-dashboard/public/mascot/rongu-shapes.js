@@ -90,8 +90,9 @@ function headColor(x, y, z, nx, ny) {
   return c;
 }
 // how much of the scale pattern shows: faint on the face, more on the crown and the back
-function headScales(x, y, z) {
-  return 0.12 + 0.75 * Math.max(smoothstep(1.7, 1.86, y), smoothstep(0.1, -0.25, z));
+function headScales(x, y, z, nx, ny) {
+  const crown = smoothstep(1.68, 1.82, y), back = smoothstep(0.12, -0.2, z), throat = smoothstep(-0.25, -0.6, ny);
+  return 0.28 + 0.72 * Math.max(crown, back, throat);
 }
 
 // ---------- shirt ----------
@@ -327,7 +328,7 @@ function meshPart(sdf, min, max, h, colorFn, { pivot = [0, 0, 0], worldY = null,
     colors[v * 3 + 2] = srgbToLinear(clamp(c[2], 0, 1)) * ao;
     mood[v * 3] = bodyT(worldY === null ? y : worldY + y);
     mood[v * 3 + 1] = tint;
-    mood[v * 3 + 2] = typeof scales === 'function' ? scales(x, y, z) : scales;
+    mood[v * 3 + 2] = typeof scales === 'function' ? scales(x, y, z, nx, ny, nz) : scales;
     m.positions[v * 3] -= pivot[0]; m.positions[v * 3 + 1] -= pivot[1]; m.positions[v * 3 + 2] -= pivot[2];
   }
   return { ...m, colors, mood, pivot };
@@ -346,12 +347,12 @@ export function buildRongu(quality = 1) {
   const parts = {};
   parts.head = meshPart(headSdf, [-0.56, 1.02, -0.64], [0.56, 2.3, 0.5], 0.0112 * q, headColor, { pivot: RIG.neck, aoScene: sceneSdf, scales: headScales });
   parts.shirt = meshPart(shirtSdf, [-0.48, 0.52, -0.36], [0.48, 1.26, 0.36], 0.0135 * q, shirtColor, { pivot: RIG.chest, aoScene: sceneSdf, tint: 0, scales: 0 });
-  parts.pelvis = meshPart(pelvisSdf, [-0.34, 0.34, -0.38], [0.34, 0.78, 0.3], 0.016 * q, pelvisColor, { pivot: RIG.hips, aoScene: sceneSdf, scales: 0.5 });
+  parts.pelvis = meshPart(pelvisSdf, [-0.34, 0.34, -0.38], [0.34, 0.78, 0.3], 0.016 * q, pelvisColor, { pivot: RIG.hips, aoScene: sceneSdf, scales: 0.6 });
   parts.sleeve = meshPart(sleeveSdf, [-0.13, -0.16, -0.13], [0.13, 0.13, 0.13], 0.011 * q, () => C.shirt, { worldY: RIG.shoulder[1], tint: 0, scales: 0 });
   parts.upperArm = meshPart(upperArmSdf, [-0.085, -0.3, -0.085], [0.085, 0.085, 0.085], 0.011 * q, skinColor, { worldY: RIG.shoulder[1] });
   parts.forearm = meshPart(forearmSdf, [-0.08, -0.28, -0.08], [0.08, 0.08, 0.08], 0.011 * q, skinColor, { worldY: RIG.shoulder[1] - RIG.upperArm });
   for (const pose of Object.keys(HAND_POSES)) {
-    parts['hand_' + pose] = meshPart(handSdf(pose), [-0.09, -0.24, -0.08], [0.1, 0.08, 0.16], 0.0075 * q, handColor, { worldY: 0.6, scales: 0.4 });
+    parts['hand_' + pose] = meshPart(handSdf(pose), [-0.09, -0.24, -0.08], [0.1, 0.08, 0.16], 0.0075 * q, handColor, { worldY: 0.6, scales: 0.75 });
   }
   parts.thigh = meshPart(thighSdf, [-0.105, -0.31, -0.105], [0.105, 0.105, 0.105], 0.012 * q, skinColor, { worldY: RIG.hip[1] });
   parts.shin = meshPart(shinSdf, [-0.1, -0.33, -0.1], [0.1, 0.1, 0.1], 0.012 * q, skinColor, { worldY: RIG.hip[1] - RIG.thigh });

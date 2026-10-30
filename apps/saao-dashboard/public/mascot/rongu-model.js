@@ -35,18 +35,21 @@ vec3 rgHash(vec3 p) {
   p += dot(p, p.yxz + 33.33);
   return fract((p.xxy + p.yxx) * p.zyx);
 }
-float rgScales(vec3 p) {
+float rgBeads(vec3 p) {
   vec3 i = floor(p), f = fract(p);
-  float d = 8.0;
+  float d1 = 8.0, d2 = 8.0;
   for (int x = -1; x <= 1; x++) for (int y = -1; y <= 1; y++) for (int z = -1; z <= 1; z++) {
     vec3 g = vec3(float(x), float(y), float(z));
-    vec3 r = g + rgHash(i + g) * 0.75 + 0.125 - f;
-    d = min(d, dot(r, r));
+    vec3 r = g + 0.5 + (rgHash(i + g) - 0.5) * 0.45 - f;
+    float d = dot(r, r);
+    if (d < d1) { d2 = d1; d1 = d; } else if (d < d2) d2 = d;
   }
-  return sqrt(d);
+  float edge = sqrt(d2) - sqrt(d1); // 0 on the crease between two beads
+  float h = smoothstep(0.0, 0.42, edge);
+  return 1.0 - (1.0 - h) * (1.0 - h); // a rounded dome
 }
 vec3 rgPerturb(vec3 surfPos, vec3 surfNorm, vec2 dHdxy, float faceDir) {
-  vec3 sx = normalize(dFdx(surfPos)), sy = normalize(dFdy(surfPos));
+  vec3 sx = dFdx(surfPos), sy = dFdy(surfPos);
   vec3 r1 = cross(sy, surfNorm), r2 = cross(surfNorm, sx);
   float det = dot(sx, r1) * faceDir;
   vec3 grad = sign(det) * (dHdxy.x * r1 + dHdxy.y * r2);
@@ -67,9 +70,9 @@ function injectSkin(material, shared) {
       .replace('#include <color_fragment>', `#include <color_fragment>
   vec3 scaleP = vRest * uScaleFreq;
   float scaleAA = clamp(1.6 - length(fwidth(scaleP)) * 2.2, 0.0, 1.0);
-  float scaleH = smoothstep(0.18, 0.62, rgScales(scaleP));
+  float scaleH = rgBeads(scaleP);
   scaleAA *= vMood.z;
-  diffuseColor.rgb *= 1.0 - 0.07 * scaleH * scaleAA;
+  diffuseColor.rgb *= mix(1.0, 0.7 + 0.36 * scaleH, scaleAA); // darker creases, slightly lighter bead tops
   float moodWave = smoothstep(vMood.x - 0.07, vMood.x + 0.07, uWave);
   vec4 mood = mix(uMoodFrom, uMoodTo, moodWave);
   float skinLum = dot(diffuseColor.rgb, vec3(0.2126, 0.7152, 0.0722));
@@ -247,9 +250,10 @@ class Tail {
       const t = i / this.N, c = tailColor(t);
       for (let j = 0; j < this.M; j++) {
         const v = i * this.M + j, a = (j / this.M) * Math.PI * 2;
-        rest.set([Math.cos(a) * 0.06, Math.sin(a) * 0.06, t * this.L], v * 3);
+        const rr = 0.082 * Math.pow(1 - t, 0.55) + 0.019;
+        rest.set([Math.cos(a) * rr, Math.sin(a) * rr, t * this.L], v * 3);
         col.set([c.r, c.g, c.b], v * 3);
-        mood.set([0.55 + 0.45 * t, 0.35, 0.9], v * 3);
+        mood.set([0.55 + 0.45 * t, 0.35, 1], v * 3);
         if (i < this.N) {
           const a0 = v, a1 = i * this.M + ((j + 1) % this.M), b0 = a0 + this.M, b1 = a1 + this.M;
           idx.push(a0, b0, b1, a0, b1, a1);
@@ -257,7 +261,7 @@ class Tail {
       }
     }
     const tip = rings * this.M, ct = tailColor(1);
-    rest.set([0, 0, this.L + 0.01], tip * 3); col.set([ct.r, ct.g, ct.b], tip * 3); mood.set([1, 0.35, 0.9], tip * 3);
+    rest.set([0, 0, this.L + 0.01], tip * 3); col.set([ct.r, ct.g, ct.b], tip * 3); mood.set([1, 0.35, 1], tip * 3);
     for (let j = 0; j < this.M; j++) idx.push(this.N * this.M + j, tip, this.N * this.M + ((j + 1) % this.M));
     const g = new THREE.BufferGeometry();
     g.setAttribute('position', new THREE.BufferAttribute(this.positions, 3).setUsage(THREE.DynamicDrawUsage));
@@ -313,8 +317,8 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
     uMoodFrom: { value: new THREE.Vector4(0, 0, 0, 0) },
     uMoodTo: { value: new THREE.Vector4(0, 0, 0, 0) },
     uWave: { value: 1 },
-    uScaleFreq: { value: 40 },
-    uBump: { value: 0.3 },
+    uScaleFreq: { value: 52 },
+    uBump: { value: 0.0042 }, // bead height, in model units
     uShimmer: { value: 0 },
     uGlow: { value: 0.04 },
     uRim: { value: 0.24 },
