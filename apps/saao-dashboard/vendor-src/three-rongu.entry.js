@@ -4,7 +4,7 @@
 //   npx esbuild@0.28.2 three-rongu.entry.js --bundle --minify --format=esm --legal-comments=eof --outfile=three-rongu.min.js
 // Add a name here when the mascot code starts using a new three.js class.
 export {
-  AdditiveBlending, BoxGeometry, BufferAttribute, BufferGeometry, CanvasTexture, CapsuleGeometry, CircleGeometry, Color,
+  AdditiveBlending, BoxGeometry, BufferAttribute, BufferGeometry, CanvasTexture, CapsuleGeometry, CatmullRomCurve3, CircleGeometry, Color,
   ConeGeometry, CylinderGeometry, DirectionalLight, DoubleSide, DynamicDrawUsage, Euler, ExtrudeGeometry, Group,
   HemisphereLight, InstancedMesh, Matrix4, Mesh, MeshBasicMaterial, MeshPhysicalMaterial, NeutralToneMapping,
   PCFShadowMap, PMREMGenerator, PerspectiveCamera, Plane, PlaneGeometry, QuadraticBezierCurve3, Quaternion, Raycaster, SRGBColorSpace,

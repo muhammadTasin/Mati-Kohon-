@@ -8,7 +8,7 @@ const fail = (msg) => { console.error('✗', msg); process.exit(1); };
 const t0 = performance.now();
 const parts = buildRongu(0.7);
 const ms = performance.now() - t0;
-const expected = ['head', 'shirt', 'pelvis', 'sleeve', 'upperArm', 'forearm', 'thigh', 'shin', 'shoeUpper', 'shoeSole', 'shoeCap', 'shoeLaces', 'badge', 'face', ...Object.keys(HAND_POSES).map(p => 'hand_' + p)];
+const expected = ['head', 'shirt', 'pelvis', 'sleeve', 'upperArm', 'forearm', 'thigh', 'shin', 'shoeUpper', 'shoeSole', 'shoeLaces', 'shortsHips', 'shortsLeg', 'badge', 'face', ...Object.keys(HAND_POSES).map(p => 'hand_' + p)];
 for (const name of expected) {
   const p = parts[name];
   if (!p) fail(`part ${name} is missing`);
