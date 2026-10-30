@@ -1,4 +1,5 @@
-// Rongu on the dashboard. He stands in a corner of the page, flies out to whatever he explains, lights it up with a
+// Rongu on the dashboard. On the landing page he is the hero: big, in front of the harvest photo, welcoming whoever
+// arrives and offering the full tour. Elsewhere he stands in a corner of the page, flies out to whatever he explains, lights it up with a
 // spotlight and talks in a speech bubble, in Bangla or English. Tours are lists of steps (companion-stories.js):
 // the visitor's story walks through Mati Kohon in chapters, the farmer's tour through their portal.
 //
@@ -8,7 +9,8 @@
 //    His eyes follow the pointer anywhere on the page. Drag him to carry him somewhere else; he stays there.
 //  - Idle, he renders fewer frames, sits down after a minute and dozes off after a few more.
 
-import { STORY, FARMER_TOUR } from './companion-stories.js';
+import { STORY, FARMER_TOUR, TOUR, HERO_LINES } from './companion-stories.js';
+import { authConfig } from './auth-client.js';
 
 const KEYS = { hidden: 'mk.rongu.hidden', face: 'mk.rongu.face', home: 'mk.rongu.home', progress: 'mk.rongu.progress.', greeted: 'mk.rongu.greeted', offered: 'mk.rongu.offered' };
 const store = (area) => ({
@@ -43,13 +45,10 @@ const UI = {
   close: { bn: 'বন্ধ করুন', en: 'Close' },
   later: { bn: 'পরে', en: 'Later' },
   hide: { bn: 'লুকিয়ে থাকো', en: 'Hide Rongu' },
-  startStory: { bn: 'গল্পটা দেখান', en: 'Show me the story' },
+  toStart: { bn: 'শুরুর পাতায় ফিরুন', en: 'Back to the start' },
+  cardsHint: { bn: 'যেকোনো কার্ডে চাপ দিন, আমি উড়ে গিয়ে দেখিয়ে দেব!', en: "Tap any card and I'll fly over and show you!" },
   restart: { bn: 'শুরু থেকে', en: 'From the start' },
   resume: { bn: 'অধ্যায় {n} থেকে চালিয়ে যান', en: 'Continue from chapter {n}' },
-  greetEntry: {
-    bn: 'স্বাগতম! আমি রঙ্গু, মাটি কহনের সঙ্গী। দর্শনার্থী হিসেবে ঢুকলে আমি পুরো গল্পটা ঘুরিয়ে দেখাব।',
-    en: "Welcome! I'm Rongu, the Mati Kohon companion. Come in as a visitor and I'll walk you through the whole story.",
-  },
   offerVisitor: {
     bn: 'স্বাগতম! আমি রঙ্গু। মাটি কহন কী করে, গল্পে গল্পে দেখাব? কয়েক মিনিট লাগবে।',
     en: "Welcome! I'm Rongu. Shall I show you what Mati Kohon does, as a short story? It takes a few minutes.",
@@ -85,6 +84,9 @@ let tour = null; // { def, i, token, el }
 let spotState = null; // { from, to, t, d }: the hole in the dim, moving from one part of the page to another
 let bubbleState = null; // { placement, timer, kind }
 let lastActive = performance.now(), lastPointer = 0, idle = 'awake', lostFor = 0;
+let stageOn = false, stageSlot = null, canvasScale = 1; // the landing page's hero stage, and his window's scale while he leaves it
+let heroTimer = 0, heroLine = 0; // what he says on the landing page
+let switchingRole = false, guestBlocked = false; // a tour entering the role a step needs
 
 const el = (tag, cls, attrs = {}) => {
   const node = document.createElement(tag);
@@ -147,8 +149,10 @@ function setFoot(p) {
 }
 
 // he must stay whole on screen: the body is about 0.6 of his window wide and 0.76 of it tall
-const bodyW = () => W * 0.6;
-const bodyH = () => H * 0.76;
+const DOCK_H = () => (viewW() < 640 ? 188 : 260); // his usual window (companion.css), 0.8 as wide as tall
+const sizeH = () => (stageOn ? DOCK_H() : H);
+const bodyW = () => sizeH() * 0.8 * 0.6;
+const bodyH = () => sizeH() * 0.76;
 function clampFoot(p) {
   const top = headerOffset();
   return { x: clamp(p.x, bodyW() / 2 + 4, viewW() - bodyW() / 2 - 4), y: clamp(p.y, top + bodyH() + 4, viewH() - 6) };
@@ -160,6 +164,126 @@ function homeFoot() {
   return clampFoot({ x: viewW() - bodyW() / 2 - 10, y: viewH() - 12 });
 }
 const centerFoot = () => clampFoot({ x: viewW() / 2, y: Math.min(viewH() - 24, viewH() / 2 + bodyH() * 0.7) });
+
+// ---------------------------------------------------------------------------------------------------------------------
+// the landing page: he stands big on #landingRongu (his window grows to the slot), talks, and shrinks as he flies off
+// ---------------------------------------------------------------------------------------------------------------------
+
+function sizeStage() {
+  const h = Math.max(DOCK_H(), Math.round(stageSlot.getBoundingClientRect().height));
+  dock.style.width = `${Math.round(h * 0.8)}px`;
+  dock.style.height = `${h}px`;
+  measure();
+}
+
+/** Puts him on the landing page's stage; false when there is no stage to stand on (not the landing page, hidden). */
+function enterStage() {
+  stageSlot = document.getElementById('landingRongu');
+  if (!rongu || !stageSlot || !onEntry() || !visible(stageSlot)) return false;
+  stageOn = true;
+  dock.classList.add('stage');
+  stageSlot.classList.add('ready');
+  flight = null;
+  canvasScale = 1;
+  canvas.style.transform = '';
+  sizeStage();
+  anchor = () => { const r = stageSlot.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.bottom - 2 }; };
+  anchorSmooth = false;
+  rongu.motion.home.yaw = REST_YAW;
+  setFoot(anchor());
+  return true;
+}
+
+/** His usual window again (at the end of the flight that takes him off the stage). */
+function leaveStage() {
+  if (!stageOn) return;
+  stageOn = false;
+  clearTimeout(heroTimer);
+  dock.classList.remove('stage');
+  dock.style.width = '';
+  dock.style.height = '';
+  canvasScale = 1;
+  canvas.style.transform = '';
+  measure();
+  setFoot(foot);
+}
+
+/** Back on the landing page (a role was left): he blinks onto the stage and waves. */
+function returnToStage() {
+  if (!rongu || tour || !onEntry() || stageOn || local.get(KEYS.hidden)) return;
+  dock.classList.add('blink');
+  setTimeout(() => {
+    const ok = enterStage();
+    dock.classList.remove('blink');
+    if (ok) heroTalk(0);
+  }, 200);
+}
+
+// Scrolling down the landing page he follows to his corner (the cards are where he is needed); back up, he returns
+let stageRatio = 1, hinted = false;
+const inFlight = () => Boolean(flight && !flight.done);
+const stageFoot = () => { const r = stageSlot.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.bottom - 2 }; };
+
+function goCorner() {
+  if (!rongu || !stageOn || tour || inFlight() || carrying) return;
+  anchor = null;
+  clearTimeout(heroTimer);
+  travelTo(homeFoot).then(() => {
+    if (tour || stageOn || !onEntry()) return;
+    if (!hinted) { hinted = true; showBubble({ text: t(UI.cardsHint), autoHide: 6 }); rongu.gesture('point'); }
+    syncStage();
+  });
+}
+
+function goStage() {
+  if (!rongu || stageOn || tour || inFlight() || carrying || !onEntry() || local.get(KEYS.hidden)) return;
+  stageSlot = document.getElementById('landingRongu');
+  if (!stageSlot || !visible(stageSlot)) return;
+  const was = { ...foot };
+  hideBubble();
+  stageOn = true;
+  dock.classList.add('stage');
+  stageSlot.classList.add('ready');
+  sizeStage(); // the window grows to the stage...
+  canvasScale = DOCK_H() / H; // ...but starts at the size he is now
+  canvas.style.transformOrigin = `${footOff.x.toFixed(1)}px ${footOff.y.toFixed(1)}px`;
+  canvas.style.transform = `scale(${canvasScale.toFixed(4)})`;
+  setFoot(was);
+  anchor = null;
+  travelTo(stageFoot, { scale: { from: canvasScale, to: 1, end: 'stage' } }).then(() => {
+    if (!stageOn || tour) return;
+    anchor = stageFoot;
+    rongu.motion.home.yaw = REST_YAW;
+    heroTalk();
+    syncStage();
+  });
+}
+
+/** Where he should be for how much of the hero shows. */
+function syncStage() {
+  if (!onEntry() || tour) return;
+  if (stageOn && stageRatio < 0.3) goCorner();
+  else if (!stageOn && stageRatio > 0.65) goStage();
+}
+
+/** One line on the landing page every few seconds, each with a gesture; twice through, then he just listens. */
+function heroTalk(at = heroLine) {
+  clearTimeout(heroTimer);
+  if (!stageOn || tour || !rongu || at >= HERO_LINES.length * 2) return;
+  const line = HERO_LINES[at % HERO_LINES.length];
+  heroLine = at + 1;
+  const say = document.getElementById('landingSay');
+  if (say && at > 0) {
+    say.classList.add('swap');
+    setTimeout(() => { say.textContent = t(line.text); say.classList.remove('swap'); }, 220);
+  }
+  if (idle === 'awake' && !document.hidden) {
+    if (line.tablet) rongu.setTablet(...line.tablet);
+    rongu.say(t(line.text), { seconds: Math.min(4, 0.8 + t(line.text).length / 24) });
+    if (!rongu.busy || at === 0) rongu.gesture(line.gesture);
+  }
+  heroTimer = setTimeout(() => heroTalk(), 7500);
+}
 
 function headerOffset() {
   const header = document.querySelector('.app-header');
@@ -195,16 +319,23 @@ async function waitVisible(selector, ms) {
 // flying: the window travels on an arc while he glides in it, facing where he goes
 // ---------------------------------------------------------------------------------------------------------------------
 
-function travelTo(target) {
+function travelTo(target, opts = {}) {
   const from = { ...foot }, to = target();
   const d = Math.hypot(to.x - from.x, to.y - from.y);
-  if (d < 18) { setFoot(to); flight = null; return Promise.resolve(); }
+  // a flight off the stage shrinks his window to its usual size on the way; opts.scale can grow it back onto the stage
+  const scale = opts.scale ?? (stageOn ? { from: canvasScale, to: DOCK_H() / H, end: 'leave' } : null);
+  const settle = () => {
+    if (scale?.end === 'leave') leaveStage();
+    else if (scale?.end === 'stage') { canvasScale = 1; canvas.style.transform = ''; }
+  };
+  if (d < 18) { setFoot(to); flight = null; settle(); return Promise.resolve(); }
   if (reduced) { // no flying: a short fade to the new place
     dock.classList.add('blink');
-    return wait(170).then(() => { setFoot(target()); dock.classList.remove('blink'); return wait(170); });
+    return wait(170).then(() => { settle(); setFoot(target()); dock.classList.remove('blink'); return wait(170); });
   }
   const inAir = flight && !flight.done;
-  const next = { from, target, dur: clamp(0.42 + d / 1300, 0.6, 1.35), t: inAir ? 0 : -0.36, vel: flight?.vel || { x: 0, y: 0 }, done: false, lift: Math.min(140, 30 + d * 0.22) };
+  const next = { from, target, dur: clamp(0.42 + d / 1300, 0.6, 1.35), t: inAir ? 0 : -0.36, vel: flight?.vel || { x: 0, y: 0 }, done: false, lift: Math.min(140, 30 + d * 0.22),
+    scale, settle };
   next.arrived = new Promise(r => { next.resolve = r; });
   if (flight && !flight.done) flight.resolve();
   flight = next;
@@ -229,7 +360,12 @@ function flyStep(dt) {
   const vx = (p.x - foot.x) / Math.max(dt, 1e-3), vy = (p.y - foot.y) / Math.max(dt, 1e-3);
   f.vel = { x: f.vel.x + (vx - f.vel.x) * 0.3, y: f.vel.y + (vy - f.vel.y) * 0.3 };
   setFoot(p);
-  if (u >= 1) { f.done = true; f.vel = { x: 0, y: 0 }; f.resolve(); }
+  if (f.scale) { // the big window scales around his feet (down off the stage, up onto it), then becomes the right window
+    canvasScale = f.scale.from + (f.scale.to - f.scale.from) * k;
+    canvas.style.transformOrigin = `${footOff.x.toFixed(1)}px ${footOff.y.toFixed(1)}px`;
+    canvas.style.transform = `scale(${canvasScale.toFixed(4)})`;
+  }
+  if (u >= 1) { f.done = true; f.vel = { x: 0, y: 0 }; f.settle(); f.resolve(); }
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -474,6 +610,7 @@ async function startTour(def, from = 0) {
   endTour(false, { quiet: true });
   hideBubble();
   wakeUp();
+  clearTimeout(heroTimer);
   tour = { def, i: -1, token: 0, el: null };
   document.documentElement.classList.add('rongu-touring');
   spotNow = null;
@@ -498,6 +635,18 @@ async function goStep(i, dir) {
   anchor = null; // he keeps his place on screen while the page moves
   rongu.lookAtScreen(null);
   rongu.mood(step.mood || 'calm');
+
+  // the full tour enters the role a step needs (the demo farmer, the guest manager); a role this server cannot open is skipped
+  if (step.role && role() !== step.role) {
+    const ok = await switchRole(step.role);
+    if (!live()) return;
+    if (!ok) {
+      let j = i + dir;
+      while (j >= 0 && j < def.steps.length && def.steps[j].role === step.role) j += dir;
+      if (j < 0) endTour(false); else goStep(j, dir);
+      return;
+    }
+  }
 
   if (step.screen && !onScreen(step.screen)) { window.switchScreen?.(step.screen); await wait(320); }
   if (step.tab && !document.getElementById(`fpanel-${step.tab}`)?.classList.contains('active')) { window.switchFarmerTab?.(step.tab); await wait(140); }
@@ -532,6 +681,28 @@ async function goStep(i, dir) {
   perform(step, live);
 }
 
+/** Enters a role for the tour: the visitor, the demo farmer (one click) or the guest manager (GUEST_MODE). */
+async function switchRole(next) {
+  switchingRole = true;
+  try {
+    if (next === 'officer' && guestBlocked) return false;
+    if (next === 'visitor') {
+      if (role()) window.signOutRole?.(); // from a demo role back to the visitor
+      window.chooseRole?.('visitor');
+    } else if (next === 'farmer') {
+      await window.farmerDemoSignIn?.();
+    } else if (next === 'officer') {
+      if (!(await authConfig())?.guestMode) { guestBlocked = true; return false; }
+      await window.guestManagerSignIn?.();
+    }
+    for (let k = 0; k < 20 && role() !== next; k++) await wait(100);
+    if (next === 'officer' && role() !== next) guestBlocked = true;
+    return role() === next;
+  } finally {
+    setTimeout(() => { switchingRole = false; }, 400);
+  }
+}
+
 function showStepBubble(step) {
   const { def, i } = tour;
   const ch = step.chapter, last = i === def.steps.length - 1;
@@ -544,6 +715,7 @@ function showStepBubble(step) {
     actions: [
       ...(i > 0 ? [{ label: t(UI.back), icon: 'arrow_back', quiet: true, run: () => goStep(i - 1, -1) }] : []),
       { label: t(UI.chapters), icon: 'format_list_numbered', quiet: true, run: showChapters },
+      ...(last && def.backToStart ? [{ label: t(UI.toStart), icon: 'home', quiet: true, run: () => { endTour(true, { quiet: true }); window.signOutRole?.(); } }] : []),
       last
         ? { label: t(UI.finish), icon: 'check', primary: true, run: () => endTour(true) }
         : { label: t(UI.next), icon: 'arrow_forward', iconAfter: true, primary: true, run: () => goStep(i + 1, 1) },
@@ -596,6 +768,10 @@ function endTour(finished, { quiet = false } = {}) {
   rongu.mood('calm');
   rongu.lookAtScreen(null);
   rongu.motion.home.yaw = REST_YAW;
+  if (onEntry()) { // stopped before leaving the landing page: back on the stage
+    if (stageOn) { enterStage(); heroTalk(); } else returnToStage();
+    return;
+  }
   anchor = null;
   travelTo(homeFoot).then(() => {
     if (tour) return;
@@ -624,14 +800,11 @@ function storyActions(def, { onEnter = null } = {}) {
   return [{ label: t(def.title), icon: 'auto_stories', primary: true, run: go(0) }];
 }
 
-let enteringAsVisitor = false;
-const enterAsVisitor = () => { enteringAsVisitor = true; window.chooseRole?.('visitor'); setTimeout(() => { enteringAsVisitor = false; }, 1500); };
-
 function openMenu(focus = false) {
   if (tour) { showStepBubble(tour.def.steps[tour.i]); return; }
   const r = role();
   let actions;
-  if (onEntry() || !r) actions = storyActions(STORY, { onEnter: enterAsVisitor });
+  if (onEntry() || !r || r === 'visitor') actions = storyActions(TOUR);
   else if (r === 'farmer') actions = storyActions(FARMER_TOUR);
   else actions = storyActions(STORY);
   actions.push({ label: t(UI.hide), icon: 'visibility_off', quiet: true, run: hideRongu });
@@ -639,24 +812,15 @@ function openMenu(focus = false) {
 }
 
 function greet() {
-  if (onEntry()) {
-    if (session.get(KEYS.greeted)) return;
-    session.set(KEYS.greeted, '1');
-    rongu.gesture('wave');
-    showBubble({ kind: 'offer', kicker: t(UI.name), text: t(UI.greetEntry), autoHide: 16, actions: [
-      { label: t(UI.startStory), icon: 'auto_stories', primary: true, run: () => { hideBubble(); enterAsVisitor(); setTimeout(() => startTour(STORY, 0), 450); } },
-      { label: t(UI.later), quiet: true, run: laterLine },
-    ] });
-    return;
-  }
+  if (onEntry()) { if (stageOn) heroTalk(0); return; } // the landing page greets with his own lines
   offerForRole();
 }
 
 function offerForRole() {
   const r = role();
-  if (!r || tour || enteringAsVisitor || session.get(KEYS.offered + r)) return;
+  if (!r || tour || switchingRole || session.get(KEYS.offered + r)) return;
   session.set(KEYS.offered + r, '1');
-  const def = r === 'farmer' ? FARMER_TOUR : STORY;
+  const def = r === 'farmer' ? FARMER_TOUR : r === 'visitor' ? TOUR : STORY;
   if (savedProgress(def) === 'done' && r !== 'visitor') return;
   const text = t(r === 'farmer' ? UI.offerFarmer : r === 'officer' ? UI.offerOfficer : UI.offerVisitor);
   rongu.gesture(r === 'farmer' ? 'salam' : 'wave');
@@ -678,8 +842,10 @@ async function hideRongu() {
   if (!reduced) await rongu.act('dive', { splash: 'soil', stay: true });
   dock.classList.remove('on');
   await wait(300);
+  leaveStage();
   rongu.pause();
   local.set(KEYS.hidden, '1');
+  document.documentElement.classList.add('rongu-off');
   showPill();
 }
 
@@ -698,16 +864,17 @@ async function showRongu() {
   pill.classList.remove('on');
   pill.hidden = true;
   local.set(KEYS.hidden, null);
-  if (!rongu) { await load(); showBubble({ text: t(UI.backAgain), autoHide: 4 }); return; }
+  document.documentElement.classList.remove('rongu-off');
+  if (!rongu) { await load(); if (!stageOn) showBubble({ text: t(UI.backAgain), autoHide: 4 }); return; }
   rongu.resume();
   anchor = null; flight = null;
-  setFoot(homeFoot());
+  if (!enterStage()) setFoot(homeFoot());
   rongu.motion.stopActions();
   const up = reduced ? Promise.resolve() : rongu.act('emerge', { splash: 'soil' });
   requestAnimationFrame(() => requestAnimationFrame(() => dock.classList.add('on')));
   await up;
   rongu.gesture('wave');
-  showBubble({ text: t(UI.backAgain), autoHide: 4 });
+  if (stageOn) heroTalk(0); else showBubble({ text: t(UI.backAgain), autoHide: 4 });
 }
 
 // ---------------------------------------------------------------------------------------------------------------------
@@ -750,13 +917,18 @@ function watchIdle() {
     else if (idle === 'sitting' && quiet > 180000) { idle = 'asleep'; rongu.sleep(); }
   }, 4000);
   window.addEventListener('pointermove', () => { lastPointer = performance.now(); if (idle !== 'awake') wakeUp(); else lastActive = lastPointer; }, { passive: true });
-  for (const ev of ['keydown', 'scroll', 'pointerdown']) window.addEventListener(ev, () => { if (idle !== 'awake') wakeUp(); else lastActive = performance.now(); }, { passive: true });
+  for (const ev of ['keydown', 'scroll', 'pointerdown']) window.addEventListener(ev, () => { lastPointer = performance.now(); if (idle !== 'awake') wakeUp(); else lastActive = lastPointer; }, { passive: true });
   // a wheel or a swipe during a tour's scroll gives the page back to the user
   for (const ev of ['wheel', 'touchmove']) window.addEventListener(ev, stopScroll, { passive: true });
 }
 
 function wire() {
   rongu.on('frame', tick);
+  const stageBox = document.getElementById('landingStage');
+  if (stageBox) {
+    new IntersectionObserver((entries) => { stageRatio = entries[entries.length - 1].intersectionRatio; syncStage(); },
+      { threshold: [0, 0.3, 0.65, 1] }).observe(stageBox);
+  }
   rongu.on('poke', (kind) => {
     wakeUp();
     if (kind === 'backflip' || kind === 'pet' || tour) return;
@@ -783,6 +955,7 @@ function wire() {
   });
 
   window.addEventListener('resize', () => {
+    if (stageOn) sizeStage();
     measure();
     if (!anchor && !flight && !carrying) setFoot(tour ? clampFoot(foot) : homeFoot());
   });
@@ -798,6 +971,8 @@ function wire() {
   // the language and the role: re-say the bubble in the new language; greet a role once per session
   new MutationObserver(() => {
     refreshLabels();
+    const say = document.getElementById('landingSay');
+    if (stageOn && say && heroLine > 0) say.textContent = t(HERO_LINES[(heroLine - 1) % HERO_LINES.length].text);
     if (tour && bubbleState?.kind === 'tour' && tour.i >= 0 && !bubble.querySelector('.rb-list:not([hidden])')) showStepBubble(tour.def.steps[tour.i]);
     else if (bubbleState && bubbleState.kind !== 'tour') hideBubble();
   }).observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
@@ -805,8 +980,13 @@ function wire() {
   new MutationObserver(() => {
     if (role() === lastRole) return;
     lastRole = role();
-    if (tour) endTour(false, { quiet: true });
-    if (!lastRole) { if (bubbleState?.kind === 'offer') hideBubble(); return; }
+    if (tour && !switchingRole) endTour(false, { quiet: true });
+    if (!lastRole) { // back on the landing page
+      if (bubbleState?.kind === 'offer') hideBubble();
+      if (!tour) setTimeout(returnToStage, 250);
+      return;
+    }
+    if (stageOn && !tour) { anchor = null; travelTo(homeFoot); } // a role card was chosen: off the stage, to his corner
     setTimeout(offerForRole, 900);
   }).observe(document.body, { attributes: true, attributeFilter: ['data-role'] });
 }
@@ -828,11 +1008,12 @@ function load() {
     rongu = await createRongu(canvas, { framing: 'dock', passThrough: true, carry: true, restYaw: REST_YAW });
     window.rongu = rongu; // handy in the console, with the companion's own state and tours
     window.ronguCompanion = {
-      state: () => ({ foot, headOff, footOff, W, H, anchored: !!anchor, flying: !!flight && !flight.done, step: tour?.i ?? null, placement: bubbleState?.placement ?? null, idle }),
-      story: (from = 0) => startTour(STORY, from), farmerTour: (from = 0) => startTour(FARMER_TOUR, from), stop: () => endTour(false),
+      state: () => ({ foot, headOff, footOff, W, H, stageOn, canvasScale, anchored: !!anchor, flying: !!flight && !flight.done, step: tour?.i ?? null, placement: bubbleState?.placement ?? null, idle }),
+      story: (from = 0) => startTour(STORY, from), farmerTour: (from = 0) => startTour(FARMER_TOUR, from), tour: (from = 0) => startTour(TOUR, from), stop: () => endTour(false),
+      heroSeen: (ratio) => { stageRatio = ratio; syncStage(); }, // what the hero's visibility watcher reports (for tests)
     };
     measure();
-    setFoot(homeFoot());
+    if (!enterStage()) setFoot(homeFoot());
     wire();
     const up = reduced ? Promise.resolve() : rongu.act('emerge', { splash: 'soil' });
     requestAnimationFrame(() => requestAnimationFrame(() => dock.classList.add('on')));
@@ -842,13 +1023,42 @@ function load() {
   return loading;
 }
 
+/** Without 3D (or before he can come): enter the role and open the part, no flying. */
+async function plainShow(step) {
+  if (step.role && role() !== step.role && !(await switchRole(step.role))) { if (step.role === 'officer') window.chooseRole?.('officer'); return; }
+  if (step.screen && !onScreen(step.screen)) window.switchScreen?.(step.screen);
+  if (step.tab) window.switchFarmerTab?.(step.tab);
+  const node = step.target ? await waitVisible(step.target, 1600) : null;
+  node?.scrollIntoView({ behavior: reduced ? 'auto' : 'smooth', block: 'center' });
+}
+
+/** The landing page's buttons and cards: the full tour from a chapter (0 = the start). */
+function showChapter(chapter = 0) {
+  const from = Math.max(0, TOUR.steps.findIndex(s => s.chapter === chapter));
+  const step = TOUR.steps[from];
+  if (step.role === 'officer' && guestBlocked) { window.chooseRole?.('officer'); return; } // no guest mode: the sign-in card
+  if (!webglWorks()) { plainShow(step); return; }
+  if (local.get(KEYS.hidden)) showRongu().then(() => startTour(TOUR, from));
+  else ready().then(() => (rongu ? startTour(TOUR, from) : plainShow(step)));
+}
+
 function boot() {
-  if (!webglWorks()) return;
+  window.ronguShow = showChapter;
+  // without guest mode the manager cards lead to the sign-in card instead of the tour
+  authConfig().then((cfg) => {
+    if (cfg && !cfg.guestMode) {
+      guestBlocked = true;
+      document.querySelectorAll('.feature-tile[data-role="officer"]').forEach(b => b.classList.add('locked'));
+    }
+  });
+  if (!webglWorks()) { document.documentElement.classList.add('no-rongu'); return; }
   build();
   watchIdle();
-  if (local.get(KEYS.hidden)) { showPill(); return; }
+  if (local.get(KEYS.hidden)) { document.documentElement.classList.add('rongu-off'); showPill(); return; }
+  // on the landing page he is the hero: come at once; elsewhere, when the page is idle
   const go = () => load();
-  if ('requestIdleCallback' in window) requestIdleCallback(go, { timeout: 2500 }); else setTimeout(go, 1200);
+  if (onEntry()) go();
+  else if ('requestIdleCallback' in window) requestIdleCallback(go, { timeout: 2500 }); else setTimeout(go, 1200);
 }
 
 if (document.readyState === 'complete') boot(); else window.addEventListener('load', boot, { once: true });

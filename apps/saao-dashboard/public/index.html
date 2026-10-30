@@ -87,18 +87,106 @@
   <!-- ROLE PICKER: shown before the dashboard; each role sees only its own tabs -->
   <section class="entry-screen" id="entryScreen" aria-labelledby="entryTitle">
     <div class="entry-inner">
-      <figure class="entry-photo">
-        <img src="img/photos/harvest-home.jpg" alt="Farmers carrying the paddy harvest home across a field in Bangladesh" width="1200" height="760" fetchpriority="high">
-        <figcaption><span data-i18n="photo.harvestHome">আমন কাটা শেষে ধান ঘরে তোলা</span> · <a href="#photoCredits" class="credit-link" onclick="showPhotoCredits(event)">Zaheed Sarwer Khan, CC BY 4.0</a></figcaption>
-      </figure>
-      <div class="entry-step" id="entryChoose">
-        <p class="entry-eyebrow" data-i18n="entry.eyebrow">মাটি কহন · নাসার তথ্যে মাঠের পরামর্শ</p>
-        <h1 id="entryTitle" data-i18n="entry.title">কীভাবে প্রবেশ করবেন?</h1>
-        <p class="entry-lead" data-i18n="entry.lead">আপনার ভূমিকা বেছে নিন। দর্শনার্থী হিসেবে সাইন-ইন ছাড়াই খোলা তথ্য দেখা যায়।</p>
-        <p class="entry-checking" id="entryChecking" role="status" hidden>
-          <span class="material-symbols-outlined" aria-hidden="true">progress_activity</span>
-          <span data-i18n="entry.checking">আগের সেশন যাচাই হচ্ছে…</span>
-        </p>
+      <div class="entry-step landing" id="entryChoose">
+        <!-- HERO: Rongu welcomes whoever arrives and offers to show them round (companion.js puts him on #landingRongu) -->
+        <div class="landing-hero">
+          <div class="landing-copy">
+            <p class="entry-eyebrow" data-i18n="entry.eyebrow">মাটি কহন · নাসার তথ্যে মাঠের পরামর্শ</p>
+            <h1 id="entryTitle" data-i18n="landing.title">আমি রঙ্গু। চলুন, মাটি কহন ঘুরে দেখাই।</h1>
+            <p class="landing-lead" data-i18n="landing.lead">নাসার স্যাটেলাইট আর ২৫ মৌসুমের তথ্য থেকে বাংলাদেশের কৃষকের জন্য ফসল চক্র, আবহাওয়া আর মাঠের আগাম সতর্কতা। আমি উড়ে উড়ে প্রতিটি অংশ দেখাব: দর্শনার্থী, কৃষক আর মাঠ কর্মকর্তা, তিনজনের চোখেই।</p>
+            <div class="landing-actions">
+              <button class="btn btn-primary landing-cta" type="button" onclick="ronguShow(0)">
+                <span class="material-symbols-outlined" aria-hidden="true">play_arrow</span>
+                <span data-i18n="landing.tour">রঙ্গুর সাথে পুরো সফর</span>
+              </button>
+              <button class="btn btn-secondary landing-cta" type="button" onclick="chooseRole('visitor')">
+                <span class="material-symbols-outlined" aria-hidden="true">travel_explore</span>
+                <span data-i18n="landing.explore">নিজে ঘুরে দেখুন</span>
+              </button>
+            </div>
+            <p class="landing-time"><span class="material-symbols-outlined" aria-hidden="true">schedule</span> <span data-i18n="landing.time">পুরো সফর প্রায় ৫ মিনিট; যেকোনো সময় থামানো যায়।</span></p>
+            <ul class="landing-facts">
+              <li><strong data-num="544">৫৪৪</strong><span data-i18n="landing.fact1">উপজেলার নাসা তথ্য</span></li>
+              <li><strong data-num="25">২৫</strong><span data-i18n="landing.fact2">মৌসুমের পানি রি-প্লে</span></li>
+              <li><strong data-num="7">৭</strong><span data-i18n="landing.fact3">দিকে ফসল চক্রের তুলনা</span></li>
+            </ul>
+            <p class="entry-checking" id="entryChecking" role="status" hidden>
+              <span class="material-symbols-outlined" aria-hidden="true">progress_activity</span>
+              <span data-i18n="entry.checking">আগের সেশন যাচাই হচ্ছে…</span>
+            </p>
+          </div>
+          <div class="landing-stage" id="landingStage">
+            <figure class="landing-photo">
+              <img src="img/photos/harvest-home.jpg" alt="Farmers carrying the paddy harvest home across a field in Bangladesh" width="1200" height="760" fetchpriority="high">
+              <figcaption><span data-i18n="photo.harvestHome">আমন কাটা শেষে ধান ঘরে তোলা</span> · <a href="#photoCredits" class="credit-link" onclick="showPhotoCredits(event)">Zaheed Sarwer Khan, CC BY 4.0</a></figcaption>
+            </figure>
+            <div class="landing-rongu" id="landingRongu" aria-hidden="true">
+              <span class="landing-rongu-wait" data-i18n="landing.loading">রঙ্গু আসছে…</span>
+            </div>
+            <p class="landing-say" id="landingSay" data-i18n="landing.say1">স্বাগতম! আমি রঙ্গু, মাটি কহনের সঙ্গী।</p>
+          </div>
+        </div>
+
+        <!-- WHAT RONGU SHOWS: each card starts the tour at that part (and enters the role it needs) -->
+        <section class="landing-section" aria-labelledby="featuresTitle">
+          <h2 id="featuresTitle" data-i18n="landing.featuresTitle">রঙ্গু যা যা দেখাবে</h2>
+          <p class="landing-sub" data-i18n="landing.featuresSub">যেকোনো কার্ডে চাপ দিন: রঙ্গু উড়ে গিয়ে সেটি দেখিয়ে দেবে, দরকার হলে সেই ভূমিকায় ঢুকে।</p>
+          <div class="feature-grid">
+            <button class="feature-tile" type="button" data-chapter="2" data-role="visitor" onclick="ronguShow(2)">
+              <span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">map</span></span>
+              <span class="feature-name" data-i18n="feat.map.name">দেশের মানচিত্র</span>
+              <span class="feature-desc" data-i18n="feat.map.desc">৫৪৪টি উপজেলার নাসা তথ্য; একটি জায়গা বাছলে পুরো পাতা সেটি দেখায়</span>
+              <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
+            </button>
+            <button class="feature-tile" type="button" data-chapter="3" data-role="visitor" onclick="ronguShow(3)">
+              <span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">flood</span></span>
+              <span class="feature-name" data-i18n="feat.warn.name">আগাম সতর্কতা</span>
+              <span class="feature-desc" data-i18n="feat.warn.desc">হাওরের আকস্মিক বন্যা, ফুল আসার সময় গরম রাত, গবাদিপশুর তাপ চাপ</span>
+              <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
+            </button>
+            <button class="feature-tile" type="button" data-chapter="4" data-role="visitor" onclick="ronguShow(4)">
+              <span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">partly_cloudy_day</span></span>
+              <span class="feature-name" data-i18n="feat.weather.name">আবহাওয়া</span>
+              <span class="feature-desc" data-i18n="feat.weather.desc">যেকোনো উপজেলার ৭ দিনের পূর্বাভাস, সাথে নাসা POWER</span>
+              <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
+            </button>
+            <button class="feature-tile" type="button" data-chapter="5" data-role="farmer" onclick="ronguShow(5)">
+              <span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">agriculture</span></span>
+              <span class="feature-name" data-i18n="feat.farmer.name">কৃষকের পোর্টাল</span>
+              <span class="feature-desc" data-i18n="feat.farmer.desc">আজকের পরামর্শ বাংলায় শুনুন, প্রশ্ন করুন</span>
+              <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
+            </button>
+            <button class="feature-tile" type="button" data-chapter="6" data-role="farmer" onclick="ronguShow(6)">
+              <span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">autorenew</span></span>
+              <span class="feature-name" data-i18n="feat.planner.name">ফসল চক্র পরিকল্পনা</span>
+              <span class="feature-desc" data-i18n="feat.planner.desc">জমি আর অগ্রাধিকার দিলে কম পানির ফসল চক্র</span>
+              <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
+            </button>
+            <button class="feature-tile" type="button" data-chapter="7" data-role="officer" onclick="ronguShow(7)">
+              <span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">assignment_ind</span></span>
+              <span class="feature-name" data-i18n="feat.desk.name">ম্যানেজার ডেস্ক</span>
+              <span class="feature-desc" data-i18n="feat.desk.desc">কৃষকের কেস, কল-ব্যাক আর মাঠ পর্যবেক্ষণ</span>
+              <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
+            </button>
+            <button class="feature-tile" type="button" data-chapter="8" data-role="officer" onclick="ronguShow(8)">
+              <span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">call</span></span>
+              <span class="feature-name" data-i18n="feat.calls.name">কল ও এসএমএস</span>
+              <span class="feature-desc" data-i18n="feat.calls.desc">রাজি কৃষককে প্রতিদিনের পরামর্শ কল; ডেমোতে সব ড্রাই রান</span>
+              <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
+            </button>
+            <button class="feature-tile" type="button" data-chapter="9" data-role="officer" onclick="ronguShow(9)">
+              <span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">satellite_alt</span></span>
+              <span class="feature-name" data-i18n="feat.evidence.name">স্যাটেলাইট প্রমাণ</span>
+              <span class="feature-desc" data-i18n="feat.evidence.desc">৭ দিকে তুলনা, আর প্রতিটি সংখ্যার নাসা উৎস</span>
+              <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
+            </button>
+          </div>
+        </section>
+
+        <!-- ROLES: straight in, without the tour -->
+        <section class="landing-section" aria-labelledby="rolesTitle">
+          <h2 id="rolesTitle" data-i18n="entry.title">কীভাবে প্রবেশ করবেন?</h2>
+          <p class="landing-sub" data-i18n="entry.lead">আপনার ভূমিকা বেছে নিন। দর্শনার্থী হিসেবে সাইন-ইন ছাড়াই খোলা তথ্য দেখা যায়।</p>
         <div class="role-grid">
           <button class="role-card" type="button" onclick="chooseRole('visitor')">
             <img class="role-photo" src="img/photos/nasa-modis-bangladesh.jpg" alt="" loading="lazy">
@@ -127,6 +215,7 @@
           <span class="material-symbols-outlined" aria-hidden="true">info</span>
           <span data-i18n="entry.foot">কৃষক ও অতিথি প্রবেশ এখানে ডেমো: নমুনা তথ্য, নিরাপদ বা যাচাই করা লগইন নয়, কোনো কল বা এসএমএস যায় না। আসল ম্যানেজাররা নিজের অ্যাকাউন্টে প্রবেশ করেন।</span>
         </p>
+        </section>
       </div>
 
       <div class="entry-step entry-form-card" id="entryFarmer" hidden aria-labelledby="entryFarmerTitle">
