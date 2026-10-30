@@ -84,6 +84,9 @@ function headColor(x, y, z, nx, ny) {
   }
   // pale throat under the jaw
   c = mixRgb(c, C.throat, smoothstep(-0.2, -0.7, ny) * smoothstep(1.45, 1.33, y) * smoothstep(-0.02, 0.14, z));
+  const throat = smoothstep(1.33, 1.25, y) * smoothstep(-0.06, 0.06, z);
+  const ridge = smoothstep(0.35, 0.5, Math.abs(((y * 36) % 1 + 1) % 1 - 0.5) * 2) * 0.5;
+  c = mixRgb(c, mixRgb(C.throat, C.bellyLine, ridge), throat);
   // a slightly deeper lip around each eye socket
   const ed = Math.sqrt((Math.abs(x) - RIG.eye.x) ** 2 + (y - RIG.eye.y) ** 2 + (z - RIG.eye.z) ** 2);
   c = mixRgb(c, C.skinDeep, smoothstep(0.175, 0.142, ed) * 0.45);
@@ -92,7 +95,7 @@ function headColor(x, y, z, nx, ny) {
 // how much of the scale pattern shows: faint on the face, more on the crown and the back
 function headScales(x, y, z, nx, ny) {
   const crown = smoothstep(1.7, 1.8, y), back = smoothstep(0.0, -0.22, z);
-  return Math.max(crown, back) * smoothstep(-0.2, 0.1, ny);
+  return Math.max(crown, back) * smoothstep(-0.2, 0.1, ny) * smoothstep(1.3, 1.38, y);
 }
 
 // ---------- shirt ----------
@@ -105,9 +108,9 @@ export function shirtSdf(x, y, z) {
   d = smin(d, sphere(Math.abs(x), y, z, 0.27, 1.035, -0.02, 0.112), 0.09);
   d = smin(d, ellipsoid(x, y, z, 0, 1.1, -0.1, 0.25, 0.13, 0.18), 0.08); // the yoke across the upper back
   d = smax(d, 0.585 - y, 0.028);
-  d = smax(d, -capsule(x, y, z, 0, 1.32, -0.04, 0, 1.05, -0.04, 0.168), 0.02);
+  d = smax(d, -capsule(x, y, z, 0, 1.32, -0.045, 0, 1.05, -0.045, 0.15), 0.02);
   d = smax(d, y - 1.2, 0.025);
-  d = smin(d, torusY(x, y, z, 0, 1.178, -0.042, 0.196, 0.022), 0.014);
+  d = smin(d, torusY(x, y, z, 0, 1.182, -0.046, 0.172, 0.026), 0.014);
   // soft folds near the hem and under the arms
   d += 0.0035 * Math.sin(x * 31 + z * 7) * smoothstep(0.78, 0.6, y);
   return d;
