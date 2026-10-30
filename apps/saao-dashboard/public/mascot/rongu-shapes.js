@@ -13,14 +13,14 @@ export const RIG = {
   chest: [0, 0.8, -0.02],
   neck: [0, 1.19, -0.04],
   eye: { x: 0.215, y: 1.665, z: 0.25, r: 0.14 },
-  shoulder: [0.27, 1.04, -0.02],
+  shoulder: [0.31, 1.04, -0.02],
   upperArm: 0.21,
   forearm: 0.2,
   hip: [0.13, 0.5, 0],
   thigh: 0.2,
   shin: 0.18,
-  tailRoot: [0, 0.52, -0.25],
-  armRest: 0.22, // the arms hang slightly out from the body
+  tailRoot: [0.03, 0.54, -0.17],
+  armRest: 0.32, // the arms hang slightly out from the body, clear of the shirt
 };
 
 export const COLORS = {
@@ -54,7 +54,7 @@ export function headSdf(x, y, z) {
   d = smin(d, ellipsoid(x, y, z, 0, 1.44, 0.04, 0.44, 0.235, 0.355), 0.12); // broad round face
   d = smin(d, ellipsoid(x, y, z, 0, 1.465, 0.22, 0.29, 0.165, 0.16), 0.09); // muzzle
   d = smin(d, sphere(ax, y, z, EYE_T.x, EYE_T.y, EYE_T.z, EYE_T.r), 0.07);
-  d = smin(d, capsule(x, y, z, 0, 1.32, -0.05, 0, 1.08, -0.05, 0.18), 0.08);
+  d = smin(d, capsule(x, y, z, 0, 1.32, -0.05, 0, 1.13, -0.05, 0.148), 0.08);
   // casque: a thick fan rising behind the head, thinning to its rim
   const [ly, lz] = casqueLocal(y, z);
   const taper = 1 - 0.45 * clamp((y - 1.8) / 0.3, 0, 1);
@@ -91,18 +91,18 @@ function headColor(x, y, z, nx, ny) {
 }
 // how much of the scale pattern shows: faint on the face, more on the crown and the back
 function headScales(x, y, z, nx, ny) {
-  const crown = smoothstep(1.68, 1.82, y), back = smoothstep(0.12, -0.2, z), throat = smoothstep(-0.25, -0.6, ny);
-  return 0.28 + 0.72 * Math.max(crown, back, throat);
+  const crown = smoothstep(1.7, 1.8, y), back = smoothstep(0.0, -0.22, z);
+  return Math.max(crown, back) * smoothstep(-0.2, 0.1, ny);
 }
 
 // ---------- shirt ----------
 export function shirtSdf(x, y, z) {
   const bound = ellipsoid(x, y, z, 0, 0.88, -0.02, 0.48, 0.46, 0.38);
   if (bound > 0.08) return bound;
-  let d = ellipsoid(x, y, z, 0, 0.88, -0.02, 0.31, 0.34, 0.25);
-  d = smin(d, ellipsoid(x, y, z, 0, 0.72, 0.02, 0.33, 0.2, 0.26), 0.12);
-  d = smin(d, ellipsoid(x, y, z, 0, 0.625, 0.01, 0.345, 0.06, 0.275), 0.06); // a little flare at the hem
-  d = smin(d, sphere(Math.abs(x), y, z, 0.25, 1.035, -0.02, 0.112), 0.09);
+  let d = ellipsoid(x, y, z, 0, 0.88, -0.02, 0.29, 0.34, 0.25);
+  d = smin(d, ellipsoid(x, y, z, 0, 0.72, 0.02, 0.31, 0.2, 0.26), 0.12);
+  d = smin(d, ellipsoid(x, y, z, 0, 0.625, 0.01, 0.325, 0.06, 0.275), 0.06); // a little flare at the hem
+  d = smin(d, sphere(Math.abs(x), y, z, 0.27, 1.035, -0.02, 0.112), 0.09);
   d = smax(d, 0.585 - y, 0.028);
   d = smax(d, -capsule(x, y, z, 0, 1.32, -0.04, 0, 1.05, -0.04, 0.168), 0.02);
   d = smax(d, y - 1.2, 0.025);
@@ -123,7 +123,7 @@ export function pelvisSdf(x, y, z) {
   if (bound > 0.08) return bound;
   let d = ellipsoid(x, y, z, 0, 0.585, 0, 0.28, 0.155, 0.232);
   d = smin(d, sphere(Math.abs(x), y, z, 0.13, 0.5, 0, 0.098), 0.08);
-  d = smin(d, capsule(x, y, z, 0, 0.56, -0.1, 0, RIG.tailRoot[1], RIG.tailRoot[2] + 0.02, 0.095, 0.08), 0.06);
+  d = smin(d, capsule(x, y, z, 0, 0.56, -0.1, 0.05, 0.52, -0.21, 0.1, 0.09), 0.06);
   return d;
 }
 function pelvisColor(x, y, z, nx, ny, nz) {
@@ -140,8 +140,8 @@ export const forearmSdf = limb(RIG.forearm, 0.062, 0.056);
 export const thighSdf = limb(RIG.thigh, 0.098, 0.09);
 export const shinSdf = limb(RIG.shin + 0.04, 0.09, 0.08);
 export function sleeveSdf(x, y, z) {
-  let d = capsule(x, y, z, 0, 0.01, 0, 0, -0.125, 0, 0.104, 0.114);
-  d = smax(d, -(y + 0.12), 0.016);
+  let d = capsule(x, y, z, 0, 0.01, 0, 0, -0.16, 0, 0.104, 0.116);
+  d = smax(d, -(y + 0.155), 0.016);
   return d;
 }
 const skinColor = () => C.skin;
@@ -347,12 +347,12 @@ export function buildRongu(quality = 1) {
   const parts = {};
   parts.head = meshPart(headSdf, [-0.56, 1.02, -0.64], [0.56, 2.3, 0.5], 0.0112 * q, headColor, { pivot: RIG.neck, aoScene: sceneSdf, scales: headScales });
   parts.shirt = meshPart(shirtSdf, [-0.48, 0.52, -0.36], [0.48, 1.26, 0.36], 0.0135 * q, shirtColor, { pivot: RIG.chest, aoScene: sceneSdf, tint: 0, scales: 0 });
-  parts.pelvis = meshPart(pelvisSdf, [-0.34, 0.34, -0.38], [0.34, 0.78, 0.3], 0.016 * q, pelvisColor, { pivot: RIG.hips, aoScene: sceneSdf, scales: 0.6 });
+  parts.pelvis = meshPart(pelvisSdf, [-0.34, 0.34, -0.38], [0.34, 0.78, 0.3], 0.016 * q, pelvisColor, { pivot: RIG.hips, aoScene: sceneSdf, scales: 0 });
   parts.sleeve = meshPart(sleeveSdf, [-0.13, -0.16, -0.13], [0.13, 0.13, 0.13], 0.011 * q, () => C.shirt, { worldY: RIG.shoulder[1], tint: 0, scales: 0 });
   parts.upperArm = meshPart(upperArmSdf, [-0.085, -0.3, -0.085], [0.085, 0.085, 0.085], 0.011 * q, skinColor, { worldY: RIG.shoulder[1] });
   parts.forearm = meshPart(forearmSdf, [-0.08, -0.28, -0.08], [0.08, 0.08, 0.08], 0.011 * q, skinColor, { worldY: RIG.shoulder[1] - RIG.upperArm });
   for (const pose of Object.keys(HAND_POSES)) {
-    parts['hand_' + pose] = meshPart(handSdf(pose), [-0.09, -0.24, -0.08], [0.1, 0.08, 0.16], 0.0075 * q, handColor, { worldY: 0.6, scales: 0.75 });
+    parts['hand_' + pose] = meshPart(handSdf(pose), [-0.09, -0.24, -0.08], [0.1, 0.08, 0.16], 0.0075 * q, handColor, { worldY: 0.6, scales: 0 });
   }
   parts.thigh = meshPart(thighSdf, [-0.105, -0.31, -0.105], [0.105, 0.105, 0.105], 0.012 * q, skinColor, { worldY: RIG.hip[1] });
   parts.shin = meshPart(shinSdf, [-0.1, -0.33, -0.1], [0.1, 0.1, 0.1], 0.012 * q, skinColor, { worldY: RIG.hip[1] - RIG.thigh });

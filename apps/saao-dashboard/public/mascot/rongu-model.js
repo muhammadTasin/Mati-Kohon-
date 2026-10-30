@@ -203,7 +203,7 @@ function partGeometry(p) {
 }
 
 // Give a plain three.js geometry the skin attributes (one colour, a place on the body).
-function skinned(g, hex, bodyT, tint = 1, scales = 0.3) {
+function skinned(g, hex, bodyT, tint = 1, scales = 0) {
   const n = g.attributes.position.count, c = lin(hex);
   const col = new Float32Array(n * 3), mood = new Float32Array(n * 3);
   for (let i = 0; i < n; i++) { col[i * 3] = c.r; col[i * 3 + 1] = c.g; col[i * 3 + 2] = c.b; mood[i * 3] = bodyT; mood[i * 3 + 1] = tint; mood[i * 3 + 2] = scales; }
@@ -317,8 +317,8 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
     uMoodFrom: { value: new THREE.Vector4(0, 0, 0, 0) },
     uMoodTo: { value: new THREE.Vector4(0, 0, 0, 0) },
     uWave: { value: 1 },
-    uScaleFreq: { value: 52 },
-    uBump: { value: 0.0042 }, // bead height, in model units
+    uScaleFreq: { value: 30 },
+    uBump: { value: 0.0075 }, // bead height, in model units
     uShimmer: { value: 0 },
     uGlow: { value: 0.04 },
     uRim: { value: 0.24 },

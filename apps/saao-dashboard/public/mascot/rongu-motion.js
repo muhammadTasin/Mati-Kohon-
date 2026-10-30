@@ -30,7 +30,7 @@ const CHANNELS = {
 };
 
 // He holds his tablet in his right hand, like in the drawing.
-const HOLD_TABLET = { armROut: 0.32, armRRaise: 0.32, armRTwist: 0.35, elbowR: 1.55, wristRX: 0.15, wristRZ: -0.1, wristRTwist: 0.2 };
+const HOLD_TABLET = { armROut: 0.24, armRRaise: 0.32, armRTwist: 0.35, elbowR: 1.55, wristRX: 0.15, wristRZ: -0.1, wristRTwist: 0.2 };
 
 class Spring {
   constructor(v, w, z) { this.v = v; this.vel = 0; this.target = v; this.w = w; this.z = z; }
@@ -52,11 +52,11 @@ export const GESTURES = {
   } },
   salam: { d: 2.6, fn: (t, d) => {
     const bow = smooth(0.4, 0.9, t) * smooth(d - 0.3, d - 0.9, t);
-    return { armROut: 0.0, armRRaise: 0.8, armRTwist: -0.8, elbowR: 1.5, wristRX: 0.15, handR: 'open', tablet: 0, '+chestX': 0.14 * bow, '+headX': 0.3 * bow, lidLUp: 0.75 * bow + 0.06, lidRUp: 0.75 * bow + 0.06, mouthSmile: 1.4 };
+    return { armROut: -0.12, armRRaise: 0.8, armRTwist: -0.8, elbowR: 1.5, wristRX: 0.15, handR: 'open', tablet: 0, '+chestX': 0.14 * bow, '+headX': 0.3 * bow, lidLUp: 0.75 * bow + 0.06, lidRUp: 0.75 * bow + 0.06, mouthSmile: 1.4 };
   } },
   point: { d: 1.8, fn: () => ({ armLOut: 0.55, armLRaise: 1.35, armLTwist: 0.2, elbowL: 0.15, wristLX: -0.1, handL: 'point', mouthSmile: 1.2, '+headZ': -0.05 }) },
   // hand on his cheek, head resting on it, eyes up
-  think: { d: 3.2, fn: (t) => ({ armLOut: 0.7, armLRaise: 1.0, armLTwist: 1.2, elbowL: 1.8, wristLX: 0.1, handL: 'relaxed', '+headZ': -0.15, '+headX': -0.06, eyeLPitch: 0.38, eyeRPitch: 0.38, eyeLYaw: 0.22, eyeRYaw: 0.22, mouthSmile: 0.2, mouthWidth: 0.6, tailCurl: 1.18, '+chestZ': 0.03 * Math.sin(t * 3) }) },
+  think: { d: 3.2, fn: (t) => ({ armLOut: 0.6, armLRaise: 1.0, armLTwist: 1.2, elbowL: 1.8, wristLX: 0.1, handL: 'relaxed', '+headZ': -0.15, '+headX': -0.06, eyeLPitch: 0.38, eyeRPitch: 0.38, eyeLYaw: 0.22, eyeRYaw: 0.22, mouthSmile: 0.2, mouthWidth: 0.6, tailCurl: 1.18, '+chestZ': 0.03 * Math.sin(t * 3) }) },
   shrug: { d: 1.5, fn: () => ({ armLOut: 0.45, armLRaise: 0.35, armLTwist: 1.3, elbowL: 1.25, armROut: 0.45, armRRaise: 0.35, armRTwist: 1.3, elbowR: 1.25, handL: 'open', handR: 'open', tablet: 0, '+headZ': 0.18, mouthSmile: -0.3, mouthWidth: 0.7, '+chestX': -0.04, '+hipsY': 0.01 }) },
   nod: { d: 1.0, fn: (t) => ({ '+headX': 0.22 * Math.sin(t * TAU * 2) * smooth(0, 0.15, t), mouthSmile: 1.3 }) },
   shake: { d: 1.1, fn: (t) => ({ '+headY': 0.32 * Math.sin(t * TAU * 2.2), mouthSmile: 0.1 }) },
