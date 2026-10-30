@@ -27,7 +27,7 @@ export const COLORS = {
   skin: '#86C266', skinDeep: '#6CA850', belly: '#E3E7B6', bellyLine: '#C9D49A', throat: '#DCE6B2',
   teal: '#49B6C8', casque: '#86D3EA', casqueDeep: '#4AA8D4', rim: '#F4ECCB', spine: '#F2A266',
   shirt: '#2D4EA2', shirtDeep: '#25418C', pad: '#B5D88F',
-  shoe: '#6B727B', shoeDeep: '#474D55', sole: '#F6F3EC', lace: '#FAFAF6', soleLine: '#B9BEC4', heelTab: '#A0C477',
+  shoe: '#25282D', sole: '#F6F3EC', lace: '#FAFAF6', soleLine: '#2B2F35', heelTab: '#A0C477',
 };
 const C = Object.fromEntries(Object.entries(COLORS).map(([k, v]) => [k, hexToRgb(v)]));
 
@@ -189,35 +189,70 @@ function handColor(x, y) {
   return mixRgb(C.skin, C.pad, smoothstep(-0.13, -0.18, y) * 0.5);
 }
 
-// ---------- sneakers (local to the ankle; the sole sits at y = -0.12) ----------
-function shoeUpper(x, y, z) {
-  const toe = ellipsoid(x, y, z, 0, -0.045, 0.185, 0.114, 0.074, 0.13);
-  const heel = roundBox(x, y, z, 0, -0.03, -0.035, 0.108, 0.072, 0.125, 0.066);
-  let u = smin(toe, heel, 0.08);
-  u = smax(u, -capsule(x, y, z, 0, 0.02, -0.055, 0, 0.2, -0.055, 0.062), 0.02);
+// ---------- sneakers: black canvas, white rubber sole and toe cap, white laces with a bow ----------
+// Local to the ankle; the sole's bottom sits at y = -0.12, the toe points +z. Each colour is its own
+// mesh, so the edges between them stay crisp.
+const toeSpring = (z) => 0.022 * smoothstep(0.17, 0.33, z) ** 2; // the toe lifts a little, like a real sole
+function footprint(x, z) { // a foot-shaped outline: a heel circle flowing into a wider toe circle
+  const q = clamp((z + 0.085) / 0.3, 0, 1);
+  return Math.hypot(x, z - (-0.085 + 0.3 * q)) - (0.094 + 0.014 * q);
+}
+export function soleSdf(x, y, z) {
+  const yy = y - toeSpring(z);
+  const d2 = footprint(x, z) + 0.004 * smoothstep(-0.09, -0.12, yy); // a slight flare at the ground
+  const dy = Math.abs(yy + 0.094) - 0.026, rr = 0.012;
+  const ax = Math.max(d2 + rr, 0), ay = Math.max(dy + rr, 0);
+  return Math.sqrt(ax * ax + ay * ay) + Math.min(Math.max(d2 + rr, dy + rr), 0) - rr;
+}
+export function upperSdf(x, y, z) {
+  const yy = y - toeSpring(z);
+  let u = ellipsoid(x, yy, z, 0, -0.058, 0.19, 0.098, 0.058, 0.122); // low, round toe box
+  u = smin(u, ellipsoid(x, yy, z, 0, -0.035, 0.05, 0.103, 0.082, 0.14), 0.05);
+  u = smin(u, ellipsoid(x, y, z, 0, -0.03, -0.075, 0.097, 0.098, 0.095), 0.05); // heel
+  u = smin(u, capsule(x, y, z, 0, -0.04, -0.045, 0, 0.055, -0.045, 0.092), 0.05); // mid-top ankle wrap
+  u = smax(u, -(yy + 0.085), 0.006); // sits inside the sole
+  u = smax(u, -capsule(x, y, z, 0, 0.0, -0.045, 0, 0.25, -0.045, 0.064), 0.014); // the opening for the leg
+  u = smin(u, torusY(x, y, z, 0, 0.066, -0.047, 0.083, 0.021), 0.016); // padded collar
+  u = smin(u, capsule(x * 1.35, y, z, 0, -0.012, 0.14, 0, 0.09, -0.005, 0.03) / 1.35, 0.02); // the tongue
   return u;
 }
-const LACES = [0.005, 0.045, 0.085].map(zl => {
-  const hit = rayHit(shoeUpper, 0, 0.3, zl, 0, -1, 0);
-  return [zl, hit ? hit[1] : 0.03];
+export function toeCapSdf(x, y, z) {
+  const yy = y - toeSpring(z);
+  return smax(upperSdf(x, y, z) - 0.006, Math.max(0.215 - z, yy + 0.03), 0.01);
+}
+// eyelets on either side of the tongue, found on the upper's surface
+const EYELETS = [0.185, 0.155, 0.125, 0.095].map((zl) => {
+  const side = [-1, 1].map((sx) => {
+    const hit = rayHit(upperSdf, sx * 0.04, 0.35, zl, 0, -1, 0) || [sx * 0.04, 0.02, zl];
+    return [hit[0], hit[1] + 0.01, hit[2]];
+  });
+  return side;
 });
-export function shoeSdf(x, y, z) {
-  const sole = roundBox(x, y, z, 0, -0.096, 0.075, 0.109, 0.026, 0.222, 0.026);
-  let d = smin(sole, shoeUpper(x, y, z), 0.03);
-  d = smin(d, torusY(x, y, z, 0, 0.042, -0.058, 0.07, 0.021), 0.018);
-  for (const [zl, yl] of LACES) d = smin(d, capsule(x, y, z, -0.06, yl + 0.004, zl, 0.06, yl + 0.004, zl, 0.011), 0.004);
+const BOW = (() => { const [l] = EYELETS[3]; const hit = rayHit(upperSdf, 0, 0.35, l[2], 0, -1, 0); return [0, (hit ? hit[1] : l[1]) + 0.012, l[2] + 0.006]; })();
+// where each lace crosses, lifted over the tongue
+const tongueTop = (zc) => { const hit = rayHit(upperSdf, 0, 0.35, zc, 0, -1, 0); return hit ? hit[1] : 0.03; };
+const CROSSES = EYELETS.slice(0, -1).map(([l], i) => { const zc = (l[2] + EYELETS[i + 1][0][2]) / 2; return [0, tongueTop(zc) + 0.01, zc]; });
+const BOTTOM = [0, tongueTop(EYELETS[0][0][2]) + 0.01, EYELETS[0][0][2]];
+export function laceSdf(x, y, z) {
+  const r = 0.011;
+  let d = Math.min(capsule(x, y, z, ...EYELETS[0][0], ...BOTTOM, r), capsule(x, y, z, ...BOTTOM, ...EYELETS[0][1], r));
+  for (let i = 0; i < CROSSES.length; i++) {
+    const [l, rr] = EYELETS[i], [l2, r2] = EYELETS[i + 1], m = CROSSES[i];
+    d = Math.min(d, capsule(x, y, z, ...l, ...m, r), capsule(x, y, z, ...m, ...r2, r));
+    d = Math.min(d, capsule(x, y, z, ...rr, ...m, r), capsule(x, y, z, ...m, ...l2, r));
+  }
+  const [bx, by, bz] = BOW;
+  d = smin(d, sphere(x, y, z, bx, by, bz, 0.015), 0.006);
+  // the bow's loops lie flat on the shoe, clear of the leg
+  d = Math.min(d, torusY(x, (y - by) * 1.6 + by, z, bx - 0.034, by + 0.002, bz + 0.012, 0.022, 0.009), torusY(x, (y - by) * 1.6 + by, z, bx + 0.034, by + 0.002, bz + 0.012, 0.022, 0.009));
+  d = Math.min(d, capsule(x, y, z, bx, by, bz, bx - 0.022, by - 0.03, bz + 0.03, 0.009), capsule(x, y, z, bx, by, bz, bx + 0.024, by - 0.032, bz + 0.026, 0.009));
   return d;
 }
-function shoeColor(x, y, z) {
-  if (y < -0.074) return Math.abs(y + 0.09) < 0.0045 ? C.soleLine : C.sole;
-  let c = C.shoe;
-  if (z > 0.235 && y < -0.01) c = C.sole; // rubber toe cap
-  if (y > 0.025 && Math.sqrt(x * x + (z + 0.058) ** 2) > 0.05 && z < 0.0) c = C.shoeDeep; // padded collar
-  if (z < -0.15 && y > -0.03 && Math.abs(x) < 0.03) c = C.heelTab;
-  for (const [zl, yl] of LACES) if (Math.abs(z - zl) < 0.014 && y > yl - 0.012 && Math.abs(x) < 0.068) c = C.lace;
-  const knit = 0.97 + 0.04 * noise3(x * 60, y * 60, z * 60);
-  return [c[0] * knit, c[1] * knit, c[2] * knit];
+function upperColor(x, y, z) {
+  if (z < -0.155 && y > -0.035 && y < 0.04 && Math.abs(x) < 0.028) return C.heelTab;
+  return C.shoe;
 }
+const soleColor = () => C.sole;
 
 // ---------- the rest-pose scene, for occlusion between parts ----------
 function sceneSdf(x, y, z) {
@@ -320,7 +355,11 @@ export function buildRongu(quality = 1) {
   }
   parts.thigh = meshPart(thighSdf, [-0.105, -0.31, -0.105], [0.105, 0.105, 0.105], 0.012 * q, skinColor, { worldY: RIG.hip[1] });
   parts.shin = meshPart(shinSdf, [-0.1, -0.33, -0.1], [0.1, 0.1, 0.1], 0.012 * q, skinColor, { worldY: RIG.hip[1] - RIG.thigh });
-  parts.shoe = meshPart(shoeSdf, [-0.16, -0.135, -0.2], [0.16, 0.1, 0.33], 0.0092 * q, shoeColor, { worldY: 0.12, tint: 0, scales: 0 });
+  const shoeBox = [[-0.15, -0.135, -0.2], [0.15, 0.13, 0.34]], shoeOpts = { worldY: 0.12, tint: 0, scales: 0 };
+  parts.shoeUpper = meshPart(upperSdf, ...shoeBox, 0.0068 * q, upperColor, shoeOpts);
+  parts.shoeSole = meshPart(soleSdf, ...shoeBox, 0.0062 * q, soleColor, shoeOpts);
+  parts.shoeCap = meshPart(toeCapSdf, [-0.13, -0.11, 0.18], [0.13, 0.04, 0.34], 0.006 * q, () => C.sole, shoeOpts);
+  parts.shoeLaces = meshPart(laceSdf, [-0.1, -0.06, -0.06], [0.1, 0.13, 0.16], 0.0032 * q, () => C.lace, shoeOpts);
   parts.badge = shiftDecal(badgeDecal(), RIG.chest);
   parts.face = shiftDecal(facePatch(), RIG.neck);
   return parts;

@@ -330,7 +330,8 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
   });
   injectSkin(skin, shared);
   const cloth = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.82, sheen: 1, sheenRoughness: 0.45, sheenColor: lin('#7C9BEA'), envMapIntensity: envIntensity * 0.6, clippingPlanes: clipping });
-  const canvas = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.78, sheen: 0.35, sheenColor: lin('#9AA3AD'), clearcoat: 0.1, envMapIntensity: envIntensity * 0.7, clippingPlanes: clipping });
+  const rubber = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.55, clearcoat: 0.2, clearcoatRoughness: 0.5, envMapIntensity: envIntensity * 0.7, clippingPlanes: clipping });
+  const canvas = new THREE.MeshPhysicalMaterial({ vertexColors: true, roughness: 0.82, sheen: 0.6, sheenRoughness: 0.6, sheenColor: lin('#6E7682'), clearcoat: 0.1, envMapIntensity: envIntensity * 0.7, clippingPlanes: clipping });
   const eyeWhite = new THREE.MeshPhysicalMaterial({ color: lin('#FBFBF4'), roughness: 0.22, clearcoat: 1, clearcoatRoughness: 0.04, envMapIntensity: envIntensity * 0.8, clippingPlanes: clipping });
   const pupil = new THREE.MeshPhysicalMaterial({ color: lin('#0A0E10'), roughness: 0.12, clearcoat: 1, clearcoatRoughness: 0.03, clippingPlanes: clipping });
   const sparkle = new THREE.MeshBasicMaterial({ color: 0xffffff, clippingPlanes: clipping });
@@ -342,7 +343,7 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
   const metal = new THREE.MeshPhysicalMaterial({ color: lin('#C9CED6'), metalness: 0.8, roughness: 0.3, envMapIntensity: envIntensity * 1.2, clippingPlanes: clipping });
   const gold = new THREE.MeshPhysicalMaterial({ color: lin('#E3B44E'), metalness: 0.85, roughness: 0.32, clearcoat: 0.4, envMapIntensity: envIntensity * 1.3, clippingPlanes: clipping });
   const tongueMat = new THREE.MeshPhysicalMaterial({ color: lin('#EA7F93'), roughness: 0.35, clearcoat: 0.6, clippingPlanes: clipping });
-  const materials = [skin, cloth, canvas, eyeWhite, pupil, sparkle, frame, lens, badgeMat, faceMat, metal, gold, tongueMat];
+  const materials = [skin, cloth, canvas, rubber, eyeWhite, pupil, sparkle, frame, lens, badgeMat, faceMat, metal, gold, tongueMat];
 
   const mesh = (geom, mat, name) => { const m = new THREE.Mesh(geom, mat); m.name = name; m.castShadow = !mat.transparent; m.receiveShadow = true; return m; };
   const at = (obj, world, parentWorld) => { obj.position.set(world[0] - parentWorld[0], world[1] - parentWorld[1], world[2] - parentWorld[2]); return obj; };
@@ -389,20 +390,20 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
   const glasses = new THREE.Group(); glasses.name = 'glasses';
   at(glasses, [0, RIG.eye.y - 0.06, 0.445], RIG.neck); head.add(glasses);
   const W = 0.42, H = 0.345, ring = roundedRect(W, H, 0.09);
-  const hole = roundedRect(W - 0.084, H - 0.084, 0.06);
+  const hole = roundedRect(W - 0.05, H - 0.05, 0.072);
   ring.holes.push(hole);
-  const ringGeo = new THREE.ExtrudeGeometry(ring, { depth: 0.026, bevelEnabled: true, bevelThickness: 0.011, bevelSize: 0.01, bevelSegments: 4, curveSegments: 14 }).translate(0, 0, -0.013);
-  const lensGeo = new THREE.ShapeGeometry(roundedRect(W - 0.08, H - 0.08, 0.058), 12);
+  const ringGeo = new THREE.ExtrudeGeometry(ring, { depth: 0.018, bevelEnabled: true, bevelThickness: 0.006, bevelSize: 0.005, bevelSegments: 3, curveSegments: 16 }).translate(0, 0, -0.009);
+  const lensGeo = new THREE.ShapeGeometry(roundedRect(W - 0.046, H - 0.046, 0.07), 12);
   for (const sx of [1, -1]) {
     const g = new THREE.Group();
     g.position.set(sx * 0.234, 0, 0); g.rotation.y = sx * 0.13;
     g.add(mesh(ringGeo, frame, 'frame'));
     const l = mesh(lensGeo, lens, 'lens'); l.position.z = 0.004; l.renderOrder = 3; g.add(l);
     glasses.add(g);
-    const temple = mesh(new THREE.CapsuleGeometry(0.014, 0.4, 4, 10).rotateX(Math.PI / 2), frame, 'temple');
+    const temple = mesh(new THREE.CapsuleGeometry(0.0095, 0.4, 4, 10).rotateX(Math.PI / 2), frame, 'temple');
     temple.position.set(sx * 0.438, 0.05, -0.21); temple.rotation.y = -sx * 0.07; glasses.add(temple);
   }
-  const bridge = mesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(new THREE.Vector3(-0.035, 0.07, 0.006), new THREE.Vector3(0, 0.105, 0.03), new THREE.Vector3(0.035, 0.07, 0.006)), 12, 0.016, 10), frame, 'bridge');
+  const bridge = mesh(new THREE.TubeGeometry(new THREE.QuadraticBezierCurve3(new THREE.Vector3(-0.035, 0.07, 0.006), new THREE.Vector3(0, 0.105, 0.03), new THREE.Vector3(0.035, 0.07, 0.006)), 12, 0.011, 10), frame, 'bridge');
   glasses.add(bridge);
   const glassesRest = glasses.position.clone();
 
@@ -434,7 +435,8 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
 
   // legs
   const legs = {};
-  const thighGeo = partGeometry(parts.thigh), shinGeo = partGeometry(parts.shin), shoeGeo = partGeometry(parts.shoe);
+  const thighGeo = partGeometry(parts.thigh), shinGeo = partGeometry(parts.shin);
+  const shoeGeos = ['shoeUpper', 'shoeSole', 'shoeCap', 'shoeLaces'].map((k) => [k, partGeometry(parts[k])]);
   for (const side of ['L', 'R']) {
     const sx = side === 'L' ? 1 : -1;
     const hip = at(new THREE.Group(), [sx * RIG.hip[0], RIG.hip[1], RIG.hip[2]], RIG.hips);
@@ -443,7 +445,9 @@ export function createModel(parts, { envIntensity = 1 } = {}) {
     const knee = new THREE.Group(); knee.position.y = -RIG.thigh; hip.add(knee);
     knee.add(mesh(shinGeo, skin, 'shin' + side));
     const ankle = new THREE.Group(); ankle.position.y = -RIG.shin; knee.add(ankle);
-    const shoe = mesh(shoeGeo, canvas, 'shoe' + side); shoe.rotation.y = sx * 0.08; shoe.scale.setScalar(1.3); shoe.position.y = 0.036; ankle.add(shoe);
+    const shoe = new THREE.Group(); shoe.name = 'shoe' + side;
+    for (const [k, g] of shoeGeos) shoe.add(mesh(g, k === 'shoeUpper' ? canvas : rubber, k + side));
+    shoe.rotation.y = sx * 0.08; shoe.scale.setScalar(1.3); shoe.position.y = 0.036; ankle.add(shoe);
     legs[side] = { hip, knee, ankle, sx };
   }
 
