@@ -2,6 +2,17 @@
 
 What changed in Project EDEN, newest first, with who made each change and the branch it came from. Every branch below was merged into `main` on 1 October 2026.
 
+## 31 October 2026 · NISAR over the whole season, and the grid on MODIS pixel reliability (Tasrif, `feature/field-conditions`)
+
+- **NISAR season backfill:**
+  - **Coverage:** `research/live/nisar_water.py --days 140` read 318 of 363 passes since 12 June 2026. `water_history.json` now holds a median of 21 radar readings per upazila, up from 3.
+  - **Drain pace:** measured from the season's own peak, so it is steadier. 199 upazilas are draining, up from 76, and 156 have a free-by date, up from 55.
+  - **Example:** Chauhali's pace falls from 14% to 4% a week, and its land is free by 2 December rather than 3 November.
+  - **Unchanged:** today's flood shares.
+- **Grid rebuilt on MODIS pixel reliability:** the 25-year MODIS cube had been built from the MODLAND bits of VI_Quality while the reliability layer was still downloading. With all 594 reliability layers in, 63 of about 100,000 figures moved:
+  - **Small shifts:** percentiles moved by up to 5 points, and one year's crops-a-year figure moved by 0.1 in 9 upazilas.
+  - **Unchanged:** the condition levels, the check list, the track record, the haor Boro dates and `research/pilots/field_grid_checks.json`.
+
 ## 31 October 2026 · Twenty-five years of the same fields (Tasrif, `feature/field-conditions`)
 
 - **The Aman record** (`research/grid/history.py`, run by `build.py`):
