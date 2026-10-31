@@ -98,6 +98,7 @@ export function initPortals(ctx) {
     });
     numberTabs();
     renderRoleChip();
+    renderDemoBar();
     renderFarm();
   }
 
@@ -124,8 +125,25 @@ export function initPortals(ctx) {
     const name = $('roleChipName');
     if (!name) return;
     if (!role) { name.textContent = ''; return; }
-    const who = role === 'farmer' && farmerUser ? ` · ${tr(farmerUser.nameBangla, farmerUser.nameEnglish || farmerUser.nameBangla)}` : '';
+    const who = role === 'farmer' && farmerUser ? ` · ${tr(farmerUser.nameBangla, farmerUser.nameEnglish || farmerUser.nameBangla)}`
+      : role === 'officer' && isGuest() ? ` · ${tr('অতিথি', 'Guest')}` : '';
     name.textContent = `${tr(...ROLE_NAME[role])}${who}`;
+  }
+
+  const isGuest = () => ctx.officerSource?.() === 'guest';
+
+  /** A bar under the header whenever what the person sees is a demo: the guest manager and the demo farmer. */
+  function renderDemoBar() {
+    const bar = $('demoBar');
+    if (!bar) return;
+    const text = role === 'officer' && isGuest()
+      ? tr('অতিথি মোড: নমুনা কৃষক ও নমুনা তথ্য দেখছেন। কোনো আসল কল বা এসএমএস পাঠানো হয় না। নিজের অ্যাকাউন্ট থাকলে “ভূমিকা বদলান” চেপে প্রবেশ করুন।',
+          'Guest mode: you are looking at sample farmers and sample data. No real call or SMS is sent. With your own account, press “Change role” to sign in.')
+      : role === 'farmer'
+        ? tr('ডেমো কৃষক (নমুনা কৃষক ০১): নমুনা তথ্য। কোনো কোড বা এসএমএস পাঠানো হয় না।', 'Demo farmer (sample farmer 01): sample data. No code or SMS is sent.')
+        : '';
+    bar.hidden = !text;
+    setText('demoBarText', text);
   }
 
   window.showEntryStep = function(step) {
@@ -137,6 +155,14 @@ export function initPortals(ctx) {
     setEntryError('entryDemoError', '');
     if (step === 'officer') {
       authConfig().then(cfg => {
+        // sign-in is optional: guest first when the server has it, an account (or the demo code) underneath, only what is set up
+        const guest = Boolean(cfg?.guestMode), demo = Boolean(cfg?.demoMode);
+        const account = cfg ? (cfg.accountSignIn ?? Boolean(cfg.supabaseUrl && cfg.supabaseAnonKey)) : true; // an older server has no flag: judge by its Supabase settings
+        if ($('entryGuest')) $('entryGuest').hidden = !guest;
+        if ($('entryAccountForm')) $('entryAccountForm').hidden = !account;
+        if ($('entryAccount')) { $('entryAccount').hidden = !(account || demo); $('entryAccount').open = !guest; }
+        if ($('entryNoSignIn')) $('entryNoSignIn').hidden = guest || account || demo;
+        if (guest) $('entryGuestBtn')?.focus(); else if (account) $('entryOfficerUserId')?.focus();
         if ($('entryOfficerDemo')) $('entryOfficerDemo').hidden = !cfg?.demoMode;
         // the demo user ID is the sample officer's id: shown as the hint so a demo needs only the code
         const demoOfficer = (ctx.officers() || [])[0];
@@ -144,7 +170,6 @@ export function initPortals(ctx) {
       });
     }
     if (step === 'farmer') $('entryFarmerBtn')?.focus();
-    if (step === 'officer') $('entryOfficerUserId')?.focus();
   };
 
   function setEntryError(id, message) {
@@ -156,6 +181,7 @@ export function initPortals(ctx) {
 
   window.chooseRole = function(next) {
     if (next === 'visitor') enterPortal('visitor');
+    else if (next === 'farmer') window.farmerDemoSignIn(); // one click: the demo notice is shown inside the portal
     else window.showEntryStep(next);
   };
 
@@ -174,7 +200,34 @@ export function initPortals(ctx) {
       store.set('sessionStorage', FARMER_KEY, JSON.stringify({ token: data.token, user: data.user }));
       enterPortal('farmer');
     } catch (err) {
+      window.showEntryStep('farmer'); // the one-click entry failed: show the card with the reason and a retry button
       setEntryError('entryFarmerError', `${tr('ডেমো প্রবেশ করা যায়নি।', 'Could not start the demo sign-in.')} ${failureText(err)}`);
+    } finally {
+      if (btn) btn.disabled = false;
+    }
+  };
+
+  /** Optional sign-in: the guest manager (GUEST_MODE on the server). No ID, no password; sample data, no real call or SMS. */
+  window.guestManagerSignIn = async function() {
+    setEntryError('entryGuestError', '');
+    const btn = $('entryGuestBtn');
+    if (btn) btn.disabled = true;
+    try {
+      const res = await fetch('/api/v1/auth/guest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+      if (res.status === 403) {
+        setEntryError('entryGuestError', tr('অতিথি প্রবেশ এই সার্ভারে চালু নেই।', 'Guest entry is not turned on on this server.'));
+        return;
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const status = await ctx.setOfficerSession({ ...(await res.json()), source: 'guest' });
+      if (status !== 'ok') {
+        await ctx.signOutOfficer();
+        setEntryError('entryGuestError', tr('সার্ভারে পৌঁছানো যায়নি। সংযোগ দেখে আবার চেষ্টা করুন।', 'Could not reach the server. Check your connection and try again.'));
+        return;
+      }
+      enterPortal('officer');
+    } catch {
+      setEntryError('entryGuestError', tr('সার্ভারে পৌঁছানো যায়নি। সংযোগ দেখে আবার চেষ্টা করুন।', 'Could not reach the server. Check your connection and try again.'));
     } finally {
       if (btn) btn.disabled = false;
     }
@@ -443,7 +496,23 @@ export function initPortals(ctx) {
     setHtml('todayTips', tips.length ? `
       <h4>${escapeHtml(tr('মাটি ও পানি রক্ষা', 'Soil and water'))}</h4>
       <ul>${tips.map(t => `<li>${escapeHtml(tr(t.bn, t.en))}</li>`).join('')}</ul>` : '');
+    renderTodaySpace();
     loadTodayRain();
+  }
+
+  /** What NASA sees on the area's fields (overview -> field_conditions): how green they are now, then the most
+   * useful of the rest (in the haor, when the Boro is cut against the flash floods; else Boro thirst or the summer gap). */
+  function renderTodaySpace() {
+    const notes = ctx.overview()?.field_conditions?.notes || [];
+    const order = { alert: 0, watch: 1, info: 2, good: 3 };
+    const now = notes.find(n => n.id === 'condition');
+    // the haor's flash floods first where they apply, then Boro thirst or the summer gap, the more urgent first
+    const next = notes.find(n => n.id === 'boroFlood')
+      ?? notes.filter(n => n.id === 'boroThirst' || n.id === 'emptyField').sort((a, b) => order[a.tone] - order[b.tone])[0];
+    const pick = [now, next].filter(Boolean);
+    setHtml('todaySpace', pick.length ? `
+      <h4><span class="material-symbols-outlined" aria-hidden="true">satellite_alt</span>${escapeHtml(tr('উপগ্রহে আপনার এলাকার খেত', "Your area's fields from space"))}</h4>
+      <ul>${pick.map(n => `<li class="tone-${n.tone}">${escapeHtml(tr(n.bn, n.en))}</li>`).join('')}</ul>` : '');
   }
 
   async function loadTodayRain() {
@@ -954,7 +1023,7 @@ export function initPortals(ctx) {
     if (aoiLayer) cattleMap.removeLayer(aoiLayer);
     if (aoiMarker) cattleMap.removeLayer(aoiMarker);
     try {
-      aoiLayer = window.L.geoJSON(aoi.geometry, { style: { color: '#1D4A31', weight: 3, opacity: 0.95, fillColor: '#78AB7A', fillOpacity: 0.35 } }).addTo(cattleMap);
+      aoiLayer = window.L.geoJSON(aoi.geometry, { style: { color: '#063A3F', weight: 3, opacity: 0.95, fillColor: '#72ABA3', fillOpacity: 0.35 } }).addTo(cattleMap);
       const [lon, lat] = aoi.centroid;
       aoiMarker = window.L.circleMarker([lat, lon], { radius: 6, fillColor: '#C77B26', color: '#FAF8F5', weight: 2, fillOpacity: 1 })
         .addTo(cattleMap).bindTooltip(`${escapeHtml(aoi.farmLabel)}${aoi.nearestUpazila ? `, ${escapeHtml(aoi.nearestUpazila)}` : ''}`);
@@ -1213,6 +1282,10 @@ export function initPortals(ctx) {
   }
 
   applyRole(null); // the picker first: nothing role-bound shows until a role is chosen
+  authConfig().then(cfg => {
+    if ($('roleTagGuest')) $('roleTagGuest').hidden = !cfg?.guestMode;
+    if ($('roleTagOfficer')) $('roleTagOfficer').hidden = Boolean(cfg?.guestMode);
+  });
   initWeatherLocations();
   idleTexts();
   document.querySelectorAll('.portal-tab').forEach(b => b.addEventListener('click', () => showFarmerTab(b.dataset.ftab)));
@@ -1225,6 +1298,7 @@ export function initPortals(ctx) {
       numberTabs();
       idleTexts();
       renderRoleChip();
+      renderDemoBar();
       renderWeatherSelectors();
       if (weatherForecast && selectedWeather) renderWeatherForecast(weatherForecast, selectedWeather);
       if (weatherNasa) renderNasaBox(weatherNasa, null);

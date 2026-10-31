@@ -2,6 +2,57 @@
 
 What changed in Project EDEN, newest first, with who made each change and the branch it came from. Every branch below was merged into `main` on 1 October 2026.
 
+## 31 October 2026 · NISAR over the whole season, and the grid on MODIS pixel reliability (Tasrif, `feature/field-conditions`)
+
+- **NISAR season backfill:**
+  - **Coverage:** `research/live/nisar_water.py --days 140` read 318 of 363 passes since 12 June 2026. `water_history.json` now holds a median of 21 radar readings per upazila, up from 3.
+  - **Drain pace:** measured from the season's own peak, so it is steadier. 199 upazilas are draining, up from 76, and 156 have a free-by date, up from 55.
+  - **Example:** Chauhali's pace falls from 14% to 4% a week, and its land is free by 2 December rather than 3 November.
+  - **Unchanged:** today's flood shares.
+- **Grid rebuilt on MODIS pixel reliability:** the 25-year MODIS cube had been built from the MODLAND bits of VI_Quality while the reliability layer was still downloading. With all 594 reliability layers in, 63 of about 100,000 figures moved:
+  - **Small shifts:** percentiles moved by up to 5 points, and one year's crops-a-year figure moved by 0.1 in 9 upazilas.
+  - **Unchanged:** the condition levels, the check list, the track record, the haor Boro dates and `research/pilots/field_grid_checks.json`.
+
+## 31 October 2026 · Twenty-five years of the same fields (Tasrif, `feature/field-conditions`)
+
+- **The Aman record** (`research/grid/history.py`, run by `build.py`):
+  - **Method:** every Aman season since 2001, judged the way the condition is judged now (mid-September to October greenness against the upazila's own trend).
+  - **Track record:** the same check marks Koyra after Cyclone Aila (2009-2011), Chauhali in the 2020 flood and Chauddagram in the 2024 flood, and misses the replanted August 2017 flood in the north-west. That track record is now a line on the officers' check list (`record` in `GET /api/v1/conditions/check`).
+  - **Notes:** each upazila's weakest Aman seasons, with BRRI's submergence-tolerant and late-seedbed varieties.
+- **The haor's Boro:**
+  - **What it measures:** on land that grows only Boro in 32 haor upazilas, the day half the Boro is usually cut, its trend (earlier by 4-8.5 days a decade in 12 upazilas), and how many days early the crop went in FFWC's flash-flood years (24-30 days in Sunamganj and Netrokona in 2017).
+  - **The farmer's note:** how often the engine's upstream rain burst came before that day (`flashFloodRisk`), with BRRI's haor seedbed guidance.
+  - **Where it shows:** first on the farmer's Today in the haor; alerts come right after the greenness in the field notes.
+- **Two claims tested and dropped** (`research/grid/checks.py` -> `research/pilots/field_grid_checks.json`):
+  - **The Aman season is not shifting:** −0.6 days a decade, p 0.42.
+  - **No harvest-date lever for a third crop:** an earlier Aman cut goes with more triple cropping across the country, but not within regions or over time.
+- **Tests:** the check list's record, Koyra's weakest seasons, and Dharampasha's Boro note; the Boro timing only in the haor, the Aman record only where Aman grows.
+
+## 31 October 2026 · The fields from space: a 1 km cropland grid (Tasrif, `feature/field-conditions`)
+
+- **One grid for the satellites:** `research/grid/` (`_grid.py`, `ndvi.py`, `esi.py`, `soil.py`, `build.py`) puts each upazila on a 1 km grid of its cropland only.
+  - **Cropland:** ESA WorldCover 2021 at 10 m, counted on a 100 m grid and burnt together with the dashboard's upazila outlines.
+  - **Sources on the grid:** MODIS MOD13A2 and NOAA-20 VIIRS 1 km NDVI, ECOSTRESS evaporative stress, SoilGrids.
+  - **Downloads:** `research/acquire/grid_downloads.py`, on `feature/data-jobs`.
+- **Crop greenness against what is expected** (`field_conditions.json`):
+  - **Reading:** the latest 16 days of VIIRS on the MODIS scale.
+  - **Comparison:** the same days of 2001-2025, with the 25-year greening trend taken out.
+  - **Confidence:** high only when Terra MODIS agrees; "noCrop" where the fields are normally bare or flooded.
+  - **Where it shows:** a chart of the last 12 months against the expected band (`field_conditions_curves.json`), and an officers' check list `GET /api/v1/conditions/check` (61 upazilas on 8-23 October 2026).
+- **The summer gap and what fits it:**
+  - **Gap:** the bare run between 1 March and 15 July over the last 10 summers.
+  - **Fit:** the engine's replayed sowing windows and field days decide which summer crop fits (`cropsForGap` in `packages/rotation-engine/src/data/field_conditions.ts`).
+  - **Otherwise:** when the gap opens too late, it points to an earlier-harvested winter crop; low land gets no summer crop.
+- **Boro thirst:** the share of green fields with an ECOSTRESS ESI below 0.40 in March-April. Only daytime passes count, and each figure carries the dates it rests on.
+- **Soil:** SoilGrids texture, and Saxton & Rawls available water in the top 30 cm.
+- **Crops a year over the cropland:** `greenness_upazila.json` is rewritten in its old shape (2.17 crops a year on average, against 1.76 from the centre pixel), and the time slider's crops use it. `national_greenness.py` now writes its centre-pixel figures to `research/pilots/` only.
+- **In the app:**
+  - **Overview:** a "fields from space" card with the chart and plain Bangla/English notes (`field_conditions` in `GET /api/v1/overview`), plus the less-green check list.
+  - **Farmer's Today:** two lines from space.
+  - **Map:** four map layers, and "Crop health" on the landing map.
+  - **Glossary:** rows for WorldCover, MODIS/VIIRS 1 km, ECOSTRESS and SoilGrids.
+- **Tests:** `test_server.js` checks the map rows, the overview's notes and chart, the check list's order and the time slider's source.
+
 ## 29 October 2026 · Two winter crops, a year slider, and income at market prices (Tasrif, `feature/field-shift-statement`)
 
 - **Mustard or potato, then Boro:** a late Boro is added to the crop replay with `--only`, which merges it and leaves other crops untouched.

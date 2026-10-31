@@ -33,7 +33,7 @@ npm run call:test -- --to 01XXXXXXXXX --crops sunflower,lentil   # the Bangla ca
 - **Place:** pick a district and upazila at the top of the overview; the advice, replay, alerts and rain follow it, and the browser remembers it. Rajshahi → Tanore is the detailed Talanda pilot.
 
 - **Language:** the বাংলা / EN buttons in the dashboard header switch every text; the browser remembers the choice.
-- **Krishi officer desk:** tab ৬ / 6. Managers sign in with a Supabase account (see [Manager sign-in](#manager-sign-in-supabase)). **Restore sample data** resets the sample farmers before a recording. For a local demo without Supabase, set `DEMO_MODE=true` and an `EDEN_OFFICER_CODE` in `.env`: the officer list and the shared code then work as before.
+- **Krishi officer desk:** tab ৬ / 6. Sign-in is optional: with `GUEST_MODE=true` anyone opens the desk as a guest in one click (see [Hackathon access](#hackathon-access-no-sign-in-needed)); managers with an account sign in with Supabase (see [Manager sign-in](#manager-sign-in-supabase)). **Restore sample data** resets the sample farmers before a recording. For a local demo without Supabase, set `DEMO_MODE=true` and an `EDEN_OFFICER_CODE` in `.env`: the officer list and the shared code then work as before.
 - **Farmer sign-in (app):** a farmer ID or phone number with the demo PIN `1234`. This is a demo gate, not real authentication.
 - **Outside services (keys in the git-ignored `.env`; see `.env.example`):**
   - **Gemini** rewords the advice through its OpenAI-compatible endpoint. Every number is checked against the advice, and the fixed template takes over on any doubt.
@@ -140,7 +140,92 @@ npm run calls:daily -- --follow-up           # read the reports; retry and SMS t
 
 ### What the fields grow: MODIS greenness for every upazila
 
-`python research/explore/national_greenness.py` reads the AppEEARS request `fieldshift_ndvi_national_20260927` (MODIS MOD13Q1 250 m NDVI at the 544 upazila centres, February 2000 to September 2026, plus VIIRS 500 m) and counts crops a year and the winter peak with the pilots' method (`field_cycles.py`). 530 upazilas have enough clear composites: Tanore went from 1.8 to 2.6 crops a year and its winter peak from 0.50 to 0.80 (the pilot's 9-pixel study read 0.81-0.83); parts of Bogura grow about 3. The overview shows it for any upazila (`greenness_upazila.json`). One pixel mixes fields, so it is context beside the replay, not a score input.
+Since 31 October 2026 these figures come from the 1 km cropland grid (next section), which rewrites `greenness_upazila.json` in the same shape. The centre-pixel method below is kept for comparison. `python research/explore/national_greenness.py` reads the AppEEARS request `fieldshift_ndvi_national_20260927` (MODIS MOD13Q1 250 m NDVI at the 544 upazila centres, February 2000 to September 2026, plus VIIRS 500 m) and counts crops a year and the winter peak with the pilots' method (`field_cycles.py`). 530 upazilas have enough clear composites: Tanore went from 1.8 to 2.6 crops a year and its winter peak from 0.50 to 0.80 (the pilot's 9-pixel study read 0.81-0.83); parts of Bogura grow about 3. The overview shows it for any upazila (`greenness_upazila.json`). One pixel mixes fields, so it is context beside the replay, not a score input.
+
+### The fields from space: a 1 km cropland grid (31 October 2026)
+
+`python research/grid/build.py` brings NASA's satellites onto one 1 km grid over Bangladesh and describes each upazila by its **cropland only**. ESA WorldCover 2021 at 10 m marks the cropland: 66,655 km², 48% of the land. Each 1 km cell is weighted by the cropland inside it, so towns, rivers and homestead trees no longer move the numbers. Before this, one MODIS pixel at the upazila's centre stood in for all of it.
+
+The downloads (`research/acquire/grid_downloads.py`, about 3 GB, outside git):
+- MODIS MOD13A2 and NOAA-20 VIIRS VJ113A2 1 km NDVI;
+- ECOSTRESS evaporative stress, January-April 2025 and 2026;
+- SoilGrids 250 m;
+- WorldCover.
+
+SMAP 9 km soil moisture is being prepared by AppEEARS and is not used yet. The build writes `field_conditions.json`, its chart data and `greenness_upazila.json` for 501 upazilas (the rest are city areas).
+
+What it measures:
+- **Crop greenness against what is expected.**
+  - **Reading:** the latest 16 days of VIIRS, put on the MODIS scale. A line fitted on 88 shared composites, per upazila where it fits well (329 upazilas), leaves 0.064 NDVI of error.
+  - **Comparison:** the same days of 2001-2025, with each upazila's 25-year greening trend taken out. Against the raw 25 years, two thirds of the country read "greener than usual" only because fields have greened for decades.
+  - **Confidence:** high only when half the cropland was seen through the clouds and Terra MODIS, on its own scale, says the same.
+  - **Other levels:** "noCrop" where the fields are normally bare or under water on those days; "unclear" where the two satellites contradict each other.
+  - **Result for 8-23 October 2026:** 191 upazilas as expected, 135 below, 131 above; 61 below with confidence and 20 km² or more of cropland.
+- **The summer gap.** Per 1 km cell and year, 2016-2025, the longest bare run (NDVI below 0.35) between 1 March and 15 July in the smoothed 8-day series.
+  - **Where:** 114 upazilas have 15% or more of their cropland empty for 40 days or more in at least 3 of the 10 summers. The coast empties in March (salinity), and Boro areas in May.
+  - **What fits:** the engine's own replayed sowing windows and field days (`cropsForGap`) decide which summer crop fits. Mungbean and sesame fit Dacope's gap from 8 March to 12 June.
+  - **When nothing fits:** a gap that opens after every summer crop's sowing window has closed points to an earlier-harvested winter crop instead. Low land gets no summer crop, because of early floods.
+- **Boro thirst.** ECOSTRESS's evaporative stress index on green cropland in March-April.
+  - **Passes used:** daytime passes only (9:00-15:30 local). In the morning or the evening the index says little.
+  - **Thirsty:** an ESI below 0.40 on a field greener than NDVI 0.5.
+  - **Coverage:** only 7 daytime passes covered March-April in the two seasons, so each figure carries its pass dates and the green area it rests on. In Tanore, 27% of the green fields were short of water on 19 March 2026.
+- **The soil.** SoilGrids sand, clay and organic carbon to 30 cm, with Saxton & Rawls (2006) available water: 36-55 mm in the top 30 cm. It is context only; the SRDI tests stay the source for pH, organic matter and fertilizer.
+- **Crops a year,** per cell, then weighted: 2.17 a year on average (BBS reports about 2.1), against 1.76 from the centre pixel. The time slider uses it too.
+
+Where it shows:
+- **Overview:** the "fields from space" card, with a 12-month chart of greenness against the expected band and plain Bangla and English notes.
+- **Officers:** a list of where fields are less green than expected (`GET /api/v1/conditions/check`).
+- **Farmer:** two lines on the farmer's Today.
+- **Maps:** four new map layers (crop greenness, empty fields in summer, Boro thirst, soil water) and "Crop health" on the landing map.
+
+None of it moves a score; it is context beside the replay, like the greenness before it.
+
+#### Twenty-five years of the same fields: what held up and what did not
+
+The same grid holds every 16-day MODIS image since 2001. That record answers two questions for farmers and officers (`research/grid/history.py`, run by `build.py`). It also tested two claims that turned out false (`python research/grid/checks.py` -> `research/pilots/field_grid_checks.json`).
+
+**Held up: the condition's check reads past seasons correctly.** We ran the "less green than expected" check on every Aman season since 2001.
+- **Method:** mid-September to October greenness on the cropland, against the upazila's own 25-year trend. A season is weak at 1.5 robust standard deviations and 0.03 NDVI or more below the trend. Where those days are usually bare or flooded (NDVI under 0.30, as in the deep haor), there is no Aman to judge. 492 upazilas have a record.
+- **National years:** weak seasons were widespread in 2004 (60% of the Aman-growing upazilas), 2007 (48%), 2020 (34%) and 2024 (22%), the big flood years.
+  - **2008 (33%) is not explained.** It is low in every September-October image, so it is not one cloudy composite, but no flood report we hold names it.
+- **Seasons whose cause is on record:**
+  - Koyra in 2009, 2010 and 2011 (z −7.0, −6.2, −4.5): Cyclone Aila broke the embankments and salt water stood for two years.
+  - Chauhali in 2020 (−3.0): the long Jamuna flood.
+  - Chauddagram in 2024 (−4.2): the August flood in the east. Fulgazi, Senbagh and Parshuram show it too, and all were back to normal in 2025.
+  - **The miss:** Birganj in August 2017 reads normal (+1.4). A short flood that farmers replant after does not show by October.
+- **Against BBS:**
+  - **Overall:** district Aman production departures barely follow the greenness (r 0.10 over 832 district-seasons).
+  - **Where they agree:** the two largest losses show: Manikganj 2020-21 (−91%) and Feni 2024-25 (−60%).
+  - **Why BBS cannot calibrate it:** most other large departures (Dhaka, Narayanganj) do not show, and BBS's yield per harvested hectare hides disasters.
+- **In the app:**
+  - **Officers' check list:** a line on what the same check caught in past seasons and what it missed.
+  - **Each upazila's notes:** its weakest Aman seasons. "If water was the cause", it points to BRRI's submergence-tolerant Aman (BRRI dhan51, dhan52, dhan79) and a late seedbed after a flood (BRRI dhan46 by 10 August; BR22, BR23 by 15 August).
+
+**Held up: when the haor's Boro is really cut.** This covers the haor districts' land that grows only Boro: a winter peak of NDVI 0.5 or more, and an August-October peak under 0.4 in most years. It is 2,794 km² in 32 upazilas.
+- **Method:** the day each spring that half of that Boro is cut, read from MODIS greenness falling half way from its peak. The 16-day composites place a date within about a week.
+- **Usual day (springs without a reported flash flood):** 13 April to 30 April, with a median of 19 April. Dharampasha: 21 April.
+- **2017:**
+  - **Sunamganj and Netrokona haors:** the satellite saw the crop gone 24-30 days earlier than usual (Dharampasha 24, Khaliajuri 25, Mohanganj 28, Tahirpur 30). That spring's flash flood took it.
+  - **Kishoreganj and Brahmanbaria:** 5-13 days early.
+  - **Late floods:** those of 2018 and 2019 came after the harvest and do not show.
+- **Getting earlier:** the harvest has moved 4-8.5 days earlier per decade, significant (p < 0.05) in 12 of the 32 upazilas.
+- **Not resolvable:** the share still standing on the day of each burst. A 16-day product cannot split a flood from a harvest inside one composite.
+- **The farmer's note:**
+  - **The usual day,** and in how many springs the engine's own upstream burst came before it (100 mm in 3 days at Sohra, GPM IMERG; 13 of 25 at Dharampasha).
+  - **The spring the flood took the crop,** and the trend.
+  - **BRRI's haor seedbed guidance:** 25 October to 7 November, BRRI dhan102 and dhan118.
+- **Where it shows:** the farmer's Today in the haor, and the overview's field notes.
+
+**Did not hold up 1: "the Aman season is shifting".**
+- **Nationally:** the Aman cut day (half way down from its peak, per cell, 2001-2024) has a median of about 13 November and a trend of −0.6 days a decade (Kendall p 0.42).
+- **By upazila:** of 465 upazilas, 68 cut significantly earlier and 79 significantly later.
+- **Heat:** the pilots' heat study likewise found fewer hot days in wheat's grain filling, not more.
+- **Only exception:** the haor's Boro, which farmers have moved earlier themselves.
+
+**Did not hold up 2: "cut Aman earlier and a third crop fits".**
+- **Across the country it looks real:** in BRRI's 2014-15 upazila land use, 30% of the land is cropped three or more times where Aman is cut before 1 November, against 8% where it is cut 8-15 November (Spearman −0.28, p 2e-9, 445 upazilas).
+- **But it vanishes:** within BRRI's regions (r −0.02, p 0.71), and over time. Upazilas whose Aman got earlier from 2001-05 to 2019-23 did not gain crops (Spearman −0.04, p 0.36).
+- **What it really is:** the north-west against the east and south, not a lever a farmer can pull. The app does not give it as advice.
 
 ### A map of Bangladesh
 
@@ -284,7 +369,8 @@ Do not commit secrets, local environment files, dependency folders, generated AP
 | GET/POST | `/api/v1/cattle/jobs` (`/:id`, `/:id/retry`), `/api/v1/cattle/readiness`, `/api/v1/cattle/models/train` | Background jobs (forecast, NASA POWER, Earth Engine when set up), readiness, and the training gate that refuses to train without labelled data |
 | GET | `/api/v1/erosion` | Riverbank erosion risk for the Jamuna corridor from BWDB/FFWC station records and IMERG basin rain |
 | POST | `/api/v1/ai/ask` | Bangla assistant that answers only from the project's evidence and refuses out-of-scope questions such as loans or pesticide brands; rules-based, with no outside AI service |
-| GET | `/api/v1/auth/config` | What the website needs to sign managers in: `supabaseUrl`, `supabaseAnonKey` (public by design) and `demoMode` |
+| GET | `/api/v1/auth/config` | What the website needs to sign in: `supabaseUrl`, `supabaseAnonKey` (public by design), `emailDomain`, `demoMode`, `guestMode` and `accountSignIn` (Supabase is set up) |
+| POST | `/api/v1/auth/guest` | One-click guest manager (`{ token, officer, user, guest: true }`); **403** unless `GUEST_MODE=true`. Sample data only, never a real call or SMS |
 | POST | `/api/v1/auth/login` | Farmer (ID or phone and PIN) demo sign-in, returns a session token; the demo desk login only in `DEMO_MODE` |
 | GET | `/api/v1/auth/session` | The signed-in user for a Bearer token |
 | POST | `/api/v1/auth/logout` | Ends the session |
@@ -347,7 +433,31 @@ Online, the weather check reads NASA POWER live; offline, the API serves a fixed
 - **Add a scoring dimension:** write a plugin in `packages/rotation-engine/src/plugins/`, register it in `registry.ts`, add its name to `DIMENSIONS` in `app.js`, and add a bar colour in `styles.css`.
 - **Demo desk login (recordings only):** set `DEMO_MODE=true` and your own `EDEN_OFFICER_CODE` in `.env`; the demo user ID is `saao_talanda_01`. Without `DEMO_MODE=true` the demo login does not work at all.
 
+## Hackathon access (no sign-in needed)
+
+For judges and first-time visitors nothing below needs an account:
+
+| Who | How in | What they see |
+|---|---|---|
+| Visitor | one click, no sign-in | the map, overview, weather and the story with Rongu |
+| Farmer | one click: the sample farmer (F01), no phone number or OTP | the farmer portal with sample data; a notice bar says it is a demo. The Android app works without signing in and has a one-tap sample farmer |
+| Manager | one click: **Enter as a guest** | the full manager desk on sample farmers; a notice bar says it is sample data |
+
+Guest manager, switched on by the person who runs the server: put `GUEST_MODE=true` in `.env` (it is `false` by default). A guest
+
+- sees the sample desk of the pilot site and can try everything on it: the call-back queue, field observations, the farmer register, the call list;
+- can **never** place a real call or SMS: the send routes run as dry runs for a guest, and the routes behind `AWAJ_LIVE`, `SMS_LIVE` and the SysTech switches answer 403;
+- registers **sample** farmers only, and the phone number typed in is not kept anywhere;
+- may restore the sample desk, but not reset a desk that holds real registrations;
+- lasts twelve hours (the server holds at most 500 guest sessions; a restart ends them, and the browser goes back to the picker).
+
+Account sign-in stays available and optional: the manager card shows *I have an account* under the guest button, and only when this server has Supabase set up (a server with neither shows the guest button alone, and a server without `GUEST_MODE` shows the account form first). Never turn `GUEST_MODE` on for a server that holds real farmers' records: the server prints a warning at start-up if the desk holds registered (non-sample) farmers. For the hackathon use a fresh `EDEN_OFFICER_STORE`.
+
+**Checklist before the judging:** `GUEST_MODE=true`; `AWAJ_LIVE`, `SMS_LIVE`, `VOICEBLAST_LIVE`, `BROADCAST_LIVE` left at `0` (calls and SMS stay dry runs); `DEMO_MODE=false`; a fresh `EDEN_OFFICER_STORE`; open the site in a private window and try all three roles once.
+
 ## Manager sign-in (Supabase)
+
+*Optional: the guest manager above needs none of this. Set it up when real SAAOs should sign in with their own accounts.*
 
 Managers sign in with a real account (Supabase Auth). The website signs in with `signInWithPassword` and sends the access token to the API; every desk route (`/api/v1/officer/*`, and the real-call routes) checks it with `supabase.auth.getUser(token)` and answers **401** for no or an invalid token and **403** when the account is not a manager (`app_metadata.role` must be `manager`). The role and the site are read from `app_metadata` only; `user_metadata` can be edited by the user and is never trusted.
 
@@ -436,7 +546,7 @@ NISAR, the NASA-ISRO L-band radar launched in 2025, has been public at the ASF D
 - **Water threshold:** HH below -9 dB is open water. On 18 pairs of NISAR and OPERA DSWx-HLS passes within 2 days (Khaliajuri, Itna, Tanore, Paikgachha, Batiaghata; 29 September to 23 October 2026; 1.6 million pixels) the two agree on 83% of pixels (kappa 0.67). Agreement is flat from -10 to -8 dB; -9 dB is within 0.001 kappa of the best and 2 points from OPERA on haor water. Ponds smaller than the 80 m grid and water under a standing crop look bright to radar, so on the coast NISAR counts about 13 points less water than OPERA (`research/floods/nisar_calibration.csv`).
 - **Flood share:** as in the OPERA reading, water now on land that was not water in both December 2025 and February 2026, from the newest pass that saw at least half of the upazila. `services/api/data/live/nisar_water.json` holds it; the API uses whichever of OPERA and NISAR is newer, and the alert names the satellite.
 - **Drainage:** every OPERA and NISAR reading goes into `services/api/data/live/water_history.json`. From October, an upazila whose flood share has fallen since its peak gets a pace in points a week and, when under 45 days away, the date its land is free at that pace (water leaves the haor slowly in October and fast once the rivers fall, so a straight line holds only a few weeks). One sensor's readings are used where there are enough, and south of 23 N the two are never mixed. October's winter-crop alert carries it; from November to January, low and very low land get it as a note against the plan's ready date (2025 radar), and when this year's water leaves 10 or more days later, the Boro seedbed is timed so seedlings are 35-45 days old when the land is free.
-- On 2026-10-27 (passes 16-23 October): all 544 upazilas read; 115 had 10% or more of their land under water where it is normally dry in winter and 39 had 25% or more (most: Itna 78%, Khaliajuri 76%, Sulla 72%, Mithamain 69%, Nikli 68%, Austagram 68%). Khaliajuri and Itna had barely fallen since late September; 76 upazilas were draining, 55 with a free-by date. The daily workflow reads only new frames (about 2 a day).
+- On 2026-10-27 (passes 16-23 October): all 544 upazilas read; 115 had 10% or more of their land under water where it is normally dry in winter and 39 had 25% or more (most: Itna 78%, Khaliajuri 76%, Sulla 72%, Mithamain 69%, Nikli 68%, Austagram 68%). Khaliajuri and Itna had barely fallen since late September; 76 upazilas were draining, 55 with a free-by date. On 30 October the whole season was read back (318 of 363 passes since 12 June, about 9 GB of traffic; a median of 21 radar readings per upazila): the pace is now measured from the season's own peak, 199 upazilas are draining and 156 have a free-by date. Today's flood shares did not change. The daily workflow reads only new frames (about 2 a day).
 
 ### Where this year's Aman is missing or weak (NASA HLS)
 
@@ -472,7 +582,7 @@ The yield model (`research/explore/yield_model.py`) still uses MODIS: HLS greenn
 - The pest score is rule-based until officers log pest counts.
 - Floods are not modelled for Barind land. The haor warning shows the 25-season hindcast and the season status; a live trigger needs a daily IMERG Early feed and river-gauge confirmation. Rotation advice is not modelled for the haor.
 - Flooded-rice days stand in for methane; they are not a methane measurement.
-- The OPERA flood reading is optical: cloud hides the monsoon, so July-September readings are patchy, and OPERA's radar maps over Bangladesh stop on 16 July 2026. NISAR radar fills the gap from 17 June 2026, but its calibration is still PROVISIONAL, its water threshold rests on 18 pairs at 5 upazilas, it counts about 13 points less water than OPERA on the coast, and only one repeat cycle has been read so far (a season's history would be about 7 GB). The drain pace is a straight line from the season's peak and is dated only within 45 days. Water on land normally dry in winter includes the usual monsoon water; last year's radar figure reads higher than the optical one. The HLS crop-loss map compares greenness, not yield, for one year against one year, and cloud leaves some upazilas with too little land seen.
+- The OPERA flood reading is optical: cloud hides the monsoon, so July-September readings are patchy, and OPERA's radar maps over Bangladesh stop on 16 July 2026. NISAR radar fills the gap from 17 June 2026, but its calibration is still PROVISIONAL, its water threshold rests on 18 pairs at 5 upazilas, it counts about 13 points less water than OPERA on the coast, and the season so far (12 June to 23 October 2026) has been read once; new passes are read daily. The drain pace is a straight line from the season's peak and is dated only within 45 days. Water on land normally dry in winter includes the usual monsoon water; last year's radar figure reads higher than the optical one. The HLS crop-loss map compares greenness, not yield, for one year against one year, and cloud leaves some upazilas with too little land seen.
 - NASA POWER weather arrives 2–3 days late and is not a forecast; the field alerts take their forecast from Open-Meteo's weather model. Their temperatures are grid values (a field can be 1-2 °C off), the paddy water balance assumes a bunded rainfed field with 2 mm/day seepage, and the crop stage comes from the plan's calendar, not the farmer's own transplanting date. River-erosion risk comes from station records and needs checking on the ground.
 - Sign-in for the demo mode uses a shared code, a demo farmer PIN, in-memory sessions and a JSON file store; a real deployment needs proper accounts and a database. The role picker only decides what the screen shows; the API checks its own tokens.
 - The cattle module keeps farm outlines and jobs in a local JSON file (not production-durable), and its Earth Engine worker has not been run against a real Earth Engine account; until it is set up, satellite inputs are reported as unavailable and jobs end as partial.

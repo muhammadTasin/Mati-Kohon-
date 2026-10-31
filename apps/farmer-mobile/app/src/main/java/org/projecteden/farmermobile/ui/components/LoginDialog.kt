@@ -1,5 +1,7 @@
 package org.projecteden.farmermobile.ui.components
 
+import org.projecteden.farmermobile.theme.NeoShapes
+
 import org.projecteden.farmermobile.theme.EdenShape
 
 import androidx.compose.foundation.background
@@ -51,6 +53,10 @@ import org.projecteden.farmermobile.theme.Surface
 import org.projecteden.farmermobile.theme.SurfaceContainerHigh
 import org.projecteden.farmermobile.theme.SurfaceContainerLowest
 
+/** The server's demo farmer: sample data, the sign-in needs no real number (the same one the website's one-click entry uses). */
+private const val SAMPLE_FARMER_ID = "F01"
+private const val SAMPLE_FARMER_PIN = "1234"
+
 @Composable
 fun LoginDialog(
     onDismiss: () -> Unit,
@@ -65,7 +71,7 @@ fun LoginDialog(
 
     Dialog(onDismissRequest = onDismiss) {
         Surface(
-            shape = RoundedCornerShape(2.dp),
+            shape = NeoShapes.card,
             color = Surface,
             tonalElevation = 6.dp,
             modifier = Modifier.fillMaxWidth()
@@ -95,11 +101,36 @@ fun LoginDialog(
                     )
                 }
 
+                // Sign-in is optional: the app shows advice, weather and the assistant without it
+                Text(
+                    text = "সাইন-ইন ঐচ্ছিক: না করলেও পরামর্শ ও আবহাওয়া দেখা যায়।",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = OnSurfaceVariant
+                )
+
+                // One tap, no ID and no PIN to remember (judges, first-time users): the sample farmer, sample data
+                if (selectedRole == "farmer") {
+                    Button(
+                        onClick = { onLogin("farmer", SAMPLE_FARMER_ID, SAMPLE_FARMER_PIN) },
+                        enabled = !isLoading,
+                        colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary),
+                        shape = EdenShape,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Text("নমুনা কৃষক (০১) হিসেবে দেখুন")
+                    }
+                    Text(
+                        text = "নমুনা তথ্য, কোনো আসল কল বা এসএমএস নয়। অথবা নিজের আইডি দিন:",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = OnSurfaceVariant
+                    )
+                }
+
                 // Role Toggle
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clip(RoundedCornerShape(2.dp))
+                        .clip(NeoShapes.md)
                         .background(SurfaceContainerHigh)
                         .padding(4.dp),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
@@ -108,7 +139,7 @@ fun LoginDialog(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(2.dp))
+                            .clip(NeoShapes.md)
                             .background(if (isFarmer) Primary else androidx.compose.ui.graphics.Color.Transparent)
                             .clickable {
                                 selectedRole = "farmer"
@@ -129,7 +160,7 @@ fun LoginDialog(
                     Box(
                         modifier = Modifier
                             .weight(1f)
-                            .clip(RoundedCornerShape(2.dp))
+                            .clip(NeoShapes.md)
                             .background(if (!isFarmer) Primary else androidx.compose.ui.graphics.Color.Transparent)
                             .clickable {
                                 selectedRole = "officer"
@@ -167,7 +198,7 @@ fun LoginDialog(
                     ) {
                         listOf("F01" to "কৃষক ০১", "F02" to "কৃষক ০২", "F04" to "কৃষক ০৪").forEach { (fid, label) ->
                             Surface(
-                                shape = RoundedCornerShape(2.dp),
+                                shape = NeoShapes.card,
                                 color = if (idInput == fid) PrimaryContainer else SurfaceContainerHigh,
                                 modifier = Modifier.clickable {
                                     idInput = fid
@@ -185,7 +216,7 @@ fun LoginDialog(
                     }
                 } else {
                     Surface(
-                        shape = RoundedCornerShape(2.dp),
+                        shape = NeoShapes.card,
                         color = PrimaryContainer,
                         modifier = Modifier.clickable {
                             idInput = "saao_talanda_01"
@@ -275,7 +306,7 @@ fun LoginDialog(
                         onClick = { onLogin(selectedRole, idInput, pinOrCodeInput) },
                         enabled = !isLoading && idInput.isNotBlank() && pinOrCodeInput.isNotBlank(),
                         colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary),
-                        shape = RoundedCornerShape(2.dp)
+                        shape = NeoShapes.card
                     ) {
                         if (isLoading) {
                             CircularProgressIndicator(

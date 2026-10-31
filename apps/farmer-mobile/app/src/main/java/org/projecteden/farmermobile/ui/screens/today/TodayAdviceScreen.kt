@@ -1,5 +1,7 @@
 package org.projecteden.farmermobile.ui.screens.today
 
+import org.projecteden.farmermobile.theme.NeoShapes
+
 import org.projecteden.farmermobile.theme.bevel
 
 import androidx.compose.foundation.background
@@ -72,6 +74,8 @@ fun TodayAdviceScreen(
     onNavigateToHistory: () -> Unit = {},
     onNavigateToDetail: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
+    rongu: RonguGreetingState? = null,
+    onStartTour: () -> Unit = {},
     viewModel: TodayAdviceViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
@@ -105,6 +109,9 @@ fun TodayAdviceScreen(
                 lastSyncTimeText = advice.lastSyncFormatted
             )
 
+            // Rongu, the companion, greets the farmer (hidden while his tour runs)
+            rongu?.let { RonguGreetingCard(state = it, onStartTour = onStartTour) }
+
             Button(
                 onClick = { viewModel.refreshAdvice() },
                 enabled = !isRefreshing,
@@ -112,7 +119,7 @@ fun TodayAdviceScreen(
                     containerColor = SurfaceContainer,
                     contentColor = Primary
                 ),
-                shape = RoundedCornerShape(2.dp),
+                shape = NeoShapes.card,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 if (isRefreshing) {
@@ -144,7 +151,7 @@ fun TodayAdviceScreen(
             // 2. Selected Plot Card
             Surface(
                 color = SurfaceContainerLow,
-                shape = RoundedCornerShape(2.dp),
+                shape = NeoShapes.card,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -183,7 +190,7 @@ fun TodayAdviceScreen(
 
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(2.dp))
+                            .clip(NeoShapes.md)
                             .background(SecondaryContainer)
                             .padding(horizontal = 8.dp, vertical = 3.dp)
                     ) {
@@ -201,8 +208,8 @@ fun TodayAdviceScreen(
             // 3. Recommended Crop Rotation Card (Hero)
             Surface(
                 color = SurfaceContainerLowest,
-                shape = RoundedCornerShape(2.dp),
-                shadowElevation = 2.dp,
+                shape = NeoShapes.card,
+                shadowElevation = 0.dp,
                 modifier = Modifier.bevel().fillMaxWidth()
             ) {
                 Column(
@@ -219,7 +226,7 @@ fun TodayAdviceScreen(
                     ) {
                         Row(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(2.dp))
+                                .clip(NeoShapes.md)
                                 .background(SurfaceContainer)
                                 .padding(horizontal = 8.dp, vertical = 4.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -274,7 +281,7 @@ fun TodayAdviceScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(2.dp))
+                            .clip(NeoShapes.md)
                             .background(SurfaceContainerLow)
                             .padding(8.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -282,7 +289,7 @@ fun TodayAdviceScreen(
                         // Season 1
                         Surface(
                             color = SurfaceContainerLowest,
-                            shape = RoundedCornerShape(2.dp),
+                            shape = NeoShapes.card,
                             modifier = Modifier.weight(1f)
                         ) {
                             Column(modifier = Modifier.padding(10.dp)) {
@@ -330,7 +337,7 @@ fun TodayAdviceScreen(
                         // Season 2
                         Surface(
                             color = SurfaceContainerLowest,
-                            shape = RoundedCornerShape(2.dp),
+                            shape = NeoShapes.card,
                             modifier = Modifier.weight(1f)
                         ) {
                             Column(modifier = Modifier.padding(10.dp)) {
@@ -381,7 +388,7 @@ fun TodayAdviceScreen(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(150.dp)
-                            .clip(RoundedCornerShape(2.dp)),
+                            .clip(NeoShapes.md),
                         contentAlignment = Alignment.BottomStart
                     ) {
                         Image(
@@ -417,7 +424,7 @@ fun TodayAdviceScreen(
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(2.dp))
+                            .clip(NeoShapes.md)
                             .background(SurfaceContainer)
                             .padding(10.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -451,7 +458,7 @@ fun TodayAdviceScreen(
                             containerColor = SurfaceContainer,
                             contentColor = Primary
                         ),
-                        shape = RoundedCornerShape(2.dp),
+                        shape = NeoShapes.card,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp)
@@ -481,7 +488,7 @@ fun TodayAdviceScreen(
                             containerColor = SurfaceContainer,
                             contentColor = Primary
                         ),
-                        shape = RoundedCornerShape(2.dp),
+                        shape = NeoShapes.card,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp)
@@ -509,7 +516,7 @@ fun TodayAdviceScreen(
             // 4. Cache & Sync Info Notice
             Surface(
                 color = SurfaceContainerLow,
-                shape = RoundedCornerShape(2.dp),
+                shape = NeoShapes.card,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Column(

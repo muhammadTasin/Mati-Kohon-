@@ -23,7 +23,7 @@ let lastPlanBody = null; // the last plan's request, so the what-if sliders can 
 let whatIfAdvice = null; // the advice for the what-if year, when a slider is off zero
 let whatIfTimer = null;
 let officers = [];
-let officerSession = null; // { source: 'supabase' | 'demo', officer, token (demo only) }
+let officerSession = null; // { source: 'supabase' | 'demo' | 'guest', officer, token (demo and guest only) }
 let homeArea = null; // the manager's own area from the verified token site: { siteId, placeId, nameBangla, nameEnglish, district }
 let homeAreaApplied = false; // the page switched to the manager's own area once after sign-in
 let demoMode = false; // the server runs with DEMO_MODE=true: the demo officer login is offered
@@ -218,6 +218,113 @@ function renderFieldWeek(fa) {
     `NASA POWER to ${fa.observedTo}, rain from ${fa.rainSource || '—'}; forecast from Open-Meteo (a weather model, not NASA)${fa.forecastFrom ? `, 7 days from ${fa.forecastFrom}` : ''}. Temperatures are grid values; a field can be 1-2 °C off.`));
 }
 // ---------------------------------------------------------------------------
+// The fields from space: the upazila's cropland on the 1 km grid (GET /api/v1/overview -> field_conditions)
+// ---------------------------------------------------------------------------
+
+const FIELD_TONE = { alert: ['badge-danger', 'এখনই দেখুন', 'Look now'], watch: ['badge-warning', 'নজরে রাখুন', 'Watch'], good: ['badge-success', 'ভালো', 'Fine'], info: ['badge-info', 'জেনে রাখুন', 'Good to know'] };
+const FIELD_ICON = { condition: 'grass', emptyField: 'calendar_month', boroThirst: 'water_drop', boroFlood: 'flood', amanRecord: 'history', soil: 'layers' };
+const FIELD_LEVEL = {
+  wellBelow: ['badge-danger', 'অনেক কম সবুজ', 'Much less green'], below: ['badge-warning', 'কম সবুজ', 'Less green'],
+  normal: ['badge-success', 'প্রত্যাশামতো সবুজ', 'As green as expected'], above: ['badge-success', 'বেশি সবুজ', 'Greener'],
+  wellAbove: ['badge-success', 'অনেক বেশি সবুজ', 'Much greener'], unclear: ['badge-neutral', 'অনিশ্চিত', 'Unclear'],
+  noCrop: ['badge-neutral', 'এ সময় ফসল নেই', 'No crop now'],
+};
+
+function renderFieldConditions(fc) {
+  const badge = $('fieldsBadge');
+  if (!fc) {
+    if (badge) { badge.className = 'badge badge-neutral'; badge.textContent = '—'; }
+    setHtml('fieldsChart', '');
+    setText('fieldsChartCap', '');
+    setHtml('fieldsNotes', `<li>${tr('এই উপজেলায় ফসলি জমির উপগ্রহ-তথ্য নেই (শহর এলাকা, বা ১ কিমি গ্রিড এখনো তৈরি হয়নি)।', 'No cropland reading for this upazila (a city area, or the 1 km grid has not been built yet).')}</li>`);
+    setText('fieldsNote', '');
+    return;
+  }
+  const c = fc.row.condition;
+  const [cls, bn, en] = FIELD_LEVEL[c?.level] || ['badge-neutral', '—', '—'];
+  if (badge) { badge.className = `badge ${cls}`; badge.textContent = c ? tr(bn, en) : '—'; }
+  drawFieldChart(fc.curve, c);
+  setHtml('fieldsNotes', fc.notes.map(n => {
+    const [tc, tb, te] = FIELD_TONE[n.tone] || FIELD_TONE.info;
+    return `<li class="tone-${n.tone}"><span class="material-symbols-outlined" aria-hidden="true">${FIELD_ICON[n.id] || 'info'}</span><p>${escapeHtml(tr(n.bn, n.en))}</p><span class="badge ${tc}">${tr(tb, te)}</span></li>`;
+  }).join(''));
+  const s = fc.sources;
+  setText('fieldsNote', tr(
+    `উপজেলার শুধু ফসলি জমি (ESA WorldCover ২০২১, ১০ মি) ধরে ১ কিমি গ্রিডে গড়। এখনকার সবুজ: নাসা VIIRS (NOAA-20), MODIS-এর মাপে আনা; তুলনা: নাসা MODIS ২০০১–২০২৫-এর একই দিনগুলো, ২৫ বছরের সবুজ বাড়ার ধারা বাদ দিয়ে। খালি জমি: MODIS, শেষ ১০ গ্রীষ্ম। পানির টান: নাসা ECOSTRESS, মার্চ–এপ্রিল ২০২৫ ও ২০২৬, দিনের পরিষ্কার ছবি। মাটি: SoilGrids (বৈশ্বিক মডেল; সার ও pH-এর জন্য SRDI-র মাটি পরীক্ষাই মানুন)। আমনের ইতিহাস: একই MODIS, প্রতি বছরের মধ্য-সেপ্টেম্বর–অক্টোবর, নিজের ধারার চেয়ে অনেক নিচে (১.৫ রোবাস্ট SD ও ০.০৩ NDVI)। হাওরের বোরো: শুধু বোরো হয় এমন জমিতে MODIS-এর সবুজ অর্ধেক নামার দিন (১৬ দিনের ছবি, প্রায় এক সপ্তাহের নির্ভুলতা); বৃষ্টি: নাসা GPM IMERG, মেঘালয়ের সোহরা, আর বন্যা পূর্বাভাস কেন্দ্রের বার্ষিক প্রতিবেদন। কম সবুজ মানে দেরিতে রোপণ বা আগাম কাটাও হতে পারে: মাঠে যাচাই করুন।`,
+    `Averaged over the upazila's cropland only (ESA WorldCover 2021, 10 m) on a 1 km grid. Greenness now: ${s.ndviNow}; compared with ${s.ndviBaseline}, the same days each year with the 25-year greening trend taken out. Empty fields: the same MODIS, the last 10 summers. Thirst: ${s.stress}. Soil: ${s.soil} (a global model; for fertilizer and pH the SRDI soil tests stand). Aman record: the same MODIS, mid-September to October each year, far below the upazila's own trend (1.5 robust SD and 0.03 NDVI). Haor Boro: the day MODIS greenness falls half way on land that grows only Boro (16-day composites, good to about a week); rain: ${s.flashFlood ?? 'NASA GPM IMERG at Sohra, Meghalaya'}. Less green can also mean a late planting or an early harvest: check in the field.`));
+}
+
+/** The last 12 months' greenness (line) against what the 25-year record expects for each date (band and dashes). */
+function drawFieldChart(curve, cond) {
+  const svg = $('fieldsChart');
+  if (!svg || !curve?.dates?.length) { if (svg) svg.innerHTML = ''; return; }
+  const W = 520, H = 210, L = 34, R = 12, T = 12, B = 28;
+  const all = [...curve.ndvi, ...curve.low, ...curve.high].filter(v => v != null);
+  const y0 = Math.max(0, Math.floor((Math.min(...all) - 0.05) * 10) / 10), y1 = Math.min(1, Math.ceil((Math.max(...all) + 0.05) * 10) / 10);
+  const t = curve.dates.map(d => Date.parse(d));
+  const x = i => L + (t[i] - t[0]) / (t[t.length - 1] - t[0]) * (W - L - R);
+  const y = v => T + (y1 - v) / (y1 - y0) * (H - T - B);
+  const path = (vals) => vals.reduce((d, v, i) => (v == null ? `${d} ` : `${d}${d.endsWith(' ') || !d ? 'M' : 'L'}${x(i).toFixed(1)},${y(v).toFixed(1)}`), '').trim();
+  const ok = curve.low.map((v, i) => v != null && curve.high[i] != null);
+  const band = ok.some(Boolean) ? `M${curve.low.map((v, i) => (ok[i] ? `${x(i).toFixed(1)},${y(v).toFixed(1)}` : null)).filter(Boolean).join('L')}L${curve.high.map((v, i) => (ok[i] ? `${x(i).toFixed(1)},${y(v).toFixed(1)}` : null)).filter(Boolean).reverse().join('L')}Z` : '';
+  const grid = [];
+  for (let v = y0; v <= y1 + 1e-9; v += 0.2) grid.push(`<line x1="${L}" x2="${W - R}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" class="fc-grid"/><text x="${L - 6}" y="${(y(v) + 4).toFixed(1)}" class="fc-tick" text-anchor="end">${num(v.toFixed(1))}</text>`);
+  const months = [];
+  let lastMonth = -1;
+  curve.dates.forEach((d, i) => {
+    const m = Number(d.slice(5, 7));
+    if (m !== lastMonth && Number(d.slice(8, 10)) <= 16) {
+      months.push(`<text x="${x(i).toFixed(1)}" y="${H - 8}" class="fc-tick" text-anchor="middle">${escapeHtml(new Date(d).toLocaleDateString(lang === 'en' ? 'en-GB' : 'bn-BD', { month: 'short' }))}</text>`);
+      lastMonth = m;
+    }
+  });
+  let lastI = curve.ndvi.length - 1;
+  while (lastI > 0 && curve.ndvi[lastI] == null) lastI--;
+  const dot = curve.ndvi[lastI] != null ? `<circle cx="${x(lastI).toFixed(1)}" cy="${y(curve.ndvi[lastI]).toFixed(1)}" r="5" class="fc-now"/>` : '';
+  svg.innerHTML = `${grid.join('')}${months.join('')}<path d="${band}" class="fc-band"/><path d="${path(curve.expected)}" class="fc-expected"/><path d="${path(curve.ndvi)}" class="fc-line"/>${dot}`;
+  setText('fieldsChartCap', tr(
+    `ফসলি জমির সবুজ (NDVI), গত ১২ মাস। রেখা: এ বছর (নাসা VIIRS); ছায়া: ২০০১–২০২৫-এর ধারা ধরে এ সময়ে প্রত্যাশিত (১০ বছরের ৮টি এর মধ্যে), ড্যাশ: প্রত্যাশিত মান।${cond ? ` শেষ ছবি ${isoDate(cond.date)}।` : ''}`,
+    `Cropland greenness (NDVI), the last 12 months. Line: this year (NASA VIIRS); shade: what 2001-2025 expects for these days with its trend (8 years in 10 fall inside), dashes: the expected value.${cond ? ` Latest image ${cond.date}.` : ''}`));
+}
+
+/** Where the fields are less green than expected, both satellites agreeing: a field-check list (GET /api/v1/conditions/check). */
+let lessGreen; // undefined until loaded, null when the API has none
+async function loadLessGreen() {
+  try {
+    if (lessGreen === undefined) lessGreen = await (await fetch('/api/v1/conditions/check')).json();
+  } catch {
+    lessGreen = null;
+  }
+  renderLessGreen();
+}
+
+function renderLessGreen() {
+  const g = lessGreen;
+  const badge = $('lessGreenBadge');
+  if (g === undefined) return;
+  if (!g?.now) {
+    if (badge) badge.textContent = '—';
+    setHtml('lessGreenList', `<li>${tr('১ কিমি গ্রিড এখনো তৈরি হয়নি।', 'The 1 km grid has not been built yet.')}</li>`);
+    setText('lessGreenNote', '');
+    setHtml('lessGreenRecord', '');
+    return;
+  }
+  if (badge) { badge.className = `badge ${g.total ? 'badge-warning' : 'badge-success'}`; badge.textContent = tr(`${num(g.total)} উপজেলা`, `${g.total} upazilas`); }
+  const metric = (label, value, kind = '') => `<span class="metric ${kind}"><span>${label}</span> <b>${value}</b></span>`;
+  setHtml('lessGreenList', g.upazilas.length ? g.upazilas.slice(0, 6).map(u => {
+    const fewer = Math.max(1, Math.round((100 - u.percentile) / 4));
+    const rankText = fewer >= 24 ? tr('২৫ বছরে সবচেয়ে কম', 'Lowest in 25 years') : tr(`২৫ বছরের ${num(fewer)}টির চেয়ে কম`, `Below ${fewer} of 25 years`);
+    return `<li><span><button class="link-btn" type="button" onclick="chooseFromMap('${escapeHtml(u.id)}')"><strong>${escapeHtml(u.name)}</strong></button><span class="kv-sub">${escapeHtml(u.district)}</span><span class="metrics">${
+      metric(tr('NDVI এখন', 'NDVI now'), num(u.ndvi.toFixed(2)), 'is-warn')}${metric(tr('প্রত্যাশিত', 'Expected'), num(u.expected.toFixed(2)))}${
+      metric(tr('দেখা গেছে', 'Seen'), `${num(u.seenPct)}%`)}</span></span><span class="badge ${u.level === 'wellBelow' ? 'badge-danger' : 'badge-warning'}">${rankText}</span></li>`;
+  }).join('') : `<li>${tr('কোনো উপজেলায় খেত প্রত্যাশার চেয়ে কম সবুজ নয়।', 'No upazila has fields less green than expected.')}</li>`);
+  setHtml('lessGreenRecord', g.record ? `<span class="material-symbols-outlined" aria-hidden="true">history</span><span>${escapeHtml(tr(g.record.bn, g.record.en))}</span>` : '');
+  setText('lessGreenNote', tr(
+    `নাসা VIIRS-এর শেষ ১৬ দিনের ছবি (${isoDate(g.now.composite)} থেকে), প্রতিটি উপজেলার শুধু ফসলি জমি; ২০০১–২০২৫-এর একই দিনের ২৫ বছরের ধারা বাদ দিয়ে তুলনা, আর নাসার Terra MODIS-ও একই কথা বললে তবেই তালিকায়। ডানে: গত ২৫ বছরের মধ্যে অবস্থান। দেরিতে রোপণ বা আগাম কাটাও কারণ হতে পারে; এটি মাঠ যাচাইয়ের তালিকা।`,
+    `NASA VIIRS's latest 16 days (from ${g.now.composite}), each upazila's cropland only, against the same days of 2001-2025 with the 25-year trend taken out; listed only when NASA's Terra MODIS agrees. Right: how it ranks among the past 25 years. A late planting or an early harvest can do this too: a list for field checks.`));
+}
+
+// ---------------------------------------------------------------------------
 
 async function loadOverview() {
   let res = await fetch(`/api/v1/overview?place=${encodeURIComponent(currentPlace)}`);
@@ -234,6 +341,7 @@ async function loadOverview() {
   renderOverview(currentOverview);
   applyPlaceText();
   loadFloodCheck();
+  loadLessGreen();
 }
 
 /**
@@ -332,6 +440,8 @@ function renderOverview(o) {
 
   renderFieldWeek(o.local_context?.fieldAlerts);
   renderFloodCheck();
+  renderFieldConditions(o.field_conditions);
+  renderLessGreen();
 
   const alert = o.active_alerts[0];
   if (alert) {
@@ -1136,8 +1246,11 @@ function renderOfficerSelect() {
 }
 
 /** The token for officer API calls: the demo token in a demo session, otherwise the Supabase access token (kept fresh by Supabase). */
+/** A demo or guest session keeps its own server token; a Supabase session is kept (and refreshed) by Supabase. */
+const hasOwnToken = (session) => session?.source === 'demo' || session?.source === 'guest';
+
 async function officerToken() {
-  if (officerSession?.source === 'demo') return officerSession.token;
+  if (hasOwnToken(officerSession)) return officerSession.token;
   return accessToken();
 }
 
@@ -1149,7 +1262,8 @@ async function officerFetch(url, options = {}) {
   if (res.status === 403 && (await res.clone().json().catch(() => null))?.error?.code === 'site_required') {
     return res; // a signed-in manager whose account has no site: refused, but still signed in; the caller shows the message
   }
-  if (res.status === 401 || res.status === 403) {
+  // a guest's 403 is "not allowed here" (a real call, a desk with real records): the guest session itself is fine
+  if (res.status === 401 || (res.status === 403 && officerSession?.source !== 'guest')) {
     await window.officerSignOut();
     throw new OfficerAccessError(res.status);
   }
@@ -1189,6 +1303,10 @@ window.officerSignIn = async function(event) {
 };
 
 window.officerSignOut = async function() {
+  // a guest or demo token is also ended on the server (best effort)
+  if (hasOwnToken(officerSession) && officerSession.token) {
+    fetch('/api/v1/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${officerSession.token}` } }).catch(() => {});
+  }
   officerSession = null;
   homeArea = null;
   homeAreaApplied = false;
@@ -1239,7 +1357,9 @@ function renderProfile() {
   const o = officerSession?.officer;
   if (o) {
     setText('saaoName', tr(o.nameBangla, o.nameEnglish));
-    setText('saaoRole', tr(`SAAO, ${o.blockBangla} • প্রবেশ করেছেন`, `SAAO, ${o.blockEnglish} • signed in`));
+    setText('saaoRole', o.guest
+      ? tr(`${o.blockBangla} • নমুনা তথ্য`, `${o.blockEnglish} • sample data`)
+      : tr(`SAAO, ${o.blockBangla} • প্রবেশ করেছেন`, `SAAO, ${o.blockEnglish} • signed in`));
   } else {
     setText('saaoName', tr('নমুনা কর্মকর্তা', 'Sample officer'));
     setText('saaoRole', tr('SAAO, তালন্দ ব্লক', 'SAAO, Talanda block'));
@@ -1864,11 +1984,12 @@ function startPortals() {
     officers: () => officers,
     loadOfficers,
     officerSignedIn: () => Boolean(officerSession),
-    /** Starts an officer session ({ source: 'supabase' } or a demo { source: 'demo', token, officer }) and loads the desk: 'ok' | 'denied' | 'unavailable'. */
+    officerSource: () => officerSession?.source ?? null,
+    /** Starts an officer session ({ source: 'supabase' }, a demo { source: 'demo', token, officer } or a guest { source: 'guest', token, officer }) and loads the desk: 'ok' | 'denied' | 'unavailable'. */
     async setOfficerSession(session) {
       officerSession = session;
-      if (session.source === 'demo') {
-        // only the demo token is kept here; a Supabase session is kept (and refreshed) by Supabase itself
+      if (hasOwnToken(session)) {
+        // only the demo or guest token is kept here; a Supabase session is kept (and refreshed) by Supabase itself
         try {
           sessionStorage.setItem('eden.officer', JSON.stringify(session));
         } catch {
@@ -1903,7 +2024,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     const saved = localStorage.getItem('eden.lang');
     if (saved === 'en' || saved === 'bn') lang = saved;
     const session = sessionStorage.getItem('eden.officer');
-    if (session) officerSession = { ...JSON.parse(session), source: 'demo' };
+    if (session) {
+      const saved = JSON.parse(session);
+      officerSession = { ...saved, source: saved.source === 'guest' ? 'guest' : 'demo' };
+    }
   } catch {
     // storage blocked: start in Bangla, signed out
   }
@@ -2113,6 +2237,7 @@ function chooseFromMap(id) {
   syncPlaceSelects(placeId);
   choosePlace(placeId);
 }
+window.openPlace = chooseFromMap; // the landing page's map (landing-map.js): "Open this place"
 document.addEventListener('DOMContentLoaded', () => {
   bdMap = initBdMap({ tr, num, isoDate, escapeHtml, choose: chooseFromMap, currentId: () => currentPlace });
 });

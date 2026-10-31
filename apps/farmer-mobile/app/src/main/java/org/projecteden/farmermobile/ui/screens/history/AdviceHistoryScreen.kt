@@ -1,5 +1,7 @@
 package org.projecteden.farmermobile.ui.screens.history
 
+import org.projecteden.farmermobile.theme.NeoShapes
+
 import org.projecteden.farmermobile.theme.bevel
 
 import androidx.compose.foundation.background
@@ -95,7 +97,7 @@ fun AdviceHistoryScreen(
             // 1. Offline Freshness Banner
             Surface(
                 color = SurfaceContainerHigh,
-                shape = RoundedCornerShape(2.dp),
+                shape = NeoShapes.card,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -168,7 +170,7 @@ fun AdviceHistoryScreen(
                     )
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(2.dp))
+                            .clip(NeoShapes.md)
                             .background(PrimaryContainer)
                             .padding(horizontal = 8.dp, vertical = 2.dp)
                     ) {
@@ -204,8 +206,8 @@ fun AdviceHistoryScreen(
             historyList.forEach { item ->
                 Surface(
                     color = SurfaceContainerLowest,
-                    shape = RoundedCornerShape(2.dp),
-                    shadowElevation = 2.dp,
+                    shape = NeoShapes.card,
+                    shadowElevation = 0.dp,
                     modifier = Modifier.bevel().fillMaxWidth()
                 ) {
                     Row(
@@ -251,7 +253,7 @@ fun AdviceHistoryScreen(
                                 if (item.hasListenedAudio) {
                                     Box(
                                         modifier = Modifier
-                                            .clip(RoundedCornerShape(2.dp))
+                                            .clip(NeoShapes.md)
                                             .background(SurfaceContainer)
                                             .padding(horizontal = 8.dp, vertical = 2.dp)
                                     ) {
@@ -312,7 +314,7 @@ fun AdviceHistoryScreen(
                                         containerColor = SurfaceContainer,
                                         contentColor = Primary
                                     ),
-                                    shape = RoundedCornerShape(2.dp),
+                                    shape = NeoShapes.card,
                                     modifier = Modifier.height(44.dp)
                                 ) {
                                     Row(
@@ -337,7 +339,7 @@ fun AdviceHistoryScreen(
                                     onClick = onNavigateToDetail,
                                     modifier = Modifier
                                         .size(44.dp)
-                                        .clip(RoundedCornerShape(2.dp))
+                                        .clip(NeoShapes.md)
                                         .background(SurfaceContainerLow)
                                 ) {
                                     Icon(
@@ -356,7 +358,7 @@ fun AdviceHistoryScreen(
             // 4. Honest Calm Empty State for Older Seasons
             Surface(
                 color = SurfaceContainerLow,
-                shape = RoundedCornerShape(2.dp),
+                shape = NeoShapes.card,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(top = 16.dp)
@@ -408,7 +410,7 @@ fun AdviceHistoryScreen(
                     // Contact SAAO Chip
                     Box(
                         modifier = Modifier
-                            .clip(RoundedCornerShape(2.dp))
+                            .clip(NeoShapes.md)
                             .background(SurfaceContainer)
                             .padding(horizontal = 12.dp, vertical = 6.dp)
                     ) {

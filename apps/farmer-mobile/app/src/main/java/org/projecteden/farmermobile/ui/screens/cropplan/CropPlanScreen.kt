@@ -1,5 +1,7 @@
 package org.projecteden.farmermobile.ui.screens.cropplan
 
+import org.projecteden.farmermobile.theme.NeoShapes
+
 import org.projecteden.farmermobile.theme.bevel
 
 import androidx.compose.foundation.background
@@ -96,7 +98,7 @@ fun CropPlanScreen(
             // 1. Selected Plot Header Pill
             Surface(
                 color = SurfaceContainerHigh,
-                shape = RoundedCornerShape(2.dp),
+                shape = NeoShapes.card,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Row(
@@ -161,7 +163,7 @@ fun CropPlanScreen(
 
                 Box(
                     modifier = Modifier
-                        .clip(RoundedCornerShape(2.dp))
+                        .clip(NeoShapes.md)
                         .background(SecondaryContainer)
                         .padding(horizontal = 10.dp, vertical = 3.dp)
                 ) {
@@ -182,8 +184,8 @@ fun CropPlanScreen(
                 // Step 1: Aman Paddy
                 Surface(
                     color = SurfaceContainerLowest,
-                    shape = RoundedCornerShape(2.dp),
-                    shadowElevation = 2.dp,
+                    shape = NeoShapes.card,
+                    shadowElevation = 0.dp,
                     modifier = Modifier.bevel().fillMaxWidth()
                 ) {
                     Row(
@@ -227,7 +229,7 @@ fun CropPlanScreen(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(2.dp))
+                                        .clip(NeoShapes.md)
                                         .background(PrimaryFixed)
                                         .padding(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
@@ -285,7 +287,7 @@ fun CropPlanScreen(
 
                                 Surface(
                                     color = SurfaceContainerLow,
-                                    shape = RoundedCornerShape(2.dp),
+                                    shape = NeoShapes.card,
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Row(
@@ -316,8 +318,8 @@ fun CropPlanScreen(
                 // Step 2: Mustard (Subsequent proposed crop)
                 Surface(
                     color = SurfaceContainerLowest,
-                    shape = RoundedCornerShape(2.dp),
-                    shadowElevation = 2.dp,
+                    shape = NeoShapes.card,
+                    shadowElevation = 0.dp,
                     modifier = Modifier.bevel().fillMaxWidth()
                 ) {
                     Row(
@@ -361,7 +363,7 @@ fun CropPlanScreen(
                             ) {
                                 Box(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(2.dp))
+                                        .clip(NeoShapes.md)
                                         .background(SecondaryContainer)
                                         .padding(horizontal = 6.dp, vertical = 2.dp)
                                 ) {
@@ -419,7 +421,7 @@ fun CropPlanScreen(
 
                                 Surface(
                                     color = SurfaceContainerLow,
-                                    shape = RoundedCornerShape(2.dp),
+                                    shape = NeoShapes.card,
                                     modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Row(
@@ -473,7 +475,7 @@ fun CropPlanScreen(
 
                 Surface(
                     color = SurfaceContainer,
-                    shape = RoundedCornerShape(2.dp),
+                    shape = NeoShapes.card,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Column(
@@ -503,7 +505,7 @@ fun CropPlanScreen(
 
                             Box(
                                 modifier = Modifier
-                                    .clip(RoundedCornerShape(2.dp))
+                                    .clip(NeoShapes.md)
                                     .background(SurfaceContainerHigh)
                                     .padding(horizontal = 8.dp, vertical = 3.dp)
                             ) {
@@ -521,7 +523,7 @@ fun CropPlanScreen(
                         ) {
                             Surface(
                                 color = SurfaceContainerLow,
-                                shape = RoundedCornerShape(2.dp),
+                                shape = NeoShapes.card,
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Column(modifier = Modifier.padding(8.dp)) {
@@ -541,7 +543,7 @@ fun CropPlanScreen(
 
                             Surface(
                                 color = SurfaceContainerLow,
-                                shape = RoundedCornerShape(2.dp),
+                                shape = NeoShapes.card,
                                 modifier = Modifier.weight(1f)
                             ) {
                                 Column(modifier = Modifier.padding(8.dp)) {
@@ -564,7 +566,7 @@ fun CropPlanScreen(
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clip(RoundedCornerShape(2.dp))
+                                .clip(NeoShapes.md)
                                 .background(SurfaceContainerHigh.copy(alpha = 0.6f))
                                 .padding(horizontal = 8.dp, vertical = 6.dp),
                             verticalAlignment = Alignment.CenterVertically,
@@ -593,7 +595,7 @@ fun CropPlanScreen(
                     containerColor = PrimaryContainer,
                     contentColor = OnPrimary
                 ),
-                shape = RoundedCornerShape(2.dp),
+                shape = NeoShapes.card,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(52.dp)

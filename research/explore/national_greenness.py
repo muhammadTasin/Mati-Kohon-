@@ -10,7 +10,11 @@ pilots' method (field_cycles.py, first_look.py):
 Only good or marginal pixels count (pixel reliability 0 or 1). One pixel mixes fields, so this describes the landscape
 around the upazila's centre, not a farm; it is context beside the replay, not an input to the scores.
 
-Output: research/pilots/greenness_upazila.csv, packages/rotation-engine/src/data/greenness_upazila.json
+Superseded for the app on 31 Oct 2026 by research/grid/build.py, which measures the same things over each upazila's
+whole cropland (1 km MOD13A2 under ESA WorldCover) and rewrites greenness_upazila.json; this script keeps the
+centre-pixel figures beside it, for comparison and for the upazilas with no cropland.
+
+Output: research/pilots/greenness_upazila.csv, research/pilots/greenness_upazila_centroid.json
 Usage : python research/explore/national_greenness.py   (after downloading the AppEEARS bundle)
 """
 from __future__ import annotations
@@ -29,7 +33,7 @@ sys.path.insert(0, str(HERE.parents[0] / "acquire"))
 from _common import DATA, RESEARCH  # noqa: E402
 
 SRC = DATA / "appeears" / "ndvi_national" / "fieldshift-ndvi-national-20260927-MOD13Q1-061-results.csv"
-OUT_JSON = RESEARCH.parent / "packages" / "rotation-engine" / "src" / "data" / "greenness_upazila.json"
+OUT_JSON = RESEARCH / "pilots" / "greenness_upazila_centroid.json"
 WINTER_CROP_NDVI = 0.50
 EARLY, RECENT = range(2001, 2006), range(2021, 2026)
 

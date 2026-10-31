@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>মাটি কহন · Mati Kohon — নাসার তথ্যে ফসল চক্র ও মাঠের পরামর্শ</title>
-  <meta name="theme-color" content="#EEE9E2">
+  <meta name="theme-color" content="#EDE6DA">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Anek+Bangla:wdth,wght@75..125,300..800&family=Hind+Siliguri:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -13,6 +13,8 @@
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="theme.css">
   <link rel="stylesheet" href="brand.css">
+  <link rel="stylesheet" href="neo.css">
+  <link rel="stylesheet" href="companion.css">
 </head>
 <body class="state-entry">
   <!--
@@ -58,6 +60,12 @@
         <button id="langEn" class="lang-btn" type="button" onclick="setLanguage('en')">EN</button>
       </div>
 
+      <!-- the landing page's way in: to the role cards -->
+      <button class="header-enter" id="headerEnter" type="button" onclick="document.getElementById('rolesTitle')?.scrollIntoView({ behavior: 'smooth', block: 'start' })">
+        <span class="material-symbols-outlined" aria-hidden="true">login</span>
+        <span data-i18n="header.enter">প্রবেশ করুন</span>
+      </button>
+
       <!-- ROLE: who is using the dashboard; pressing it returns to the role picker -->
       <button class="role-chip" id="roleChip" type="button" onclick="signOutRole()" data-roles="visitor farmer officer" hidden>
         <span class="material-symbols-outlined" aria-hidden="true">badge</span>
@@ -76,49 +84,286 @@
     </div>
   </header>
 
+  <!-- Shown to a guest manager and to the demo farmer: what is real here and what is not (text set in portals.js) -->
+  <div class="demo-bar" id="demoBar" role="status" hidden>
+    <span class="material-symbols-outlined" aria-hidden="true">science</span>
+    <span id="demoBarText"></span>
+  </div>
 
   <!-- ROLE PICKER: shown before the dashboard; each role sees only its own tabs -->
   <section class="entry-screen" id="entryScreen" aria-labelledby="entryTitle">
     <div class="entry-inner">
-      <figure class="entry-photo">
-        <img src="img/photos/harvest-home.jpg" alt="Farmers carrying the paddy harvest home across a field in Bangladesh" width="1200" height="760" fetchpriority="high">
-        <figcaption><span data-i18n="photo.harvestHome">আমন কাটা শেষে ধান ঘরে তোলা</span> · <a href="#photoCredits" class="credit-link" onclick="showPhotoCredits(event)">Zaheed Sarwer Khan, CC BY 4.0</a></figcaption>
-      </figure>
-      <div class="entry-step" id="entryChoose">
-        <p class="entry-eyebrow" data-i18n="entry.eyebrow">মাটি কহন · নাসার তথ্যে মাঠের পরামর্শ</p>
-        <h1 id="entryTitle" data-i18n="entry.title">কীভাবে প্রবেশ করবেন?</h1>
-        <p class="entry-lead" data-i18n="entry.lead">আপনার ভূমিকা বেছে নিন। দর্শনার্থী হিসেবে সাইন-ইন ছাড়াই খোলা তথ্য দেখা যায়।</p>
-        <p class="entry-checking" id="entryChecking" role="status" hidden>
-          <span class="material-symbols-outlined" aria-hidden="true">progress_activity</span>
-          <span data-i18n="entry.checking">আগের সেশন যাচাই হচ্ছে…</span>
-        </p>
+      <div class="entry-step landing" id="entryChoose">
+        <!-- HERO: Rongu welcomes whoever arrives and offers to show them round (companion.js puts him on #landingRongu) -->
+        <div class="landing-hero">
+          <!-- THE COUNTRY TODAY: every upazila coloured by a NASA layer, now or year by year (landing-map.js) -->
+          <div class="landing-map" id="landingMap">
+            <div class="lm-head">
+              <h1 id="entryTitle" data-i18n="lm.title">বাংলাদেশ আজ, নাসার চোখে</h1>
+              <p class="lm-sub" data-i18n="lm.sub">৫৪৪টি উপজেলা। একটি স্তর বাছুন, উপজেলার উপর আঙুল রাখুন, বা সময়রেখা চালিয়ে ২৫ বছরের বদল দেখুন।</p>
+            </div>
+            <div class="lm-ctrl">
+              <p class="lm-label" data-i18n="lm.when">কখন</p>
+              <div class="lm-modes" role="tablist" aria-label="Map time">
+                <button type="button" role="tab" class="on" aria-selected="true" data-mode="now"><span class="material-symbols-outlined" aria-hidden="true">radar</span><span data-i18n="lm.now">এখন</span></button>
+                <button type="button" role="tab" aria-selected="false" data-mode="years"><span class="material-symbols-outlined" aria-hidden="true">timeline</span><span data-i18n="lm.years">২৫ বছরে</span></button>
+              </div>
+              <div class="lm-timeline" id="lmTimeline" hidden>
+                <button class="lm-play" id="lmPlay" type="button"><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span></button>
+                <input type="range" id="lmYear" min="2001" max="2025" step="1" value="2025" aria-label="Year">
+                <output id="lmYearOut" for="lmYear"></output>
+              </div>
+              <p class="lm-label" data-i18n="lm.what">কী দেখবেন</p>
+              <div class="lm-layers" id="lmLayers" role="radiogroup" aria-label="Map layer"></div>
+            </div>
+            <div class="lm-mapcol">
+              <div class="lm-legend" id="lmLegend"></div>
+              <div class="lm-canvas" id="lmCanvas">
+                <div class="lm-3d">
+                  <svg class="lm-ghost" viewBox="-6 -6 721 1048" aria-hidden="true">
+                    <defs><path id="lmGhostLand" d="M60 0L64 14L72 15L73 19L78 20L79 25L83 24L84 29L93 26L94 32L102 36L105 40L103 41L105 48L110 46L112 47L112 53L122 55L124 65L129 65L130 57L138 56L137 51L141 46L136 44L136 38L139 37L139 33L142 33L144 28L155 38L162 37L165 40L166 50L170 51L173 54L168 60L175 60L179 64L172 66L173 80L185 84L191 90L189 94L193 94L204 103L209 103L214 97L216 103L223 105L229 100L229 103L233 104L232 110L238 108L238 100L243 94L240 88L241 76L238 74L240 71L246 71L246 66L252 68L253 65L254 74L260 79L264 78L267 83L266 86L269 87L271 90L271 97L282 108L279 110L279 114L285 114L275 134L278 142L276 150L279 152L284 168L280 180L280 193L275 206L277 222L280 223L284 223L288 219L296 220L300 224L310 227L318 233L352 238L358 243L367 245L379 241L398 241L402 237L406 243L420 239L426 243L434 244L464 237L494 236L504 241L508 240L510 242L516 242L520 245L524 245L525 248L538 246L541 241L546 241L545 246L551 249L558 247L560 243L566 245L568 241L574 243L578 240L602 241L614 239L625 243L630 249L634 247L644 256L651 258L656 257L658 262L670 265L669 276L674 275L676 279L679 279L679 292L672 291L670 295L664 295L651 285L641 286L642 296L647 298L648 312L650 314L643 326L640 348L637 352L629 350L628 357L631 365L626 366L623 373L618 374L604 372L604 383L599 378L594 380L596 392L591 412L587 412L586 406L582 405L580 401L567 397L569 412L558 409L556 402L554 402L550 418L542 424L510 417L514 428L511 434L511 440L500 437L495 442L495 448L491 448L488 452L492 462L488 468L489 475L486 479L478 477L476 482L477 487L485 488L484 494L478 492L478 501L486 510L484 515L491 520L496 538L502 542L498 548L500 549L501 557L503 560L503 575L507 585L510 590L515 591L511 566L516 554L518 557L522 558L527 568L530 570L529 575L532 577L535 594L537 594L536 601L540 606L544 605L546 607L549 607L551 603L562 603L571 594L570 590L576 590L578 587L575 572L568 552L578 543L582 534L590 528L596 529L595 524L600 521L595 488L598 480L602 479L605 489L612 494L616 494L617 488L620 489L628 479L631 479L632 483L637 485L637 492L640 491L642 482L645 481L649 485L649 502L653 509L655 528L658 530L659 536L663 541L661 548L666 562L659 562L660 584L665 592L662 612L673 618L678 643L683 645L695 738L698 739L696 746L691 744L697 756L698 779L701 786L698 791L697 808L697 836L704 873L708 882L708 885L696 892L690 870L683 869L680 873L672 872L670 862L663 853L657 854L654 863L646 861L644 872L636 878L638 894L632 902L632 905L635 906L636 911L639 912L645 921L645 940L651 952L658 975L652 970L635 940L633 930L612 902L611 882L607 870L597 856L602 852L603 850L596 849L592 855L580 844L584 842L581 831L587 828L587 825L583 818L592 789L589 787L582 812L579 812L581 804L581 783L585 779L590 782L590 777L585 766L586 758L584 748L581 747L578 741L576 730L569 722L564 694L558 682L543 666L537 656L526 648L521 637L519 637L518 643L512 639L512 642L498 644L498 646L508 646L514 651L516 654L513 662L503 661L496 650L494 650L497 664L489 680L484 680L474 693L468 690L458 675L429 654L409 618L406 619L400 616L398 612L403 608L399 604L398 571L398 563L402 560L402 556L395 545L378 549L393 563L394 570L380 584L380 586L386 583L386 585L382 593L381 589L378 588L377 595L384 598L388 582L395 586L396 596L386 604L392 612L394 622L404 630L404 634L401 636L404 648L407 646L404 641L406 637L406 640L412 646L412 652L415 658L408 648L405 651L411 663L417 668L419 681L433 696L429 709L433 709L436 701L438 708L434 719L435 712L429 712L430 720L425 746L417 756L416 760L408 768L403 781L395 785L393 780L391 780L389 786L386 787L386 790L374 800L371 798L374 792L368 795L364 790L366 786L360 790L360 794L351 792L348 789L355 770L368 759L370 755L374 757L383 744L388 736L389 728L386 728L383 731L384 738L377 740L377 743L379 744L375 744L354 768L353 763L351 763L341 792L335 799L330 800L318 797L314 790L305 786L306 776L313 771L313 768L310 770L300 768L300 774L295 776L292 774L292 766L286 755L288 741L284 742L284 754L278 756L283 781L279 788L281 794L276 791L268 794L266 791L263 791L260 794L256 792L252 794L251 790L248 790L256 804L251 807L240 805L242 813L236 814L232 807L233 800L230 796L234 791L233 768L230 768L227 762L224 762L224 764L227 779L222 782L220 790L222 802L213 812L205 808L204 800L201 802L198 795L192 796L194 820L182 824L184 813L179 798L173 801L165 798L166 791L162 782L165 768L157 752L162 744L161 734L149 720L152 715L148 713L148 702L146 699L149 696L149 688L144 676L140 674L143 664L140 664L139 660L144 650L139 648L136 641L143 634L145 626L142 622L135 620L134 609L128 610L129 601L127 600L132 597L130 584L135 582L139 577L139 574L147 566L142 567L137 566L136 563L126 562L118 565L115 561L107 559L108 556L104 551L108 549L109 542L113 540L112 535L114 527L118 526L119 520L111 522L98 510L94 501L86 502L88 496L84 496L83 494L85 490L84 482L86 473L82 472L86 470L87 466L85 458L93 456L98 457L106 449L110 448L108 420L104 420L103 417L111 412L110 390L105 384L94 385L88 384L87 382L84 382L82 387L78 379L64 373L58 374L48 372L39 362L28 359L21 352L-0 325L8 316L9 308L14 306L15 301L23 294L20 280L33 277L39 287L50 290L47 284L50 280L53 278L58 279L61 270L66 266L65 249L68 244L65 241L66 235L66 238L70 238L70 235L83 238L84 241L92 236L107 236L110 240L115 238L116 241L122 242L126 234L132 239L139 241L140 236L144 236L143 228L151 224L150 221L140 220L136 214L132 216L126 210L125 204L121 202L124 200L125 192L122 190L120 184L116 184L114 189L107 187L104 192L96 191L96 188L92 186L80 186L80 182L74 179L74 174L66 172L67 160L60 159L54 151L39 140L38 136L30 140L26 138L20 142L14 135L11 118L15 116L19 102L24 101L26 92L23 92L22 89L25 80L34 74L51 68L51 58L61 49L64 49L68 42L68 45L76 44L70 28L54 25L52 31L48 24L55 6ZM504 666L508 667L507 680L498 687L493 680L494 676ZM523 666L540 690L540 699L534 702L525 700L517 680L517 668ZM432 670L446 676L451 683L433 685L429 673ZM400 678L400 703L402 702L403 689L403 678ZM447 688L459 692L459 702L461 702L462 707L464 706L464 699L474 704L480 703L482 706L482 728L474 744L461 754L461 756L466 756L462 762L459 759L450 762L449 754L461 736L463 710L458 711L458 722L456 727L453 726L451 737L441 754L437 759L435 757L434 750L439 746L447 724L448 710L457 711L454 706L448 706L445 702L446 698L443 694ZM443 709L444 724L438 732L437 725ZM400 714L401 718L396 724L398 730L400 730L403 721L403 714ZM429 764L434 770L432 779L428 778L428 775L423 776L428 786L424 789L418 791L421 782L418 780L414 788L410 790L411 782L414 778L419 780ZM155 780L159 780L159 784L163 790L163 800L172 808L170 813L166 813L157 802L159 790L155 784Z"/></defs>
+                    <use href="#lmGhostLand" class="lm-ghost-side" transform="translate(0 22)"/>
+                    <use href="#lmGhostLand" class="lm-ghost-top"/>
+                  </svg>
+                  <canvas class="lm-base" id="lmBase" aria-hidden="true"></canvas>
+                  <svg id="lmSvg" role="img" aria-labelledby="entryTitle"></svg>
+                  <canvas class="lm-light" id="lmLight" aria-hidden="true"></canvas>
+                </div>
+                <div class="lm-tip" id="lmTip" hidden></div>
+                <p class="lm-wait" id="lmWait" data-i18n="lm.loading">মানচিত্র আসছে…</p>
+              </div>
+              <p class="lm-note" id="lmNote"><span class="lm-skel lm-skel-note"></span></p>
+            </div>
+            <div class="lm-place" id="lmPlace" aria-busy="true">
+              <span class="lm-skel lm-skel-title"></span>
+              <span class="lm-skel"></span>
+              <span class="lm-skel-grid"><span class="lm-skel"></span><span class="lm-skel"></span><span class="lm-skel"></span><span class="lm-skel"></span></span>
+              <span class="lm-skel lm-skel-btn"></span>
+            </div>
+          </div>
+
+          <!-- RONGU: the guide, beside the map; the tour and the way in -->
+          <div class="landing-side">
+            <div class="landing-stage" id="landingStage">
+              <span class="landing-backdrop" aria-hidden="true"></span>
+              <!-- the disc is the Earth: a turning wire globe and a satellite on its orbit (landing-orbit.js) -->
+              <svg class="landing-sky" id="landingSky" aria-hidden="true"></svg>
+              <span class="landing-podium" aria-hidden="true"></span>
+              <div class="landing-rongu" id="landingRongu" aria-hidden="true">
+                <span class="landing-rongu-wait">
+                  <svg class="landing-ghost" viewBox="0 -30 80 130" aria-hidden="true">
+                    <path class="ghost-line" d="M51 76c11 2 15-8 9-12-5-3-8 3-4 5"/>
+                    <path d="M40 19c3-10 13-11 12 1z"/>
+                    <rect x="16" y="49" width="11" height="14" rx="2" transform="rotate(-14 21 56)"/>
+                    <rect x="27" y="48" width="26" height="27" rx="9"/>
+                    <rect x="31" y="70" width="7" height="17" rx="3.5"/><rect x="42" y="70" width="7" height="17" rx="3.5"/>
+                    <ellipse cx="34" cy="90" rx="7.5" ry="4"/><ellipse cx="46" cy="90" rx="7.5" ry="4"/>
+                    <ellipse cx="40" cy="33" rx="19" ry="16"/>
+                    <circle class="ghost-glass" cx="32" cy="31" r="7.5"/><circle class="ghost-glass" cx="48" cy="31" r="7.5"/>
+                  </svg>
+                  <span class="visually-hidden" data-i18n="landing.loading">রঙ্গু আসছে…</span>
+                </span>
+              </div>
+              <p class="landing-say" id="landingSay" data-i18n="landing.say1">স্বাগতম! আমি রঙ্গু, মাটি কহনের সঙ্গী।</p>
+              <svg class="landing-near" id="landingNear" aria-hidden="true"></svg>
+              <span class="landing-sat" id="landingSat" aria-hidden="true">
+                <svg viewBox="0 0 62 30">
+                  <rect x="1" y="8" width="19" height="14" rx="1.5" fill="#2C5E86"/>
+                  <rect x="1" y="20.4" width="19" height="1.6" fill="#1B3D5B"/>
+                  <path d="M7.3 8v12.4M13.6 8v12.4M1 14.2h19" stroke="#86AFD3" stroke-width=".8"/>
+                  <path d="M20 15h5M39 13.5h3" stroke="#8A9094" stroke-width="1.4"/>
+                  <path d="M25 10h11v11H25z" fill="#D9A647"/>
+                  <path d="M25 10l3-3h11l-3 3z" fill="#F1CD7C"/>
+                  <path d="M36 10l3-3v11l-3 3z" fill="#A6772A"/>
+                  <path d="M30.5 7V4" stroke="#8A9094" stroke-width="1"/>
+                  <ellipse cx="30.5" cy="3.4" rx="4.2" ry="1.7" fill="#F6F1E7" stroke="#9AA3A8" stroke-width=".6"/>
+                  <rect x="42" y="7" width="19" height="14" rx="1.5" fill="#2C5E86"/>
+                  <rect x="42" y="19.4" width="19" height="1.6" fill="#1B3D5B"/>
+                  <path d="M48.3 7v12.4M54.6 7v12.4M42 13.2h19" stroke="#86AFD3" stroke-width=".8"/>
+                  <circle class="landing-sat-led" cx="27.4" cy="18.6" r="1.1" fill="#E5533F"/>
+                </svg>
+              </span>
+            </div>
+            <div class="landing-actions">
+              <button class="btn btn-primary landing-cta" type="button" onclick="ronguShow(0)">
+                <span class="material-symbols-outlined" aria-hidden="true">play_arrow</span>
+                <span data-i18n="landing.tour">রঙ্গুর সাথে পুরো সফর</span>
+              </button>
+              <button class="btn btn-secondary landing-cta" type="button" onclick="chooseRole('visitor')">
+                <span class="material-symbols-outlined" aria-hidden="true">travel_explore</span>
+                <span data-i18n="landing.explore">নিজে ঘুরে দেখুন</span>
+              </button>
+            </div>
+            <p class="landing-time"><span class="material-symbols-outlined" aria-hidden="true">schedule</span> <span data-i18n="landing.time">পুরো সফর প্রায় ৫ মিনিট; যেকোনো সময় থামানো যায়।</span></p>
+            <p class="entry-checking" id="entryChecking" role="status" hidden>
+              <span class="material-symbols-outlined" aria-hidden="true">progress_activity</span>
+              <span data-i18n="entry.checking">আগের সেশন যাচাই হচ্ছে…</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- WHAT RONGU SHOWS: each card starts the tour at that part (and enters the role it needs) -->
+        <section class="landing-section" aria-labelledby="featuresTitle">
+          <h2 id="featuresTitle" data-i18n="landing.featuresTitle">রঙ্গু যা যা দেখাবে</h2>
+          <p class="landing-sub" data-i18n="landing.featuresSub">যেকোনো কার্ডে চাপ দিন: রঙ্গু উড়ে গিয়ে সেটি দেখিয়ে দেবে, দরকার হলে সেই ভূমিকায় ঢুকে।</p>
+          <div class="feature-grid">
+            <button class="feature-tile" type="button" data-chapter="2" data-role="visitor" onclick="ronguShow(2)">
+              <span class="feature-top"><span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">map</span></span><span class="feature-num" aria-hidden="true"></span></span>
+              <span class="feature-name" data-i18n="feat.map.name">দেশের মানচিত্র</span>
+              <span class="feature-desc" data-i18n="feat.map.desc">৫৪৪টি উপজেলার নাসা তথ্য; একটি জায়গা বাছলে পুরো পাতা সেটি দেখায়</span>
+              <span class="feature-foot">
+                <span class="feature-role"><span class="material-symbols-outlined" aria-hidden="true">visibility</span><span data-i18n="entry.visitor.name">দর্শনার্থী</span></span>
+                <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
+              </span>
+            </button>
+            <button class="feature-tile" type="button" data-chapter="3" data-role="visitor" onclick="ronguShow(3)">
+              <span class="feature-top"><span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">flood</span></span><span class="feature-num" aria-hidden="true"></span></span>
+              <span class="feature-name" data-i18n="feat.warn.name">আগাম সতর্কতা</span>
+              <span class="feature-desc" data-i18n="feat.warn.desc">হাওরের আকস্মিক বন্যা, ফুল আসার সময় গরম রাত, গবাদিপশুর তাপ চাপ</span>
+              <span class="feature-foot">
+                <span class="feature-role"><span class="material-symbols-outlined" aria-hidden="true">visibility</span><span data-i18n="entry.visitor.name">দর্শনার্থী</span></span>
+                <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
+              </span>
+            </button>
+            <button class="feature-tile" type="button" data-chapter="4" data-role="visitor" onclick="ronguShow(4)">
+              <span class="feature-top"><span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">partly_cloudy_day</span></span><span class="feature-num" aria-hidden="true"></span></span>
+              <span class="feature-name" data-i18n="feat.weather.name">আবহাওয়া</span>
+              <span class="feature-desc" data-i18n="feat.weather.desc">যেকোনো উপজেলার ৭ দিনের পূর্বাভাস, সাথে নাসা POWER</span>
+              <span class="feature-foot">
+                <span class="feature-role"><span class="material-symbols-outlined" aria-hidden="true">visibility</span><span data-i18n="entry.visitor.name">দর্শনার্থী</span></span>
+                <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
+              </span>
+            </button>
+            <button class="feature-tile" type="button" data-chapter="5" data-role="farmer" onclick="ronguShow(5)">
+              <span class="feature-top"><span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">agriculture</span></span><span class="feature-num" aria-hidden="true"></span></span>
+              <span class="feature-name" data-i18n="feat.farmer.name">কৃষকের পোর্টাল</span>
+              <span class="feature-desc" data-i18n="feat.farmer.desc">আজকের পরামর্শ বাংলায় শুনুন, প্রশ্ন করুন</span>
+              <span class="feature-foot">
+                <span class="feature-role"><span class="material-symbols-outlined" aria-hidden="true">agriculture</span><span data-i18n="entry.farmer.name">কৃষক</span></span>
+                <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
+              </span>
+            </button>
+            <button class="feature-tile" type="button" data-chapter="6" data-role="farmer" onclick="ronguShow(6)">
+              <span class="feature-top"><span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">autorenew</span></span><span class="feature-num" aria-hidden="true"></span></span>
+              <span class="feature-name" data-i18n="feat.planner.name">ফসল চক্র পরিকল্পনা</span>
+              <span class="feature-desc" data-i18n="feat.planner.desc">জমি আর অগ্রাধিকার দিলে কম পানির ফসল চক্র</span>
+              <span class="feature-foot">
+                <span class="feature-role"><span class="material-symbols-outlined" aria-hidden="true">agriculture</span><span data-i18n="entry.farmer.name">কৃষক</span></span>
+                <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
+              </span>
+            </button>
+            <button class="feature-tile" type="button" data-chapter="7" data-role="officer" onclick="ronguShow(7)">
+              <span class="feature-top"><span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">assignment_ind</span></span><span class="feature-num" aria-hidden="true"></span></span>
+              <span class="feature-name" data-i18n="feat.desk.name">ম্যানেজার ডেস্ক</span>
+              <span class="feature-desc" data-i18n="feat.desk.desc">কৃষকের কেস, কল-ব্যাক আর মাঠ পর্যবেক্ষণ</span>
+              <span class="feature-foot">
+                <span class="feature-role"><span class="material-symbols-outlined" aria-hidden="true">badge</span><span data-i18n="entry.officer.name">ম্যানেজার</span></span>
+                <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
+              </span>
+            </button>
+            <button class="feature-tile" type="button" data-chapter="8" data-role="officer" onclick="ronguShow(8)">
+              <span class="feature-top"><span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">call</span></span><span class="feature-num" aria-hidden="true"></span></span>
+              <span class="feature-name" data-i18n="feat.calls.name">কল ও এসএমএস</span>
+              <span class="feature-desc" data-i18n="feat.calls.desc">রাজি কৃষককে প্রতিদিনের পরামর্শ কল; ডেমোতে সব ড্রাই রান</span>
+              <span class="feature-foot">
+                <span class="feature-role"><span class="material-symbols-outlined" aria-hidden="true">badge</span><span data-i18n="entry.officer.name">ম্যানেজার</span></span>
+                <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
+              </span>
+            </button>
+            <button class="feature-tile" type="button" data-chapter="9" data-role="officer" onclick="ronguShow(9)">
+              <span class="feature-top"><span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">satellite_alt</span></span><span class="feature-num" aria-hidden="true"></span></span>
+              <span class="feature-name" data-i18n="feat.evidence.name">স্যাটেলাইট প্রমাণ</span>
+              <span class="feature-desc" data-i18n="feat.evidence.desc">৭ দিকে তুলনা, আর প্রতিটি সংখ্যার নাসা উৎস</span>
+              <span class="feature-foot">
+                <span class="feature-role"><span class="material-symbols-outlined" aria-hidden="true">badge</span><span data-i18n="entry.officer.name">ম্যানেজার</span></span>
+                <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
+              </span>
+            </button>
+          </div>
+        </section>
+
+        <!-- ROLES: straight in, without the tour -->
+        <section class="landing-section" aria-labelledby="rolesTitle">
+          <h2 id="rolesTitle" data-i18n="entry.title">কীভাবে প্রবেশ করবেন?</h2>
+          <p class="landing-sub" data-i18n="entry.lead">আপনার ভূমিকা বেছে নিন। দর্শনার্থী হিসেবে সাইন-ইন ছাড়াই খোলা তথ্য দেখা যায়।</p>
         <div class="role-grid">
           <button class="role-card" type="button" onclick="chooseRole('visitor')">
-            <img class="role-photo" src="img/photos/nasa-modis-bangladesh.jpg" alt="" loading="lazy">
+            <span class="role-art" aria-hidden="true">
+              <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
+                <rect width="400" height="120" fill="#E2EEEE"/>
+                <g fill="#9DC7C2"><circle cx="40" cy="22" r="1.6"/><circle cx="92" cy="50" r="1.2"/><circle cx="130" cy="14" r="1.3"/><circle cx="300" cy="16" r="1.1"/><circle cx="352" cy="28" r="1.6"/><circle cx="374" cy="72" r="1.2"/><circle cx="26" cy="84" r="1.1"/></g>
+                <defs><clipPath id="roleArtPlanet"><circle cx="200" cy="190" r="132"/></clipPath></defs>
+                <circle cx="200" cy="190" r="132" fill="#D3E6E5"/>
+                <g clip-path="url(#roleArtPlanet)" fill="none" stroke="#9DC7C2" stroke-width="1.2">
+                  <ellipse cx="200" cy="104" rx="104" ry="14"/><ellipse cx="200" cy="77" rx="62" ry="8"/>
+                  <ellipse cx="200" cy="190" rx="66" ry="132"/><ellipse cx="200" cy="190" rx="114" ry="132"/><path d="M200 55v70"/>
+                </g>
+                <ellipse cx="200" cy="66" rx="165" ry="24" transform="rotate(-6 200 66)" fill="none" stroke="#2A8A86" stroke-width="1.5" stroke-dasharray="3 7" stroke-linecap="round" opacity=".6"/>
+                <g transform="translate(292 26) rotate(-10) scale(.8)">
+                <rect x="1" y="8" width="19" height="14" rx="1.5" fill="#2C5E86"/><path d="M7.3 8v14M13.6 8v14M1 15h19" stroke="#86AFD3" stroke-width=".8"/>
+                <path d="M20 15h5M39 13.5h3" stroke="#8A9094" stroke-width="1.4"/><path d="M25 10h11v11H25z" fill="#D9A647"/><path d="M25 10l3-3h11l-3 3z" fill="#F1CD7C"/><path d="M36 10l3-3v11l-3 3z" fill="#A6772A"/>
+                <rect x="42" y="7" width="19" height="14" rx="1.5" fill="#2C5E86"/><path d="M48.3 7v14M54.6 7v14M42 14h19" stroke="#86AFD3" stroke-width=".8"/>
+                </g>
+              </svg>
+            </span>
             <span class="role-icon"><span class="material-symbols-outlined" aria-hidden="true">travel_explore</span></span>
             <span class="role-name" data-i18n="entry.visitor.name">দর্শনার্থী</span>
             <span class="role-desc" data-i18n="entry.visitor.desc">সাইন-ইন ছাড়া পড়ার জন্য: বাংলাদেশের মানচিত্র, ওভারভিউ ও আবহাওয়া।</span>
             <span class="role-tag tag-open" data-i18n="entry.visitor.tag">সাইন-ইন লাগবে না</span>
           </button>
           <button class="role-card" type="button" onclick="chooseRole('farmer')">
-            <img class="role-photo" src="img/photos/farmer-rajshahi.jpg" alt="" loading="lazy">
+            <span class="role-art" aria-hidden="true">
+              <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
+                <rect width="400" height="120" fill="#F1E2C6"/>
+                <circle cx="318" cy="38" r="30" fill="#F6D9A0"/><circle cx="318" cy="38" r="18" fill="#E9B65C"/>
+                <path d="M0 76C80 60 160 70 240 63S360 64 400 58V120H0Z" fill="#BCCB92"/>
+                <path d="M0 94C90 80 190 92 280 84S380 85 400 81V120H0Z" fill="#91AE6A"/>
+                <path d="M150 96l-3-7M150 96l0-8M150 96l3-7M176 95l-3-7M176 95l0-8M176 95l3-7M202 96l-3-7M202 96l0-8M202 96l3-7M228 95l-3-7M228 95l0-8M228 95l3-7M254 94l-3-7M254 94l0-8M254 94l3-7M280 93l-3-7M280 93l0-8M280 93l3-7M306 92l-3-7M306 92l0-8M306 92l3-7M332 91l-3-7M332 91l0-8M332 91l3-7M358 91l-3-7M358 91l0-8M358 91l3-7M384 90l-3-7M384 90l0-8M384 90l3-7" fill="none" stroke="#6F914F" stroke-width="2" stroke-linecap="round"/>
+                <path d="M0 108C110 98 230 110 400 100V120H0Z" fill="#6F914F"/>
+                <g transform="translate(62 28)">
+                  <rect width="32" height="56" rx="7" fill="#0B4A4F"/><rect x="3.5" y="7" width="25" height="40" rx="2.5" fill="#F8F4EA"/>
+                  <path d="M9 17h14M9 24h10M9 31h12" stroke="#C07A24" stroke-width="2.4" stroke-linecap="round"/>
+                </g>
+                <path d="M104 46a9 9 0 0 1 0 16M111 39a19 19 0 0 1 0 30" fill="none" stroke="#C07A24" stroke-width="2.6" stroke-linecap="round"/>
+              </svg>
+            </span>
             <span class="role-icon"><span class="material-symbols-outlined" aria-hidden="true">agriculture</span></span>
             <span class="role-name" data-i18n="entry.farmer.name">কৃষক</span>
             <span class="role-desc" data-i18n="entry.farmer.desc">কৃষক পোর্টাল: আজকের পরামর্শ, আবহাওয়া, নদীভাঙন, সহকারী ও খামার; ফসল পরিকল্পনা।</span>
             <span class="role-tag tag-demo" data-i18n="entry.farmer.tag">ডেমো সাইন-ইন</span>
           </button>
           <button class="role-card" type="button" onclick="chooseRole('officer')">
-            <img class="role-photo" src="img/photos/transplanting.jpg" alt="" loading="lazy">
+            <span class="role-art" aria-hidden="true">
+              <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
+                <rect width="400" height="120" fill="#E2EBF0"/>
+                <path d="M0 30H400M0 60H400M0 90H400M50 0V120M100 0V120M150 0V120M200 0V120M250 0V120M300 0V120M350 0V120" stroke="#D4E1E9" stroke-width="1"/>
+                <path transform="translate(158 9) scale(.102)" d="M60 0L124 65L138 56L144 28L162 37L179 64L173 80L204 103L214 97L238 108L238 74L253 65L285 114L275 134L284 168L280 223L296 220L367 245L494 236L525 248L546 241L551 249L614 239L670 265L679 279L670 295L641 286L650 314L640 348L629 350L623 373L594 380L591 412L567 397L569 412L554 402L542 424L510 417L511 440L495 442L489 475L476 482L502 542L507 585L515 591L516 554L546 607L578 587L568 552L600 521L598 480L612 494L628 479L637 492L649 485L666 562L659 562L662 612L683 645L698 739L697 836L708 882L696 892L690 870L672 872L663 853L636 878L632 905L645 921L658 975L612 902L597 856L603 850L592 855L580 844L592 789L579 812L590 777L558 682L519 637L498 644L514 651L513 662L494 650L489 680L468 690L400 616L395 545L378 549L394 570L377 595L395 586L386 604L433 696L429 709L436 701L438 708L403 781L391 780L374 800L366 786L348 789L386 728L351 763L335 799L305 786L313 768L292 774L288 741L278 756L281 794L248 790L256 804L240 805L242 813L232 807L227 762L213 812L192 796L194 820L182 824L179 798L165 798L161 734L149 720L136 641L145 626L127 600L147 566L107 559L119 520L83 494L85 458L110 448L110 390L48 372L-0 325L23 294L20 280L33 277L50 290L58 279L66 235L139 241L151 224L126 210L120 184L104 192L80 186L38 136L14 135L25 80L76 44L70 28L48 24Z" fill="#F8F4EA" stroke="#7FA3B5" stroke-width="12" stroke-linejoin="round"/>
+                <g transform="translate(172 27)"><path d="M0 0c-5.5 0-9.5 4-9.5 9.3C-9.5 16 0 22 0 22s9.5-6 9.5-12.7C9.5 4 5.5 0 0 0z" fill="#C07A24"/><circle cy="9" r="3.4" fill="#F8F4EA"/></g><g transform="translate(212 18)"><path d="M0 0c-5.5 0-9.5 4-9.5 9.3C-9.5 16 0 22 0 22s9.5-6 9.5-12.7C9.5 4 5.5 0 0 0z" fill="#2F6F8A"/><circle cy="9" r="3.4" fill="#F8F4EA"/></g><g transform="translate(184 66)"><path d="M0 0c-5.5 0-9.5 4-9.5 9.3C-9.5 16 0 22 0 22s9.5-6 9.5-12.7C9.5 4 5.5 0 0 0z" fill="#0B4A4F"/><circle cy="9" r="3.4" fill="#F8F4EA"/></g>
+                <g transform="translate(52 34)">
+                  <rect width="62" height="40" rx="12" fill="#2F6F8A"/><path d="M14 40l-2 12 14-12z" fill="#2F6F8A"/>
+                  <circle cx="19" cy="20" r="3.6" fill="#F8F4EA"/><circle cx="31" cy="20" r="3.6" fill="#F8F4EA"/><circle cx="43" cy="20" r="3.6" fill="#F8F4EA"/>
+                </g>
+                <g transform="translate(270 22)">
+                  <rect width="80" height="82" rx="10" fill="#F8F4EA"/><rect x="27" y="-5" width="26" height="11" rx="4" fill="#2F6F8A"/>
+                  <path d="M12 20h40M12 28h28" stroke="#C9D7DF" stroke-width="3" stroke-linecap="round"/>
+                  <rect x="12" y="50" width="10" height="20" rx="2" fill="#9FBCC8"/><rect x="28" y="40" width="10" height="30" rx="2" fill="#2F6F8A"/>
+                  <rect x="44" y="54" width="10" height="16" rx="2" fill="#9FBCC8"/><rect x="60" y="34" width="10" height="36" rx="2" fill="#2F6F8A"/>
+                  <circle cx="72" cy="8" r="9" fill="#6F914F"/><path d="M68 8l3 3 5-6" fill="none" stroke="#F8F4EA" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+                </g>
+              </svg>
+            </span>
             <span class="role-icon"><span class="material-symbols-outlined" aria-hidden="true">shield_person</span></span>
             <span class="role-name" data-i18n="entry.officer.name">ম্যানেজার</span>
             <span class="role-desc" data-i18n="entry.officer.desc">ম্যানেজার ডেস্ক: কৃষকের কেস, তুলনা, কল, গবাদিপশু ও ডেটার মান।</span>
-            <span class="role-tag tag-open" data-i18n="entry.officer.tag">লগইন লাগবে</span>
+            <span class="role-tag tag-open" id="roleTagOfficer" data-i18n="entry.officer.tag">লগইন লাগবে</span>
+            <span class="role-tag tag-demo" id="roleTagGuest" hidden data-i18n="entry.officer.tagGuest">অতিথি হিসেবে দেখুন</span>
           </button>
         </div>
         <p class="entry-foot">
           <span class="material-symbols-outlined" aria-hidden="true">info</span>
-          <span data-i18n="entry.foot">কৃষকের প্রবেশ এখানে ডেমো, নিরাপদ বা যাচাই করা লগইন নয়। ম্যানেজাররা নিজের অ্যাকাউন্টে প্রবেশ করেন।</span>
+          <span data-i18n="entry.foot">কৃষক ও অতিথি প্রবেশ এখানে ডেমো: নমুনা তথ্য, নিরাপদ বা যাচাই করা লগইন নয়, কোনো কল বা এসএমএস যায় না। আসল ম্যানেজাররা নিজের অ্যাকাউন্টে প্রবেশ করেন।</span>
         </p>
+        </section>
       </div>
 
       <div class="entry-step entry-form-card" id="entryFarmer" hidden aria-labelledby="entryFarmerTitle">
@@ -153,6 +398,20 @@
             <h2 id="entryOfficerTitle" data-i18n="entry.officer.formTitle">ম্যানেজার প্রবেশ</h2>
           </div>
         </div>
+        <!-- Guest: no ID and no password (the server runs with GUEST_MODE=true) -->
+        <div class="entry-guest" id="entryGuest" hidden>
+          <p class="entry-explain" data-i18n="entry.guest.explain">অতিথি হিসেবে ম্যানেজারের ডেস্ক ঘুরে দেখুন: নমুনা কৃষক ও নমুনা তথ্য। কোনো আসল কল বা এসএমএস পাঠানো হয় না।</p>
+          <button class="btn btn-primary btn-block" type="button" id="entryGuestBtn" onclick="guestManagerSignIn()">
+            <span class="material-symbols-outlined" aria-hidden="true">login</span>
+            <span data-i18n="entry.guest.enter">অতিথি হিসেবে প্রবেশ করুন</span>
+          </button>
+          <p class="entry-error" id="entryGuestError" role="alert" hidden></p>
+        </div>
+
+        <!-- An account is optional: only offered when this server has account sign-in (or the demo login) set up -->
+        <details class="entry-account" id="entryAccount">
+          <summary><span data-i18n="entry.account.summary">আমার অ্যাকাউন্ট আছে (ঐচ্ছিক)</span></summary>
+        <div id="entryAccountForm">
         <p class="entry-explain" data-i18n="entry.officer.help">আপনার অফিস থেকে পাওয়া ইউজার আইডি ও পাসওয়ার্ড দিন।</p>
         <form class="entry-form" onsubmit="entryOfficerSignIn(event)" novalidate>
           <div class="form-group">
@@ -170,6 +429,7 @@
           </button>
           <p class="entry-error" id="entryOfficerError" role="alert" hidden></p>
         </form>
+        </div>
 
         <!-- The old demo login: shown only when the server runs with DEMO_MODE=true -->
         <div id="entryOfficerDemo" hidden>
@@ -198,6 +458,8 @@
             <p class="entry-error" id="entryDemoError" role="alert" hidden></p>
           </form>
         </div>
+        </details>
+        <p class="entry-notice" id="entryNoSignIn" hidden data-i18n="entry.none">এই সার্ভারে ম্যানেজার প্রবেশ চালু করা নেই।</p>
       </div>
     </div>
   </section>
@@ -335,6 +597,37 @@
             <ul class="kv-list" id="floodCheckList"></ul>
             <details class="card-source"><summary data-i18n="common.sourceMethod">উৎস ও পদ্ধতি</summary><p class="warning-note" id="floodCheckNote"></p></details>
           </div>
+      </div>
+
+      <!-- THE FIELDS FROM SPACE: the upazila's cropland on the 1 km grid (research/grid/build.py) -->
+      <div class="ov-section-head">
+        <h2 data-i18n="overview.fieldsSection">মাঠ, উপগ্রহের চোখে</h2>
+        <p class="subtitle" data-i18n="overview.fieldsSectionSub">শুধু ফসলি জমি ধরে: এ মৌসুমের সবুজ, গ্রীষ্মে জমি খালির সময়, বোরোতে পানির টান আর মাটি</p>
+      </div>
+      <div class="ov-fields">
+        <div class="card fields-card">
+          <div class="card-header">
+            <h3 data-i18n="overview.fieldsTitle">এই উপজেলার খেত</h3>
+            <span class="badge badge-neutral" id="fieldsBadge">—</span>
+          </div>
+          <div class="fields-body">
+            <figure class="fields-chart">
+              <svg id="fieldsChart" viewBox="0 0 520 210" role="img" aria-labelledby="fieldsChartCap"></svg>
+              <figcaption id="fieldsChartCap"></figcaption>
+            </figure>
+            <ul class="fields-notes" id="fieldsNotes"></ul>
+          </div>
+          <details class="card-source"><summary data-i18n="common.sourceMethod">উৎস ও পদ্ধতি</summary><p class="warning-note" id="fieldsNote"></p></details>
+        </div>
+        <div class="card less-green-card">
+          <div class="card-header">
+            <h3 data-i18n="overview.lessGreenTitle">যেখানে খেত প্রত্যাশার চেয়ে কম সবুজ</h3>
+            <span class="badge badge-neutral" id="lessGreenBadge">—</span>
+          </div>
+          <ul class="kv-list" id="lessGreenList"></ul>
+          <p class="track-record" id="lessGreenRecord"></p>
+          <details class="card-source"><summary data-i18n="common.sourceMethod">উৎস ও পদ্ধতি</summary><p class="warning-note" id="lessGreenNote"></p></details>
+        </div>
       </div>
 
       <!-- THE MAP AND THIS PLACE -->
@@ -882,7 +1175,11 @@
                 <tr><td>NASA POWER (MERRA-2)</td><td data-i18n="glossary.powerNative">০.৫° গ্রিড, দৈনিক</td><td data-i18n="glossary.powerHere">জেলার বিন্দু; BMD স্টেশনের সাথে মাসভিত্তিক সমন্বয়</td></tr>
                 <tr><td>GPM IMERG Final</td><td data-i18n="glossary.imergNative">০.১° (~১০ কিমি), দৈনিক</td><td data-i18n="glossary.imergHere">একই বিন্দু; ২৫ মৌসুমের পানির হিসাব</td></tr>
                 <tr><td>SMAP L4</td><td data-i18n="glossary.smapNative">৯ কিমি, ৩ ঘণ্টা</td><td data-i18n="glossary.smapHere">উপজেলার বিন্দু; অতীতের একই দিনের সাথে তুলনা</td></tr>
-                <tr><td>MODIS NDVI (MOD13Q1)</td><td data-i18n="glossary.modisNative">২৫০ মি, ১৬ দিন</td><td data-i18n="glossary.modisHere">উপজেলার কেন্দ্রের পিক্সেল; মাসের মধ্যমা</td></tr>
+                <tr><td>ESA WorldCover 2021</td><td data-i18n="glossary.wcNative">১০ মি</td><td data-i18n="glossary.wcHere">কোন জমি ফসলি: নিচের ১ কিমি গ্রিডের সব হিসাব শুধু ফসলি জমি ধরে</td></tr>
+                <tr><td>MODIS NDVI (MOD13A2) + VIIRS (VJ113A2)</td><td data-i18n="glossary.ndvi1kmNative">১ কিমি, ১৬ দিন</td><td data-i18n="glossary.ndvi1kmHere">উপজেলার ফসলি জমির ১ কিমি ঘর, জমির ভাগে ওজন; ২৫ বছরের ধারা বাদ দিয়ে এখনকার সবুজ, বছরে ফসল, গ্রীষ্মে খালি জমি</td></tr>
+                <tr><td>ECOSTRESS ESI</td><td data-i18n="glossary.esiNative">৭০ মি, অনিয়মিত</td><td data-i18n="glossary.esiHere">মার্চ–এপ্রিলের দিনের পরিষ্কার ছবিতে সবুজ ফসলি পিক্সেল: কতটায় পানির টান</td></tr>
+                <tr><td>SoilGrids 2.0</td><td data-i18n="glossary.sgNative">২৫০ মি</td><td data-i18n="glossary.sgHere">১ কিমিতে গড়, তারপর ফসলি জমিতে: মাটির ধরন আর ধরে রাখা পানি</td></tr>
+                <tr><td>MODIS NDVI (MOD13Q1)</td><td data-i18n="glossary.modisNative">২৫০ মি, ১৬ দিন</td><td data-i18n="glossary.modisHere">উপজেলার কেন্দ্রের পিক্সেল; মাসের মধ্যমা (মৌসুমের ক্যালেন্ডার)</td></tr>
                 <tr><td>HLS (Landsat + Sentinel-2)</td><td data-i18n="glossary.hlsNative">৩০ মি, ২–৩ দিন</td><td data-i18n="glossary.hlsHere">উপজেলার আমন জমির অংশ</td></tr>
                 <tr><td>OPERA DSWx, NISAR</td><td data-i18n="glossary.operaNative">৩০ মি / ২০ মি</td><td data-i18n="glossary.operaHere">উপজেলার জমির কত অংশ পানির নিচে</td></tr>
                 <tr><td>GRACE/GRACE-FO → GLDAS-2.2</td><td data-i18n="glossary.graceNative">০.২৫°, মাসিক</td><td data-i18n="glossary.graceHere">জেলার ভূগর্ভস্থ পানির ধারা</td></tr>
@@ -1190,6 +1487,7 @@
           <div class="today-seasons" id="todaySeasons"></div>
           <p class="today-narrative" id="todayNarrative"></p>
           <p class="today-rain" id="todayRain" aria-live="polite"></p>
+          <div class="today-space" id="todaySpace"></div>
           <div class="today-tips" id="todayTips"></div>
           <div class="today-actions">
             <button class="btn btn-primary" type="button" onclick="toggleTodayAudio()">
@@ -1992,5 +2290,9 @@
   <script defer src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script defer src="/vendor/supabase.js"></script>
   <script type="module" src="app.js"></script>
+  <script type="module" src="neo.js"></script>
+  <script type="module" src="landing-map.js"></script>
+  <script type="module" src="landing-orbit.js"></script>
+  <script type="module" src="companion.js"></script>
 </body>
 </html>

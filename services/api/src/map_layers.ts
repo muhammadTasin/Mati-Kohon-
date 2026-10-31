@@ -15,6 +15,7 @@ import { cropLossFor, floodFor, liveFields, liveStatus, liveUpazilas } from './l
 import { LOC } from '../../../packages/rotation-engine/src/data/location.ts';
 import { AMAN_CATALOG } from '../../../packages/rotation-engine/src/data/crop_catalog.ts';
 import { fieldAlerts, worstLevel, type FieldAlert, type FieldCrops } from '../../../packages/rotation-engine/src/field_alerts.ts';
+import { conditionTrackRecord, fieldConditionsData } from '../../../packages/rotation-engine/src/data/field_conditions.ts';
 
 const DATA = new URL('../../../packages/rotation-engine/src/data/', import.meta.url);
 const read = (name: string) => JSON.parse(fs.readFileSync(new URL(name, DATA), 'utf8'));
@@ -41,6 +42,18 @@ interface StaticRow {
   dryRootWet: number | null;
   /** The yearly hot days' Theil-Sen slope per decade, only where the Mann-Kendall p is below 0.05; else null. */
   hotTrendPerDecade: number | null;
+  /** The 1 km cropland grid (field_conditions.json): this season's greenness against what the trend expects. */
+  condPct: number | null;
+  condLevel: string | null;
+  condConfidence: 'high' | 'low' | null;
+  /** The summer gap: days the fields usually stand empty after the winter harvest, and from when. */
+  emptyDays: number | null;
+  emptyFrom: string | null;
+  /** March-April: % of green fields ECOSTRESS saw short of water. */
+  boroThirstPct: number | null;
+  /** SoilGrids: water the top 30 cm holds (mm), and its texture. */
+  soilAwcMm: number | null;
+  soilTexture: string | null;
 }
 
 let fixed: { rows: Record<string, StaticRow>; sources: Record<string, string> } | null = null;
@@ -53,6 +66,7 @@ function staticRows() {
   const pest = read('pesticide_load.json');
   const budget = read('groundwater_budget.json');
   const calendar = read('season_calendar.json');
+  const grid = fieldConditionsData()?.upazilas ?? {};
   const sum = (arr: number[] | undefined, months: number[]) => (arr ? Math.round(months.reduce((a, m) => a + arr[m], 0) * 10) / 10 : null);
   const mean = (arr: number[] | undefined, months: number[]) => (arr ? Math.round(months.reduce((a, m) => a + arr[m], 0) / months.length * 100) / 100 : null);
   const rows: Record<string, StaticRow> = {};
@@ -82,6 +96,7 @@ function staticRows() {
       preMonsoonErosiveDays: sum(c?.months?.erosiveRainDays, [3, 4, 5]),
       dryRootWet: mean(c?.months?.rootWet, [0, 1, 2, 3]),
       hotTrendPerDecade: hotTrend && hotTrend.p < 0.05 ? hotTrend.slopePerDecade : null,
+      ...gridRow(grid[u.id]),
     };
   }
   fixed = {
@@ -95,9 +110,56 @@ function staticRows() {
       field: "Paddy water from NASA GPM IMERG rain and POWER evapotranspiration (the replay's water balance); heat and cold from NASA POWER and Open-Meteo's 7-day forecast (a weather model, not NASA)",
       soil: atlas.source,
       risk: `${calendar.source}; seasons ${calendar.seasons} (research/explore/season_calendar.py)`,
+      fieldGrid: fieldGridSource(),
     },
   };
   return fixed;
+}
+
+/** The map's values from the 1 km cropland grid (research/grid/build.py); all null before it has run. */
+function gridRow(g: any) {
+  const c = g?.condition;
+  return {
+    condPct: c && c.level !== 'noCrop' && c.level !== 'unclear' ? c.percentile : null,
+    condLevel: c?.level ?? null,
+    condConfidence: c?.confidence ?? null,
+    emptyDays: g?.emptyField?.days ?? null,
+    emptyFrom: g?.emptyField?.from ?? null,
+    boroThirstPct: typeof g?.boroThirst?.share === 'number' ? Math.round(g.boroThirst.share * 100) : null,
+    soilAwcMm: g?.soil?.awcMm30 ?? null,
+    soilTexture: g?.soil?.texture ?? null,
+  };
+}
+
+function fieldGridSource() {
+  const d = fieldConditionsData();
+  if (!d) return 'not built yet (research/grid/build.py)';
+  return `${d.method} Now: ${d.sources.ndviNow}; against ${d.sources.ndviBaseline}, ${d.now.trend}. Summer gap: the same MODIS, smoothed. ${d.sources.stress}. ${d.sources.soil}. Cropland: ${d.sources.cropland}.`;
+}
+
+/**
+ * Where the fields are less green than the 25-year record expects for these days, with both satellites agreeing
+ * (NOAA-20 VIIRS now, Terra MODIS's own reading): the least green first. A list for officers' field checks; a
+ * paler field can mean a late planting or an early harvest as well as water, pest or disease trouble.
+ */
+export function greennessCheckList(limit = 60) {
+  const d = fieldConditionsData();
+  if (!d) return null;
+  const { rows } = staticRows();
+  const out = [];
+  for (const [id, g] of Object.entries(d.upazilas)) {
+    const c = g.condition;
+    if (!c || c.confidence !== 'high' || (c.level !== 'below' && c.level !== 'wellBelow')) continue;
+    if (g.cropland.km2 < 20) continue; // city thanas: too little cropland to send a field check
+    const r = rows[id];
+    out.push({
+      id, name: r?.name ?? id, district: r?.district ?? '', percentile: c.percentile, level: c.level, date: c.date,
+      ndvi: c.ndvi, expected: c.expected, seenPct: c.seen != null ? Math.round(c.seen * 100) : null,
+      modisPercentile: c.modis?.percentile ?? null, croplandKm2: g.cropland.km2,
+    });
+  }
+  out.sort((a, b) => a.percentile - b.percentile || b.croplandKm2 - a.croplandKm2);
+  return { now: d.now, total: out.length, upazilas: out.slice(0, limit), record: conditionTrackRecord() };
 }
 
 let grows: Record<string, { aman: boolean; boro: boolean; wheat: boolean }> | null = null;
@@ -179,8 +241,14 @@ function buildYears() {
   for (const [name, place] of Object.entries<any>(calendar.places)) {
     if (name !== 'talanda_tanore') districts[name] = place.years;
   }
-  const upazilas: Record<string, number[] | null> = {};
+  const upazilas: Record<string, Array<number | null> | null> = {};
   for (const [id, g] of Object.entries<any>(calendar.greenness.upazilas)) upazilas[id] = g.cropsByYear ?? null;
+  // over the whole cropland where the 1 km grid has been built (its years are complete agricultural years)
+  const grid = fieldConditionsData();
+  const gridYears = grid?.cropsByYear.years ?? [];
+  for (const [id, g] of Object.entries(grid?.upazilas ?? {})) {
+    if (g.cropsByYear) upazilas[id] = (calendar.years as number[]).map(y => (gridYears.includes(y) ? g.cropsByYear![gridYears.indexOf(y)] : null));
+  }
   return {
     years: calendar.years as number[],
     districts,
@@ -188,7 +256,9 @@ function buildYears() {
     sources: {
       climate: `${calendar.source}; one value a year at each district point`,
       groundwater: calendar.groundwaterSource,
-      crops: `${calendar.greenness.product}; growth peaks of the smoothed NDVI per agricultural year (November-October), as research/explore/national_greenness.py`,
+      crops: grid
+        ? "NASA MODIS MOD13A2 1 km NDVI over the upazila's cropland (ESA WorldCover 2021): growth peaks of the smoothed NDVI per agricultural year (November-October), research/grid/build.py"
+        : `${calendar.greenness.product}; growth peaks of the smoothed NDVI per agricultural year (November-October), as research/explore/national_greenness.py`,
     },
   };
 }

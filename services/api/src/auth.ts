@@ -8,6 +8,8 @@
  *    for authorisation.
  *  - Only SUPABASE_URL and SUPABASE_ANON_KEY are read here. The privileged server key is never used by this project.
  *  - With DEMO_MODE=true the old in-memory demo token is accepted too (officer_desk.ts).
+ *  - Sign-in is optional: with GUEST_MODE=true the desk opens as a guest in one click (sample data only). A guest passes
+ *    requireManager but not requireRealManager, which every route that can place a real call or SMS uses.
  */
 import type http from 'node:http';
 import { createClient } from '@supabase/supabase-js';
@@ -21,15 +23,24 @@ export interface AuthConfig {
   /** Domain the User ID is combined with: `<userId>@<emailDomain>` is the Supabase account email (AUTH_EMAIL_DOMAIN). */
   emailDomain: string;
   demoMode: boolean;
+  /** One-click guest manager is on (GUEST_MODE=true). */
+  guestMode: boolean;
+  /** Account sign-in (Supabase) is set up on this server; when false the browser shows no account form. */
+  accountSignIn: boolean;
 }
 
 /** What the browser needs to sign in. The anon key is public by design; nothing secret is returned. */
 export function authConfig(): AuthConfig {
+  const supabaseUrl = process.env.SUPABASE_URL?.trim() || '';
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY?.trim() || '';
+  const emailDomain = (process.env.AUTH_EMAIL_DOMAIN ?? '').trim().toLowerCase().replace(/^@/, '');
   return {
-    supabaseUrl: process.env.SUPABASE_URL?.trim() || '',
-    supabaseAnonKey: process.env.SUPABASE_ANON_KEY?.trim() || '',
-    emailDomain: (process.env.AUTH_EMAIL_DOMAIN ?? '').trim().toLowerCase().replace(/^@/, ''),
+    supabaseUrl,
+    supabaseAnonKey,
+    emailDomain,
     demoMode: desk.demoEnabled(),
+    guestMode: desk.guestEnabled(),
+    accountSignIn: Boolean(supabaseUrl && supabaseAnonKey && emailDomain),
   };
 }
 
@@ -68,7 +79,12 @@ export type VerifyToken = (token: string) => Promise<Pick<User, 'id' | 'email' |
 
 const verifyWithSupabase: VerifyToken = async (token) => {
   const supabase = supabaseClient();
-  if (!supabase) throw new ApiError('configuration_required', 'Manager sign-in is not configured on this server (SUPABASE_URL, SUPABASE_ANON_KEY)');
+  if (!supabase) {
+    // a guest or demo server has no account backend on purpose: a token it does not know (a session lost in a restart, an
+    // expired guest) is simply "not signed in", so the browser returns to the picker instead of waiting for the server
+    if (desk.guestEnabled() || desk.demoEnabled()) return null;
+    throw new ApiError('configuration_required', 'Manager sign-in is not configured on this server (SUPABASE_URL, SUPABASE_ANON_KEY)');
+  }
   const { data, error } = await supabase.auth.getUser(token);
   return error || !data.user ? null : data.user;
 };
@@ -99,5 +115,12 @@ export async function requireManager(req: http.IncomingMessage, verify: VerifyTo
   const officer = managerFromUser(user);
   if (!officer) throw new ApiError('forbidden', 'This account is not allowed to use the manager desk');
   siteByRequest.set(req, officer.site);
+  return officer;
+}
+
+/** Like requireManager, but refuses the guest: for anything that can place a real call or SMS. */
+export async function requireRealManager(req: http.IncomingMessage, verify: VerifyToken = verifyWithSupabase): Promise<desk.Officer> {
+  const officer = await requireManager(req, verify);
+  if (officer.guest) throw new ApiError('forbidden', 'Guest mode cannot place real calls or messages: sign in with a manager account');
   return officer;
 }

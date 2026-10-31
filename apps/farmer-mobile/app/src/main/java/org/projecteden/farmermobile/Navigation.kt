@@ -1,22 +1,32 @@
 package org.projecteden.farmermobile
 
 import android.util.Log
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
 import org.projecteden.farmermobile.theme.Surface
 import org.projecteden.farmermobile.ui.components.EdenBottomNavBar
 import org.projecteden.farmermobile.ui.components.EdenTab
+import org.projecteden.farmermobile.ui.components.RonguPrefs
+import org.projecteden.farmermobile.ui.components.RonguTourCard
+import org.projecteden.farmermobile.ui.components.RonguTourScrim
+import org.projecteden.farmermobile.ui.components.RonguTourSteps
+import org.projecteden.farmermobile.ui.screens.today.RonguGreetingState
 import org.projecteden.farmermobile.ui.screens.ai.AiAssistantScreen
 import org.projecteden.farmermobile.ui.screens.cropplan.CropPlanScreen
 import org.projecteden.farmermobile.ui.screens.erosion.RiverErosionScreen
@@ -92,6 +102,22 @@ fun EdenMainScaffold(
     onNavigateToHistory: () -> Unit
 ) {
     var selectedTab by rememberSaveable { mutableStateOf(EdenTab.TODAY) }
+    val context = LocalContext.current
+    val ronguGreeting = remember { RonguGreetingState(tourDone = RonguPrefs.tourDone(context)) }
+    // Rongu's tour of the five tabs: the stop he is at, or -1
+    var tourStep by rememberSaveable { mutableIntStateOf(-1) }
+    // the stop and its tab change together, so the card and the tab bar never disagree for a frame
+    val tourTo = { step: Int ->
+        tourStep = step
+        selectedTab = RonguTourSteps[step].tab
+    }
+    val endTour = {
+        tourStep = -1
+        selectedTab = EdenTab.TODAY
+        RonguPrefs.setTourDone(context)
+        ronguGreeting.afterTour()
+    }
+    BackHandler(enabled = tourStep >= 0) { endTour() }
 
     Scaffold(
         containerColor = Surface,
@@ -116,7 +142,12 @@ fun EdenMainScaffold(
                         onNavigateToPlan = onNavigateToPlan,
                         onNavigateToHistory = onNavigateToHistory,
                         onNavigateToDetail = onNavigateToDetail,
-                        onNavigateToProfile = { selectedTab = EdenTab.FARM }
+                        onNavigateToProfile = { selectedTab = EdenTab.FARM },
+                        rongu = ronguGreeting.takeIf { tourStep < 0 },
+                        onStartTour = {
+                            Log.i("EDEN_APP", "rongu_tour_started")
+                            tourTo(0)
+                        }
                     )
                 }
                 EdenTab.WEATHER -> {
@@ -137,6 +168,15 @@ fun EdenMainScaffold(
                 EdenTab.FARM -> {
                     MyFarmScreen()
                 }
+            }
+            if (tourStep >= 0) {
+                RonguTourScrim(Modifier.matchParentSize())
+                RonguTourCard(
+                    step = tourStep,
+                    onNext = { if (tourStep < RonguTourSteps.lastIndex) tourTo(tourStep + 1) else endTour() },
+                    onSkip = endTour,
+                    modifier = Modifier.align(Alignment.BottomCenter)
+                )
             }
         }
     }

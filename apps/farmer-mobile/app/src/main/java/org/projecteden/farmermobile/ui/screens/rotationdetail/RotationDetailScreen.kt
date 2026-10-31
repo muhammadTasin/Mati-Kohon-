@@ -1,5 +1,7 @@
 package org.projecteden.farmermobile.ui.screens.rotationdetail
 
+import org.projecteden.farmermobile.theme.NeoShapes
+
 import org.projecteden.farmermobile.theme.bevel
 
 import androidx.compose.animation.AnimatedVisibility
@@ -107,7 +109,7 @@ fun RotationDetailScreen(
                 // 1. Plot Header Banner
                 Surface(
                     color = SurfaceContainerHigh,
-                    shape = RoundedCornerShape(2.dp),
+                    shape = NeoShapes.card,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -146,7 +148,7 @@ fun RotationDetailScreen(
 
                         Box(
                             modifier = Modifier
-                                .clip(RoundedCornerShape(2.dp))
+                                .clip(NeoShapes.md)
                                 .background(SecondaryContainer)
                                 .padding(horizontal = 8.dp, vertical = 4.dp)
                         ) {
@@ -206,8 +208,8 @@ fun RotationDetailScreen(
                     // Season 1: Kharif-2
                     Surface(
                         color = SurfaceContainerLowest,
-                        shape = RoundedCornerShape(2.dp),
-                        shadowElevation = 2.dp,
+                        shape = NeoShapes.card,
+                        shadowElevation = 0.dp,
                         modifier = Modifier.bevel().fillMaxWidth()
                     ) {
                         Row(
@@ -235,7 +237,7 @@ fun RotationDetailScreen(
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .clip(RoundedCornerShape(2.dp))
+                                            .clip(NeoShapes.md)
                                             .background(PrimaryFixed)
                                             .padding(horizontal = 6.dp, vertical = 2.dp)
                                     ) {
@@ -295,8 +297,8 @@ fun RotationDetailScreen(
                     // Season 2: Rabi
                     Surface(
                         color = SurfaceContainerLowest,
-                        shape = RoundedCornerShape(2.dp),
-                        shadowElevation = 2.dp,
+                        shape = NeoShapes.card,
+                        shadowElevation = 0.dp,
                         modifier = Modifier.bevel().fillMaxWidth()
                     ) {
                         Row(
@@ -324,7 +326,7 @@ fun RotationDetailScreen(
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .clip(RoundedCornerShape(2.dp))
+                                            .clip(NeoShapes.md)
                                             .background(SecondaryContainer)
                                             .padding(horizontal = 6.dp, vertical = 2.dp)
                                     ) {
@@ -380,7 +382,7 @@ fun RotationDetailScreen(
 
                                 Row(
                                     modifier = Modifier
-                                        .clip(RoundedCornerShape(2.dp))
+                                        .clip(NeoShapes.md)
                                         .background(SurfaceContainer)
                                         .padding(horizontal = 8.dp, vertical = 4.dp),
                                     verticalAlignment = Alignment.CenterVertically,
@@ -406,7 +408,7 @@ fun RotationDetailScreen(
                 // 5. Provenance & Reliability Notice
                 Surface(
                     color = SurfaceContainer,
-                    shape = RoundedCornerShape(2.dp),
+                    shape = NeoShapes.card,
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
@@ -446,7 +448,7 @@ fun RotationDetailScreen(
                         containerColor = if (isConfirmed) Primary else PrimaryContainer,
                         contentColor = OnPrimary
                     ),
-                    shape = RoundedCornerShape(2.dp),
+                    shape = NeoShapes.card,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp)
@@ -483,7 +485,7 @@ fun RotationDetailScreen(
             ) {
                 Surface(
                     color = InverseSurface,
-                    shape = RoundedCornerShape(2.dp),
+                    shape = NeoShapes.card,
                     shadowElevation = 6.dp
                 ) {
                     Row(

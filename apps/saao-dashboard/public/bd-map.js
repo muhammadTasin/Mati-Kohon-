@@ -11,13 +11,13 @@ const gibs = (layer, time, matrix, ext) =>
 
 // Ramps, light to dark, in the story site's hues; each passes the dataviz ordinal checks (one hue, monotone lightness,
 // steps >= 0.06 apart). The diverging scales put the warm (dry, fewer) arm and the cool or green arm around a neutral.
-const GREEN = ['#E6EFE2', '#C7DDC1', '#A2C69E', '#78AB7A', '#4F8C5C', '#2F6B48', '#1D4A31'];
+const GREEN = ['#E3EFEC', '#C2DDD7', '#9CC6BE', '#72ABA3', '#4A8B85', '#2A6B69', '#0E4A4F']; // teal, like the rest of the page
 const BLUE = ['#E2ECF7', '#BCD4EE', '#8FB5E0', '#6497CF', '#3F79BD', '#2B5E9C', '#1C4272'];
 const AMBER = ['#F5EBDC', '#EBD3B0', '#DFB680', '#D19956', '#C77B26', '#9A5A14', '#6E3C10'];
 const NEUTRAL = '#E4DED4';
 const DRY_WET = ['#7E470F', '#C77B26', '#E5C397', NEUTRAL, '#A9C7E8', '#4F86C4', '#1F4F86'];
-const FEWER_MORE = ['#9A5A14', '#DFB680', NEUTRAL, '#A2C69E', '#2F6B48'];
-const NO_DATA = '#D8D2C8';
+const FEWER_MORE = ['#9A5A14', '#DFB680', NEUTRAL, '#9CC6BE', '#2A6B69'];
+export const NO_DATA = '#D8D2C8';
 
 const GROUPS = {
   crops: ['ফসল (নাসা MODIS)', 'Crops (NASA MODIS)'],
@@ -38,21 +38,33 @@ const yearValue = (r, key) => {
   return d.districts[r.district]?.[key]?.[k] ?? null;
 };
 
-const LAYERS = [
-  { id: 'cropsNow', group: 'crops', name: ['বছরে কয়টি ফসল', 'Crops a year'], note: ['MODIS, ২০২১–২৬', 'MODIS, 2021–26'],
+export const LAYERS = [ // also read by the landing page's map (landing-map.js)
+  { id: 'cropsNow', group: 'crops', name: ['বছরে কয়টি ফসল', 'Crops a year'], note: ['MODIS ১ কিমি, শুধু ফসলি জমি, ২০২০–২৫', 'MODIS 1 km, cropland only, 2020–25'],
     value: r => r.cropsNow, breaks: [1.0, 1.4, 1.8, 2.2, 2.6], colors: GREEN.slice(1), digits: 1, source: 'crops' },
-  { id: 'cropsChange', group: 'crops', name: ['ফসলের সংখ্যা বেড়েছে না কমেছে', 'Change in crops a year'], note: ['২০০১–০৬ থেকে ২০২১–২৬', '2001–06 to 2021–26'],
+  { id: 'cropsChange', group: 'crops', name: ['ফসলের সংখ্যা বেড়েছে না কমেছে', 'Change in crops a year'], note: ['২০০১–০৬ থেকে ২০২০–২৫, শুধু ফসলি জমি', '2001–06 to 2020–25, cropland only'],
     value: r => (r.cropsNow == null || r.cropsThen == null ? null : r.cropsNow - r.cropsThen), breaks: [-0.6, -0.2, 0.2, 0.6],
     colors: FEWER_MORE, digits: 1, signed: true, source: 'crops' },
-  { id: 'winterNdvi', group: 'crops', name: ['শীতের ফসলের সবুজ', 'Winter crop greenness'], note: ['MODIS NDVI-র শীর্ষ, ২০২১–২৬', 'MODIS NDVI peak, 2021–26'],
+  { id: 'winterNdvi', group: 'crops', name: ['শীতের ফসলের সবুজ', 'Winter crop greenness'], note: ['MODIS NDVI-র শীর্ষ, শুধু ফসলি জমি, ২০২০–২৫', 'MODIS NDVI peak, cropland only, 2020–25'],
     value: r => r.winterNdvi, breaks: [0.4, 0.5, 0.6, 0.7, 0.8], colors: GREEN.slice(1), digits: 2, source: 'crops' },
+  { id: 'emptyGap', group: 'crops', name: ['গ্রীষ্মে জমি খালি (দিন)', 'Fields empty in summer (days)'],
+    note: ['বোরো বা রবির পরে, আমনের আগে; শেষ ১০ বছর, নাসা MODIS ১ কিমি, শুধু ফসলি জমি', 'after the winter crop, before Aman; last 10 years, NASA MODIS 1 km, cropland only'],
+    value: r => r.emptyDays, breaks: [56, 72, 88, 104], colors: AMBER.slice(1, 6), digits: 0, unit: ['দিন', 'days'], source: 'fieldGrid' },
   { id: 'boroWater', group: 'water', name: ['বোরোর সেচ চাহিদা', 'Boro irrigation need'], note: ['মিমি, নাসা ২৫ মৌসুমের রিপ্লে, জেলার পয়েন্ট', 'mm, NASA 25-season replay, district point'],
     value: r => r.boroIrrigationMm, breaks: [500, 600, 650, 700, 750], colors: BLUE.slice(1), digits: 0, unit: ['মিমি', 'mm'], source: 'water', district: true },
+  { id: 'boroThirst', group: 'water', name: ['পানির টানে সবুজ খেত (মার্চ–এপ্রিল)', 'Green fields short of water (Mar-Apr)'],
+    note: ['%, নাসা ECOSTRESS, ২০২৫ ও ২০২৬, দিনের পরিষ্কার ছবি', '%, NASA ECOSTRESS, 2025 and 2026, clear daytime passes'],
+    value: r => r.boroThirstPct, breaks: [5, 10, 20, 30], colors: AMBER.slice(1, 6), digits: 0, unit: ['%', '%'], source: 'fieldGrid' },
   { id: 'groundwater', group: 'water', name: ['ভূগর্ভস্থ পানি কমার হার', 'Groundwater falling'], note: ['মিমি/বছর, নাসা GLDAS (GRACE), জেলা', 'mm a year, NASA GLDAS (GRACE), district'],
     value: r => (r.groundwaterMmPerYear == null ? null : -r.groundwaterMmPerYear), breaks: [2, 3, 4, 5, 6], colors: AMBER.slice(1), digits: 1,
     unit: ['মিমি/বছর', 'mm/yr'], source: 'water', district: true },
   { id: 'boroToMove', group: 'water', name: ['পানির পতন থামাতে বোরো জমি সরাতে হবে', 'Boro land to move to stop the fall'], note: ['% বোরো জমি মসুরের চক্রে, নাসা GRACE (GLDAS) ও BBS, জেলা; সর্বনিম্ন হিসাব', '% of Boro land to a lentil rotation, NASA GRACE (GLDAS) and BBS, district; a floor'],
     value: r => r.boroToMovePct, breaks: [1, 2, 3, 5, 8], colors: AMBER.slice(1), digits: 1, unit: ['%', '%'], source: 'water', district: true },
+  { id: 'cropCondition', group: 'now', name: ['খেতের সবুজ, প্রত্যাশার তুলনায়', 'Crop greenness against expected'],
+    note: ['নাসা VIIRS, শেষ ১৬ দিন; ২৫ বছরের ধারা বাদ দিয়ে, শুধু ফসলি জমি', 'NASA VIIRS, the last 16 days; the 25-year trend taken out, cropland only'],
+    value: r => r.condLevel, source: 'fieldGrid',
+    categories: [['wellBelow', 'অনেক কম সবুজ', 'Much less green', '#9A5A14'], ['below', 'কম সবুজ', 'Less green', '#DFB680'],
+      ['normal', 'প্রত্যাশামতো', 'As expected', NEUTRAL], ['above', 'বেশি সবুজ', 'Greener', '#9CC6BE'], ['wellAbove', 'অনেক বেশি সবুজ', 'Much greener', '#2A6B69'],
+      ['unclear', 'দুই উপগ্রহে অমিল', 'Satellites disagree', '#CFC6B8'], ['noCrop', 'এ সময় ফসল থাকে না', 'No crop at this time', '#EFEBE3']] },
   { id: 'rain7', group: 'now', name: ['গত ৭ দিনের বৃষ্টি', 'Rain in the last 7 days'], note: ['মিমি, GPM IMERG', 'mm, GPM IMERG'],
     value: r => r.rain7, breaks: [5, 15, 30, 60, 100], colors: BLUE.slice(1), digits: 0, unit: ['মিমি', 'mm'], source: 'live' },
   { id: 'rain30', group: 'now', name: ['৩০ দিনের বৃষ্টি, স্বাভাবিকের তুলনায়', 'Rain in 30 days against normal'], note: ['%, নাসা POWER', '%, NASA POWER'],
@@ -88,6 +100,8 @@ const LAYERS = [
     value: r => r.organicMatter, source: 'soil',
     categories: [['Very Low', 'খুব কম', 'Very low', GREEN[1]], ['Low', 'কম', 'Low', GREEN[2]], ['Medium', 'মাঝারি', 'Medium', GREEN[3]],
       ['Optimum', 'উপযুক্ত', 'Optimum', GREEN[4]], ['High', 'বেশি', 'High', GREEN[5]], ['Very High', 'খুব বেশি', 'Very high', GREEN[6]]] },
+  { id: 'soilWater', group: 'soil', name: ['ওপরের মাটি কত পানি ধরে', 'Water the topsoil holds'], note: ['মিমি, ওপরের ৩০ সেমি; SoilGrids, শুধু ফসলি জমি', 'mm in the top 30 cm; SoilGrids, cropland only'],
+    value: r => r.soilAwcMm, breaks: [40, 42, 45, 48], colors: BLUE.slice(1, 6), digits: 0, unit: ['মিমি', 'mm'], source: 'fieldGrid' },
   { id: 'springHeat', group: 'risk', name: ['বসন্তে গরম দিন (মার্চ–মে)', 'Spring hot days (Mar-May)'], note: ['৩৬°সে বা বেশি, বছরে গড়ে; নাসা POWER (স্টেশনে মেলানো), জেলা', '36 °C or more, days a year; NASA POWER (station-corrected), district'],
     value: r => r.springHotDays, breaks: [5, 10, 20, 30, 40], colors: AMBER.slice(1), digits: 0, unit: ['দিন', 'days'], source: 'risk', district: true },
   { id: 'winterCold', group: 'risk', name: ['শীতের রাত (ডিসে–ফেব্রু)', 'Cold nights (Dec-Feb)'], note: ['১০°সে বা কম, বছরে গড়ে: বোরোর চারা ও আলুর ঝুঁকি; জেলা', '10 °C or less, nights a year: a risk to Boro seedlings and potato; district'],
@@ -104,7 +118,7 @@ const LAYERS = [
     value: r => yearValue(r, 'heavyRainDays'), breaks: [5, 8, 11, 14, 18], colors: BLUE.slice(1), digits: 0, unit: ['দিন', 'days'], source: 'yearsClimate', district: true },
   { id: 'yearDryRoot', group: 'years', yearly: true, name: ['শুকনো মৌসুমে মাটির রস', 'Dry-season root-zone wetness'], note: ['জানু–এপ্রিল, সেই বছরে; নাসা POWER GWETROOT, জেলা', 'January-April of that year; NASA POWER GWETROOT, district'],
     value: r => yearValue(r, 'dryRootWet'), breaks: [0.4, 0.44, 0.47, 0.5, 0.53, 0.57], colors: DRY_WET, digits: 2, source: 'yearsClimate', district: true },
-  { id: 'yearCrops', group: 'years', yearly: true, name: ['বছরে কয়টি ফসল', 'Crops in that year'], note: ['নভেম্বর–অক্টোবরের কৃষিবছর; নাসা MODIS NDVI-র চূড়া, উপজেলার কেন্দ্র', 'agricultural year November-October; NASA MODIS NDVI peaks, upazila centre'],
+  { id: 'yearCrops', group: 'years', yearly: true, name: ['বছরে কয়টি ফসল', 'Crops in that year'], note: ['নভেম্বর–অক্টোবরের কৃষিবছর; নাসা MODIS NDVI-র চূড়া, শুধু ফসলি জমি', 'agricultural year November-October; NASA MODIS NDVI peaks, cropland only'],
     value: r => yearValue(r, 'crops'), breaks: [1, 2, 3, 4], colors: GREEN.slice(2), digits: 0, source: 'yearsCrops' },
 ];
 

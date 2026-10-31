@@ -30,6 +30,13 @@ private val AgroPrecisionLightColorScheme = lightColorScheme(
     surfaceTint = SurfaceTint,
     inverseSurface = InverseSurface,
     inverseOnSurface = InverseOnSurface,
+    surfaceBright = SurfaceBright,
+    surfaceDim = SurfaceDim,
+    surfaceContainerLowest = SurfaceContainerLowest,
+    surfaceContainerLow = SurfaceContainerLow,
+    surfaceContainer = SurfaceContainer,
+    surfaceContainerHigh = SurfaceContainerLowest, // dialogs and menus are raised cream, not inset
+    surfaceContainerHighest = SurfaceContainerHighest,
     error = Error,
     onError = OnError,
     errorContainer = ErrorContainer,
@@ -70,13 +77,13 @@ fun ProjectEDENFarmerTheme(
     darkTheme: Boolean = false,
     content: @Composable () -> Unit
 ) {
-    // The Mati Kohon material (Color.kt), high contrast for reading in the sun; sharp corners as on the story site
+    // The soft cream-and-teal material (Color.kt, docs/ui-ux-plan.md): high contrast for reading in the sun, a radius scale of 4 to 24
     val colorScheme = if (darkTheme) AgroPrecisionDarkColorScheme else AgroPrecisionLightColorScheme
 
     MaterialTheme(
         colorScheme = colorScheme,
         typography = Typography,
-        shapes = Shapes(extraSmall = EdenShape, small = EdenShape, medium = EdenShape, large = EdenShape, extraLarge = EdenShape),
+        shapes = Shapes(extraSmall = NeoShapes.xs, small = NeoShapes.sm, medium = NeoShapes.md, large = NeoShapes.card, extraLarge = NeoShapes.xl),
         content = content
     )
 }
