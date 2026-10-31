@@ -176,10 +176,20 @@ function sizeStage() {
   measure();
 }
 
-/** Puts him on the landing page's stage; false when there is no stage to stand on (not the landing page, hidden). */
+/** How much of the hero's stage is on screen now, 0-1 (what its IntersectionObserver reports, measured on the spot). */
+function stageShown() {
+  const r = document.getElementById('landingStage')?.getBoundingClientRect();
+  if (!r || r.height <= 0) return 0;
+  return Math.max(0, Math.min(r.bottom, viewH()) - Math.max(r.top, 0)) / r.height;
+}
+
+/**
+ * Puts him on the landing page's stage; false when there is no stage to stand on (not the landing page, hidden) or it
+ * is scrolled out of sight: his canvas would go off screen with it and stop drawing, and he would never come back.
+ */
 function enterStage() {
   stageSlot = document.getElementById('landingRongu');
-  if (!rongu || !stageSlot || !onEntry() || !visible(stageSlot)) return false;
+  if (!rongu || !stageSlot || !onEntry() || !visible(stageSlot) || stageShown() < 0.3) return false;
   stageOn = true;
   dock.classList.add('stage');
   stageSlot.classList.add('ready');
@@ -208,7 +218,7 @@ function leaveStage() {
   setFoot(foot);
 }
 
-/** Back on the landing page (a role was left): he blinks onto the stage and waves. */
+/** Back on the landing page (a role was left): he blinks onto the stage and waves, or to his corner if it is out of sight. */
 function returnToStage() {
   if (!rongu || tour || !onEntry() || stageOn || local.get(KEYS.hidden)) return;
   dock.classList.add('blink');
@@ -216,6 +226,7 @@ function returnToStage() {
     const ok = enterStage();
     dock.classList.remove('blink');
     if (ok) heroTalk(0);
+    else { anchor = null; travelTo(homeFoot); } // the hero's watcher brings him up when it shows
   }, 200);
 }
 
@@ -342,6 +353,8 @@ async function waitVisible(selector, ms) {
 // flying: the window travels on an arc while he glides in it, facing where he goes
 // ---------------------------------------------------------------------------------------------------------------------
 
+const dockShown = () => { const r = dock.getBoundingClientRect(); return r.bottom > 0 && r.top < viewH() && r.right > 0 && r.left < viewW(); };
+
 function travelTo(target, opts = {}) {
   const from = { ...foot }, to = target();
   const d = Math.hypot(to.x - from.x, to.y - from.y);
@@ -351,7 +364,8 @@ function travelTo(target, opts = {}) {
     if (scale?.end === 'leave') leaveStage();
     else if (scale?.end === 'stage') { canvasScale = 1; canvas.style.transform = ''; }
   };
-  if (d < 18) { setFoot(to); flight = null; settle(); return Promise.resolve(); }
+  // a short hop, or a window off screen (his frames, which fly him, stop while his canvas is out of view): just there
+  if (d < 18 || !dockShown()) { setFoot(to); flight = null; settle(); return Promise.resolve(); }
   if (reduced) { // no flying: a short fade to the new place
     dock.classList.add('blink');
     return wait(170).then(() => { settle(); setFoot(target()); dock.classList.remove('blink'); return wait(170); });
@@ -791,9 +805,9 @@ function endTour(finished, { quiet = false } = {}) {
   rongu.mood('calm');
   rongu.lookAtScreen(null);
   rongu.motion.home.yaw = REST_YAW;
-  if (onEntry()) { // stopped before leaving the landing page: back on the stage
-    if (stageOn) { enterStage(); heroTalk(); } else returnToStage();
-    return;
+  if (onEntry()) { // stopped before leaving the landing page: back on the stage (or, scrolled away from it, his corner)
+    if (!stageOn) { returnToStage(); return; }
+    if (enterStage()) { heroTalk(); return; }
   }
   anchor = null;
   travelTo(homeFoot).then(() => {
