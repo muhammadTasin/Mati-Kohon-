@@ -2,7 +2,7 @@
 
 What changed in Project EDEN, newest first, with who made each change and the branch it came from. Every branch below was merged into `main` on 1 October 2026.
 
-## 31 October 2026 · NISAR over the whole season, and the grid on MODIS pixel reliability (Tasrif, `feature/field-conditions`)
+## 31 October 2026 · NISAR over the whole season, the grid on MODIS pixel reliability, and refreshing "now" (Tasrif, `feature/field-conditions`)
 
 - **NISAR season backfill:**
   - **Coverage:** `research/live/nisar_water.py --days 140` read 318 of 363 passes since 12 June 2026. `water_history.json` now holds a median of 21 radar readings per upazila, up from 3.
@@ -12,6 +12,11 @@ What changed in Project EDEN, newest first, with who made each change and the br
 - **Grid rebuilt on MODIS pixel reliability:** the 25-year MODIS cube had been built from the MODLAND bits of VI_Quality while the reliability layer was still downloading. With all 594 reliability layers in, 63 of about 100,000 figures moved:
   - **Small shifts:** percentiles moved by up to 5 points, and one year's crops-a-year figure moved by 0.1 in 9 upazilas.
   - **Unchanged:** the condition levels, the check list, the track record, the haor Boro dates and `research/pilots/field_grid_checks.json`.
+- **Refreshing "now"** (`research/acquire/grid_downloads.py --only now`, now on this branch):
+  - **What it fetches:** any VIIRS VJ113A2 or Terra MODIS composite NASA has published since the newest on disk, through a small AppEEARS task. NASA CMR says when a composite covers the whole box.
+  - **Watching:** `--watch-until` looks again every 3 hours and survives network errors.
+  - **Then:** `python research/grid/build.py`.
+  - **On 31 October:** 8-23 October is still the newest VIIRS composite anywhere, and 30 September the newest Terra MODIS; 16-31 October is due in early November.
 
 ## 31 October 2026 · Twenty-five years of the same fields (Tasrif, `feature/field-conditions`)
 
@@ -33,7 +38,7 @@ What changed in Project EDEN, newest first, with who made each change and the br
 - **One grid for the satellites:** `research/grid/` (`_grid.py`, `ndvi.py`, `esi.py`, `soil.py`, `build.py`) puts each upazila on a 1 km grid of its cropland only.
   - **Cropland:** ESA WorldCover 2021 at 10 m, counted on a 100 m grid and burnt together with the dashboard's upazila outlines.
   - **Sources on the grid:** MODIS MOD13A2 and NOAA-20 VIIRS 1 km NDVI, ECOSTRESS evaporative stress, SoilGrids.
-  - **Downloads:** `research/acquire/grid_downloads.py`, on `feature/data-jobs`.
+  - **Downloads:** `research/acquire/grid_downloads.py` (brought onto this branch from `feature/data-jobs` on 31 October).
 - **Crop greenness against what is expected** (`field_conditions.json`):
   - **Reading:** the latest 16 days of VIIRS on the MODIS scale.
   - **Comparison:** the same days of 2001-2025, with the 25-year greening trend taken out.
