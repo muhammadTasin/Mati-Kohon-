@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -107,14 +106,16 @@ fun EdenMainScaffold(
     val ronguGreeting = remember { RonguGreetingState(tourDone = RonguPrefs.tourDone(context)) }
     // Rongu's tour of the five tabs: the stop he is at, or -1
     var tourStep by rememberSaveable { mutableIntStateOf(-1) }
+    // the stop and its tab change together, so the card and the tab bar never disagree for a frame
+    val tourTo = { step: Int ->
+        tourStep = step
+        selectedTab = RonguTourSteps[step].tab
+    }
     val endTour = {
         tourStep = -1
         selectedTab = EdenTab.TODAY
         RonguPrefs.setTourDone(context)
         ronguGreeting.afterTour()
-    }
-    LaunchedEffect(tourStep) {
-        RonguTourSteps.getOrNull(tourStep)?.let { selectedTab = it.tab }
     }
     BackHandler(enabled = tourStep >= 0) { endTour() }
 
@@ -145,7 +146,7 @@ fun EdenMainScaffold(
                         rongu = ronguGreeting.takeIf { tourStep < 0 },
                         onStartTour = {
                             Log.i("EDEN_APP", "rongu_tour_started")
-                            tourStep = 0
+                            tourTo(0)
                         }
                     )
                 }
@@ -172,7 +173,7 @@ fun EdenMainScaffold(
                 RonguTourScrim(Modifier.matchParentSize())
                 RonguTourCard(
                     step = tourStep,
-                    onNext = { if (tourStep < RonguTourSteps.lastIndex) tourStep += 1 else endTour() },
+                    onNext = { if (tourStep < RonguTourSteps.lastIndex) tourTo(tourStep + 1) else endTour() },
                     onSkip = endTour,
                     modifier = Modifier.align(Alignment.BottomCenter)
                 )

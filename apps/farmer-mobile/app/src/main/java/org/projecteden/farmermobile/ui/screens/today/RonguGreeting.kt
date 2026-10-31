@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -51,6 +52,9 @@ import org.projecteden.farmermobile.ui.components.talkFor
 
 private const val Hello = "আসসালামু আলাইকুম! আমি রঙ্গু, মাটি কহনের সঙ্গী।"
 private const val Invite = "$Hello প্রথমবার এলেন? চলুন, অ্যাপটা এক পাক ঘুরে দেখাই।"
+
+// narrower than Material's 24 dp, so both buttons and the fold arrow fit in one row on a phone
+private val ButtonPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp)
 
 /** What Rongu says on Today, one line at a time (tap him for the next). */
 private val RonguLines = listOf(
@@ -124,9 +128,9 @@ fun RonguGreetingCard(
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 RonguSpeech(state.text, modifier = Modifier.fillMaxWidth())
+                // one row on a phone; a narrower screen moves the fold arrow to a second row
                 FlowRow(
-                    horizontalArrangement = Arrangement.spacedBy(4.dp),
-                    verticalArrangement = Arrangement.Center,
+                    horizontalArrangement = Arrangement.spacedBy(2.dp),
                     itemVerticalAlignment = Alignment.CenterVertically
                 ) {
                     if (state.tourDone) {
@@ -135,15 +139,17 @@ fun RonguGreetingCard(
                             shape = NeoShapes.pill,
                             border = BorderStroke(1.dp, OutlineControl),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = Primary),
+                            contentPadding = ButtonPadding,
                             modifier = Modifier.heightIn(min = 48.dp)
                         ) {
-                            Text("অ্যাপটা ঘুরে দেখি", fontWeight = FontWeight.SemiBold)
+                            Text("ঘুরে দেখাও", fontWeight = FontWeight.SemiBold)
                         }
                     } else {
                         Button(
                             onClick = onStartTour,
                             shape = NeoShapes.pill,
                             colors = ButtonDefaults.buttonColors(containerColor = Primary, contentColor = OnPrimary),
+                            contentPadding = ButtonPadding,
                             modifier = Modifier.heightIn(min = 48.dp)
                         ) {
                             Text("চলুন, দেখি", fontWeight = FontWeight.SemiBold)
@@ -152,6 +158,7 @@ fun RonguGreetingCard(
                     TextButton(
                         onClick = { state.sayNext() },
                         shape = NeoShapes.pill,
+                        contentPadding = ButtonPadding,
                         modifier = Modifier.heightIn(min = 48.dp)
                     ) {
                         Text("আরও বলো", color = Primary, fontWeight = FontWeight.SemiBold)

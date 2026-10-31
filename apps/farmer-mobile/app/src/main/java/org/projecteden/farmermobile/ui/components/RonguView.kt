@@ -38,8 +38,6 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.Dp
@@ -97,14 +95,12 @@ fun RonguView(
     onMovesDone: () -> Unit = {}
 ) {
     val context = LocalContext.current
-    val sized = modifier
-        .aspectRatio(RonguAspect, matchHeightConstraintsFirst = true)
-        .semantics { contentDescription = RonguDescription }
+    val sized = modifier.aspectRatio(RonguAspect, matchHeightConstraintsFirst = true)
     val still = remember { Build.VERSION.SDK_INT < Build.VERSION_CODES.P || animationsOff(context) }
     if (still) {
         Image(
             painter = painterResource(R.drawable.rongu_still),
-            contentDescription = null,
+            contentDescription = RonguDescription,
             contentScale = ContentScale.Fit,
             modifier = sized
         )
@@ -174,6 +170,7 @@ private fun RonguLoops(
         factory = { viewContext ->
             ImageView(viewContext).apply {
                 scaleType = ImageView.ScaleType.FIT_CENTER
+                contentDescription = RonguDescription // on the view: a semantics modifier doesn't reach an AndroidView
                 // every loop's first frame: shown while the first loop is decoded
                 setImageResource(R.drawable.rongu_still)
             }
