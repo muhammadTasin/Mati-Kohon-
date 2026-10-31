@@ -133,6 +133,12 @@ td, th, tr, thead, tbody, hr, .banner-photo img, .role-photo, .today-photo img, 
   z-index: 70;
 }
 body.state-entry .app-header { border-bottom-color: transparent; padding-top: 18px; }
+/* the landing page's background: a faint pixel-art pattern (img/pattern-pixel.svg: a farmer in a mathal hat, a button
+   phone, a satellite, rice and a paddy sheaf), drawn on the page itself so cards and the map cover it; the header lets
+   it through, blurred */
+html:has(body.state-entry) { background-image: url(img/pattern-pixel.svg); background-size: 420px 420px; }
+body.state-entry { background-color: transparent; }
+body.state-entry .app-header { background: rgba(237, 230, 218, .8); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 body.state-entry .location-badge, body.state-entry .release-status { display: none; } /* the landing page needs no place or release yet */
 .brand-icon { background: var(--teal-700); box-shadow: 3px 4px 8px rgba(11, 74, 79, .3), -2px -2px 6px var(--hi); }
 .brand-icon .material-symbols-outlined { color: var(--face-hi); }
