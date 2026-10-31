@@ -4,6 +4,9 @@
 // hot days, crops a year). Hover shows a place, a tap pins it with its numbers and a way to open it on the dashboard,
 // and Rongu says what the layer means for farmers, his skin taking the layer's mood (companion.js ronguHeroSay).
 // The layers, colours and breaks are the dashboard map's own (bd-map.js), so the two maps always agree.
+// It is drawn as a small table model: the country stands on a slab of soil with its shadow on the page (a canvas
+// under the SVG, drawn once per size), light falls from the north-west (a canvas over it), and the upazila under the
+// finger, or the one pinned, rises out of it. Tanore, the pilot, is pinned at the start.
 
 import { LAYERS, NO_DATA } from './bd-map.js';
 
@@ -22,6 +25,10 @@ let rows = {}, years = null, liveDate = null;
 let mode = 'now', layerId = 'floodNow', year = 2025, playing = 0, pinned = null;
 const paths = new Map(); // upazila id -> <path>
 let sea = null; // the Bay of Bengal's name, under the coast
+let land = null; // the whole country as one Path2D, with the SVG's viewBox, for the slab and the light
+let lift = null, liftPin = null; // the raised copies of the upazila under the finger and of the pinned one
+const START_PLACE = 'ADM3_Tanore'; // the pilot upazila, pinned when the map opens
+const DEPTH = 22; // the slab's thickness, in map units (the map is 1000 high)
 
 // What NASA sees now: the dashboard's live layers, each with what Rongu says about it
 const NOW = [
@@ -158,31 +165,112 @@ function draw(geo) {
     return `${d}Z`;
   };
   const svg = $('lmSvg');
-  svg.setAttribute('viewBox', `-6 -6 ${width + 12} 1012`);
+  const vb = [-6, -6, width + 12, 1012 + DEPTH + 14]; // room under the coast for the slab
+  svg.setAttribute('viewBox', vb.join(' '));
   const ns = 'http://www.w3.org/2000/svg';
   const g = document.createElementNS(ns, 'g');
+  let all = '';
   for (const f of geo.features) {
     const polys = f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates;
     const p = document.createElementNS(ns, 'path');
-    p.setAttribute('d', polys.map(poly => poly.map(ring).join('')).join(''));
+    const d = polys.map(poly => poly.map(ring).join('')).join('');
+    p.setAttribute('d', d);
     p.dataset.id = f.properties.id;
+    p.style.fill = NO_DATA; // the first colours fade in from the no-data grey, not from black
     g.append(p);
     paths.set(f.properties.id, p);
+    all += d;
   }
+  land = { path: new Path2D(all), vb, width };
+  liftPin = document.createElementNS(ns, 'path');
+  liftPin.setAttribute('class', 'lm-lift pin');
+  lift = document.createElementNS(ns, 'path');
+  lift.setAttribute('class', 'lm-lift');
   sea = document.createElementNS(ns, 'text');
   sea.setAttribute('class', 'lm-sea');
   sea.setAttribute('x', X(90.3).toFixed(0));
   sea.setAttribute('y', Y(21.25).toFixed(0));
   sea.setAttribute('text-anchor', 'middle');
   seaName();
-  svg.replaceChildren(g, sea);
+  svg.replaceChildren(g, liftPin, lift, sea);
+  relief();
 }
 function seaName() { if (sea) sea.textContent = tr('বঙ্গোপসাগর', 'BAY OF BENGAL'); }
+
+// ---------- the table model: a slab of soil under the map, its shadow, the light over it ----------
+const mix = (a, b, t) => {
+  const h = (c, i) => parseInt(c.slice(1 + 2 * i, 3 + 2 * i), 16);
+  return `rgb(${[0, 1, 2].map(i => Math.round(h(a, i) + (h(b, i) - h(a, i)) * t)).join(',')})`;
+};
+/** The side of the slab at depth t (0 just under the map, 1 at the bottom): a band of grass, then soil going darker. */
+const soilAt = (t) => (t < 0.16 ? '#5f7d49' : mix('#b38d5f', '#6e4e33', (t - 0.16) / 0.84));
+function relief() {
+  const box = document.querySelector('#lmCanvas .lm-3d');
+  if (!land || !box) return;
+  const W = box.clientWidth, H = box.clientHeight;
+  if (!W || !H) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const [vx, vy, vw, vh] = land.vb;
+  const k = Math.min(W / vw, H / vh); // the SVG's own fit (xMidYMid meet)
+  const tx = (W - vw * k) / 2 - vx * k, ty = (H - vh * k) / 2 - vy * k;
+
+  const base = $('lmBase'), PAD = 32; // the shadow spills past the box
+  base.width = Math.round((W + 2 * PAD) * dpr);
+  base.height = Math.round((H + 2 * PAD) * dpr);
+  let c = base.getContext('2d');
+  c.setTransform(k * dpr, 0, 0, k * dpr, (tx + PAD) * dpr, (ty + PAD) * dpr);
+  c.save(); // the lowest layer carries the shadow on the page (shadows ignore the transform: CSS pixels times dpr)
+  c.shadowColor = 'rgba(70, 50, 24, .34)';
+  c.shadowBlur = 24 * dpr;
+  c.shadowOffsetY = 14 * dpr;
+  c.translate(0, DEPTH);
+  c.fillStyle = soilAt(1);
+  c.fill(land.path);
+  c.restore();
+  for (let d = DEPTH - 0.5; d >= 0.5; d -= 0.5) {
+    c.save();
+    c.translate(0, d);
+    c.fillStyle = soilAt(d / DEPTH);
+    c.fill(land.path);
+    c.restore();
+  }
+
+  const top = $('lmLight');
+  top.width = Math.round(W * dpr);
+  top.height = Math.round(H * dpr);
+  c = top.getContext('2d');
+  c.setTransform(k * dpr, 0, 0, k * dpr, tx * dpr, ty * dpr);
+  c.clip(land.path);
+  const g = c.createLinearGradient(0, 0, land.width, 1000);
+  g.addColorStop(0, 'rgba(255, 255, 255, .26)');
+  g.addColorStop(0.5, 'rgba(255, 255, 255, 0)');
+  g.addColorStop(1, 'rgba(40, 26, 0, .14)');
+  c.fillStyle = g;
+  c.fillRect(-10, -10, land.width + 20, 1030);
+}
+let reliefTimer = 0;
+const reliefSoon = () => { clearTimeout(reliefTimer); reliefTimer = setTimeout(relief, 120); };
+
+/** Raise a copy of an upazila out of the map (null puts it back). */
+function raise(el, id) {
+  const p = id ? paths.get(id) : null;
+  if (!el) return;
+  if (!p) { el.removeAttribute('d'); delete el.dataset.of; return; }
+  if (el.dataset.of !== id) {
+    el.setAttribute('d', p.getAttribute('d'));
+    el.dataset.of = id;
+    el.classList.remove('rise');
+    void el.getBoundingClientRect(); // start the rise again
+    el.classList.add('rise');
+  }
+  el.style.fill = p.style.fill;
+}
 
 // ---------- painting, the legend, the note ----------
 function paint({ speak = true, say = true } = {}) {
   const s = spec();
   for (const [id, p] of paths) p.style.fill = colorOf(s, rows[id]);
+  if (lift?.dataset.of) raise(lift, lift.dataset.of);
   legend(s);
   note(s);
   if (pinned) place(pinned, { speak: false });
@@ -245,6 +333,8 @@ function place(id, { speak = true } = {}) {
   if (!r) return;
   pinned = id;
   for (const [pid, p] of paths) p.classList.toggle('pinned', pid === id);
+  raise(liftPin, id);
+  if (lift?.dataset.of === id) raise(lift, null);
   const s = spec();
   $('lmPlace').innerHTML = `
     <p class="lm-place-name"><strong>${esc(r.name)}</strong> <span>${esc(r.district)}</span></p>
@@ -260,6 +350,7 @@ function place(id, { speak = true } = {}) {
 function tip(e) {
   const p = e.target.closest?.('path[data-id]');
   const box = $('lmTip');
+  raise(lift, p && p.dataset.id !== pinned ? p.dataset.id : null);
   if (!p) { box.hidden = true; return; }
   const r = rows[p.dataset.id];
   if (!r) { box.hidden = true; return; }
@@ -300,6 +391,8 @@ async function start() {
   $('lmWait').hidden = true;
   chips();
   paint({ say: false });
+  if (rows[START_PLACE]) place(START_PLACE, { speak: false }); // the pilot, pinned; Rongu keeps his welcome
+  new ResizeObserver(reliefSoon).observe(document.querySelector('#lmCanvas .lm-3d'));
 
   $('lmLayers').addEventListener('click', (e) => {
     const b = e.target.closest('[data-layer]');
@@ -319,7 +412,7 @@ async function start() {
   }));
   const svg = $('lmSvg');
   svg.addEventListener('pointermove', tip);
-  svg.addEventListener('pointerleave', () => { $('lmTip').hidden = true; });
+  svg.addEventListener('pointerleave', () => { $('lmTip').hidden = true; raise(lift, null); });
   svg.addEventListener('click', (e) => { const p = e.target.closest('path[data-id]'); if (p) place(p.dataset.id); });
   $('lmPlace').addEventListener('click', (e) => {
     const b = e.target.closest('[data-open]');
