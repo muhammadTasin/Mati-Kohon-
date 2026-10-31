@@ -228,6 +228,7 @@ function goCorner() {
   if (!rongu || !stageOn || tour || inFlight() || carrying) return;
   anchor = null;
   clearTimeout(heroTimer);
+  rongu.mood('calm');
   travelTo(homeFoot).then(() => {
     if (tour || stageOn || !onEntry()) return;
     if (!hinted) { hinted = true; showBubble({ text: t(UI.cardsHint), autoHide: 6 }); rongu.gesture('point'); }
@@ -265,6 +266,28 @@ function syncStage() {
   if (stageOn && stageRatio < 0.3) goCorner();
   else if (!stageOn && stageRatio > 0.65) goStage();
 }
+
+/**
+ * The landing map (landing-map.js) has Rongu say what a layer or a place shows, his skin taking the layer's mood
+ * (flood, drought, heat); his own lines come back after a while. False when he is not on the stage.
+ */
+window.ronguHeroSay = (text, { gesture = null, mood = null, speak = true } = {}) => {
+  if (!rongu || !stageOn || tour) return false;
+  clearTimeout(heroTimer);
+  const say = document.getElementById('landingSay');
+  if (say && say.textContent !== text) {
+    say.classList.add('swap');
+    setTimeout(() => { say.textContent = text; say.classList.remove('swap'); }, 200);
+  }
+  if (mood) rongu.mood(mood);
+  if (speak && idle === 'awake' && !document.hidden) {
+    rongu.say(text, { seconds: Math.min(5, 0.8 + text.length / 24) });
+    if (gesture) rongu.gesture(gesture);
+  }
+  heroLine = Math.max(heroLine, 1); // his own lines start again from the second, later
+  heroTimer = setTimeout(() => heroTalk(), 25000);
+  return true;
+};
 
 /** One line on the landing page every few seconds, each with a gesture; twice through, then he just listens. */
 function heroTalk(at = heroLine) {
@@ -986,7 +1009,7 @@ function wire() {
       if (!tour) setTimeout(returnToStage, 250);
       return;
     }
-    if (stageOn && !tour) { anchor = null; travelTo(homeFoot); } // a role card was chosen: off the stage, to his corner
+    if (stageOn && !tour) { anchor = null; rongu.mood('calm'); travelTo(homeFoot); } // a role card was chosen: off the stage, to his corner
     setTimeout(offerForRole, 900);
   }).observe(document.body, { attributes: true, attributeFilter: ['data-role'] });
 }

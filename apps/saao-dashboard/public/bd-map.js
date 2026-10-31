@@ -17,7 +17,7 @@ const AMBER = ['#F5EBDC', '#EBD3B0', '#DFB680', '#D19956', '#C77B26', '#9A5A14',
 const NEUTRAL = '#E4DED4';
 const DRY_WET = ['#7E470F', '#C77B26', '#E5C397', NEUTRAL, '#A9C7E8', '#4F86C4', '#1F4F86'];
 const FEWER_MORE = ['#9A5A14', '#DFB680', NEUTRAL, '#9CC6BE', '#2A6B69'];
-const NO_DATA = '#D8D2C8';
+export const NO_DATA = '#D8D2C8';
 
 const GROUPS = {
   crops: ['ফসল (নাসা MODIS)', 'Crops (NASA MODIS)'],
@@ -38,7 +38,7 @@ const yearValue = (r, key) => {
   return d.districts[r.district]?.[key]?.[k] ?? null;
 };
 
-const LAYERS = [
+export const LAYERS = [ // also read by the landing page's map (landing-map.js)
   { id: 'cropsNow', group: 'crops', name: ['বছরে কয়টি ফসল', 'Crops a year'], note: ['MODIS, ২০২১–২৬', 'MODIS, 2021–26'],
     value: r => r.cropsNow, breaks: [1.0, 1.4, 1.8, 2.2, 2.6], colors: GREEN.slice(1), digits: 1, source: 'crops' },
   { id: 'cropsChange', group: 'crops', name: ['ফসলের সংখ্যা বেড়েছে না কমেছে', 'Change in crops a year'], note: ['২০০১–০৬ থেকে ২০২১–২৬', '2001–06 to 2021–26'],

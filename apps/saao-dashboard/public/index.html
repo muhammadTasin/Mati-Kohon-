@@ -60,6 +60,12 @@
         <button id="langEn" class="lang-btn" type="button" onclick="setLanguage('en')">EN</button>
       </div>
 
+      <!-- the landing page's way in: to the role cards -->
+      <button class="header-enter" id="headerEnter" type="button" onclick="document.getElementById('rolesTitle')?.scrollIntoView({ behavior: 'smooth', block: 'start' })">
+        <span class="material-symbols-outlined" aria-hidden="true">login</span>
+        <span data-i18n="header.enter">প্রবেশ করুন</span>
+      </button>
+
       <!-- ROLE: who is using the dashboard; pressing it returns to the role picker -->
       <button class="role-chip" id="roleChip" type="button" onclick="signOutRole()" data-roles="visitor farmer officer" hidden>
         <span class="material-symbols-outlined" aria-hidden="true">badge</span>
@@ -90,10 +96,54 @@
       <div class="entry-step landing" id="entryChoose">
         <!-- HERO: Rongu welcomes whoever arrives and offers to show them round (companion.js puts him on #landingRongu) -->
         <div class="landing-hero">
-          <div class="landing-copy">
-            <p class="entry-eyebrow" data-i18n="entry.eyebrow">মাটি কহন · নাসার তথ্যে মাঠের পরামর্শ</p>
-            <h1 id="entryTitle" data-i18n="landing.title">আমি রঙ্গু। চলুন, মাটি কহন ঘুরে দেখাই।</h1>
-            <p class="landing-lead" data-i18n="landing.lead">নাসার স্যাটেলাইট আর ২৫ মৌসুমের তথ্য থেকে বাংলাদেশের কৃষকের জন্য ফসল চক্র, আবহাওয়া আর মাঠের আগাম সতর্কতা। আমি উড়ে উড়ে প্রতিটি অংশ দেখাব: দর্শনার্থী, কৃষক আর মাঠ কর্মকর্তা, তিনজনের চোখেই।</p>
+          <!-- THE COUNTRY TODAY: every upazila coloured by a NASA layer, now or year by year (landing-map.js) -->
+          <div class="landing-map" id="landingMap">
+            <div class="lm-head">
+              <p class="entry-eyebrow" data-i18n="entry.eyebrow">মাটি কহন · নাসার তথ্যে মাঠের পরামর্শ</p>
+              <h1 id="entryTitle" data-i18n="lm.title">বাংলাদেশ আজ, নাসার চোখে</h1>
+              <p class="lm-sub" data-i18n="lm.sub">৫৪৪টি উপজেলা। একটি স্তর বাছুন, উপজেলার উপর আঙুল রাখুন, বা সময়রেখা চালিয়ে ২৫ বছরের বদল দেখুন।</p>
+            </div>
+            <div class="lm-bar">
+              <div class="lm-modes" role="tablist" aria-label="Map time">
+                <button type="button" role="tab" class="on" aria-selected="true" data-mode="now"><span class="material-symbols-outlined" aria-hidden="true">radar</span><span data-i18n="lm.now">এখন</span></button>
+                <button type="button" role="tab" aria-selected="false" data-mode="years"><span class="material-symbols-outlined" aria-hidden="true">timeline</span><span data-i18n="lm.years">২৫ বছরে</span></button>
+              </div>
+              <div class="lm-layers" id="lmLayers" role="radiogroup" aria-label="Map layer"></div>
+            </div>
+            <div class="lm-body">
+              <div class="lm-mapcol">
+                <div class="lm-canvas" id="lmCanvas">
+                  <svg id="lmSvg" role="img" aria-labelledby="entryTitle"></svg>
+                  <div class="lm-tip" id="lmTip" hidden></div>
+                  <p class="lm-wait" id="lmWait" data-i18n="lm.loading">মানচিত্র আসছে…</p>
+                </div>
+                <div class="lm-timeline" id="lmTimeline" hidden>
+                  <button class="lm-play" id="lmPlay" type="button"><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span></button>
+                  <input type="range" id="lmYear" min="2001" max="2025" step="1" value="2025" aria-label="Year">
+                  <output id="lmYearOut" for="lmYear"></output>
+                </div>
+              </div>
+              <aside class="lm-side">
+                <div class="lm-legend" id="lmLegend"></div>
+                <div class="lm-place" id="lmPlace">
+                  <span class="material-symbols-outlined" aria-hidden="true">touch_app</span>
+                  <span data-i18n="lm.pick">যেকোনো উপজেলায় চাপ দিন</span>
+                </div>
+                <p class="lm-note" id="lmNote"></p>
+              </aside>
+            </div>
+          </div>
+
+          <!-- RONGU: the guide, beside the map; the tour and the way in -->
+          <div class="landing-side">
+            <div class="landing-stage" id="landingStage">
+              <span class="landing-backdrop" aria-hidden="true"></span>
+              <span class="landing-podium" aria-hidden="true"></span>
+              <div class="landing-rongu" id="landingRongu" aria-hidden="true">
+                <span class="landing-rongu-wait" data-i18n="landing.loading">রঙ্গু আসছে…</span>
+              </div>
+              <p class="landing-say" id="landingSay" data-i18n="landing.say1">স্বাগতম! আমি রঙ্গু, মাটি কহনের সঙ্গী।</p>
+            </div>
             <div class="landing-actions">
               <button class="btn btn-primary landing-cta" type="button" onclick="ronguShow(0)">
                 <span class="material-symbols-outlined" aria-hidden="true">play_arrow</span>
@@ -105,23 +155,10 @@
               </button>
             </div>
             <p class="landing-time"><span class="material-symbols-outlined" aria-hidden="true">schedule</span> <span data-i18n="landing.time">পুরো সফর প্রায় ৫ মিনিট; যেকোনো সময় থামানো যায়।</span></p>
-            <ul class="landing-facts">
-              <li><strong data-num="544">৫৪৪</strong><span data-i18n="landing.fact1">উপজেলার নাসা তথ্য</span></li>
-              <li><strong data-num="25">২৫</strong><span data-i18n="landing.fact2">মৌসুমের পানি রি-প্লে</span></li>
-              <li><strong data-num="7">৭</strong><span data-i18n="landing.fact3">দিকে ফসল চক্রের তুলনা</span></li>
-            </ul>
             <p class="entry-checking" id="entryChecking" role="status" hidden>
               <span class="material-symbols-outlined" aria-hidden="true">progress_activity</span>
               <span data-i18n="entry.checking">আগের সেশন যাচাই হচ্ছে…</span>
             </p>
-          </div>
-          <div class="landing-stage" id="landingStage">
-            <span class="landing-backdrop" aria-hidden="true"></span>
-            <span class="landing-podium" aria-hidden="true"></span>
-            <div class="landing-rongu" id="landingRongu" aria-hidden="true">
-              <span class="landing-rongu-wait" data-i18n="landing.loading">রঙ্গু আসছে…</span>
-            </div>
-            <p class="landing-say" id="landingSay" data-i18n="landing.say1">স্বাগতম! আমি রঙ্গু, মাটি কহনের সঙ্গী।</p>
           </div>
         </div>
 
@@ -2105,6 +2142,7 @@
   <script defer src="/vendor/supabase.js"></script>
   <script type="module" src="app.js"></script>
   <script type="module" src="neo.js"></script>
+  <script type="module" src="landing-map.js"></script>
   <script type="module" src="companion.js"></script>
 </body>
 </html>

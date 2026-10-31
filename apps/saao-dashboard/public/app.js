@@ -2127,6 +2127,7 @@ function chooseFromMap(id) {
   syncPlaceSelects(placeId);
   choosePlace(placeId);
 }
+window.openPlace = chooseFromMap; // the landing page's map (landing-map.js): "Open this place"
 document.addEventListener('DOMContentLoaded', () => {
   bdMap = initBdMap({ tr, num, isoDate, escapeHtml, choose: chooseFromMap, currentId: () => currentPlace });
 });
