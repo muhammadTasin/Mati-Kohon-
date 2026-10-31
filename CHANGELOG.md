@@ -2,6 +2,17 @@
 
 What changed in Project EDEN, newest first, with who made each change and the branch it came from. Every branch below was merged into `main` on 1 October 2026.
 
+## 31 October 2026 · SMAP tested for the winter sowing, and how dry this October is (Tasrif, `feature/smap-check`)
+
+- **SMAP is not used for "wetter or drier than usual"** (`research/grid/smap.py`; `smapCheck` in `research/pilots/field_grid_checks.json`):
+  - **The record breaks:** SMAP's enhanced 9 km record reads drier from late December 2023 in 94-98% of farm upazilas, in every season.
+  - **Not explained by rain:** in the 2024-25 monsoons the rain was 112% and MERRA-2's surface wetness higher.
+  - **Doesn't follow the rain:** from last October to this one it barely follows IMERG's rain (Spearman 0.32).
+- **This October is very dry:**
+  - **How dry:** GPM IMERG Late, against its own 2001-2025, gives a median 26% of the usual rain for the 30 days to 28 October. 24 of 64 districts are the driest of 26 years.
+  - **The app's figures:** the dry-start advice is right in direction, but its figures come from POWER alone. The daily update runs without the Earthdata secrets, so it skips IMERG and SMAP, and POWER's own IMERG field ends on 14 September.
+  - **Fix:** set the `EARTHDATA_USERNAME` and `EARTHDATA_PASSWORD` repository secrets.
+
 ## 31 October 2026 · NISAR over the whole season, and the grid on MODIS pixel reliability (Tasrif, `feature/field-conditions`)
 
 - **NISAR season backfill:**

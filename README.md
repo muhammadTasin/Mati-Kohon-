@@ -227,6 +227,25 @@ The same grid holds every 16-day MODIS image since 2001. That record answers two
 - **But it vanishes:** within BRRI's regions (r −0.02, p 0.71), and over time. Upazilas whose Aman got earlier from 2001-05 to 2019-23 did not gain crops (Spearman −0.04, p 0.36).
 - **What it really is:** the north-west against the east and south, not a lever a farmer can pull. The app does not give it as advice.
 
+**Did not hold up 3: "SMAP can say whether the topsoil is wetter or drier than usual before the winter sowing".** `research/grid/smap.py` puts NASA's enhanced 9 km SMAP soil moisture (SPL3SMP_E version 6, the 6 am and 6 pm passes whose retrieval succeeded) on each upazila's cropland. `checks.py` tests it (`smapCheck`).
+- **The record breaks dry from late December 2023.** Setting each farm upazila against itself, 2021-22 against 2024-25:
+  - **December-February:** 98% read drier (median −0.078 m³/m³).
+  - **June-September:** 94% read drier (−0.034).
+  - **October-November:** 94% read drier (−0.046).
+  - **Processing:** the same version throughout (R19240).
+- **The rain does not explain it.** At the 64 district centres in NASA POWER's reprocessed archive:
+  - **2024-25 monsoons:** 112% of 2019-23's rain, and MERRA-2's surface wetness rose (+0.023), yet SMAP fell (−0.033). In 46 districts SMAP dried while neither the rain nor MERRA-2 did.
+  - **October-November:** rain 91%, MERRA-2 unchanged, SMAP −0.053.
+  - **Winters:** these really were drier (45% of the rain), so part of the winter drop is real.
+- **Its change barely follows the rain,** even against the years after the break. From the 30 days to 28 October 2025 to the same days of 2026, GPM IMERG's rain fell by a median 108 mm at the district centres, while SMAP moved by −0.009 (Spearman 0.32 across 61 districts). Over standing Aman, irrigated plots and ponds, a 9 km reading of the top 5 cm says little about the season.
+- **The app does not use it.**
+
+**What the rain does say: this October is very dry.**
+- **Measured rain:** GPM IMERG Late for the 30 days to 28 October 2026, against the Late run's own 2001-2025 at each district centre, gives a median 26% of the usual rain. 24 of 64 districts are the driest of all 26 years (Sunamganj 23 mm against a median of 350). Only the hill tracts (Bandarban 117%, Rangamati 103%) and the far north-west (Thakurgaon 85%, Rajshahi 63%) come near normal.
+- **The app's advice:** its dry-start advice before the winter sowing is right in direction, but its figures come from NASA POWER alone. The daily GitHub update has been running without the Earthdata secrets, so it skips IMERG and SMAP (`.github/workflows/daily-nasa-update.yml`).
+- **POWER's own rain:** in the copy fetched on 30 October, POWER's IMERG field ends on 14 September 2026. POWER's corrected rain gives 21-32 mm at all five pilot sites for the same weeks, where IMERG Late has 16-74 mm. Against POWER's own normal it reads about 11% almost everywhere (quartiles 8-13%), the north-west included.
+- **The fix:** set the `EARTHDATA_USERNAME` and `EARTHDATA_PASSWORD` repository secrets. The daily update then reads IMERG (scaled to the Final run, as `daily_update.py` does) and SMAP L4.
+
 ### A map of Bangladesh
 
 The overview's satellite card is a real map (Leaflet with NASA GIBS imagery). All 544 upazilas (geoBoundaries outlines, thinned to 0.74 MB by `python research/export/map_export.py`, sent gzipped) are coloured by one of ten layers: crops a year, its change since 2001-06 and winter greenness (MODIS); Boro irrigation need (NASA replay) and groundwater decline (GLDAS), both per district; rain in the last 7 days (IMERG), 30-day rain against normal and root-zone soil wetness (the daily NASA update); pesticide on rice (PEST-CHEMGRIDS) and soil organic matter (SRDI). Underneath: OpenStreetMap, NASA MODIS or VIIRS true colour from yesterday, or the Blue Marble; on top: NASA's 3-day MODIS flood map, IMERG rain, SMAP root-zone moisture and MODIS 8-day NDVI. Hover shows the value, a click shows the upazila's facts with a button that plans for it, choosing a place in the list flies the map there, and a table lists the district's upazilas. `GET /api/v1/map/upazilas` serves the values.
