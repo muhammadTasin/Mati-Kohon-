@@ -383,7 +383,6 @@ export const EN = {
   'lm.now': 'Now',
   'lm.years': '25 years',
   'lm.loading': 'The map is on its way…',
-  'lm.pick': 'Tap any upazila',
   'header.enter': 'Enter',
   'feat.map.name': 'The map of the country',
   'feat.map.desc': 'NASA data for 544 upazilas; pick a place and the whole page shows it',

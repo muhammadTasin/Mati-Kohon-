@@ -332,6 +332,7 @@ function place(id, { speak = true } = {}) {
   const r = rows[id];
   if (!r) return;
   pinned = id;
+  $('lmPlace').removeAttribute('aria-busy');
   for (const [pid, p] of paths) p.classList.toggle('pinned', pid === id);
   raise(liftPin, id);
   if (lift?.dataset.of === id) raise(lift, null);
@@ -362,6 +363,13 @@ function tip(e) {
   box.style.transform = `translate(${x}px, ${y}px)`;
 }
 
+/** No place pinned: how to pick one. */
+function hint() {
+  const box = $('lmPlace');
+  box.removeAttribute('aria-busy');
+  box.innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">touch_app</span> <span>${esc(tr('যেকোনো উপজেলায় চাপ দিন', 'Tap any upazila'))}</span>`;
+}
+
 // ---------- the timeline ----------
 function stopPlay() {
   clearInterval(playing);
@@ -378,6 +386,8 @@ function setYear(y, { speak = false } = {}) {
 
 // ---------- start ----------
 async function start() {
+  chips(); // the layers and the legend need no data: they show at once, the map and the place come with it
+  legend(spec());
   const [geo, map, yrs] = await Promise.all([
     fetch('data/bd_upazilas.geojson').then(r => r.json()),
     fetch('/api/v1/map/upazilas').then(r => (r.ok ? r.json() : { upazilas: {} })),
@@ -392,6 +402,8 @@ async function start() {
   chips();
   paint({ say: false });
   if (rows[START_PLACE]) place(START_PLACE, { speak: false }); // the pilot, pinned; Rongu keeps his welcome
+  else hint();
+  $('lmCanvas').classList.add('ready'); // the skeleton gives way
   new ResizeObserver(reliefSoon).observe(document.querySelector('#lmCanvas .lm-3d'));
 
   $('lmLayers').addEventListener('click', (e) => {
@@ -436,7 +448,7 @@ async function start() {
   });
   $('lmPlay').setAttribute('aria-label', tr('চালান', 'Play'));
   // a new language: chips, legend, note and the pinned place again
-  new MutationObserver(() => { chips(); seaName(); paint({ say: false }); if (pinned) place(pinned, { speak: false }); })
+  new MutationObserver(() => { chips(); seaName(); paint({ say: false }); if (pinned) place(pinned, { speak: false }); else hint(); })
     .observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 }
 
@@ -445,7 +457,12 @@ let started = false;
 const maybeStart = () => {
   if (started || !document.body.classList.contains('state-entry') || !$('landingMap')) return;
   started = true;
-  start().catch((err) => { console.warn('landing map', err); $('lmWait').textContent = tr('মানচিত্র আনা যায়নি।', 'The map could not be loaded.'); });
+  start().catch((err) => {
+    console.warn('landing map', err);
+    $('lmWait').textContent = tr('মানচিত্র আনা যায়নি।', 'The map could not be loaded.');
+    $('lmCanvas').classList.add('failed');
+    hint();
+  });
 };
 new MutationObserver(maybeStart).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 maybeStart();
