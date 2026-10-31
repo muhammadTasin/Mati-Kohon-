@@ -99,38 +99,35 @@
           <!-- THE COUNTRY TODAY: every upazila coloured by a NASA layer, now or year by year (landing-map.js) -->
           <div class="landing-map" id="landingMap">
             <div class="lm-head">
-              <p class="entry-eyebrow" data-i18n="entry.eyebrow">মাটি কহন · নাসার তথ্যে মাঠের পরামর্শ</p>
               <h1 id="entryTitle" data-i18n="lm.title">বাংলাদেশ আজ, নাসার চোখে</h1>
               <p class="lm-sub" data-i18n="lm.sub">৫৪৪টি উপজেলা। একটি স্তর বাছুন, উপজেলার উপর আঙুল রাখুন, বা সময়রেখা চালিয়ে ২৫ বছরের বদল দেখুন।</p>
             </div>
-            <div class="lm-bar">
+            <div class="lm-ctrl">
+              <p class="lm-label" data-i18n="lm.when">কখন</p>
               <div class="lm-modes" role="tablist" aria-label="Map time">
                 <button type="button" role="tab" class="on" aria-selected="true" data-mode="now"><span class="material-symbols-outlined" aria-hidden="true">radar</span><span data-i18n="lm.now">এখন</span></button>
                 <button type="button" role="tab" aria-selected="false" data-mode="years"><span class="material-symbols-outlined" aria-hidden="true">timeline</span><span data-i18n="lm.years">২৫ বছরে</span></button>
               </div>
+              <div class="lm-timeline" id="lmTimeline" hidden>
+                <button class="lm-play" id="lmPlay" type="button"><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span></button>
+                <input type="range" id="lmYear" min="2001" max="2025" step="1" value="2025" aria-label="Year">
+                <output id="lmYearOut" for="lmYear"></output>
+              </div>
+              <p class="lm-label" data-i18n="lm.what">কী দেখবেন</p>
               <div class="lm-layers" id="lmLayers" role="radiogroup" aria-label="Map layer"></div>
             </div>
-            <div class="lm-body">
-              <div class="lm-mapcol">
-                <div class="lm-canvas" id="lmCanvas">
-                  <svg id="lmSvg" role="img" aria-labelledby="entryTitle"></svg>
-                  <div class="lm-tip" id="lmTip" hidden></div>
-                  <p class="lm-wait" id="lmWait" data-i18n="lm.loading">মানচিত্র আসছে…</p>
-                </div>
-                <div class="lm-timeline" id="lmTimeline" hidden>
-                  <button class="lm-play" id="lmPlay" type="button"><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span></button>
-                  <input type="range" id="lmYear" min="2001" max="2025" step="1" value="2025" aria-label="Year">
-                  <output id="lmYearOut" for="lmYear"></output>
-                </div>
+            <div class="lm-mapcol">
+              <div class="lm-legend" id="lmLegend"></div>
+              <div class="lm-canvas" id="lmCanvas">
+                <svg id="lmSvg" role="img" aria-labelledby="entryTitle"></svg>
+                <div class="lm-tip" id="lmTip" hidden></div>
+                <p class="lm-wait" id="lmWait" data-i18n="lm.loading">মানচিত্র আসছে…</p>
               </div>
-              <aside class="lm-side">
-                <div class="lm-legend" id="lmLegend"></div>
-                <div class="lm-place" id="lmPlace">
-                  <span class="material-symbols-outlined" aria-hidden="true">touch_app</span>
-                  <span data-i18n="lm.pick">যেকোনো উপজেলায় চাপ দিন</span>
-                </div>
-                <p class="lm-note" id="lmNote"></p>
-              </aside>
+              <p class="lm-note" id="lmNote"></p>
+            </div>
+            <div class="lm-place" id="lmPlace">
+              <span class="material-symbols-outlined" aria-hidden="true">touch_app</span>
+              <span data-i18n="lm.pick">যেকোনো উপজেলায় চাপ দিন</span>
             </div>
           </div>
 

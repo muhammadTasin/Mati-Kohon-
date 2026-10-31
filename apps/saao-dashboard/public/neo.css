@@ -470,9 +470,13 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
 .entry-inner { max-width: 1240px; }
 .entry-step.landing { text-align: left; }
 .landing-hero {
-  display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(300px, 0.9fr); align-items: center; gap: 32px;
-  min-height: min(680px, calc(100vh - 120px)); padding: 32px 40px;
-  background: var(--face); border-radius: 32px !important; box-shadow: var(--e3);
+  display: grid; align-items: start; column-gap: 40px; row-gap: 22px; padding: 12px 8px 8px;
+  grid-template-columns: 236px minmax(0, 1fr) 350px;
+  grid-template-rows: auto auto 1fr;
+  grid-template-areas:
+    "head head  side"
+    "ctrl map   side"
+    "place map  side";
 }
 .landing-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .landing-cta { display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 12px 24px; font-size: 16.5px; }
@@ -481,34 +485,46 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
 .landing-time .material-symbols-outlined { font-size: var(--icon-sm); }
 .landing-side .entry-checking { margin: 0; }
 
-/* the map of the country (landing-map.js) */
-.landing-map { min-width: 0; }
-.lm-head .entry-eyebrow { text-align: left; margin: 0 0 8px; }
-.lm-head h1 { margin: 0 0 6px; text-align: left; font-size: clamp(24px, 2.4vw, 36px); line-height: 1.15; color: var(--teal-900); }
-.lm-sub { margin: 0 0 16px; max-width: 62ch; font-size: 15px; line-height: 1.6; color: var(--text); }
-.lm-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-bottom: 14px; }
-.lm-modes { display: inline-flex; gap: 4px; padding: 4px; background: var(--sunk); box-shadow: var(--inset); border-radius: var(--r-pill) !important; }
+/* the map of the country (landing-map.js): its parts are placed straight on the hero's grid */
+.landing-map { display: contents; }
+.lm-head { grid-area: head; }
+.lm-ctrl { grid-area: ctrl; display: grid; gap: 8px; align-content: start; }
+.lm-mapcol { grid-area: map; display: grid; gap: 14px; min-width: 0; }
+.lm-place { grid-area: place; align-self: start; }
+.lm-head h1 { margin: 0 0 8px; text-align: left; font-size: clamp(28px, 3.1vw, 46px); line-height: 1.12; color: var(--teal-900); }
+.lm-sub { margin: 0; max-width: 84ch; font-size: 16px; line-height: 1.6; color: var(--text); }
+.lm-label { margin: 6px 0 0; font: 650 12px/1.3 var(--font-body); letter-spacing: .04em; text-transform: uppercase; color: var(--muted-ink); }
+.lm-label:first-child { margin-top: 0; }
+
+/* when: two halves of one pressed pill */
+.lm-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: var(--sunk); box-shadow: var(--inset); border-radius: var(--r-pill) !important; }
 .lm-modes button, .lm-chip {
-  display: inline-flex; align-items: center; gap: 6px; border: 0; cursor: pointer; font: 600 13.5px var(--font-body);
-  border-radius: var(--r-pill) !important; transition: background .2s var(--ease), box-shadow .2s var(--ease), color .2s var(--ease);
+  display: inline-flex; align-items: center; gap: 8px; border: 0; cursor: pointer; font: 600 14px var(--font-body);
+  transition: background .2s var(--ease), box-shadow .2s var(--ease), color .2s var(--ease);
 }
-.lm-modes button { padding: 7px 14px; color: var(--ink-2); background: transparent; }
+.lm-modes button { justify-content: center; padding: 8px 10px; color: var(--ink-2); background: transparent; border-radius: var(--r-pill) !important; }
 .lm-modes button.on { color: var(--face-hi); background: var(--teal-700); box-shadow: 2px 3px 7px rgba(11, 74, 79, .3); }
-.lm-modes .material-symbols-outlined, .lm-chip .material-symbols-outlined { font-size: 18px; }
-.lm-layers { display: flex; flex-wrap: wrap; gap: 8px; }
-.lm-chip { padding: 7px 13px; color: var(--ink-2); background: var(--face-hi); box-shadow: var(--e2); }
-.lm-chip:hover { color: var(--teal-900); box-shadow: var(--e3); }
-.lm-chip.on { color: var(--teal-900); background: var(--teal-50); box-shadow: var(--inset), inset 0 0 0 var(--bw-2) var(--teal-700); }
-.lm-chip.on .material-symbols-outlined { color: var(--teal-700); }
-.lm-body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(170px, 0.62fr); gap: 18px; align-items: start; }
-.lm-canvas {
-  position: relative; aspect-ratio: 0.8; max-height: 520px; padding: 10px;
-  background: var(--face-hi); border-radius: var(--r-xl) !important; box-shadow: var(--inset);
+.lm-modes .material-symbols-outlined { font-size: 18px; }
+
+/* what: one row per layer, the chosen one raised with a filled icon */
+.lm-layers { display: grid; gap: 4px; }
+.lm-chip { width: 100%; padding: 6px 12px 6px 6px; color: var(--ink-2); background: transparent; text-align: left; border-radius: 14px !important; }
+.lm-chip .material-symbols-outlined {
+  display: grid; place-items: center; flex: none; width: 34px; height: 34px; font-size: 19px; color: var(--teal-700);
+  background: var(--face-hi); border-radius: 50% !important; box-shadow: var(--e1);
+  transition: background .2s var(--ease), color .2s var(--ease);
 }
-.lm-canvas svg { display: block; width: 100%; height: 100%; }
-.lm-canvas path { stroke: var(--face-hi); stroke-width: .7; stroke-linejoin: round; cursor: pointer; transition: fill .45s ease, opacity .2s ease; }
+.lm-chip:hover { color: var(--teal-900); background: rgba(255, 255, 255, .45); }
+.lm-chip.on { color: var(--teal-900); background: var(--face-hi); box-shadow: var(--e2); font-weight: 700; }
+.lm-chip.on .material-symbols-outlined { color: var(--face-hi); background: var(--teal-700); box-shadow: none; }
+
+/* the map: the country itself on the page, lifted by a soft shadow; no box around it */
+.lm-canvas { position: relative; height: min(620px, calc(100vh - 250px)); min-height: 420px; }
+.lm-canvas svg { display: block; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 12px 16px rgba(122, 98, 62, .2)); }
+.lm-canvas path { stroke: var(--paper); stroke-width: .7; stroke-linejoin: round; cursor: pointer; transition: fill .45s ease; }
 .lm-canvas path:hover { stroke: var(--teal-900); stroke-width: 1.6; }
-.lm-canvas path.pinned { stroke: var(--teal-900); stroke-width: 2.4; }
+.lm-canvas path.pinned { stroke: var(--teal-900); stroke-width: 2.6; }
+.lm-canvas .lm-sea { font: italic 500 22px var(--font-body); letter-spacing: .12em; fill: var(--sky-ink, #3d6f8f); opacity: .55; pointer-events: none; }
 .lm-wait { position: absolute; inset: 0; display: grid; place-items: center; margin: 0; color: var(--teal-700); font: 600 15px var(--font-display); }
 .lm-wait[hidden] { display: none; }
 .lm-tip {
@@ -518,40 +534,44 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
 }
 .lm-tip[hidden] { display: none; }
 .lm-tip strong { font-weight: 700; }
-.lm-side { display: grid; gap: 14px; align-content: start; }
-.lm-legend-title { margin: 0 0 8px; font: 650 14px/1.35 var(--font-body); color: var(--teal-900); }
+
+/* over the map the legend in one row, under it where the numbers come from; the year slider sits with "when" */
+.lm-legend { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 6px 12px; }
+.lm-legend-title { margin: 0; font: 650 13.5px/1.35 var(--font-body); color: var(--teal-900); }
 .lm-legend-title span { font-weight: 500; color: var(--muted-ink); }
-.lm-legend ul { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; font-size: 12.5px; color: var(--text); }
-.lm-legend li { display: flex; align-items: center; gap: 8px; }
+.lm-legend ul { display: contents; }
+.lm-legend li { display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--text); list-style: none; }
 .lm-swatch { flex: none; width: 16px; height: 12px; border-radius: 3px !important; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .08); }
-.lm-place { padding: 12px 14px; background: var(--face-hi); border-radius: var(--r-lg) !important; box-shadow: var(--e2); font-size: 13.5px; color: var(--muted-ink); }
-.lm-place > .material-symbols-outlined { vertical-align: -5px; margin-right: 4px; color: var(--teal-700); }
-.lm-place-name { margin: 0 0 4px; color: var(--ink); }
-.lm-place-name strong { font: 700 16px var(--font-display); color: var(--teal-900); }
-.lm-place-now { margin: 0 0 8px; color: var(--text); }
-.lm-place-now b { color: var(--ink); }
-.lm-place dl { display: grid; gap: 6px; margin: 0 0 10px; }
-.lm-place dl div { display: grid; gap: 0; }
-.lm-place dt { font-size: 12px; color: var(--muted-ink); }
-.lm-place dd { margin: 0; font-weight: 600; color: var(--ink-2); }
-.lm-place .btn { display: inline-flex; align-items: center; gap: 4px; }
-.lm-note { margin: 0; font-size: 12px; line-height: 1.5; color: var(--muted-ink); }
-.lm-mapcol { display: grid; gap: 12px; min-width: 0; }
-.lm-timeline { display: flex; align-items: center; gap: 12px; margin-top: 0; padding: 8px 14px 8px 8px; background: var(--face-hi); border-radius: var(--r-pill) !important; box-shadow: var(--e2); }
+.lm-note { margin: 0; max-width: 62ch; justify-self: center; font-size: 12px; line-height: 1.5; color: var(--muted-ink); text-align: center; }
+.lm-timeline { display: flex; align-items: center; gap: 10px; width: 100%; margin-top: 2px; padding: 5px 12px 5px 5px; background: var(--face-hi); border-radius: var(--r-pill) !important; box-shadow: var(--e2); }
 .lm-timeline[hidden] { display: none; }
 .lm-play {
   display: grid; place-items: center; flex: none; width: 40px; height: 40px; border: 0; cursor: pointer; color: var(--face-hi);
   background: var(--teal-700); border-radius: 50% !important; box-shadow: 2px 3px 7px rgba(11, 74, 79, .3);
 }
 .lm-play:hover { background: var(--teal-600); }
-.lm-timeline input[type="range"] { flex: 1; }
+.lm-timeline input[type="range"] { flex: 1; min-width: 0; }
 .lm-timeline output { min-width: 3.2em; font: 700 18px var(--font-display); color: var(--teal-900); text-align: right; }
 
+/* a place: the hint, then its card once tapped */
+.lm-place { padding: 12px 14px; background: var(--face-hi); border-radius: var(--r-lg) !important; box-shadow: var(--e2); font-size: 13.5px; color: var(--muted-ink); }
+.lm-place > .material-symbols-outlined { vertical-align: -5px; margin-right: 4px; color: var(--teal-700); }
+.lm-place-name { margin: 0 0 4px; color: var(--ink); }
+.lm-place-name strong { font: 700 17px var(--font-display); color: var(--teal-900); }
+.lm-place-now { margin: 0 0 10px; color: var(--text); }
+.lm-place-now b { color: var(--ink); }
+.lm-place dl { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; margin: 0 0 12px; }
+.lm-place dl div { display: grid; gap: 0; }
+.lm-place dt { font-size: 12px; color: var(--muted-ink); }
+.lm-place dd { margin: 0; font-weight: 600; color: var(--ink-2); }
+.lm-place .btn { display: inline-flex; align-items: center; gap: 4px; }
+
 /* Rongu's side: the stage, the tour and the way in */
-.landing-side { display: grid; justify-items: center; gap: 14px; min-width: 0; }
+.landing-side { grid-area: side; align-self: center; display: grid; justify-items: center; gap: 14px; min-width: 0; }
 .landing-side .landing-actions { justify-content: center; }
 .landing-side .landing-time { justify-content: center; margin-top: 0; }
-.landing-side .landing-stage { width: 100%; }
+.landing-side .landing-stage { width: 100%; min-height: 0; }
+.landing-side .landing-say { left: 57%; max-width: min(300px, 46%); font-size: 15px; }
 
 /* the stage: Rongu on his own, a soft pressed disc behind him, a small podium under his feet, and what he says */
 .landing-stage { position: relative; aspect-ratio: 1.02; min-height: 360px; }
@@ -583,7 +603,7 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
 /* no 3D here (or he was tucked away): no empty stage, the copy takes the whole hero */
 .no-rongu .landing-stage, .rongu-off .landing-stage { display: none; }
 .no-rongu .landing-side, .rongu-off .landing-side { align-self: center; }
-.no-rongu .landing-hero, .rongu-off .landing-hero { grid-template-columns: minmax(0, 1fr); min-height: 0; }
+.no-rongu .landing-hero, .rongu-off .landing-hero { grid-template-columns: 236px minmax(0, 1fr) 280px; }
 
 /* what Rongu will show: one card per part of the tour, coloured by the role it enters */
 .landing-section { margin-top: 56px; text-align: center; }
@@ -617,18 +637,33 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
 @media (max-width: 1100px) {
   .feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .feature-tile { min-height: 0; }
-  .landing-hero { grid-template-columns: minmax(0, 1.3fr) minmax(260px, 0.8fr); padding: 26px 28px; gap: 24px; }
-  .lm-body { grid-template-columns: minmax(0, 1fr) 168px; gap: 14px; }
-  .lm-canvas { max-height: 470px; }
+}
+@media (max-width: 1180px) {
+  .landing-hero {
+    grid-template-columns: minmax(0, 1fr) 210px 280px; column-gap: 28px;
+    grid-template-areas:
+      "head head  side"
+      "ctrl ctrl  side"
+      "map  place side";
+  }
+  .lm-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+  .lm-label { display: none; }
+  .lm-modes { display: inline-grid; }
+  .lm-layers { display: flex; flex-wrap: wrap; gap: 8px; }
+  .lm-chip { width: auto; padding: 4px 13px 4px 4px; background: var(--face-hi); box-shadow: var(--e2); border-radius: var(--r-pill) !important; }
+  .lm-chip .material-symbols-outlined { width: 28px; height: 28px; font-size: 17px; box-shadow: none; }
+  .lm-chip:hover { background: var(--face-hi); box-shadow: var(--e3); }
+  .lm-timeline { order: 1; width: min(100%, 460px); margin-top: 0; }
+  .lm-layers { order: 0; }
 }
 @media (max-width: 900px) {
-  .landing-hero { grid-template-columns: minmax(0, 1fr); min-height: 0; padding: 20px; gap: 20px; border-radius: 24px !important; }
-  .landing-hero { display: flex; flex-direction: column; align-items: stretch; }
-  .landing-map { display: contents; }
+  .landing-hero { display: flex; flex-direction: column; align-items: stretch; gap: 18px; padding: 4px 0 0; }
   .lm-head { order: 0; }
   .landing-side { order: 1; }
-  .lm-bar { order: 2; margin-bottom: 0; }
-  .lm-body { order: 3; }
+  .lm-ctrl { order: 2; }
+  .lm-mapcol { order: 3; }
+  .lm-place { order: 4; align-self: stretch; }
+  .lm-canvas { height: auto; min-height: 0; aspect-ratio: 0.74; max-height: 560px; }
   .lm-head h1 { font-size: clamp(24px, 6.4vw, 34px); }
   .lm-sub { margin-bottom: 0; }
   .landing-side .landing-stage { width: min(100%, 300px); margin: 0 auto; aspect-ratio: 1.02; min-height: 0; }
@@ -640,13 +675,13 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
   body.state-entry .header-right { flex-wrap: nowrap; }
   .header-enter { padding: 7px 11px; }
   .header-enter span[data-i18n] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } /* the arrow alone, still read out */
-  .lm-body { grid-template-columns: minmax(0, 1fr); }
-  .lm-canvas { max-height: 440px; }
-  .lm-legend ul { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+  .lm-legend { justify-content: flex-start; }
+  .lm-legend-title { flex-basis: 100%; }
+  .lm-note { text-align: left; justify-self: start; }
   .landing-side .landing-stage { width: min(100%, 230px); }
   .landing-side .landing-time { display: none; }
   .entry-screen { padding: 16px 12px 56px; }
-  .landing-say { left: 58%; max-width: 42%; padding: 9px 12px; font-size: 13.5px; }
+  .landing-side .landing-say { left: 58%; max-width: 42%; padding: 9px 12px; font-size: 13.5px; }
   .landing-cta { flex: 1 1 100%; justify-content: center; }
   .feature-grid { grid-template-columns: minmax(0, 1fr); }
   .feature-tile { min-height: 0; }

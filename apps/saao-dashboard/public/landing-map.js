@@ -21,6 +21,7 @@ const pct = (share) => `${num(Math.round(share * 100))}%`;
 let rows = {}, years = null, liveDate = null;
 let mode = 'now', layerId = 'floodNow', year = 2025, playing = 0, pinned = null;
 const paths = new Map(); // upazila id -> <path>
+let sea = null; // the Bay of Bengal's name, under the coast
 
 // What NASA sees now: the dashboard's live layers, each with what Rongu says about it
 const NOW = [
@@ -168,8 +169,15 @@ function draw(geo) {
     g.append(p);
     paths.set(f.properties.id, p);
   }
-  svg.replaceChildren(g);
+  sea = document.createElementNS(ns, 'text');
+  sea.setAttribute('class', 'lm-sea');
+  sea.setAttribute('x', X(90.3).toFixed(0));
+  sea.setAttribute('y', Y(21.25).toFixed(0));
+  sea.setAttribute('text-anchor', 'middle');
+  seaName();
+  svg.replaceChildren(g, sea);
 }
+function seaName() { if (sea) sea.textContent = tr('বঙ্গোপসাগর', 'BAY OF BENGAL'); }
 
 // ---------- painting, the legend, the note ----------
 function paint({ speak = true, say = true } = {}) {
@@ -335,7 +343,7 @@ async function start() {
   });
   $('lmPlay').setAttribute('aria-label', tr('চালান', 'Play'));
   // a new language: chips, legend, note and the pinned place again
-  new MutationObserver(() => { chips(); paint({ say: false }); if (pinned) place(pinned, { speak: false }); })
+  new MutationObserver(() => { chips(); seaName(); paint({ say: false }); if (pinned) place(pinned, { speak: false }); })
     .observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
 }
 
