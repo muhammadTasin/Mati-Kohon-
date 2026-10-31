@@ -110,6 +110,7 @@ export class Motion {
     this.scan = { at: rand(8, 14), until: 0, L: [0, 0], R: [0, 0] };
     this.fidgetAt = rand(7, 12);
     this.autoFidget = true;
+    this.loop = 0; // seconds; when set, the idle rhythms repeat exactly (the phone app's pre-rendered loops)
     this.hands = { L: 'relaxed', R: 'grip' };
     this.home = { x: 0, z: 0, yaw: 0 };
     this.overrides = {}; // fixed values, for tuning poses in the lab // where he stands when nothing moves him
@@ -147,12 +148,14 @@ export class Motion {
     P.rootX = this.home.x; P.rootZ = this.home.z; P.rootYaw = this.home.yaw;
 
     // idle life: breathing, weight shifts, a slowly curling tail
-    const br = Math.sin(t * TAU / 3.6);
+    // (with this.loop set, each rhythm is rounded to fit a whole number of times into it: seamless pre-rendered loops)
+    const per = (p) => (this.loop ? this.loop / Math.max(1, Math.round(this.loop / p)) : p);
+    const br = Math.sin(t * TAU / per(3.6));
     P.chestX += 0.02 * br; P.hipsY += 0.004 * br; P.armLOut += 0.012 * br; P.armROut += 0.008 * br;
-    P.hipsX = 0.014 * Math.sin(t * TAU / 7.3); P.hipsRoll = 0.022 * Math.sin(t * TAU / 7.3 + 0.4);
-    P.chestZ = -0.015 * Math.sin(t * TAU / 7.3 + 0.9);
-    P.headZ = 0.035 * Math.sin(t * TAU / 5.7 + 1.1); P.headY = 0.05 * Math.sin(t * TAU / 9.1);
-    P.tailCurl = 1 + 0.05 * Math.sin(t * TAU / 6.2);
+    P.hipsX = 0.014 * Math.sin(t * TAU / per(7.3)); P.hipsRoll = 0.022 * Math.sin(t * TAU / per(7.3) + 0.4);
+    P.chestZ = -0.015 * Math.sin(t * TAU / per(7.3) + 0.9);
+    P.headZ = 0.035 * Math.sin(t * TAU / per(5.7) + 1.1); P.headY = 0.05 * Math.sin(t * TAU / per(9.1));
+    P.tailCurl = 1 + 0.05 * Math.sin(t * TAU / per(6.2));
     P.legLOut = 0.02; P.legROut = 0.02;
 
     // locomotion: the first queued action drives the body
@@ -181,7 +184,8 @@ export class Motion {
 
     this.faceLayer(P, dt);
     Object.assign(P, this.overrides);
-    this.tailPhase += dt * this.springs.tailSpeed.v * TAU * 0.4;
+    const tailHz = CHANNELS.tailSpeed[0] * 0.4, tailFit = this.loop ? Math.max(1, Math.round(tailHz * this.loop)) / (tailHz * this.loop) : 1;
+    this.tailPhase += dt * this.springs.tailSpeed.v * TAU * 0.4 * tailFit;
 
     for (const k in this.springs) { const s = this.springs[k]; s.target = P[k]; s.step(dt); }
     for (const side of ['L', 'R']) if (P['hand' + side] !== this.hands[side]) { this.hands[side] = P['hand' + side]; this.model.setHand(side, this.hands[side]); }

@@ -74,6 +74,8 @@ fun TodayAdviceScreen(
     onNavigateToHistory: () -> Unit = {},
     onNavigateToDetail: () -> Unit = {},
     onNavigateToProfile: () -> Unit = {},
+    rongu: RonguGreetingState? = null,
+    onStartTour: () -> Unit = {},
     viewModel: TodayAdviceViewModel = viewModel(),
     modifier: Modifier = Modifier
 ) {
@@ -106,6 +108,9 @@ fun TodayAdviceScreen(
                 isOffline = advice.isOffline,
                 lastSyncTimeText = advice.lastSyncFormatted
             )
+
+            // Rongu, the companion, greets the farmer (hidden while his tour runs)
+            rongu?.let { RonguGreetingCard(state = it, onStartTour = onStartTour) }
 
             Button(
                 onClick = { viewModel.refreshAdvice() },
