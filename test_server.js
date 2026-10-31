@@ -168,6 +168,26 @@ async function run() {
   check(god.springHotDays > 0 && god.winterColdNights >= 0 && god.preMonsoonErosiveDays > 0 && god.dryRootWet > 0 && god.dryRootWet < 1 && mapRows.sources.risk,
     'the map carries the season risks: spring heat, winter cold, soil-moving rain on bare fields and the dry-season root zone');
 
+  // The 1 km cropland grid (research/grid/build.py): greenness against the trend, the summer gap, Boro thirst, the soil
+  const levels = ['wellBelow', 'below', 'normal', 'above', 'wellAbove', 'unclear', 'noCrop'];
+  const gridRows = Object.values(mapRows.upazilas).filter(r => levels.includes(r.condLevel));
+  check(gridRows.length > 450 && mapRows.sources.fieldGrid?.includes('WorldCover'), 'most upazilas carry a cropland greenness level from the 1 km grid, with its sources');
+  check(gridRows.every(r => r.condPct === null || (r.condPct >= 0 && r.condPct <= 100)) && Object.values(mapRows.upazilas).some(r => r.emptyDays > 0 && r.emptyFrom)
+    && Object.values(mapRows.upazilas).some(r => r.boroThirstPct !== null) && god.soilAwcMm > 20 && god.soilTexture, 'the map carries the summer gap, Boro thirst and the soil');
+  const dacope = await (await fetch(`${BASE}/api/v1/overview?place=ADM3_Dacope`)).json();
+  const fc = dacope.field_conditions;
+  check(fc?.row?.condition && fc.curve?.dates.length === fc.curve.ndvi.length && fc.curve.low.length === fc.curve.dates.length && fc.now?.composite,
+    "an upazila's overview carries its fields from space with the chart's data");
+  check(fc.notes.every(n => n.bn && n.en && ['alert', 'watch', 'good', 'info'].includes(n.tone)) && fc.notes.some(n => n.id === 'emptyField' && /mungbean|sesame/.test(n.en)),
+    'the plain notes come in Bangla and English, and a coastal gap is filled with a summer crop that fits');
+  check((await (await fetch(`${BASE}/api/v1/overview`)).json()).field_conditions?.id === 'ADM3_Tanore', "the Tanore pilot reads its upazila's cropland");
+  const lessGreen = await (await fetch(`${BASE}/api/v1/conditions/check`)).json();
+  check(lessGreen.upazilas.every(u => ['below', 'wellBelow'].includes(u.level) && u.croplandKm2 >= 20) && lessGreen.upazilas.every((u, i, a) => i === 0 || a[i - 1].percentile <= u.percentile),
+    'the less-green check list holds only confident, below-expected upazilas with real cropland, least green first');
+  const gridYears = await (await fetch(`${BASE}/api/v1/map/years`)).json();
+  check(gridYears.upazilaCropsByYear.ADM3_Godagari?.length === gridYears.years.length && gridYears.sources.crops.includes('cropland'), "the time slider's crops a year come from the cropland");
+  console.log('✓ Field conditions: cropland greenness against the trend for', gridRows.length, 'upazilas;', lessGreen.total, 'to check; Dacope:', fc.row.condition.level, fc.row.emptyField?.days, 'empty days');
+
   // Field Shift's statement: the farmer's rotation now, constraints and a what-if year go through the advice API
   const fsAdvice = await (await fetch(`${BASE}/api/v1/advice`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
     unionId: 'talanda_tanore', currentAmanCrop: 'BRRI dhan49', farmerPriorities: { water: 0.5, income: 0.3, soil: 0.2 },

@@ -2,6 +2,31 @@
 
 What changed in Project EDEN, newest first, with who made each change and the branch it came from. Every branch below was merged into `main` on 1 October 2026.
 
+## 31 October 2026 · The fields from space: a 1 km cropland grid (Tasrif, `feature/field-conditions`)
+
+- **One grid for the satellites:** `research/grid/` (`_grid.py`, `ndvi.py`, `esi.py`, `soil.py`, `build.py`) puts each upazila on a 1 km grid of its cropland only.
+  - **Cropland:** ESA WorldCover 2021 at 10 m, counted on a 100 m grid and burnt together with the dashboard's upazila outlines.
+  - **Sources on the grid:** MODIS MOD13A2 and NOAA-20 VIIRS 1 km NDVI, ECOSTRESS evaporative stress, SoilGrids.
+  - **Downloads:** `research/acquire/grid_downloads.py`, on `feature/data-jobs`.
+- **Crop greenness against what is expected** (`field_conditions.json`):
+  - **Reading:** the latest 16 days of VIIRS on the MODIS scale.
+  - **Comparison:** the same days of 2001-2025, with the 25-year greening trend taken out.
+  - **Confidence:** high only when Terra MODIS agrees; "noCrop" where the fields are normally bare or flooded.
+  - **Where it shows:** a chart of the last 12 months against the expected band (`field_conditions_curves.json`), and an officers' check list `GET /api/v1/conditions/check` (61 upazilas on 8-23 October 2026).
+- **The summer gap and what fits it:**
+  - **Gap:** the bare run between 1 March and 15 July over the last 10 summers.
+  - **Fit:** the engine's replayed sowing windows and field days decide which summer crop fits (`cropsForGap` in `packages/rotation-engine/src/data/field_conditions.ts`).
+  - **Otherwise:** when the gap opens too late, it points to an earlier-harvested winter crop; low land gets no summer crop.
+- **Boro thirst:** the share of green fields with an ECOSTRESS ESI below 0.40 in March-April. Only daytime passes count, and each figure carries the dates it rests on.
+- **Soil:** SoilGrids texture, and Saxton & Rawls available water in the top 30 cm.
+- **Crops a year over the cropland:** `greenness_upazila.json` is rewritten in its old shape (2.17 crops a year on average, against 1.76 from the centre pixel), and the time slider's crops use it. `national_greenness.py` now writes its centre-pixel figures to `research/pilots/` only.
+- **In the app:**
+  - **Overview:** a "fields from space" card with the chart and plain Bangla/English notes (`field_conditions` in `GET /api/v1/overview`), plus the less-green check list.
+  - **Farmer's Today:** two lines from space.
+  - **Map:** four map layers, and "Crop health" on the landing map.
+  - **Glossary:** rows for WorldCover, MODIS/VIIRS 1 km, ECOSTRESS and SoilGrids.
+- **Tests:** `test_server.js` checks the map rows, the overview's notes and chart, the check list's order and the time slider's source.
+
 ## 29 October 2026 · Two winter crops, a year slider, and income at market prices (Tasrif, `feature/field-shift-statement`)
 
 - **Mustard or potato, then Boro:** a late Boro is added to the crop replay with `--only`, which merges it and leaves other crops untouched.

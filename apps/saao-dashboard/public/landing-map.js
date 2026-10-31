@@ -32,6 +32,14 @@ const DEPTH = 22; // the slab's thickness, in map units (the map is 1000 high)
 
 // What NASA sees now: the dashboard's live layers, each with what Rongu says about it
 const NOW = [
+  { id: 'cropCondition', icon: 'grass', short: ['খেতের সবুজ', 'Crop health'], say(st) {
+    const below = st.count(v => v === 'below' || v === 'wellBelow'), above = st.count(v => v === 'above' || v === 'wellAbove');
+    return {
+      text: tr(`নাসার উপগ্রহে শেষ ১৬ দিনে ${num(below)}টি উপজেলার খেত ২৫ বছরের ধারা যা আশা করে তার চেয়ে কম সবুজ, ${num(above)}টিতে বেশি। কোনো উপজেলায় চাপ দিন, কারণ দেখাই।`,
+        `In NASA's last 16 days, ${below} upazilas have fields less green than the 25-year record expects, and ${above} are greener. Tap one and I'll show you why.`),
+      mood: below > 80 ? 'drought' : 'calm', gesture: 'skySoil',
+    };
+  } },
   { id: 'rain30', icon: 'water_drop', short: ['বৃষ্টি', 'Rain'], say(st) {
     const dry = st.share(v => v < 75);
     return {
@@ -325,7 +333,7 @@ function chips() {
 
 // ---------- a place: hover tip, tap to pin its numbers and open it ----------
 const placeRows = () => [
-  ['rain30', tr('বৃষ্টি, ৩০ দিন', 'Rain, 30 days')], ['floodNow', tr('বন্যার পানি', 'Flood water')],
+  ['cropCondition', tr('খেতের সবুজ', 'Crop health')], ['rain30', tr('বৃষ্টি, ৩০ দিন', 'Rain, 30 days')], ['floodNow', tr('বন্যার পানি', 'Flood water')],
   ['soilWet', tr('মাটির রস', 'Soil wetness')], ['amanDryNow', tr('আমনে খরা', 'Aman dry spell')], ['blastNow', tr('ব্লাস্টের আবহাওয়া', 'Blast weather')],
 ];
 function place(id, { speak = true } = {}) {

@@ -140,7 +140,45 @@ npm run calls:daily -- --follow-up           # read the reports; retry and SMS t
 
 ### What the fields grow: MODIS greenness for every upazila
 
-`python research/explore/national_greenness.py` reads the AppEEARS request `fieldshift_ndvi_national_20260927` (MODIS MOD13Q1 250 m NDVI at the 544 upazila centres, February 2000 to September 2026, plus VIIRS 500 m) and counts crops a year and the winter peak with the pilots' method (`field_cycles.py`). 530 upazilas have enough clear composites: Tanore went from 1.8 to 2.6 crops a year and its winter peak from 0.50 to 0.80 (the pilot's 9-pixel study read 0.81-0.83); parts of Bogura grow about 3. The overview shows it for any upazila (`greenness_upazila.json`). One pixel mixes fields, so it is context beside the replay, not a score input.
+Since 31 October 2026 these figures come from the 1 km cropland grid (next section), which rewrites `greenness_upazila.json` in the same shape. The centre-pixel method below is kept for comparison. `python research/explore/national_greenness.py` reads the AppEEARS request `fieldshift_ndvi_national_20260927` (MODIS MOD13Q1 250 m NDVI at the 544 upazila centres, February 2000 to September 2026, plus VIIRS 500 m) and counts crops a year and the winter peak with the pilots' method (`field_cycles.py`). 530 upazilas have enough clear composites: Tanore went from 1.8 to 2.6 crops a year and its winter peak from 0.50 to 0.80 (the pilot's 9-pixel study read 0.81-0.83); parts of Bogura grow about 3. The overview shows it for any upazila (`greenness_upazila.json`). One pixel mixes fields, so it is context beside the replay, not a score input.
+
+### The fields from space: a 1 km cropland grid (31 October 2026)
+
+`python research/grid/build.py` brings NASA's satellites onto one 1 km grid over Bangladesh and describes each upazila by its **cropland only**. ESA WorldCover 2021 at 10 m marks the cropland: 66,655 km², 48% of the land. Each 1 km cell is weighted by the cropland inside it, so towns, rivers and homestead trees no longer move the numbers. Before this, one MODIS pixel at the upazila's centre stood in for all of it.
+
+The downloads (`research/acquire/grid_downloads.py`, about 3 GB, outside git):
+- MODIS MOD13A2 and NOAA-20 VIIRS VJ113A2 1 km NDVI;
+- ECOSTRESS evaporative stress, January-April 2025 and 2026;
+- SoilGrids 250 m;
+- WorldCover.
+
+SMAP 9 km soil moisture is being prepared by AppEEARS and is not used yet. The build writes `field_conditions.json`, its chart data and `greenness_upazila.json` for 501 upazilas (the rest are city areas).
+
+What it measures:
+- **Crop greenness against what is expected.**
+  - **Reading:** the latest 16 days of VIIRS, put on the MODIS scale. A line fitted on 88 shared composites, per upazila where it fits well (329 upazilas), leaves 0.064 NDVI of error.
+  - **Comparison:** the same days of 2001-2025, with each upazila's 25-year greening trend taken out. Against the raw 25 years, two thirds of the country read "greener than usual" only because fields have greened for decades.
+  - **Confidence:** high only when half the cropland was seen through the clouds and Terra MODIS, on its own scale, says the same.
+  - **Other levels:** "noCrop" where the fields are normally bare or under water on those days; "unclear" where the two satellites contradict each other.
+  - **Result for 8-23 October 2026:** 191 upazilas as expected, 135 below, 131 above; 61 below with confidence and 20 km² or more of cropland.
+- **The summer gap.** Per 1 km cell and year, 2016-2025, the longest bare run (NDVI below 0.35) between 1 March and 15 July in the smoothed 8-day series.
+  - **Where:** 114 upazilas have 15% or more of their cropland empty for 40 days or more in at least 3 of the 10 summers. The coast empties in March (salinity), and Boro areas in May.
+  - **What fits:** the engine's own replayed sowing windows and field days (`cropsForGap`) decide which summer crop fits. Mungbean and sesame fit Dacope's gap from 8 March to 12 June.
+  - **When nothing fits:** a gap that opens after every summer crop's sowing window has closed points to an earlier-harvested winter crop instead. Low land gets no summer crop, because of early floods.
+- **Boro thirst.** ECOSTRESS's evaporative stress index on green cropland in March-April.
+  - **Passes used:** daytime passes only (9:00-15:30 local). In the morning or the evening the index says little.
+  - **Thirsty:** an ESI below 0.40 on a field greener than NDVI 0.5.
+  - **Coverage:** only 7 daytime passes covered March-April in the two seasons, so each figure carries its pass dates and the green area it rests on. In Tanore, 27% of the green fields were short of water on 19 March 2026.
+- **The soil.** SoilGrids sand, clay and organic carbon to 30 cm, with Saxton & Rawls (2006) available water: 36-55 mm in the top 30 cm. It is context only; the SRDI tests stay the source for pH, organic matter and fertilizer.
+- **Crops a year,** per cell, then weighted: 2.17 a year on average (BBS reports about 2.1), against 1.76 from the centre pixel. The time slider uses it too.
+
+Where it shows:
+- **Overview:** the "fields from space" card, with a 12-month chart of greenness against the expected band and plain Bangla and English notes.
+- **Officers:** a list of where fields are less green than expected (`GET /api/v1/conditions/check`).
+- **Farmer:** two lines on the farmer's Today.
+- **Maps:** four new map layers (crop greenness, empty fields in summer, Boro thirst, soil water) and "Crop health" on the landing map.
+
+None of it moves a score; it is context beside the replay, like the greenness before it.
 
 ### A map of Bangladesh
 

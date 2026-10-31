@@ -599,6 +599,36 @@
           </div>
       </div>
 
+      <!-- THE FIELDS FROM SPACE: the upazila's cropland on the 1 km grid (research/grid/build.py) -->
+      <div class="ov-section-head">
+        <h2 data-i18n="overview.fieldsSection">মাঠ, উপগ্রহের চোখে</h2>
+        <p class="subtitle" data-i18n="overview.fieldsSectionSub">শুধু ফসলি জমি ধরে: এ মৌসুমের সবুজ, গ্রীষ্মে জমি খালির সময়, বোরোতে পানির টান আর মাটি</p>
+      </div>
+      <div class="ov-fields">
+        <div class="card fields-card">
+          <div class="card-header">
+            <h3 data-i18n="overview.fieldsTitle">এই উপজেলার খেত</h3>
+            <span class="badge badge-neutral" id="fieldsBadge">—</span>
+          </div>
+          <div class="fields-body">
+            <figure class="fields-chart">
+              <svg id="fieldsChart" viewBox="0 0 520 210" role="img" aria-labelledby="fieldsChartCap"></svg>
+              <figcaption id="fieldsChartCap"></figcaption>
+            </figure>
+            <ul class="fields-notes" id="fieldsNotes"></ul>
+          </div>
+          <details class="card-source"><summary data-i18n="common.sourceMethod">উৎস ও পদ্ধতি</summary><p class="warning-note" id="fieldsNote"></p></details>
+        </div>
+        <div class="card less-green-card">
+          <div class="card-header">
+            <h3 data-i18n="overview.lessGreenTitle">যেখানে খেত প্রত্যাশার চেয়ে কম সবুজ</h3>
+            <span class="badge badge-neutral" id="lessGreenBadge">—</span>
+          </div>
+          <ul class="kv-list" id="lessGreenList"></ul>
+          <details class="card-source"><summary data-i18n="common.sourceMethod">উৎস ও পদ্ধতি</summary><p class="warning-note" id="lessGreenNote"></p></details>
+        </div>
+      </div>
+
       <!-- THE MAP AND THIS PLACE -->
       <div class="ov-section-head">
         <h2 data-i18n="overview.mapSection">মানচিত্র ও এই জায়গা</h2>
@@ -1144,7 +1174,11 @@
                 <tr><td>NASA POWER (MERRA-2)</td><td data-i18n="glossary.powerNative">০.৫° গ্রিড, দৈনিক</td><td data-i18n="glossary.powerHere">জেলার বিন্দু; BMD স্টেশনের সাথে মাসভিত্তিক সমন্বয়</td></tr>
                 <tr><td>GPM IMERG Final</td><td data-i18n="glossary.imergNative">০.১° (~১০ কিমি), দৈনিক</td><td data-i18n="glossary.imergHere">একই বিন্দু; ২৫ মৌসুমের পানির হিসাব</td></tr>
                 <tr><td>SMAP L4</td><td data-i18n="glossary.smapNative">৯ কিমি, ৩ ঘণ্টা</td><td data-i18n="glossary.smapHere">উপজেলার বিন্দু; অতীতের একই দিনের সাথে তুলনা</td></tr>
-                <tr><td>MODIS NDVI (MOD13Q1)</td><td data-i18n="glossary.modisNative">২৫০ মি, ১৬ দিন</td><td data-i18n="glossary.modisHere">উপজেলার কেন্দ্রের পিক্সেল; মাসের মধ্যমা</td></tr>
+                <tr><td>ESA WorldCover 2021</td><td data-i18n="glossary.wcNative">১০ মি</td><td data-i18n="glossary.wcHere">কোন জমি ফসলি: নিচের ১ কিমি গ্রিডের সব হিসাব শুধু ফসলি জমি ধরে</td></tr>
+                <tr><td>MODIS NDVI (MOD13A2) + VIIRS (VJ113A2)</td><td data-i18n="glossary.ndvi1kmNative">১ কিমি, ১৬ দিন</td><td data-i18n="glossary.ndvi1kmHere">উপজেলার ফসলি জমির ১ কিমি ঘর, জমির ভাগে ওজন; ২৫ বছরের ধারা বাদ দিয়ে এখনকার সবুজ, বছরে ফসল, গ্রীষ্মে খালি জমি</td></tr>
+                <tr><td>ECOSTRESS ESI</td><td data-i18n="glossary.esiNative">৭০ মি, অনিয়মিত</td><td data-i18n="glossary.esiHere">মার্চ–এপ্রিলের দিনের পরিষ্কার ছবিতে সবুজ ফসলি পিক্সেল: কতটায় পানির টান</td></tr>
+                <tr><td>SoilGrids 2.0</td><td data-i18n="glossary.sgNative">২৫০ মি</td><td data-i18n="glossary.sgHere">১ কিমিতে গড়, তারপর ফসলি জমিতে: মাটির ধরন আর ধরে রাখা পানি</td></tr>
+                <tr><td>MODIS NDVI (MOD13Q1)</td><td data-i18n="glossary.modisNative">২৫০ মি, ১৬ দিন</td><td data-i18n="glossary.modisHere">উপজেলার কেন্দ্রের পিক্সেল; মাসের মধ্যমা (মৌসুমের ক্যালেন্ডার)</td></tr>
                 <tr><td>HLS (Landsat + Sentinel-2)</td><td data-i18n="glossary.hlsNative">৩০ মি, ২–৩ দিন</td><td data-i18n="glossary.hlsHere">উপজেলার আমন জমির অংশ</td></tr>
                 <tr><td>OPERA DSWx, NISAR</td><td data-i18n="glossary.operaNative">৩০ মি / ২০ মি</td><td data-i18n="glossary.operaHere">উপজেলার জমির কত অংশ পানির নিচে</td></tr>
                 <tr><td>GRACE/GRACE-FO → GLDAS-2.2</td><td data-i18n="glossary.graceNative">০.২৫°, মাসিক</td><td data-i18n="glossary.graceHere">জেলার ভূগর্ভস্থ পানির ধারা</td></tr>
@@ -1452,6 +1486,7 @@
           <div class="today-seasons" id="todaySeasons"></div>
           <p class="today-narrative" id="todayNarrative"></p>
           <p class="today-rain" id="todayRain" aria-live="polite"></p>
+          <div class="today-space" id="todaySpace"></div>
           <div class="today-tips" id="todayTips"></div>
           <div class="today-actions">
             <button class="btn btn-primary" type="button" onclick="toggleTodayAudio()">

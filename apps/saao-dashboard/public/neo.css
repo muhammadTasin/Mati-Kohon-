@@ -807,3 +807,36 @@ html[lang="bn"] .feature-num::before { content: "০" counter(feat, bengali); }
   .landing-ring, .landing-sat-led { animation: none; }
 }
 @media print { .card, .stat-card { box-shadow: none; border: var(--bw-1) solid var(--line); } }
+
+/* the fields from space (overview): the chart and the plain notes beside it, the officer's check list */
+.ov-fields { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr); gap: 18px; align-items: start; margin-bottom: 8px; }
+.fields-card, .less-green-card { box-shadow: var(--e3), inset var(--bw-4) 0 0 0 var(--teal-500); }
+.less-green-card { box-shadow: var(--e3), inset var(--bw-4) 0 0 0 var(--amber); }
+.fields-body { display: grid; gap: 16px; }
+.fields-chart { margin: 0; }
+.fields-chart svg { display: block; width: 100%; height: auto; }
+.fields-chart figcaption { margin-top: 6px; font-size: 12px; line-height: 1.5; color: var(--muted-ink); }
+.fc-grid { stroke: var(--line); stroke-width: 1; }
+.fc-tick { font: 11px var(--font-body); fill: var(--muted-ink); }
+.fc-band { fill: var(--teal-100); opacity: .8; }
+.fc-expected { fill: none; stroke: var(--teal-500); stroke-width: 1.5; stroke-dasharray: 4 4; }
+.fc-line { fill: none; stroke: var(--teal-900); stroke-width: 2.4; stroke-linejoin: round; stroke-linecap: round; }
+.fc-now { fill: var(--amber); stroke: var(--face-hi); stroke-width: 2; }
+.fields-notes { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 10px; margin: 0; padding: 0; list-style: none; }
+.fields-notes li { display: grid; grid-template-columns: 28px minmax(0, 1fr); gap: 4px 10px; align-items: start; padding: 10px 12px; background: var(--face-hi); border-radius: var(--r-md) !important; box-shadow: var(--e1); }
+.fields-notes li > .material-symbols-outlined { grid-row: span 2; font-size: 22px; color: var(--teal-700); }
+.fields-notes li.tone-alert > .material-symbols-outlined { color: #9A5A14; }
+.fields-notes li.tone-watch > .material-symbols-outlined { color: var(--amber); }
+.fields-notes p { margin: 0; font-size: 13.5px; line-height: 1.55; color: var(--text); }
+.fields-notes .badge { justify-self: start; }
+.link-btn { padding: 0; border: 0; background: none; font: inherit; color: var(--teal-900); cursor: pointer; text-align: left; }
+.link-btn:hover strong { text-decoration: underline; }
+@media (max-width: 1100px) { .ov-fields { grid-template-columns: minmax(0, 1fr); } }
+
+/* the farmer's Today: two lines from space */
+.today-space { margin: 12px 0 0; padding: 12px 14px; background: var(--sky-soft); border-radius: var(--r-md) !important; }
+.today-space h4 { display: flex; align-items: center; gap: 6px; margin: 0 0 6px; font: 650 14px var(--font-body); color: var(--sky-ink); }
+.today-space h4 .material-symbols-outlined { font-size: 18px; }
+.today-space ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; font-size: 14px; line-height: 1.55; color: var(--text); }
+.today-space li.tone-alert, .today-space li.tone-watch { font-weight: 600; color: var(--ink); }
+.today-space:empty { display: none; }

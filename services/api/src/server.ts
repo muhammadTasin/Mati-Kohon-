@@ -28,7 +28,8 @@ import { synthesizeSpeech, ttsStatus } from './providers/tts.ts';
 import { sendSms, smsConfig } from './sms.ts';
 import { getRiverErosion } from './erosion.ts';
 import { cropLossStatus, floodStatus, liveHaor, liveStatus, liveUpazila, liveUpazilas } from './live.ts';
-import { floodCheckList, mapLayers, mapYears } from './map_layers.ts';
+import { floodCheckList, greennessCheckList, mapLayers, mapYears } from './map_layers.ts';
+import { fieldConditionsView } from '../../../packages/rotation-engine/src/data/field_conditions.ts';
 import { askAiAssistant } from './ai_assistant.ts';
 import { cropMenu } from '../../../packages/rotation-engine/src/data/crop_choice.ts';
 import { cropsFromKeys, keypadMenu, landFromKey, replyFor, understand } from './voice.ts';
@@ -197,6 +198,8 @@ function overviewHere(placeId: string) {
         verdictBangla: RAIN_VERDICT_BANGLA[rain.verdict] ?? rain.verdict,
       },
     },
+    // the 1 km cropland grid: this season's greenness, the summer gap, Boro thirst, the soil (research/grid/build.py)
+    field_conditions: fieldConditionsView(LOC.kind === 'pilot' ? 'ADM3_Tanore' : LOC.id, { landType: advice.scope.land_type }),
     recommended: {
       rotationBangla: best.nameBangla,
       rotationEnglish: best.nameEnglish,
@@ -603,6 +606,9 @@ const server = http.createServer(async (req, res) => {
     }
 
     // API: where to check first for flood damage (NASA OPERA DSWx-HLS), most water first
+    if (pathname === '/api/v1/conditions/check' && req.method === 'GET') {
+      return sendJSON(res, 200, greennessCheckList() ?? { now: null, total: 0, upazilas: [] });
+    }
     if (pathname === '/api/v1/flood/upazilas' && req.method === 'GET') {
       return sendJSON(res, 200, { status: floodStatus(), cropLoss: cropLossStatus(), upazilas: floodCheckList() });
     }
