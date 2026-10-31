@@ -601,6 +601,17 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
   position: absolute; left: 50%; top: 8%; width: 76%; aspect-ratio: 1; transform: translateX(-50%);
   background: var(--teal-50); border-radius: 50% !important; box-shadow: var(--inset);
 }
+/* the disc is the Earth (landing-orbit.js): a wire globe, a dashed orbit, a satellite; its near half rises above
+   Rongu's own layer (z-index over .rongu-dock's 1160) unless the stage has slid under the header */
+.landing-sky, .landing-near { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.landing-globe { fill: none; stroke: var(--teal-300); stroke-width: 1; stroke-linejoin: round; opacity: .75; }
+.landing-ring { fill: none; stroke: var(--teal-500); stroke-width: 1.5; stroke-dasharray: 3 7; stroke-linecap: round; opacity: .6; animation: landing-ring 1.4s linear infinite; }
+@keyframes landing-ring { to { stroke-dashoffset: -10; } }
+.landing-sat { position: absolute; left: 0; top: 0; width: 58px; opacity: 0; transform-origin: 50% 50%; pointer-events: none; filter: drop-shadow(0 4px 4px rgba(46, 32, 10, .28)); }
+.landing-sat svg { display: block; width: 100%; height: auto; }
+.landing-sat-led { animation: landing-led 1.6s steps(1) infinite; }
+@keyframes landing-led { 50% { opacity: .15; } }
+.landing-stage.near-ok .landing-near, .landing-stage.near-ok .landing-sat.near { z-index: 1161; }
 .landing-podium {
   position: absolute; left: 50%; bottom: 4%; width: 46%; height: 9%; transform: translateX(-50%);
   background: var(--face-hi); border-radius: 50% !important; box-shadow: var(--e2);
@@ -737,5 +748,6 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
   .btn:hover, .role-card:hover { transform: none; }
   .ds-skeleton, .ds-skel-row, .climate-skel-row { animation: none; }
   .lm-canvas path.lm-lift.rise { animation: none; }
+  .landing-ring, .landing-sat-led { animation: none; }
 }
 @media print { .card, .stat-card { box-shadow: none; border: var(--bw-1) solid var(--line); } }
