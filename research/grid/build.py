@@ -11,6 +11,10 @@ What it answers, for the farmer and the officer:
   boroThirst   Green fields short of water in March-April (ECOSTRESS evaporative stress index, daytime passes).
   soil         Texture and the water the top 30 cm holds for a crop (SoilGrids, Saxton & Rawls).
   cropsByYear  Crops in each agricultural year since 2001-02 over the whole cropland (the map's time slider).
+  amanRecord   The weak Aman seasons since 2001, judged the way the condition is judged now, and how that reads seasons
+               whose cause is on record (history.py).
+  boroHarvest  In the haor, when the Boro on land that grows only Boro is usually cut, its trend, and how many days
+               early it went in FFWC's flash-flood years (history.py).
   greenness    Crops a year and the winter peak, early 2000s against now, over the whole cropland rather than one
                pixel at the upazila's centre: rewrites greenness_upazila.json in its old shape for the advice.
 
@@ -29,6 +33,7 @@ from datetime import date, timedelta
 import numpy as np
 
 import esi
+import history
 import ndvi
 import soil
 from _grid import ENGINE_DATA, load_grid
@@ -120,6 +125,8 @@ def main() -> None:
     gap_len, _ = g.per_upazila(np.where(gap_has > 0, ph["gapDays"], np.nan))
 
     thirst, esi_summary = esi.boro_thirst(g, [(v_dates, v_cube), (m_dates, m_cube)])
+    record, record_summary = history.aman_record(m_dates, m_up, ids, g.crop_km2)
+    haor, haor_summary = history.boro_harvest(g, m_dates, m_cube)
     soils = soil.soils(g)
 
     # ---------- the last 12 months against what the trend expects, for the chart ----------
@@ -174,6 +181,10 @@ def main() -> None:
             row["boroThirst"] = thirst[uid]
         if uid in soils:
             row["soil"] = soils[uid]
+        if uid in record:
+            row["amanRecord"] = record[uid]
+        if uid in haor:
+            row["boroHarvest"] = haor[uid]
         rows[uid] = row
         curves[uid] = {"ndvi": [r(v_up[k, i]) for k in keep],
                        "expected": [r(c[0][i]) for c in curve_band],
@@ -188,6 +199,8 @@ def main() -> None:
                    f"{v_dates[0].isoformat()} to {v_dates[-1].isoformat()}, on the MODIS scale",
         "stress": "NASA ECOSTRESS ECO_L4T_ESI.002 evaporative stress index, 70 m, daytime passes, March-April 2025 and 2026",
         "soil": "ISRIC SoilGrids 2.0, 250 m: sand, clay, organic carbon 0-30 cm; Saxton & Rawls (2006) available water",
+        "flashFlood": "NASA GPM IMERG Final 3-day rain at Sohra (Meghalaya), 100 mm or more, and FFWC's Annual Flood "
+                      "Reports (research/floods/flash_flood_hindcast.csv)",
         "upazilas": "the dashboard's 544 upazila outlines (bd_upazilas.geojson)",
     }
     out = {
@@ -205,6 +218,8 @@ def main() -> None:
                        "minDays": GAP_DAYS, "minShare": GAP_SHARE, "minYears": GAP_MIN_YEARS,
                        "window": "%02d-%02d to %02d-%02d" % (*ndvi.GAP_WINDOW[0], *ndvi.GAP_WINDOW[1])},
         "boroThirst": {**esi_summary, "thirstyEsi": esi.THIRSTY, "greenNdvi": esi.GREEN},
+        "amanRecord": record_summary,
+        "boroHarvest": haor_summary,
         "upazilas": rows,
     }
     OUT.write_text(json.dumps(out, ensure_ascii=False, separators=(",", ":")) + "\n", encoding="utf-8")

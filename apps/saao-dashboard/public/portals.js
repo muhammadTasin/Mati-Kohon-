@@ -501,12 +501,14 @@ export function initPortals(ctx) {
   }
 
   /** What NASA sees on the area's fields (overview -> field_conditions): how green they are now, then the most
-   * useful of the rest (Boro thirst to act on, the summer gap and what fits it). */
+   * useful of the rest (in the haor, when the Boro is cut against the flash floods; else Boro thirst or the summer gap). */
   function renderTodaySpace() {
     const notes = ctx.overview()?.field_conditions?.notes || [];
     const order = { alert: 0, watch: 1, info: 2, good: 3 };
     const now = notes.find(n => n.id === 'condition');
-    const next = notes.filter(n => n.id === 'boroThirst' || n.id === 'emptyField').sort((a, b) => order[a.tone] - order[b.tone])[0];
+    // the haor's flash floods first where they apply, then Boro thirst or the summer gap, the more urgent first
+    const next = notes.find(n => n.id === 'boroFlood')
+      ?? notes.filter(n => n.id === 'boroThirst' || n.id === 'emptyField').sort((a, b) => order[a.tone] - order[b.tone])[0];
     const pick = [now, next].filter(Boolean);
     setHtml('todaySpace', pick.length ? `
       <h4><span class="material-symbols-outlined" aria-hidden="true">satellite_alt</span>${escapeHtml(tr('উপগ্রহে আপনার এলাকার খেত', "Your area's fields from space"))}</h4>

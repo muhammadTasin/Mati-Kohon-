@@ -186,7 +186,19 @@ async function run() {
     'the less-green check list holds only confident, below-expected upazilas with real cropland, least green first');
   const gridYears = await (await fetch(`${BASE}/api/v1/map/years`)).json();
   check(gridYears.upazilaCropsByYear.ADM3_Godagari?.length === gridYears.years.length && gridYears.sources.crops.includes('cropland'), "the time slider's crops a year come from the cropland");
-  console.log('✓ Field conditions: cropland greenness against the trend for', gridRows.length, 'upazilas;', lessGreen.total, 'to check; Dacope:', fc.row.condition.level, fc.row.emptyField?.days, 'empty days');
+  // 25 years of the same fields: the check's record on seasons with a known cause, and the haor's Boro against the flash floods
+  check(/Koyra in 2009–2011/.test(lessGreen.record?.en) && /misses Birganj in 2017/.test(lessGreen.record?.en) && lessGreen.record.bn,
+    'the check list says what the same check caught in past seasons (Cyclone Aila at Koyra) and what it missed');
+  const koyra = await (await fetch(`${BASE}/api/v1/overview?place=ADM3_Koyra`)).json();
+  check(koyra.field_conditions.row.amanRecord.weak[0][0] === 2009 && koyra.field_conditions.notes.some(n => n.id === 'amanRecord' && /2009/.test(n.en)),
+    "an upazila's weakest Aman seasons are named, Koyra's worst after Cyclone Aila");
+  const haorFc = (await (await fetch(`${BASE}/api/v1/overview?place=ADM3_Dharampasha`)).json()).field_conditions;
+  const boroNote = haorFc.notes.find(n => n.id === 'boroFlood');
+  check(/^04-/.test(haorFc.row.boroHarvest?.half) && boroNote && /In \d+ of 25 springs/.test(boroNote.en) && /2017/.test(boroNote.en) && boroNote.bn,
+    "in the haor, when the Boro is usually cut, how often the upstream rain came first, and the spring the flood took it");
+  check(!dacope.field_conditions.row.boroHarvest && !haorFc.row.amanRecord, 'the Boro timing stays in the haor, and the Aman record where Aman grows');
+  console.log('✓ Field conditions: cropland greenness against the trend for', gridRows.length, 'upazilas;', lessGreen.total, 'to check; Dacope:', fc.row.condition.level, fc.row.emptyField?.days, 'empty days;',
+    'Dharampasha Boro half cut', haorFc.row.boroHarvest.half);
 
   // Field Shift's statement: the farmer's rotation now, constraints and a what-if year go through the advice API
   const fsAdvice = await (await fetch(`${BASE}/api/v1/advice`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({

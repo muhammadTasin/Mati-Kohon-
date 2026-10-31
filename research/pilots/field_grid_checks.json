@@ -1,0 +1,295 @@
+{
+ "generatedOn": "2026-10-31",
+ "amanCutTiming": {
+  "nationalMedianDay": 317.6,
+  "trendDaysPerDecade": -0.6,
+  "kendallP": 0.417,
+  "upazilas": 465,
+  "earlierSignificant": 68,
+  "laterSignificant": 79,
+  "verdict": "no national shift; upazilas split both ways"
+ },
+ "thirdCropGate": {
+  "upazilas": 445,
+  "acrossCountry": {
+   "spearman": -0.28,
+   "p": 2e-09,
+   "tripleShareByCutDay": {
+    "before 1 Nov": 0.3,
+    "1-8 Nov": 0.23,
+    "8-15 Nov": 0.08,
+    "15-22 Nov": 0.11,
+    "after 22 Nov": 0.17
+   }
+  },
+  "withinRegions": {
+   "pearson": -0.02,
+   "p": 0.71
+  },
+  "overTime": {
+   "upazilas": 466,
+   "spearman": -0.04,
+   "p": 0.36
+  },
+  "verdict": "a north-west against east and south difference, not a lever: it vanishes within regions and over time"
+ },
+ "amanRecordVsBbs": {
+  "districtSeasons": 832,
+  "pearson": 0.1,
+  "p": 0.0043,
+  "largeLosses": [
+   {
+    "district": "Manikganj",
+    "season": "2020-21",
+    "productionDepPct": -91,
+    "greennessDep": -0.082
+   },
+   {
+    "district": "Feni",
+    "season": "2024-25",
+    "productionDepPct": -60,
+    "greennessDep": -0.061
+   },
+   {
+    "district": "Dhaka",
+    "season": "2018-19",
+    "productionDepPct": -47,
+    "greennessDep": 0.002
+   },
+   {
+    "district": "Dhaka",
+    "season": "2014-15",
+    "productionDepPct": -46,
+    "greennessDep": 0.022
+   },
+   {
+    "district": "Manikganj",
+    "season": "2016-17",
+    "productionDepPct": -43,
+    "greennessDep": 0.004
+   },
+   {
+    "district": "Gopalganj",
+    "season": "2013-14",
+    "productionDepPct": -34,
+    "greennessDep": 0.02
+   },
+   {
+    "district": "Madaripur",
+    "season": "2021-22",
+    "productionDepPct": -33,
+    "greennessDep": 0.007
+   },
+   {
+    "district": "Munshiganj",
+    "season": "2019-20",
+    "productionDepPct": -32,
+    "greennessDep": 0.025
+   },
+   {
+    "district": "Barguna",
+    "season": "2019-20",
+    "productionDepPct": -30,
+    "greennessDep": 0.003
+   },
+   {
+    "district": "Narayanganj",
+    "season": "2015-16",
+    "productionDepPct": -30,
+    "greennessDep": 0.004
+   },
+   {
+    "district": "Madaripur",
+    "season": "2020-21",
+    "productionDepPct": -29,
+    "greennessDep": -0.037
+   },
+   {
+    "district": "Shariatpur",
+    "season": "2021-22",
+    "productionDepPct": -28,
+    "greennessDep": 0.02
+   },
+   {
+    "district": "Bagerhat",
+    "season": "2018-19",
+    "productionDepPct": -27,
+    "greennessDep": -0.008
+   },
+   {
+    "district": "Noakhali",
+    "season": "2024-25",
+    "productionDepPct": -26,
+    "greennessDep": -0.044
+   },
+   {
+    "district": "Rajbari",
+    "season": "2021-22",
+    "productionDepPct": -24,
+    "greennessDep": 0.018
+   },
+   {
+    "district": "Naogaon",
+    "season": "2017-18",
+    "productionDepPct": -23,
+    "greennessDep": 0.009
+   },
+   {
+    "district": "Gopalganj",
+    "season": "2022-23",
+    "productionDepPct": -21,
+    "greennessDep": 0.006
+   },
+   {
+    "district": "Munshiganj",
+    "season": "2020-21",
+    "productionDepPct": -21,
+    "greennessDep": -0.047
+   },
+   {
+    "district": "Sunamganj",
+    "season": "2015-16",
+    "productionDepPct": -21,
+    "greennessDep": -0.067
+   },
+   {
+    "district": "Tangail",
+    "season": "2020-21",
+    "productionDepPct": -21,
+    "greennessDep": -0.053
+   },
+   {
+    "district": "Naogaon",
+    "season": "2018-19",
+    "productionDepPct": -20,
+    "greennessDep": 0.015
+   },
+   {
+    "district": "Khulna",
+    "season": "2017-18",
+    "productionDepPct": -19,
+    "greennessDep": 0.007
+   },
+   {
+    "district": "Bagerhat",
+    "season": "2017-18",
+    "productionDepPct": -18,
+    "greennessDep": -0.001
+   },
+   {
+    "district": "Brahamanbaria",
+    "season": "2018-19",
+    "productionDepPct": -17,
+    "greennessDep": -0.03
+   },
+   {
+    "district": "Jhalokati",
+    "season": "2024-25",
+    "productionDepPct": -17,
+    "greennessDep": 0.008
+   },
+   {
+    "district": "Patuakhali",
+    "season": "2020-21",
+    "productionDepPct": -17,
+    "greennessDep": 0.018
+   },
+   {
+    "district": "Pirojpur",
+    "season": "2017-18",
+    "productionDepPct": -17,
+    "greennessDep": -0.003
+   },
+   {
+    "district": "Chuadanga",
+    "season": "2019-20",
+    "productionDepPct": -16,
+    "greennessDep": 0.039
+   },
+   {
+    "district": "Comilla",
+    "season": "2019-20",
+    "productionDepPct": -16,
+    "greennessDep": 0.01
+   },
+   {
+    "district": "Nilphamari",
+    "season": "2019-20",
+    "productionDepPct": -16,
+    "greennessDep": 0.027
+   },
+   {
+    "district": "Tangail",
+    "season": "2019-20",
+    "productionDepPct": -16,
+    "greennessDep": 0.017
+   },
+   {
+    "district": "Gopalganj",
+    "season": "2015-16",
+    "productionDepPct": -15,
+    "greennessDep": 0.006
+   },
+   {
+    "district": "Pirojpur",
+    "season": "2021-22",
+    "productionDepPct": -15,
+    "greennessDep": 0.014
+   }
+  ],
+  "checks": [
+   {
+    "name": "Koyra",
+    "years": [
+     2009,
+     2010,
+     2011
+    ],
+    "z": {
+     "2009": -7.0,
+     "2010": -6.2,
+     "2011": -4.5
+    },
+    "caught": true
+   },
+   {
+    "name": "Chauhali",
+    "years": [
+     2020
+    ],
+    "z": {
+     "2020": -3.0
+    },
+    "caught": true
+   },
+   {
+    "name": "Chauddagram",
+    "years": [
+     2024
+    ],
+    "z": {
+     "2024": -4.2
+    },
+    "caught": true
+   },
+   {
+    "name": "Birganj",
+    "years": [
+     2017
+    ],
+    "z": {
+     "2017": 1.4
+    },
+    "caught": false
+   }
+  ],
+  "widespread": [
+   2004,
+   2007,
+   2008,
+   2020,
+   2024
+  ],
+  "verdict": "the record shows long, severe losses (Aila, the 2020 and 2024 floods) but BBS district figures are too noisy to calibrate it"
+ }
+}

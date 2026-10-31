@@ -15,7 +15,7 @@ import { cropLossFor, floodFor, liveFields, liveStatus, liveUpazilas } from './l
 import { LOC } from '../../../packages/rotation-engine/src/data/location.ts';
 import { AMAN_CATALOG } from '../../../packages/rotation-engine/src/data/crop_catalog.ts';
 import { fieldAlerts, worstLevel, type FieldAlert, type FieldCrops } from '../../../packages/rotation-engine/src/field_alerts.ts';
-import { fieldConditionsData } from '../../../packages/rotation-engine/src/data/field_conditions.ts';
+import { conditionTrackRecord, fieldConditionsData } from '../../../packages/rotation-engine/src/data/field_conditions.ts';
 
 const DATA = new URL('../../../packages/rotation-engine/src/data/', import.meta.url);
 const read = (name: string) => JSON.parse(fs.readFileSync(new URL(name, DATA), 'utf8'));
@@ -159,7 +159,7 @@ export function greennessCheckList(limit = 60) {
     });
   }
   out.sort((a, b) => a.percentile - b.percentile || b.croplandKm2 - a.croplandKm2);
-  return { now: d.now, total: out.length, upazilas: out.slice(0, limit) };
+  return { now: d.now, total: out.length, upazilas: out.slice(0, limit), record: conditionTrackRecord() };
 }
 
 let grows: Record<string, { aman: boolean; boro: boolean; wheat: boolean }> | null = null;

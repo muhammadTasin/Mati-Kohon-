@@ -180,6 +180,53 @@ Where it shows:
 
 None of it moves a score; it is context beside the replay, like the greenness before it.
 
+#### Twenty-five years of the same fields: what held up and what did not
+
+The same grid holds every 16-day MODIS image since 2001. That record answers two questions for farmers and officers (`research/grid/history.py`, run by `build.py`). It also tested two claims that turned out false (`python research/grid/checks.py` -> `research/pilots/field_grid_checks.json`).
+
+**Held up: the condition's check reads past seasons correctly.** We ran the "less green than expected" check on every Aman season since 2001.
+- **Method:** mid-September to October greenness on the cropland, against the upazila's own 25-year trend. A season is weak at 1.5 robust standard deviations and 0.03 NDVI or more below the trend. Where those days are usually bare or flooded (NDVI under 0.30, as in the deep haor), there is no Aman to judge. 492 upazilas have a record.
+- **National years:** weak seasons were widespread in 2004 (60% of the Aman-growing upazilas), 2007 (48%), 2020 (34%) and 2024 (22%), the big flood years.
+  - **2008 (33%) is not explained.** It is low in every September-October image, so it is not one cloudy composite, but no flood report we hold names it.
+- **Seasons whose cause is on record:**
+  - Koyra in 2009, 2010 and 2011 (z −7.0, −6.2, −4.5): Cyclone Aila broke the embankments and salt water stood for two years.
+  - Chauhali in 2020 (−3.0): the long Jamuna flood.
+  - Chauddagram in 2024 (−4.2): the August flood in the east. Fulgazi, Senbagh and Parshuram show it too, and all were back to normal in 2025.
+  - **The miss:** Birganj in August 2017 reads normal (+1.4). A short flood that farmers replant after does not show by October.
+- **Against BBS:**
+  - **Overall:** district Aman production departures barely follow the greenness (r 0.10 over 832 district-seasons).
+  - **Where they agree:** the two largest losses show: Manikganj 2020-21 (−91%) and Feni 2024-25 (−60%).
+  - **Why BBS cannot calibrate it:** most other large departures (Dhaka, Narayanganj) do not show, and BBS's yield per harvested hectare hides disasters.
+- **In the app:**
+  - **Officers' check list:** a line on what the same check caught in past seasons and what it missed.
+  - **Each upazila's notes:** its weakest Aman seasons. "If water was the cause", it points to BRRI's submergence-tolerant Aman (BRRI dhan51, dhan52, dhan79) and a late seedbed after a flood (BRRI dhan46 by 10 August; BR22, BR23 by 15 August).
+
+**Held up: when the haor's Boro is really cut.** This covers the haor districts' land that grows only Boro: a winter peak of NDVI 0.5 or more, and an August-October peak under 0.4 in most years. It is 2,794 km² in 32 upazilas.
+- **Method:** the day each spring that half of that Boro is cut, read from MODIS greenness falling half way from its peak. The 16-day composites place a date within about a week.
+- **Usual day (springs without a reported flash flood):** 13 April to 30 April, with a median of 19 April. Dharampasha: 21 April.
+- **2017:**
+  - **Sunamganj and Netrokona haors:** the satellite saw the crop gone 24-30 days earlier than usual (Dharampasha 24, Khaliajuri 25, Mohanganj 28, Tahirpur 30). That spring's flash flood took it.
+  - **Kishoreganj and Brahmanbaria:** 5-13 days early.
+  - **Late floods:** those of 2018 and 2019 came after the harvest and do not show.
+- **Getting earlier:** the harvest has moved 4-8.5 days earlier per decade, significant (p < 0.05) in 12 of the 32 upazilas.
+- **Not resolvable:** the share still standing on the day of each burst. A 16-day product cannot split a flood from a harvest inside one composite.
+- **The farmer's note:**
+  - **The usual day,** and in how many springs the engine's own upstream burst came before it (100 mm in 3 days at Sohra, GPM IMERG; 13 of 25 at Dharampasha).
+  - **The spring the flood took the crop,** and the trend.
+  - **BRRI's haor seedbed guidance:** 25 October to 7 November, BRRI dhan102 and dhan118.
+- **Where it shows:** the farmer's Today in the haor, and the overview's field notes.
+
+**Did not hold up 1: "the Aman season is shifting".**
+- **Nationally:** the Aman cut day (half way down from its peak, per cell, 2001-2024) has a median of about 13 November and a trend of −0.6 days a decade (Kendall p 0.42).
+- **By upazila:** of 465 upazilas, 68 cut significantly earlier and 79 significantly later.
+- **Heat:** the pilots' heat study likewise found fewer hot days in wheat's grain filling, not more.
+- **Only exception:** the haor's Boro, which farmers have moved earlier themselves.
+
+**Did not hold up 2: "cut Aman earlier and a third crop fits".**
+- **Across the country it looks real:** in BRRI's 2014-15 upazila land use, 30% of the land is cropped three or more times where Aman is cut before 1 November, against 8% where it is cut 8-15 November (Spearman −0.28, p 2e-9, 445 upazilas).
+- **But it vanishes:** within BRRI's regions (r −0.02, p 0.71), and over time. Upazilas whose Aman got earlier from 2001-05 to 2019-23 did not gain crops (Spearman −0.04, p 0.36).
+- **What it really is:** the north-west against the east and south, not a lever a farmer can pull. The app does not give it as advice.
+
 ### A map of Bangladesh
 
 The overview's satellite card is a real map (Leaflet with NASA GIBS imagery). All 544 upazilas (geoBoundaries outlines, thinned to 0.74 MB by `python research/export/map_export.py`, sent gzipped) are coloured by one of ten layers: crops a year, its change since 2001-06 and winter greenness (MODIS); Boro irrigation need (NASA replay) and groundwater decline (GLDAS), both per district; rain in the last 7 days (IMERG), 30-day rain against normal and root-zone soil wetness (the daily NASA update); pesticide on rice (PEST-CHEMGRIDS) and soil organic matter (SRDI). Underneath: OpenStreetMap, NASA MODIS or VIIRS true colour from yesterday, or the Blue Marble; on top: NASA's 3-day MODIS flood map, IMERG rain, SMAP root-zone moisture and MODIS 8-day NDVI. Hover shows the value, a click shows the upazila's facts with a button that plans for it, choosing a place in the list flies the map there, and a table lists the district's upazilas. `GET /api/v1/map/upazilas` serves the values.

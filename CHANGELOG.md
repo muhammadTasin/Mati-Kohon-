@@ -2,6 +2,21 @@
 
 What changed in Project EDEN, newest first, with who made each change and the branch it came from. Every branch below was merged into `main` on 1 October 2026.
 
+## 31 October 2026 · Twenty-five years of the same fields (Tasrif, `feature/field-conditions`)
+
+- **The Aman record** (`research/grid/history.py`, run by `build.py`):
+  - **Method:** every Aman season since 2001, judged the way the condition is judged now (mid-September to October greenness against the upazila's own trend).
+  - **Track record:** the same check marks Koyra after Cyclone Aila (2009-2011), Chauhali in the 2020 flood and Chauddagram in the 2024 flood, and misses the replanted August 2017 flood in the north-west. That track record is now a line on the officers' check list (`record` in `GET /api/v1/conditions/check`).
+  - **Notes:** each upazila's weakest Aman seasons, with BRRI's submergence-tolerant and late-seedbed varieties.
+- **The haor's Boro:**
+  - **What it measures:** on land that grows only Boro in 32 haor upazilas, the day half the Boro is usually cut, its trend (earlier by 4-8.5 days a decade in 12 upazilas), and how many days early the crop went in FFWC's flash-flood years (24-30 days in Sunamganj and Netrokona in 2017).
+  - **The farmer's note:** how often the engine's upstream rain burst came before that day (`flashFloodRisk`), with BRRI's haor seedbed guidance.
+  - **Where it shows:** first on the farmer's Today in the haor; alerts come right after the greenness in the field notes.
+- **Two claims tested and dropped** (`research/grid/checks.py` -> `research/pilots/field_grid_checks.json`):
+  - **The Aman season is not shifting:** −0.6 days a decade, p 0.42.
+  - **No harvest-date lever for a third crop:** an earlier Aman cut goes with more triple cropping across the country, but not within regions or over time.
+- **Tests:** the check list's record, Koyra's weakest seasons, and Dharampasha's Boro note; the Boro timing only in the haor, the Aman record only where Aman grows.
+
 ## 31 October 2026 · The fields from space: a 1 km cropland grid (Tasrif, `feature/field-conditions`)
 
 - **One grid for the satellites:** `research/grid/` (`_grid.py`, `ndvi.py`, `esi.py`, `soil.py`, `build.py`) puts each upazila on a 1 km grid of its cropland only.

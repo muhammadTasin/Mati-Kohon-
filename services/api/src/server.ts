@@ -605,10 +605,11 @@ const server = http.createServer(async (req, res) => {
       return ov ? sendJSON(res, 200, ov) : sendJSON(res, 422, { error: 'No research data for this place yet' });
     }
 
-    // API: where to check first for flood damage (NASA OPERA DSWx-HLS), most water first
+    // API: where fields are less green than expected (1 km cropland grid), least green first, with the check's record
     if (pathname === '/api/v1/conditions/check' && req.method === 'GET') {
-      return sendJSON(res, 200, greennessCheckList() ?? { now: null, total: 0, upazilas: [] });
+      return sendJSON(res, 200, greennessCheckList() ?? { now: null, total: 0, upazilas: [], record: null });
     }
+    // API: where to check first for flood damage (NASA OPERA DSWx-HLS), most water first
     if (pathname === '/api/v1/flood/upazilas' && req.method === 'GET') {
       return sendJSON(res, 200, { status: floodStatus(), cropLoss: cropLossStatus(), upazilas: floodCheckList() });
     }

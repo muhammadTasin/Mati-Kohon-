@@ -222,7 +222,7 @@ function renderFieldWeek(fa) {
 // ---------------------------------------------------------------------------
 
 const FIELD_TONE = { alert: ['badge-danger', 'এখনই দেখুন', 'Look now'], watch: ['badge-warning', 'নজরে রাখুন', 'Watch'], good: ['badge-success', 'ভালো', 'Fine'], info: ['badge-info', 'জেনে রাখুন', 'Good to know'] };
-const FIELD_ICON = { condition: 'grass', emptyField: 'calendar_month', boroThirst: 'water_drop', soil: 'layers' };
+const FIELD_ICON = { condition: 'grass', emptyField: 'calendar_month', boroThirst: 'water_drop', boroFlood: 'flood', amanRecord: 'history', soil: 'layers' };
 const FIELD_LEVEL = {
   wellBelow: ['badge-danger', 'অনেক কম সবুজ', 'Much less green'], below: ['badge-warning', 'কম সবুজ', 'Less green'],
   normal: ['badge-success', 'প্রত্যাশামতো সবুজ', 'As green as expected'], above: ['badge-success', 'বেশি সবুজ', 'Greener'],
@@ -250,8 +250,8 @@ function renderFieldConditions(fc) {
   }).join(''));
   const s = fc.sources;
   setText('fieldsNote', tr(
-    `উপজেলার শুধু ফসলি জমি (ESA WorldCover ২০২১, ১০ মি) ধরে ১ কিমি গ্রিডে গড়। এখনকার সবুজ: নাসা VIIRS (NOAA-20), MODIS-এর মাপে আনা; তুলনা: নাসা MODIS ২০০১–২০২৫-এর একই দিনগুলো, ২৫ বছরের সবুজ বাড়ার ধারা বাদ দিয়ে। খালি জমি: MODIS, শেষ ১০ গ্রীষ্ম। পানির টান: নাসা ECOSTRESS, মার্চ–এপ্রিল ২০২৫ ও ২০২৬, দিনের পরিষ্কার ছবি। মাটি: SoilGrids (বৈশ্বিক মডেল; সার ও pH-এর জন্য SRDI-র মাটি পরীক্ষাই মানুন)। কম সবুজ মানে দেরিতে রোপণ বা আগাম কাটাও হতে পারে: মাঠে যাচাই করুন।`,
-    `Averaged over the upazila's cropland only (ESA WorldCover 2021, 10 m) on a 1 km grid. Greenness now: ${s.ndviNow}; compared with ${s.ndviBaseline}, the same days each year with the 25-year greening trend taken out. Empty fields: the same MODIS, the last 10 summers. Thirst: ${s.stress}. Soil: ${s.soil} (a global model; for fertilizer and pH the SRDI soil tests stand). Less green can also mean a late planting or an early harvest: check in the field.`));
+    `উপজেলার শুধু ফসলি জমি (ESA WorldCover ২০২১, ১০ মি) ধরে ১ কিমি গ্রিডে গড়। এখনকার সবুজ: নাসা VIIRS (NOAA-20), MODIS-এর মাপে আনা; তুলনা: নাসা MODIS ২০০১–২০২৫-এর একই দিনগুলো, ২৫ বছরের সবুজ বাড়ার ধারা বাদ দিয়ে। খালি জমি: MODIS, শেষ ১০ গ্রীষ্ম। পানির টান: নাসা ECOSTRESS, মার্চ–এপ্রিল ২০২৫ ও ২০২৬, দিনের পরিষ্কার ছবি। মাটি: SoilGrids (বৈশ্বিক মডেল; সার ও pH-এর জন্য SRDI-র মাটি পরীক্ষাই মানুন)। আমনের ইতিহাস: একই MODIS, প্রতি বছরের মধ্য-সেপ্টেম্বর–অক্টোবর, নিজের ধারার চেয়ে অনেক নিচে (১.৫ রোবাস্ট SD ও ০.০৩ NDVI)। হাওরের বোরো: শুধু বোরো হয় এমন জমিতে MODIS-এর সবুজ অর্ধেক নামার দিন (১৬ দিনের ছবি, প্রায় এক সপ্তাহের নির্ভুলতা); বৃষ্টি: নাসা GPM IMERG, মেঘালয়ের সোহরা, আর বন্যা পূর্বাভাস কেন্দ্রের বার্ষিক প্রতিবেদন। কম সবুজ মানে দেরিতে রোপণ বা আগাম কাটাও হতে পারে: মাঠে যাচাই করুন।`,
+    `Averaged over the upazila's cropland only (ESA WorldCover 2021, 10 m) on a 1 km grid. Greenness now: ${s.ndviNow}; compared with ${s.ndviBaseline}, the same days each year with the 25-year greening trend taken out. Empty fields: the same MODIS, the last 10 summers. Thirst: ${s.stress}. Soil: ${s.soil} (a global model; for fertilizer and pH the SRDI soil tests stand). Aman record: the same MODIS, mid-September to October each year, far below the upazila's own trend (1.5 robust SD and 0.03 NDVI). Haor Boro: the day MODIS greenness falls half way on land that grows only Boro (16-day composites, good to about a week); rain: ${s.flashFlood ?? 'NASA GPM IMERG at Sohra, Meghalaya'}. Less green can also mean a late planting or an early harvest: check in the field.`));
 }
 
 /** The last 12 months' greenness (line) against what the 25-year record expects for each date (band and dashes). */
@@ -306,6 +306,7 @@ function renderLessGreen() {
     if (badge) badge.textContent = '—';
     setHtml('lessGreenList', `<li>${tr('১ কিমি গ্রিড এখনো তৈরি হয়নি।', 'The 1 km grid has not been built yet.')}</li>`);
     setText('lessGreenNote', '');
+    setHtml('lessGreenRecord', '');
     return;
   }
   if (badge) { badge.className = `badge ${g.total ? 'badge-warning' : 'badge-success'}`; badge.textContent = tr(`${num(g.total)} উপজেলা`, `${g.total} upazilas`); }
@@ -317,6 +318,7 @@ function renderLessGreen() {
       metric(tr('NDVI এখন', 'NDVI now'), num(u.ndvi.toFixed(2)), 'is-warn')}${metric(tr('প্রত্যাশিত', 'Expected'), num(u.expected.toFixed(2)))}${
       metric(tr('দেখা গেছে', 'Seen'), `${num(u.seenPct)}%`)}</span></span><span class="badge ${u.level === 'wellBelow' ? 'badge-danger' : 'badge-warning'}">${rankText}</span></li>`;
   }).join('') : `<li>${tr('কোনো উপজেলায় খেত প্রত্যাশার চেয়ে কম সবুজ নয়।', 'No upazila has fields less green than expected.')}</li>`);
+  setHtml('lessGreenRecord', g.record ? `<span class="material-symbols-outlined" aria-hidden="true">history</span><span>${escapeHtml(tr(g.record.bn, g.record.en))}</span>` : '');
   setText('lessGreenNote', tr(
     `নাসা VIIRS-এর শেষ ১৬ দিনের ছবি (${isoDate(g.now.composite)} থেকে), প্রতিটি উপজেলার শুধু ফসলি জমি; ২০০১–২০২৫-এর একই দিনের ২৫ বছরের ধারা বাদ দিয়ে তুলনা, আর নাসার Terra MODIS-ও একই কথা বললে তবেই তালিকায়। ডানে: গত ২৫ বছরের মধ্যে অবস্থান। দেরিতে রোপণ বা আগাম কাটাও কারণ হতে পারে; এটি মাঠ যাচাইয়ের তালিকা।`,
     `NASA VIIRS's latest 16 days (from ${g.now.composite}), each upazila's cropland only, against the same days of 2001-2025 with the 25-year trend taken out; listed only when NASA's Terra MODIS agrees. Right: how it ranks among the past 25 years. A late planting or an early harvest can do this too: a list for field checks.`));
