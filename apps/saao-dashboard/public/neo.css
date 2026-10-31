@@ -232,6 +232,11 @@ body.state-entry .header-enter { display: inline-flex; }
 .role-card { box-shadow: var(--e3); transition: transform .3s var(--ease), box-shadow .3s var(--ease); }
 .role-card:hover { transform: translateY(-3px); box-shadow: var(--e4); }
 .role-icon { background: var(--face-hi); box-shadow: var(--e2); }
+/* each role's picture is drawn in the site's own colours (a planet and its satellite, a field and a talking phone,
+   the country with its cases), where photos used to clash with the cream and teal */
+.role-art { display: block; width: calc(100% + 44px); height: 120px; margin: -24px -22px 6px; overflow: hidden; border-radius: 0 !important; }
+.role-art svg { display: block; width: 100%; height: 100%; }
+@media (max-width: 860px) { .role-art { height: 104px; } }
 .role-icon .material-symbols-outlined { color: var(--teal-700); }
 .entry-eyebrow { color: var(--sky-ink); }
 .entry-screen h1 { color: var(--teal-900); }
