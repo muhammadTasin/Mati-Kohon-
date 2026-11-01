@@ -294,19 +294,23 @@ function legend(s) {
       const lo = s.breaks[k - 1], hi = s.breaks[k];
       return [c, k === 0 ? `< ${fmt(s, hi)}` : k === s.breaks.length ? `≥ ${fmt(s, lo)}` : `${fmt(s, lo)} – ${fmt(s, hi)}`];
     });
+  // the map's title says what it shows; the key under it only the classes, "no data" set apart at the end
+  $('lmMapTitle').innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">${current().icon}</span>`
+    + `<span>${esc(tr(...s.name))}${s.unit ? ` <span class="lm-unit">(${esc(tr(s.unit[0], s.unit[1]))})</span>` : ''}</span>`;
   $('lmLegend').innerHTML = `
-    <p class="lm-legend-title">${esc(tr(...s.name))}${s.unit ? ` <span>(${esc(tr(s.unit[0], s.unit[1]))})</span>` : ''}</p>
     <ul>${items.map(([c, label]) => `<li><span class="lm-swatch" style="background:${c}"></span>${esc(label)}</li>`).join('')}
-      <li><span class="lm-swatch" style="background:${NO_DATA}"></span>${esc(tr('তথ্য নেই', 'no data'))}</li></ul>`;
+      <li class="lm-nodata"><span class="lm-swatch" style="background:${NO_DATA}"></span>${esc(tr('তথ্য নেই', 'no data'))}</li></ul>`;
 }
 
 function note(s) {
   const when = mode === 'now' && liveDate
     ? new Date(`${liveDate}T00:00:00`).toLocaleDateString(lang() === 'en' ? 'en-GB' : 'bn-BD', { day: 'numeric', month: 'long', year: 'numeric' })
     : tr(`${num(year)} সাল`, `the year ${year}`);
-  const text = tr(...s.note);
+  let text = tr(...s.note);
+  for (const u of s.unit ?? []) if (text.startsWith(`${u}, `)) text = text.slice(u.length + 2); // the title gives the unit
   const byDistrict = s.district && !/জেলা|district/i.test(text) ? tr(' · জেলাভিত্তিক', ' · by district') : ''; // unless the note says so already
-  $('lmNote').textContent = `${text} · ${when}${byDistrict}`;
+  $('lmWhen').innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">${mode === 'now' ? 'event' : 'history'}</span><span>${esc(when)}</span>`;
+  $('lmNote').innerHTML = `<span class="material-symbols-outlined" aria-hidden="true">info</span><span>${esc(text + byDistrict)}</span>`;
 }
 
 // ---------- the chips ----------
@@ -345,11 +349,19 @@ function place(id, { speak = true } = {}) {
   raise(liftPin, id);
   if (lift?.dataset.of === id) raise(lift, null);
   const s = spec();
+  const icon = (lid) => NOW.find(l => l.id === lid)?.icon ?? 'layers';
+  // the map's own reading first, in its colour on the map; today's other readings under it, each a way to that layer
   $('lmPlace').innerHTML = `
-    <p class="lm-place-name"><strong>${esc(r.name)}</strong> <span>${esc(r.district)}</span></p>
-    <p class="lm-place-now">${esc(tr(...s.name))}: <b>${esc(valueText(s, r))}</b></p>
-    <dl>${placeRows().filter(([lid]) => lid !== current().id).map(([lid, label]) => `<div><dt>${esc(label)}</dt><dd>${esc(valueText(layer(lid), r))}</dd></div>`).join('')}</dl>
-    <button class="btn btn-sm btn-primary" type="button" data-open="${esc(id)}"><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span><span>${esc(tr('এই জায়গা খুলুন', 'Open this place'))}</span></button>`;
+    <p class="lm-place-name"><span class="material-symbols-outlined" aria-hidden="true">location_on</span><strong>${esc(r.name)}</strong> <span>${esc(r.district)}</span></p>
+    <div class="lm-place-now">
+      <span class="lm-place-label">${esc(tr(...s.name))}</span>
+      <span class="lm-place-value"><span class="lm-swatch" style="background:${colorOf(s, r)}"></span><b>${esc(valueText(s, r))}</b></span>
+    </div>
+    <ul class="lm-place-rows">${placeRows().filter(([lid]) => lid !== current().id).map(([lid, label]) => `
+      <li><button type="button" data-layer-go="${lid}" title="${esc(tr('মানচিত্রে দেখুন', 'Show on the map'))}">
+        <span class="material-symbols-outlined" aria-hidden="true">${icon(lid)}</span><span class="lm-row-text"><span>${esc(label)}</span><b>${esc(valueText(layer(lid), r))}</b></span>
+      </button></li>`).join('')}</ul>
+    <button class="btn btn-primary btn-block" type="button" data-open="${esc(id)}"><span class="material-symbols-outlined" aria-hidden="true">open_in_new</span><span>${esc(tr('এই জায়গা খুলুন', 'Open this place'))}</span></button>`;
   if (speak) {
     window.ronguHeroSay?.(tr(`${r.name}, ${r.district}: ${tr(...s.name)} ${valueText(s, r)}। নিচের বোতামে পুরো পাতাটা খুলবে।`,
       `${r.name}, ${r.district}: ${tr(...s.name)} ${valueText(s, r)}. The button below opens the whole page for it.`), { gesture: 'point', speak: true });
@@ -435,6 +447,15 @@ async function start() {
   svg.addEventListener('pointerleave', () => { $('lmTip').hidden = true; raise(lift, null); });
   svg.addEventListener('click', (e) => { const p = e.target.closest('path[data-id]'); if (p) place(p.dataset.id); });
   $('lmPlace').addEventListener('click', (e) => {
+    const go = e.target.closest('[data-layer-go]');
+    if (go) { // one of today's readings: the map switches to it (back to now, if the years were showing)
+      stopPlay();
+      mode = 'now';
+      layerId = go.dataset.layerGo;
+      chips();
+      paint();
+      return;
+    }
     const b = e.target.closest('[data-open]');
     if (!b) return;
     const id = b.dataset.open;
