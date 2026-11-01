@@ -238,11 +238,6 @@ body.state-entry .header-enter { display: inline-flex; }
 .role-card { box-shadow: var(--e3); transition: transform .3s var(--ease), box-shadow .3s var(--ease); }
 .role-card:hover { transform: translateY(-3px); box-shadow: var(--e4); }
 .role-icon { background: var(--face-hi); box-shadow: var(--e2); }
-/* each role's picture is drawn in the site's own colours (a planet and its satellite, a field and a talking phone,
-   the country with its cases), where photos used to clash with the cream and teal */
-.role-art { display: block; width: calc(100% + 44px); height: 120px; margin: -24px -22px 6px; overflow: hidden; border-radius: 0 !important; }
-.role-art svg { display: block; width: 100%; height: 100%; }
-@media (max-width: 860px) { .role-art { height: 104px; } }
 .role-icon .material-symbols-outlined { color: var(--teal-700); }
 .entry-eyebrow { color: var(--sky-ink); }
 .entry-screen h1 { color: var(--teal-900); }
@@ -667,66 +662,75 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
 .no-rongu .landing-side, .rongu-off .landing-side { align-self: center; }
 .no-rongu .landing-hero, .rongu-off .landing-hero { grid-template-columns: 236px minmax(0, 1fr) 280px; }
 
-/* what Rongu will show: one card per part of the tour, coloured by the role it enters */
+/* how to explore: one card per role, its picture on top, the parts of the app it opens as rows (each starts Rongu's
+   tour there), and the role's own way in at the foot; the role's colour marks the icon and the rows */
 .landing-section { margin-top: 56px; text-align: center; }
 .landing-section h2 { margin: 0 0 8px; font: 700 clamp(24px, 2.4vw, 32px)/1.25 var(--font-display); color: var(--teal-900); }
 .landing-sub { max-width: 640px; margin: 0 auto 26px; color: var(--muted-ink); }
-.feature-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; text-align: left; }
-.feature-grid { counter-reset: feat; }
-.feature-tile {
+.path-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; align-items: stretch; text-align: left; }
+.path-card {
   --role: var(--teal-700); --role-deep: var(--teal-900); --role-soft: var(--teal-50);
-  counter-increment: feat;
-  position: relative; display: flex; flex-direction: column; align-items: stretch; gap: 8px; min-height: 0; padding: 20px 20px 18px;
-  font: inherit; color: var(--ink); text-align: left; cursor: pointer;
-  background: var(--face); border: 0; border-radius: 22px !important; box-shadow: var(--e3);
-  transition: transform .25s var(--ease), box-shadow .25s var(--ease), background .2s var(--ease);
+  display: flex; flex-direction: column; min-width: 0; overflow: hidden;
+  background: var(--face); border-radius: var(--r-xl) !important; box-shadow: var(--e3);
 }
-.feature-tile[data-role="farmer"] { --role: var(--amber); --role-deep: var(--amber-deep); --role-soft: var(--amber-soft); }
-.feature-tile[data-role="officer"] { --role: #2F6F8A; --role-deep: #1B4558; --role-soft: var(--sky-soft); }
-.feature-tile:hover { transform: translateY(-4px); box-shadow: var(--e4); }
+.path-card[data-role="farmer"] { --role: var(--amber); --role-deep: var(--amber-deep); --role-soft: var(--amber-soft); }
+.path-card[data-role="officer"] { --role: #2F6F8A; --role-deep: #1B4558; --role-soft: var(--sky-soft); }
+/* each role's picture is drawn in the site's own colours (a planet and its satellite, a field and a talking phone,
+   the country with its cases), where photos used to clash with the cream and teal */
+.path-art { display: block; height: 120px; overflow: hidden; border-radius: 0 !important; }
+.path-art svg { display: block; width: 100%; height: 100%; }
+.path-body { display: flex; flex: 1; flex-direction: column; gap: 14px; padding: 0 20px 20px; }
+/* the role's icon steps up over the picture's edge */
+.path-head { display: flex; align-items: flex-end; gap: 12px; margin-top: -26px; }
+.path-icon {
+  display: grid; place-items: center; flex: none; width: 54px; height: 54px; color: var(--face-hi); background: var(--role);
+  border-radius: 16px !important; box-shadow: 0 0 0 4px var(--face), var(--e2);
+}
+.path-icon .material-symbols-outlined { font-size: 28px; color: inherit; }
+.path-title { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding-bottom: 2px; }
+.path-name { font: 700 21px/1.2 var(--font-display); color: var(--teal-900); }
+.path-title .role-tag { border-radius: var(--r-pill) !important; }
+.path-lead { margin: 0; font-size: 14.5px; line-height: 1.55; color: var(--text); }
+.path-list { display: flex; flex: 1; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; }
+/* a row: the part's icon, its name and one line, and Rongu's play button, which opens into words on hover */
+.feature-tile {
+  display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; align-items: center; gap: 12px; width: 100%;
+  padding: 10px 10px 10px 12px; font: inherit; color: var(--ink); text-align: left; cursor: pointer;
+  background: var(--face-lo); border: var(--bw-1) solid var(--line); border-radius: var(--r-lg) !important;
+  transition: background .2s var(--ease), box-shadow .2s var(--ease), border-color .2s var(--ease), transform .2s var(--ease);
+}
+.feature-tile:hover { background: var(--face-hi); border-color: transparent; box-shadow: var(--e2); transform: translateY(-1px); }
 .feature-tile:active { transform: none; background: var(--pressed); box-shadow: var(--inset-pressed); }
-.feature-tile:focus-visible { outline: var(--bw-2) solid var(--role); outline-offset: 3px; }
-/* a flat block in the role's colour; the tour's stop number beside it */
-.feature-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 6px; }
+.feature-tile:focus-visible { outline: var(--bw-2) solid var(--role); outline-offset: 2px; }
 .feature-icon {
-  display: grid; place-items: center; width: 50px; height: 50px; color: var(--face-hi); background: var(--role);
-  border-radius: 15px !important; box-shadow: none;
+  display: grid; place-items: center; width: 40px; height: 40px; color: var(--role-deep); background: var(--role-soft);
+  border-radius: var(--r-md) !important;
 }
-.feature-icon .material-symbols-outlined { font-size: 26px; color: inherit; }
-.feature-num::before { content: counter(feat, decimal-leading-zero); }
-html[lang="bn"] .feature-num::before { content: "০" counter(feat, bengali); }
-.feature-num { font: 800 34px/1 var(--font-display); color: transparent; -webkit-text-stroke: 1.4px var(--role); opacity: .4; letter-spacing: .02em; }
-.feature-name { font: 700 18px/1.3 var(--font-display); color: var(--teal-900); }
-.feature-desc { flex: 1; font-size: 14px; line-height: 1.55; color: var(--text); }
-/* the foot: the role this stop enters, and Rongu's arrow, which opens into words on hover */
-.feature-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-top: 8px; padding-top: 12px; border-top: var(--bw-1) dashed var(--line); }
-.feature-role {
-  display: inline-flex; align-items: center; gap: 5px; padding: 4px 10px 4px 7px; font-size: 12.5px; font-weight: 650; color: var(--role-deep);
-  background: var(--role-soft); border-radius: var(--r-pill) !important;
-}
-.feature-role .material-symbols-outlined { font-size: 16px; }
+.feature-icon .material-symbols-outlined { font-size: 22px; color: inherit; }
+.feature-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.feature-name { font: 700 15px/1.3 var(--font-display); color: var(--teal-900); }
+.feature-desc { font-size: 13px; line-height: 1.45; color: var(--text); }
+/* a fixed round button, so a hover never reflows the row; "Rongu shows you" is read out, and the subtitle says it */
 .feature-go {
-  display: inline-flex; align-items: center; gap: 0; height: 34px; padding: 0 8px; font-size: 13px; font-weight: 650; color: var(--face-hi);
-  background: var(--teal-700); border-radius: var(--r-pill) !important; box-shadow: 2px 3px 7px rgba(11, 74, 79, .28);
-  transition: background .2s var(--ease), gap .25s var(--ease), padding .25s var(--ease);
+  display: grid; place-items: center; width: 32px; height: 32px; color: var(--face-hi); background: var(--teal-700);
+  border-radius: var(--r-pill) !important; transition: background .2s var(--ease), transform .2s var(--ease);
 }
-.feature-go-text { max-width: 0; overflow: hidden; white-space: nowrap; transition: max-width .3s var(--ease); }
-.feature-go .material-symbols-outlined { font-size: 18px; transition: transform .2s var(--ease); }
-.feature-tile:hover .feature-go, .feature-tile:focus-visible .feature-go { gap: 6px; padding: 0 10px 0 14px; background: var(--teal-600); }
-.feature-tile:hover .feature-go-text, .feature-tile:focus-visible .feature-go-text { max-width: 160px; }
-.feature-tile:hover .feature-go .material-symbols-outlined { transform: translateX(2px); }
-@media (hover: none) { .feature-go { gap: 6px; padding: 0 10px 0 14px; } .feature-go-text { max-width: 160px; } } /* touch: the words always */
-/* no guest mode on this server: the card opens the sign-in instead, a lock where the arrow was */
+.feature-go-text { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.feature-go .material-symbols-outlined { font-size: 20px; }
+.feature-tile:hover .feature-go, .feature-tile:focus-visible .feature-go { background: var(--teal-600); transform: scale(1.1); }
+/* no guest mode on this server: the manager's rows open the sign-in instead, a lock where the play button was */
 .feature-tile.locked .feature-go { background: var(--sunk); color: var(--muted-ink); box-shadow: var(--inset); }
 .feature-tile.locked .feature-go-text, .feature-tile.locked .feature-go .material-symbols-outlined { display: none; }
 .feature-tile.locked .feature-go::after { content: "lock"; font: 18px/1 'Material Symbols Outlined'; }
-.landing-section .role-grid { margin-top: 4px; }
+.path-enter { justify-content: center; gap: 8px; margin-top: 2px; }
+.path-enter .material-symbols-outlined { font-size: 20px; transition: transform .2s var(--ease); }
+.path-enter:hover .material-symbols-outlined { transform: translateX(3px); }
+/* the whole tour, once more under the cards, for whoever scrolled past the hero */
+.path-tour { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 14px; margin-top: 26px; }
+.path-tour-time { font-size: 13.5px; color: var(--muted-ink); }
 .landing-section .entry-foot { justify-content: center; }
+@media (max-width: 960px) { .path-grid { grid-template-columns: minmax(0, 1fr); max-width: 560px; margin: 0 auto; } }
 
-@media (max-width: 1100px) {
-  .feature-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .feature-tile { min-height: 0; }
-}
 @media (max-width: 1180px) {
   .landing-hero {
     grid-template-columns: minmax(0, 1fr) 210px 280px; column-gap: 28px;
@@ -773,8 +777,6 @@ html[lang="bn"] .feature-num::before { content: "০" counter(feat, bengali); }
   .entry-screen { padding: 16px 12px 56px; }
   .landing-side .landing-say { left: 58%; max-width: 42%; padding: 9px 12px; font-size: 13.5px; }
   .landing-cta { flex: 1 1 100%; justify-content: center; }
-  .feature-grid { grid-template-columns: minmax(0, 1fr); }
-  .feature-tile { min-height: 0; }
   .landing-section { margin-top: 40px; }
 }
 

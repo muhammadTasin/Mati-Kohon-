@@ -202,93 +202,14 @@
           </div>
         </div>
 
-        <!-- WHAT RONGU SHOWS: each card starts the tour at that part (and enters the role it needs) -->
-        <section class="landing-section" aria-labelledby="featuresTitle">
-          <h2 id="featuresTitle" data-i18n="landing.featuresTitle">রঙ্গু যা যা দেখাবে</h2>
-          <p class="landing-sub" data-i18n="landing.featuresSub">যেকোনো কার্ডে চাপ দিন: রঙ্গু উড়ে গিয়ে সেটি দেখিয়ে দেবে, দরকার হলে সেই ভূমিকায় ঢুকে।</p>
-          <div class="feature-grid">
-            <button class="feature-tile" type="button" data-chapter="2" data-role="visitor" onclick="ronguShow(2)">
-              <span class="feature-top"><span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">map</span></span><span class="feature-num" aria-hidden="true"></span></span>
-              <span class="feature-name" data-i18n="feat.map.name">দেশের মানচিত্র</span>
-              <span class="feature-desc" data-i18n="feat.map.desc">৫৪৪টি উপজেলার নাসা তথ্য; একটি জায়গা বাছলে পুরো পাতা সেটি দেখায়</span>
-              <span class="feature-foot">
-                <span class="feature-role"><span class="material-symbols-outlined" aria-hidden="true">visibility</span><span data-i18n="entry.visitor.name">দর্শনার্থী</span></span>
-                <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
-              </span>
-            </button>
-            <button class="feature-tile" type="button" data-chapter="3" data-role="visitor" onclick="ronguShow(3)">
-              <span class="feature-top"><span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">flood</span></span><span class="feature-num" aria-hidden="true"></span></span>
-              <span class="feature-name" data-i18n="feat.warn.name">আগাম সতর্কতা</span>
-              <span class="feature-desc" data-i18n="feat.warn.desc">হাওরের আকস্মিক বন্যা, ফুল আসার সময় গরম রাত, গবাদিপশুর তাপ চাপ</span>
-              <span class="feature-foot">
-                <span class="feature-role"><span class="material-symbols-outlined" aria-hidden="true">visibility</span><span data-i18n="entry.visitor.name">দর্শনার্থী</span></span>
-                <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
-              </span>
-            </button>
-            <button class="feature-tile" type="button" data-chapter="4" data-role="visitor" onclick="ronguShow(4)">
-              <span class="feature-top"><span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">partly_cloudy_day</span></span><span class="feature-num" aria-hidden="true"></span></span>
-              <span class="feature-name" data-i18n="feat.weather.name">আবহাওয়া</span>
-              <span class="feature-desc" data-i18n="feat.weather.desc">যেকোনো উপজেলার ৭ দিনের পূর্বাভাস, সাথে নাসা POWER</span>
-              <span class="feature-foot">
-                <span class="feature-role"><span class="material-symbols-outlined" aria-hidden="true">visibility</span><span data-i18n="entry.visitor.name">দর্শনার্থী</span></span>
-                <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
-              </span>
-            </button>
-            <button class="feature-tile" type="button" data-chapter="5" data-role="farmer" onclick="ronguShow(5)">
-              <span class="feature-top"><span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">agriculture</span></span><span class="feature-num" aria-hidden="true"></span></span>
-              <span class="feature-name" data-i18n="feat.farmer.name">কৃষকের পোর্টাল</span>
-              <span class="feature-desc" data-i18n="feat.farmer.desc">আজকের পরামর্শ বাংলায় শুনুন, প্রশ্ন করুন</span>
-              <span class="feature-foot">
-                <span class="feature-role"><span class="material-symbols-outlined" aria-hidden="true">agriculture</span><span data-i18n="entry.farmer.name">কৃষক</span></span>
-                <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
-              </span>
-            </button>
-            <button class="feature-tile" type="button" data-chapter="6" data-role="farmer" onclick="ronguShow(6)">
-              <span class="feature-top"><span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">autorenew</span></span><span class="feature-num" aria-hidden="true"></span></span>
-              <span class="feature-name" data-i18n="feat.planner.name">ফসল চক্র পরিকল্পনা</span>
-              <span class="feature-desc" data-i18n="feat.planner.desc">জমি আর অগ্রাধিকার দিলে কম পানির ফসল চক্র</span>
-              <span class="feature-foot">
-                <span class="feature-role"><span class="material-symbols-outlined" aria-hidden="true">agriculture</span><span data-i18n="entry.farmer.name">কৃষক</span></span>
-                <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
-              </span>
-            </button>
-            <button class="feature-tile" type="button" data-chapter="7" data-role="officer" onclick="ronguShow(7)">
-              <span class="feature-top"><span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">assignment_ind</span></span><span class="feature-num" aria-hidden="true"></span></span>
-              <span class="feature-name" data-i18n="feat.desk.name">ম্যানেজার ডেস্ক</span>
-              <span class="feature-desc" data-i18n="feat.desk.desc">কৃষকের কেস, কল-ব্যাক আর মাঠ পর্যবেক্ষণ</span>
-              <span class="feature-foot">
-                <span class="feature-role"><span class="material-symbols-outlined" aria-hidden="true">badge</span><span data-i18n="entry.officer.name">ম্যানেজার</span></span>
-                <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
-              </span>
-            </button>
-            <button class="feature-tile" type="button" data-chapter="8" data-role="officer" onclick="ronguShow(8)">
-              <span class="feature-top"><span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">call</span></span><span class="feature-num" aria-hidden="true"></span></span>
-              <span class="feature-name" data-i18n="feat.calls.name">কল ও এসএমএস</span>
-              <span class="feature-desc" data-i18n="feat.calls.desc">রাজি কৃষককে প্রতিদিনের পরামর্শ কল; ডেমোতে সব ড্রাই রান</span>
-              <span class="feature-foot">
-                <span class="feature-role"><span class="material-symbols-outlined" aria-hidden="true">badge</span><span data-i18n="entry.officer.name">ম্যানেজার</span></span>
-                <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
-              </span>
-            </button>
-            <button class="feature-tile" type="button" data-chapter="9" data-role="officer" onclick="ronguShow(9)">
-              <span class="feature-top"><span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">satellite_alt</span></span><span class="feature-num" aria-hidden="true"></span></span>
-              <span class="feature-name" data-i18n="feat.evidence.name">স্যাটেলাইট প্রমাণ</span>
-              <span class="feature-desc" data-i18n="feat.evidence.desc">৭ দিকে তুলনা, আর প্রতিটি সংখ্যার নাসা উৎস</span>
-              <span class="feature-foot">
-                <span class="feature-role"><span class="material-symbols-outlined" aria-hidden="true">badge</span><span data-i18n="entry.officer.name">ম্যানেজার</span></span>
-                <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></span>
-              </span>
-            </button>
-          </div>
-        </section>
-
-        <!-- ROLES: straight in, without the tour -->
-        <section class="landing-section" aria-labelledby="rolesTitle">
-          <h2 id="rolesTitle" data-i18n="entry.title">কীভাবে প্রবেশ করবেন?</h2>
-          <p class="landing-sub" data-i18n="entry.lead">আপনার ভূমিকা বেছে নিন। দর্শনার্থী হিসেবে সাইন-ইন ছাড়াই খোলা তথ্য দেখা যায়।</p>
-        <div class="role-grid">
-          <button class="role-card" type="button" onclick="chooseRole('visitor')">
-            <span class="role-art" aria-hidden="true">
+        <!-- HOW TO EXPLORE: one card per role, listing what it opens. A role's button goes straight in; any item starts
+             Rongu's tour at that part (entering the role it needs). -->
+        <section class="landing-section" aria-labelledby="pathsTitle">
+          <h2 id="pathsTitle" data-i18n="landing.pathsTitle">কীভাবে ঘুরে দেখবেন?</h2>
+          <p class="landing-sub" data-i18n="landing.pathsSub">একটি ভূমিকা বেছে সরাসরি ঢুকুন, অথবা যেকোনো অংশে চাপ দিন: রঙ্গু উড়ে গিয়ে সেটি দেখিয়ে দেবে।</p>
+          <div class="path-grid">
+          <article class="path-card" data-role="visitor" aria-labelledby="path-visitor">
+            <span class="path-art" aria-hidden="true">
               <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
                 <rect width="400" height="120" fill="#E2EEEE"/>
                 <g fill="#9DC7C2"><circle cx="40" cy="22" r="1.6"/><circle cx="92" cy="50" r="1.2"/><circle cx="130" cy="14" r="1.3"/><circle cx="300" cy="16" r="1.1"/><circle cx="352" cy="28" r="1.6"/><circle cx="374" cy="72" r="1.2"/><circle cx="26" cy="84" r="1.1"/></g>
@@ -306,13 +227,40 @@
                 </g>
               </svg>
             </span>
-            <span class="role-icon"><span class="material-symbols-outlined" aria-hidden="true">travel_explore</span></span>
-            <span class="role-name" data-i18n="entry.visitor.name">দর্শনার্থী</span>
-            <span class="role-desc" data-i18n="entry.visitor.desc">সাইন-ইন ছাড়া পড়ার জন্য: বাংলাদেশের মানচিত্র, ওভারভিউ ও আবহাওয়া।</span>
-            <span class="role-tag tag-open" data-i18n="entry.visitor.tag">সাইন-ইন লাগবে না</span>
-          </button>
-          <button class="role-card" type="button" onclick="chooseRole('farmer')">
-            <span class="role-art" aria-hidden="true">
+            <div class="path-body">
+              <div class="path-head">
+                <span class="path-icon"><span class="material-symbols-outlined" aria-hidden="true">travel_explore</span></span>
+                <span class="path-title">
+                  <span class="path-name" id="path-visitor" data-i18n="entry.visitor.name">দর্শনার্থী</span>
+                  <span class="role-tag tag-open" data-i18n="entry.visitor.tag">সাইন-ইন লাগবে না</span>
+                </span>
+              </div>
+              <p class="path-lead" data-i18n="landing.path.visitor">সাইন-ইন ছাড়াই নাসার খোলা তথ্য পড়ুন।</p>
+              <ul class="path-list">
+                <li><button class="feature-tile" type="button" data-chapter="2" data-role="visitor" onclick="ronguShow(2)">
+                  <span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">map</span></span>
+                  <span class="feature-text"><span class="feature-name" data-i18n="feat.map.name">দেশের মানচিত্র</span><span class="feature-desc" data-i18n="feat.map.desc">৫৪৪টি উপজেলার নাসা তথ্য; একটি জায়গা বাছলে পুরো পাতা সেটি দেখায়</span></span>
+                  <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span></span>
+                </button></li>
+                <li><button class="feature-tile" type="button" data-chapter="3" data-role="visitor" onclick="ronguShow(3)">
+                  <span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">flood</span></span>
+                  <span class="feature-text"><span class="feature-name" data-i18n="feat.warn.name">আগাম সতর্কতা</span><span class="feature-desc" data-i18n="feat.warn.desc">হাওরের আকস্মিক বন্যা, ফুল আসার সময় গরম রাত, গবাদিপশুর তাপ চাপ</span></span>
+                  <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span></span>
+                </button></li>
+                <li><button class="feature-tile" type="button" data-chapter="4" data-role="visitor" onclick="ronguShow(4)">
+                  <span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">partly_cloudy_day</span></span>
+                  <span class="feature-text"><span class="feature-name" data-i18n="feat.weather.name">আবহাওয়া</span><span class="feature-desc" data-i18n="feat.weather.desc">যেকোনো উপজেলার ৭ দিনের পূর্বাভাস, সাথে নাসা POWER</span></span>
+                  <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span></span>
+                </button></li>
+              </ul>
+              <button class="btn btn-primary btn-block path-enter" type="button" onclick="chooseRole('visitor')">
+                <span data-i18n="landing.enter.visitor">মানচিত্র খুলুন</span>
+                <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+              </button>
+            </div>
+          </article>
+          <article class="path-card" data-role="farmer" aria-labelledby="path-farmer">
+            <span class="path-art" aria-hidden="true">
               <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
                 <rect width="400" height="120" fill="#F1E2C6"/>
                 <circle cx="318" cy="38" r="30" fill="#F6D9A0"/><circle cx="318" cy="38" r="18" fill="#E9B65C"/>
@@ -327,13 +275,35 @@
                 <path d="M104 46a9 9 0 0 1 0 16M111 39a19 19 0 0 1 0 30" fill="none" stroke="#C07A24" stroke-width="2.6" stroke-linecap="round"/>
               </svg>
             </span>
-            <span class="role-icon"><span class="material-symbols-outlined" aria-hidden="true">agriculture</span></span>
-            <span class="role-name" data-i18n="entry.farmer.name">কৃষক</span>
-            <span class="role-desc" data-i18n="entry.farmer.desc">কৃষক পোর্টাল: আজকের পরামর্শ, আবহাওয়া, নদীভাঙন, সহকারী ও খামার; ফসল পরিকল্পনা।</span>
-            <span class="role-tag tag-demo" data-i18n="entry.farmer.tag">ডেমো সাইন-ইন</span>
-          </button>
-          <button class="role-card" type="button" onclick="chooseRole('officer')">
-            <span class="role-art" aria-hidden="true">
+            <div class="path-body">
+              <div class="path-head">
+                <span class="path-icon"><span class="material-symbols-outlined" aria-hidden="true">agriculture</span></span>
+                <span class="path-title">
+                  <span class="path-name" id="path-farmer" data-i18n="entry.farmer.name">কৃষক</span>
+                  <span class="role-tag tag-demo" data-i18n="entry.farmer.tag">ডেমো সাইন-ইন</span>
+                </span>
+              </div>
+              <p class="path-lead" data-i18n="landing.path.farmer">বাংলায় আজকের পরামর্শ, আর নিজের জমির ফসল পরিকল্পনা।</p>
+              <ul class="path-list">
+                <li><button class="feature-tile" type="button" data-chapter="5" data-role="farmer" onclick="ronguShow(5)">
+                  <span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">agriculture</span></span>
+                  <span class="feature-text"><span class="feature-name" data-i18n="feat.farmer.name">কৃষকের পোর্টাল</span><span class="feature-desc" data-i18n="feat.farmer.desc">আজকের পরামর্শ বাংলায় শুনুন, প্রশ্ন করুন</span></span>
+                  <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span></span>
+                </button></li>
+                <li><button class="feature-tile" type="button" data-chapter="6" data-role="farmer" onclick="ronguShow(6)">
+                  <span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">autorenew</span></span>
+                  <span class="feature-text"><span class="feature-name" data-i18n="feat.planner.name">ফসল চক্র পরিকল্পনা</span><span class="feature-desc" data-i18n="feat.planner.desc">জমি আর অগ্রাধিকার দিলে কম পানির ফসল চক্র</span></span>
+                  <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span></span>
+                </button></li>
+              </ul>
+              <button class="btn btn-primary btn-block path-enter" type="button" onclick="chooseRole('farmer')">
+                <span data-i18n="landing.enter.farmer">কৃষক হিসেবে ঢুকুন</span>
+                <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+              </button>
+            </div>
+          </article>
+          <article class="path-card" data-role="officer" aria-labelledby="path-officer">
+            <span class="path-art" aria-hidden="true">
               <svg viewBox="0 0 400 120" preserveAspectRatio="xMidYMid slice">
                 <rect width="400" height="120" fill="#E2EBF0"/>
                 <path d="M0 30H400M0 60H400M0 90H400M50 0V120M100 0V120M150 0V120M200 0V120M250 0V120M300 0V120M350 0V120" stroke="#D4E1E9" stroke-width="1"/>
@@ -352,17 +322,51 @@
                 </g>
               </svg>
             </span>
-            <span class="role-icon"><span class="material-symbols-outlined" aria-hidden="true">shield_person</span></span>
-            <span class="role-name" data-i18n="entry.officer.name">ম্যানেজার</span>
-            <span class="role-desc" data-i18n="entry.officer.desc">ম্যানেজার ডেস্ক: কৃষকের কেস, তুলনা, কল, গবাদিপশু ও ডেটার মান।</span>
-            <span class="role-tag tag-open" id="roleTagOfficer" data-i18n="entry.officer.tag">লগইন লাগবে</span>
-            <span class="role-tag tag-demo" id="roleTagGuest" hidden data-i18n="entry.officer.tagGuest">অতিথি হিসেবে দেখুন</span>
-          </button>
-        </div>
-        <p class="entry-foot">
-          <span class="material-symbols-outlined" aria-hidden="true">info</span>
-          <span data-i18n="entry.foot">কৃষক ও অতিথি প্রবেশ এখানে ডেমো: নমুনা তথ্য, নিরাপদ বা যাচাই করা লগইন নয়, কোনো কল বা এসএমএস যায় না। আসল ম্যানেজাররা নিজের অ্যাকাউন্টে প্রবেশ করেন।</span>
-        </p>
+            <div class="path-body">
+              <div class="path-head">
+                <span class="path-icon"><span class="material-symbols-outlined" aria-hidden="true">shield_person</span></span>
+                <span class="path-title">
+                  <span class="path-name" id="path-officer" data-i18n="entry.officer.name">ম্যানেজার</span>
+                  <span class="role-tag tag-open" id="roleTagOfficer" data-i18n="entry.officer.tag">লগইন লাগবে</span>
+                  <span class="role-tag tag-demo" id="roleTagGuest" hidden data-i18n="entry.officer.tagGuest">অতিথি হিসেবে দেখুন</span>
+                </span>
+              </div>
+              <p class="path-lead" data-i18n="landing.path.officer">কৃষকের কেস, কল, আর প্রতিটি সংখ্যার পেছনের নাসা প্রমাণ।</p>
+              <ul class="path-list">
+                <li><button class="feature-tile" type="button" data-chapter="7" data-role="officer" onclick="ronguShow(7)">
+                  <span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">assignment_ind</span></span>
+                  <span class="feature-text"><span class="feature-name" data-i18n="feat.desk.name">ম্যানেজার ডেস্ক</span><span class="feature-desc" data-i18n="feat.desk.desc">কৃষকের কেস, কল-ব্যাক আর মাঠ পর্যবেক্ষণ</span></span>
+                  <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span></span>
+                </button></li>
+                <li><button class="feature-tile" type="button" data-chapter="8" data-role="officer" onclick="ronguShow(8)">
+                  <span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">call</span></span>
+                  <span class="feature-text"><span class="feature-name" data-i18n="feat.calls.name">কল ও এসএমএস</span><span class="feature-desc" data-i18n="feat.calls.desc">রাজি কৃষককে প্রতিদিনের পরামর্শ কল; ডেমোতে সব ড্রাই রান</span></span>
+                  <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span></span>
+                </button></li>
+                <li><button class="feature-tile" type="button" data-chapter="9" data-role="officer" onclick="ronguShow(9)">
+                  <span class="feature-icon"><span class="material-symbols-outlined" aria-hidden="true">satellite_alt</span></span>
+                  <span class="feature-text"><span class="feature-name" data-i18n="feat.evidence.name">স্যাটেলাইট প্রমাণ</span><span class="feature-desc" data-i18n="feat.evidence.desc">৭ দিকে তুলনা, আর প্রতিটি সংখ্যার নাসা উৎস</span></span>
+                  <span class="feature-go"><span class="feature-go-text" data-i18n="feat.go">রঙ্গু দেখাবে</span><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span></span>
+                </button></li>
+              </ul>
+              <button class="btn btn-primary btn-block path-enter" type="button" onclick="chooseRole('officer')">
+                <span data-i18n="landing.enter.officer">ম্যানেজার ডেস্কে ঢুকুন</span>
+                <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+              </button>
+            </div>
+          </article>
+          </div>
+          <div class="path-tour">
+            <button class="btn btn-secondary" type="button" onclick="ronguShow(0)">
+              <span class="material-symbols-outlined" aria-hidden="true">play_arrow</span>
+              <span data-i18n="landing.orTour">অথবা রঙ্গুর সাথে পুরো সফর</span>
+            </button>
+            <span class="path-tour-time" data-i18n="landing.tourShort">প্রায় ৫ মিনিট</span>
+          </div>
+          <p class="entry-foot">
+            <span class="material-symbols-outlined" aria-hidden="true">info</span>
+            <span data-i18n="entry.foot">কৃষক ও অতিথি প্রবেশ এখানে ডেমো: নমুনা তথ্য, নিরাপদ বা যাচাই করা লগইন নয়, কোনো কল বা এসএমএস যায় না। আসল ম্যানেজাররা নিজের অ্যাকাউন্টে প্রবেশ করেন।</span>
+          </p>
         </section>
       </div>
 

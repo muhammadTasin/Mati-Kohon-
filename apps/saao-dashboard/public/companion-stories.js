@@ -282,7 +282,7 @@ export const HERO_LINES = [
   { gesture: 'showTablet', tablet: ['chart', { title: 'Water saved' }], text: { bn: 'নাসার স্যাটেলাইট দেখে কৃষককে বলি, কোন ফসলে পানি বাঁচে।', en: 'I read NASA satellites to tell farmers which crops save water.' } },
   { gesture: 'point', text: { bn: 'মানচিত্রে যেকোনো উপজেলায় চাপ দিন, আমি বলে দেব সেখানে এখন কী চলছে।', en: "Tap any upazila on the map and I'll tell you what is going on there now." } },
   { gesture: 'adjustGlasses', text: { bn: 'পুরো সফরে কৃষক আর মাঠ কর্মকর্তার পাতাও দেখাব।', en: "On the full tour I'll show you the farmer's and the officer's pages too." } },
-  { gesture: 'thumbsUp', text: { bn: 'নিচের যেকোনো কার্ডে চাপ দিন, আমি উড়ে গিয়ে দেখিয়ে দেব!', en: "Tap any card below and I'll fly over and show you!" } },
+  { gesture: 'thumbsUp', text: { bn: 'নিচের যেকোনো অংশে চাপ দিন, আমি উড়ে গিয়ে দেখিয়ে দেব!', en: "Tap any part below and I'll fly over and show you!" } },
 ];
 
 export const FARMER_TOUR = {

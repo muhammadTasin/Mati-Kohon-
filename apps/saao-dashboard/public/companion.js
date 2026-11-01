@@ -46,7 +46,7 @@ const UI = {
   later: { bn: 'পরে', en: 'Later' },
   hide: { bn: 'লুকিয়ে থাকো', en: 'Hide Rongu' },
   toStart: { bn: 'শুরুর পাতায় ফিরুন', en: 'Back to the start' },
-  cardsHint: { bn: 'যেকোনো কার্ডে চাপ দিন, আমি উড়ে গিয়ে দেখিয়ে দেব!', en: "Tap any card and I'll fly over and show you!" },
+  cardsHint: { bn: 'নিচের যেকোনো অংশে চাপ দিন, আমি উড়ে গিয়ে দেখিয়ে দেব!', en: "Tap any part below and I'll fly over and show you!" },
   restart: { bn: 'শুরু থেকে', en: 'From the start' },
   resume: { bn: 'অধ্যায় {n} থেকে চালিয়ে যান', en: 'Continue from chapter {n}' },
   offerVisitor: {
