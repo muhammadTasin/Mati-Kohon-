@@ -11,6 +11,7 @@ const BASE = `http://localhost:${PORT}`;
 const STORE = path.join(os.tmpdir(), `eden-officer-test-${process.pid}.json`);
 const CALL_STORE = path.join(os.tmpdir(), `eden-calls-test-${process.pid}.json`);
 const CATTLE_STORE = path.join(os.tmpdir(), `eden-cattle-test-${process.pid}.json`);
+const LANDING_AUDIO = path.join(os.tmpdir(), `eden-landing-audio-test-${process.pid}`); // stays empty: no voice in the tests
 // A NISAR radar flood reading three days old, written fresh each run (readings older than 21 days are not used)
 const NISAR = path.join(os.tmpdir(), `eden-nisar-test-${process.pid}.json`);
 const daysAgo = (n) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
@@ -50,7 +51,7 @@ const serverProc = spawn('node', ['--experimental-strip-types', 'services/api/sr
   // tests never place a real call, never reach an LLM or TTS service, and read a fixed day of NASA conditions
   // (the daily update rewrites the live file)
   env: { ...process.env, PORT, DEMO_MODE: 'true', EDEN_OFFICER_CODE: OFFICER_CODE, SUPABASE_URL: FAKE_SUPABASE_URL, SUPABASE_ANON_KEY: 'fake-anon-key', ...FAKE_SECRETS, OFFLINE: '1',
-    EDEN_OFFICER_STORE: STORE, CATTLE_STORE_PATH: CATTLE_STORE, SEED_DEMO_DATA: 'false', LLM_BASE_URL: '', TTS_BASE_URL: '', GOOGLE_TTS_CREDENTIALS: '', SMS_LIVE: '0', SMS_API_KEY: '', AWAJ_VOICE_SOURCE: '',
+    EDEN_OFFICER_STORE: STORE, CATTLE_STORE_PATH: CATTLE_STORE, EDEN_LANDING_AUDIO: LANDING_AUDIO, SEED_DEMO_DATA: 'false', LLM_BASE_URL: '', TTS_BASE_URL: '', GOOGLE_TTS_CREDENTIALS: '', SMS_LIVE: '0', SMS_API_KEY: '', AWAJ_VOICE_SOURCE: '',
     API_WRITE_TOKEN: '', AWAJ_LIVE: '0', CALL_PROVIDER: '', VOICEBLAST_LIVE: '0', BROADCAST_LIVE: '0', EDEN_LIVE_FILE: path.resolve('tests/fixtures/live_conditions_2026-10-01.json'), EDEN_FLOOD_FILE: path.resolve('tests/fixtures/no_flood_file.json'), EDEN_CROP_LOSS_FILE: path.resolve('tests/fixtures/crop_loss_fixture.json'),
     EDEN_NISAR_FILE: NISAR, EDEN_CALL_STORE: CALL_STORE, MISSED_CALL_KEY: 'test-missed-key', SMS_SECRET_KEY: '' },
 });
@@ -744,6 +745,25 @@ async function run() {
   check(home.texts.some(({ name }) => name.startsWith('calls/advice')) && home.texts.some(({ name }) => name.startsWith('channel-events')), 'the pilot\'s call and acknowledgement texts are still produced');
   console.log(`✓ Delivered text: ${away.texts.length} Godagari texts (narration, audio script, voice, SMS, call script, keypad menu, acknowledgements) carry no fertilizer amount, Talanda soil card text or Talanda name; the pilot is unchanged`);
 
+  // The landing page's sample calls: four places, each the day's call or the season's plan with the NASA data behind it.
+  // No number appears, and without a voice on the server the recording route says so instead of reading anything out.
+  console.log('Testing the landing page sample calls ...');
+  const landing = await (await fetch(`${BASE}/api/v1/landing/calls`)).json();
+  check(landing.samples?.length === 4 && landing.voice === false, `four sample places and no voice without a TTS provider, got ${landing.samples?.length} and ${landing.voice}`);
+  for (const s of landing.samples) {
+    const c = s.call;
+    check(['alert', 'drain', 'reminder', 'plan'].includes(c.kind), `${s.id}: a known kind of call, got ${c.kind}`);
+    check(c.scriptBangla?.length > 40 && c.smsBangla?.length > 10 && c.durationSeconds > 0, `${s.id}: a script, an SMS and a length`);
+    check(Array.isArray(c.datasets) && c.datasets.length > 0, `${s.id}: names the NASA data behind it`);
+    check(!/01[3-9]\d{8}/.test(JSON.stringify(s)), `${s.id}: carries no phone number`);
+  }
+  // the boundaries and the locations list spell these two differently; the call still says their Bangla names
+  const why = (id) => landing.samples.find(s => s.id === id)?.call.whyBangla ?? '';
+  check(why('landing_chauhali').includes('চৌহালি') && why('landing_dharampasha').includes('ধর্মপাশা'), `sample calls name Chauhali and Dharampasha in Bangla: ${why('landing_chauhali')} | ${why('landing_dharampasha')}`);
+  check((await fetch(`${BASE}/api/v1/landing/calls/landing_koyra/audio`)).status === 503, 'no recording without a voice provider');
+  check((await fetch(`${BASE}/api/v1/landing/calls/nobody/audio`)).status === 404, 'an unknown sample has no recording');
+  console.log('✓ Landing sample calls: four places with a script, an SMS and their NASA data, no number, Bangla place names, and no recording without a voice');
+
   // Site scope over HTTP: a manager sees and changes only their own site's desk; the area parameter accepts known ids only
   console.log('Testing manager site scope ...');
   const as = (token) => ({ headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' } });
@@ -936,6 +956,7 @@ function finish(code) {
   fs.rmSync(CALL_STORE, { force: true });
   fs.rmSync(CATTLE_STORE, { force: true });
   fs.rmSync(NISAR, { force: true });
+  fs.rmSync(LANDING_AUDIO, { recursive: true, force: true });
   process.exit(code);
 }
 

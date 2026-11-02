@@ -227,6 +227,24 @@ The same grid holds every 16-day MODIS image since 2001. That record answers two
 - **But it vanishes:** within BRRI's regions (r −0.02, p 0.71), and over time. Upazilas whose Aman got earlier from 2001-05 to 2019-23 did not gain crops (Spearman −0.04, p 0.36).
 - **What it really is:** the north-west against the east and south, not a lever a farmer can pull. The app does not give it as advice.
 
+### The landing page: from the sky to the farmer's phone
+
+The first screen tells the whole project in one look. "Seen from space. Said on the farmer's phone." stands beside Rongu, and under it three linked steps:
+
+1. **NASA sees:** the datasets with the newest reading of each.
+2. **Mati Kohon decides:** the country with four sample places, each a different Bangladesh:
+   - Talanda in the dry Barind;
+   - Chauhali on the Jamuna chars;
+   - Dharampasha in the haor;
+   - Koyra on the salty coast.
+3. **The farmer hears:** a phone with the call a farmer there would get today, its Bangla recording, and the SMS after it.
+
+Picking a place turns the satellite's beam on it, changes the call, and lights up the datasets behind that call (NISAR for Chauhali's drain date, for example).
+
+`GET /api/v1/landing/calls` builds the calls with the same rules as the real ones (`sampleCall` in `farmer_calls.ts`): the day's alert, drain date or reminder, else the season's rotation. Nothing is stored or sent, and nobody is dialled. `GET /api/v1/landing/calls/:id/audio` records each script once with the Google voice and keeps it (`services/api/src/landing.ts`). Without a voice set up, the phone shows the words only.
+
+Below the steps come the numbers (544 upazilas, 25 seasons, 14 datasets, the 1 km grid, the daily update), the country map explorer, and a card for each of the 14 NASA datasets: what it measures, how finely, and what it changes for the farmer. One list in `landing-story.js` feeds the steps, the cards and the count.
+
 ### A map of Bangladesh
 
 The overview's satellite card is a real map (Leaflet with NASA GIBS imagery). All 544 upazilas (geoBoundaries outlines, thinned to 0.74 MB by `python research/export/map_export.py`, sent gzipped) are coloured by one of ten layers: crops a year, its change since 2001-06 and winter greenness (MODIS); Boro irrigation need (NASA replay) and groundwater decline (GLDAS), both per district; rain in the last 7 days (IMERG), 30-day rain against normal and root-zone soil wetness (the daily NASA update); pesticide on rice (PEST-CHEMGRIDS) and soil organic matter (SRDI). Underneath: OpenStreetMap, NASA MODIS or VIIRS true colour from yesterday, or the Blue Marble; on top: NASA's 3-day MODIS flood map, IMERG rain, SMAP root-zone moisture and MODIS 8-day NDVI. Hover shows the value, a click shows the upazila's facts with a button that plans for it, choosing a place in the list flies the map there, and a table lists the district's upazilas. `GET /api/v1/map/upazilas` serves the values.

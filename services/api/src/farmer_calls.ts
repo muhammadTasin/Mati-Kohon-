@@ -37,7 +37,7 @@ import { bnDate, bnDateOf, bnDigits, bnGenitive, enDate } from '../../../package
 import { FORBIDDEN_TERMS } from '../../../packages/narration-core/src/dual_gate_validator.ts';
 import * as desk from './officer_desk.ts';
 import { adviseWithNarration, planRequest, voiceAnswer } from './advice.ts';
-import { speakable } from './voice.ts';
+import { replyFor, speakable } from './voice.ts';
 import { floodFor } from './live.ts';
 import { getLocationsPayload } from './locations.ts';
 import { broadcastReport, sendSystechCall, systechConfig, voiceblastHistory, type CallRoute } from './systech.ts';
@@ -111,16 +111,31 @@ const isDate = (s: unknown): s is string => typeof s === 'string' && /^\d{4}-\d{
 
 // ------------------------------------------------------------------ names
 let upazilaNames: Map<string, string> | null = null;
+let upazilaSounds: Map<string, string | null> | null = null;
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, '');
+// The boundaries and the locations list spell a third of the names differently (Jessore and Jashore, Dharampasha and
+// Dharmapasha, Ullah Para and Ullapara), so those match by a rough sound: no vowels, h, w or y, no doubled letters,
+// b as p, and no "Sadar", within the same district. Matching the name alone or across districts was wrong too often
+// (Dhaka's Mirpur is not Kushtia's), so a name found only that way stays in English.
+const DISTRICT_SPELLING: Record<string, string> = { chittagong: 'chattogram', nawabganj: 'chapainababganj' };
+const sound = (s: string) => norm(s).replace(/sadar|upazila|thana/g, '').replace(/[aeiouwyh]/g, '').replace(/(.)\1+/g, '$1').replace(/b/g, 'p').replace(/v/g, 'b');
+const districtSound = (s: string) => sound(DISTRICT_SPELLING[norm(s)] ?? s);
 /** The upazila's name in Bangla from the locations list, matched by its English name and district; English otherwise. */
 export function upazilaNameBangla(place: Place): string {
-  if (!upazilaNames) {
+  if (!upazilaNames || !upazilaSounds) {
     upazilaNames = new Map();
+    upazilaSounds = new Map();
     for (const d of getLocationsPayload().districts) {
-      for (const u of d.upazilas) upazilaNames.set(`${norm(d.nameEn)}|${norm(u.nameEn)}`, u.nameBn);
+      for (const u of d.upazilas) {
+        upazilaNames.set(`${norm(d.nameEn)}|${norm(u.nameEn)}`, u.nameBn);
+        const key = `${districtSound(d.nameEn)}|${sound(u.nameEn)}`;
+        upazilaSounds.set(key, upazilaSounds.has(key) ? null : u.nameBn); // two names that sound alike: neither
+      }
     }
   }
-  return upazilaNames.get(`${norm(place.district)}|${norm(place.upazila)}`) ?? place.upazila;
+  return upazilaNames.get(`${norm(place.district)}|${norm(place.upazila)}`)
+    ?? upazilaSounds.get(`${districtSound(place.district)}|${sound(place.upazila)}`)
+    ?? place.upazila;
 }
 const upazilaBangla = (place: Place) => `${upazilaNameBangla(place)} উপজেলা`;
 
@@ -159,6 +174,8 @@ interface Candidate {
   actionBangla: string;
   smsBangla: string;
   questionId?: string;
+  /** The NASA data the call rests on (the landing page lights them up): power, imerg, nisar, opera, ... */
+  datasets?: string[];
 }
 
 const FLOOD_LAND = ['medium_low'];
@@ -197,6 +214,7 @@ function alertCandidates(farmer: FarmerRecord, place: Place, today: string): Can
         reasonBangla: reason,
         actionBangla: a.smsBangla,
         smsBangla: a.smsBangla,
+        datasets: a.id === 'flood_now' ? [n.sensor === 'nisar' ? 'nisar' : 'opera'] : ['imerg', 'power'],
       };
     });
 }
@@ -229,6 +247,7 @@ function drainCandidate(farmer: FarmerRecord, place: Place, today: string): Cand
     reasonBangla: `${by} হিসাবে ${bnGenitive(upazila)} জমির পানি সপ্তাহে প্রায় ${bnDigits(Math.round(d.perWeek * 100))} ভাগ করে নামছে; এভাবে নামলে নিচু জমি ${bnDate(md(d.freeBy))} নাগাদ খালি হবে।`,
     actionBangla: action,
     smsBangla: `জমি খালি ~${bnDate(md(d.freeBy))}। ${boro ? (daysBetween(today, seedbed) > 3 ? `বোরোর বীজতলা ${bnDate(md(seedbed))} নাগাদ দিন।` : 'বোরোর বীজতলা এখনই দিন।') : 'খালি হলেই রবি ফসল বুনুন।'}`,
+    datasets: [d.to.sensor === 'nisar' ? 'nisar' : 'opera'],
   };
 }
 
@@ -258,7 +277,7 @@ function reminderCandidates(farmer: FarmerRecord, place: Place, today: string): 
       const toOpen = daysBetween(today, open), toClose = daysBetween(today, close);
       const span = `${bnDate(window[0])} থেকে ${bnDate(window[1])}`;
       const base = {
-        kind: 'reminder' as const, topic: `reminder:${crop}`, level: 'advice' as const, emergency: false,
+        kind: 'reminder' as const, topic: `reminder:${crop}`, level: 'advice' as const, emergency: false, datasets: ['power', 'imerg'],
         reasonBangla: `আপনার এলাকায় ${act.bn} ভালো সময় ${span}।`,
       };
       if (toOpen >= 1 && toOpen <= OPENS_AHEAD) {
@@ -342,6 +361,45 @@ export function candidatesFor(farmer: FarmerRecord, today: string): Candidate[] 
     .filter(c => !used.has(c.key))
     .filter(c => c.emergency || c.kind === 'answer' || (!capped && !recentTopics.has(c.topic)))
     .sort((a, b) => RANK[a.emergency ? 'emergency' : a.kind] - RANK[b.emergency ? 'emergency' : b.kind]);
+}
+
+// ------------------------------------------------------------------ a sample call (the landing page)
+/** A farmer the landing page speaks for: nobody in the register, no number, never dialled. */
+export interface SampleFarmer {
+  id: string;
+  placeId: string;
+  landType: FarmerRecord['landType'];
+  crops: string[];
+  unionBangla?: string;
+  unionEnglish?: string;
+}
+
+/**
+ * What a farmer like this would hear today if they were registered: the day's best call (an alert, the drain date or
+ * a reminder), or else the season's plan, as the script and SMS. Nothing is stored, planned or sent.
+ */
+export function sampleCall(s: SampleFarmer, today = dhakaToday()) {
+  const farmer = {
+    ...s, nameBangla: '', nameEnglish: '', villageBangla: '', villageEnglish: '', phoneMasked: '', currentAmanCrop: '',
+    irrigation: 'unknown', sample: true,
+  } as unknown as FarmerRecord;
+  const place = placeOf(farmer);
+  const where = whereFor(farmer, place);
+  const best = candidatesFor(farmer, today)[0];
+  if (best) {
+    return {
+      kind: best.kind, level: best.level, titleBangla: best.titleBangla, titleEnglish: best.titleEnglish,
+      whyBangla: best.whyBangla, whyEnglish: best.whyEnglish, datasets: best.datasets ?? [], ...compose(farmer, best, where),
+    };
+  }
+  const reply = replyFor(adviseWithNarration({ ...planRequest({ unionId: place.id, landType: s.landType }), today }));
+  return {
+    kind: 'plan' as const, level: 'advice' as const, titleBangla: 'এই মৌসুমের ফসলচক্র', titleEnglish: "This season's rotation",
+    whyBangla: `${where.bn}: নাসার পঁচিশ মৌসুমের হিসাবে সবচেয়ে ভালো চক্র।`,
+    whyEnglish: `${where.en}: the best rotation over 25 seasons of NASA data.`,
+    datasets: ['power', 'imerg', 'nasadem', 'grace'],
+    scriptBangla: reply.speechBangla, smsBangla: reply.smsBangla, durationSeconds: reply.durationSecondsEstimate,
+  };
 }
 
 /**

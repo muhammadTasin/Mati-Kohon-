@@ -471,42 +471,50 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
 #entryAccountForm[hidden] + #entryOfficerDemo > hr { display: none; } /* the demo form alone needs no divider under the summary */
 .entry-account[open] > summary { margin-bottom: 12px; }
 
-/* ---------- the landing page: Rongu is the hero (companion.js stands him on #landingRongu) ---------- */
-.entry-screen { padding: 28px 24px 72px; }
+/* ---------- the landing page: the story first (sky -> field -> phone), then the map, the NASA data and the ways in ---------- */
+.entry-screen { padding: 28px 24px 72px; overflow-x: clip; } /* the map's shadow and Rongu's satellite may spill past a phone's edge */
 .entry-inner { max-width: 1240px; }
 .entry-step.landing { text-align: left; }
-.landing-hero {
-  display: grid; align-items: start; column-gap: 40px; row-gap: 22px; padding: 12px 8px 8px;
-  grid-template-columns: 264px minmax(0, 1fr) 350px;
-  grid-template-rows: auto auto 1fr;
-  grid-template-areas:
-    "head head  head"
-    "ctrl map   side"
-    "place map  side";
+.story-hero { display: grid; grid-template-columns: minmax(0, 1fr) 380px; align-items: center; gap: 40px; padding: 12px 8px 4px; }
+.story-copy { display: grid; justify-items: start; gap: 18px; min-width: 0; }
+.story-kicker {
+  display: inline-flex; align-items: center; gap: 8px; margin: 0; padding: 6px 14px 6px 10px; font-size: 13.5px; font-weight: 650;
+  color: var(--teal-900); background: var(--face-hi); border-radius: var(--r-pill) !important; box-shadow: var(--e2);
 }
-.landing-actions { display: flex; flex-wrap: wrap; gap: 12px; }
-.landing-cta { display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 12px 24px; font-size: 16.5px; }
-.landing-cta .material-symbols-outlined { font-size: 22px; }
-.landing-time { display: flex; align-items: center; gap: 6px; margin: 14px 0 0; font-size: 13.5px; color: var(--muted-ink); }
-.landing-time .material-symbols-outlined { font-size: var(--icon-sm); }
-.landing-side .entry-checking { margin: 0; }
-
-/* the map of the country (landing-map.js): its parts are placed straight on the hero's grid */
-.landing-map { display: contents; }
-.lm-head { grid-area: head; }
-.lm-ctrl { grid-area: ctrl; display: grid; gap: 8px; align-content: start; }
-.lm-mapcol { grid-area: map; display: grid; gap: 12px; min-width: 0; }
-.lm-place { grid-area: place; align-self: start; }
-.lm-head h1 {
-  margin: 0 0 12px; text-align: left; font-size: clamp(28px, 3.1vw, 46px); line-height: 1.12; color: #17706C; /* 4.7:1 on the page */
+.story-kicker .material-symbols-outlined { font-size: 19px; color: var(--teal-700); }
+/* the title stands up off the page like the map does (each line on its own) */
+.story-title {
+  margin: 0; font: 700 clamp(34px, 4.1vw, 58px)/1.1 var(--font-display); color: #17706C; /* 4.7:1 on the page */
   text-shadow:
     0 .022em 0 #10605D, 0 .044em 0 #0D5552, 0 .066em 0 #0A4A4A, 0 .088em 0 #084042, 0 .11em 0 #06363A,
     0 .14em .04em rgba(46, 32, 10, .16), 0 .2em .24em rgba(46, 32, 10, .24);
 }
-.lm-sub { margin: 0; max-width: 84ch; font-size: 16px; line-height: 1.6; color: var(--text); }
+.story-title span { display: block; }
+.story-lead { margin: 0; max-width: 64ch; font-size: 17px; line-height: 1.65; color: var(--text); }
+.landing-actions { display: flex; flex-wrap: wrap; gap: 12px; }
+.landing-cta { display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 12px 24px; font-size: 16.5px; }
+.landing-cta .material-symbols-outlined { font-size: 22px; }
+.landing-time { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13.5px; color: var(--muted-ink); }
+.landing-time .material-symbols-outlined { font-size: var(--icon-sm); }
+.story-copy .entry-checking { margin: 0; }
+
+/* the map of the country (landing-map.js), a section of its own under the story: the layers, the map, the place */
+.lm-section { text-align: left; }
+.landing-map {
+  display: grid; align-items: start; column-gap: 36px; row-gap: 20px;
+  grid-template-columns: 250px minmax(0, 1fr) 320px;
+  grid-template-areas:
+    "head head head"
+    "ctrl map  place";
+}
+.lm-head { grid-area: head; text-align: center; }
+.lm-ctrl { grid-area: ctrl; display: grid; gap: 8px; align-content: start; }
+.lm-mapcol { grid-area: map; display: grid; gap: 12px; min-width: 0; }
+.lm-place { grid-area: place; align-self: start; }
+.lm-section .lm-head h2 { margin: 0 0 8px; }
+.lm-sub { margin: 0 auto; max-width: 70ch; font-size: 16px; line-height: 1.6; color: var(--muted-ink); }
 .lm-label { margin: 6px 0 0; font: 650 12px/1.3 var(--font-body); letter-spacing: .04em; text-transform: uppercase; color: var(--muted-ink); }
 .lm-label:first-child { margin-top: 0; }
-
 /* when: two halves of one pressed pill */
 .lm-modes { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; background: var(--sunk); box-shadow: var(--inset); border-radius: var(--r-pill) !important; }
 .lm-modes button, .lm-chip {
@@ -638,13 +646,10 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
 .lm-row-text b { font-size: 13.5px; line-height: 1.35; font-weight: 650; color: var(--ink-2); }
 .lm-place .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 
-/* Rongu's side: the stage, the tour and the way in */
-.landing-side { grid-area: side; align-self: center; display: grid; justify-items: center; gap: 14px; min-width: 0; }
-.landing-side .landing-actions { justify-content: center; }
-.landing-side .landing-time { justify-content: center; margin-top: 0; }
+/* Rongu's side: his stage */
+.landing-side { display: grid; justify-items: center; min-width: 0; }
 .landing-side .landing-stage { width: 100%; min-height: 0; }
-.landing-side .landing-say { left: 57%; max-width: min(300px, 46%); font-size: 15px; }
-
+.landing-side .landing-say { left: 57%; max-width: min(260px, 46%); font-size: 15px; }
 /* the stage: Rongu on his own, a soft pressed disc behind him, a small podium under his feet, and what he says */
 .landing-stage { position: relative; aspect-ratio: 1.02; min-height: 360px; }
 .landing-backdrop {
@@ -685,10 +690,146 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
   background: var(--face-hi); border-radius: 3px !important; transform: rotate(45deg); box-shadow: 4px 4px 6px rgba(122, 98, 62, .14);
 }
 .landing-say.swap { opacity: 0; transform: translateY(4px); }
-/* no 3D here (or he was tucked away): no empty stage, the copy takes the whole hero */
-.no-rongu .landing-stage, .rongu-off .landing-stage { display: none; }
-.no-rongu .landing-side, .rongu-off .landing-side { align-self: center; }
-.no-rongu .landing-hero, .rongu-off .landing-hero { grid-template-columns: 264px minmax(0, 1fr) 280px; }
+/* no 3D here (or he was tucked away): no empty stage, the story takes the whole hero */
+.no-rongu .landing-side, .rongu-off .landing-side { display: none; }
+.no-rongu .story-hero, .rongu-off .story-hero { grid-template-columns: minmax(0, 1fr); }
+/* how it works, live: three steps side by side, an arrow between them; each a raised card with its number and name */
+.story-flow {
+  display: grid; grid-template-columns: minmax(0, .95fr) minmax(0, 1.1fr) minmax(0, 1fr); gap: 40px; align-items: stretch;
+  margin: 28px 0 0; padding: 0; list-style: none;
+}
+.flow-step {
+  position: relative; display: flex; flex-direction: column; gap: 14px; min-width: 0; padding: 20px;
+  background: var(--face); border-radius: var(--r-xl) !important; box-shadow: var(--e3);
+}
+.flow-step:not(:last-child)::after {
+  content: "arrow_forward"; position: absolute; z-index: 1; top: 50%; right: -34px; display: grid; place-items: center;
+  width: 28px; height: 28px; font: 20px/1 'Material Symbols Outlined'; color: var(--face-hi); background: var(--teal-700);
+  border-radius: 50% !important; box-shadow: var(--e2); transform: translateY(-50%);
+}
+.flow-head { display: flex; align-items: flex-start; gap: 12px; }
+.flow-num {
+  display: grid; place-items: center; flex: none; width: 40px; height: 40px; font: 700 20px/1 var(--font-display);
+  color: var(--face-hi); background: var(--teal-700); border-radius: 50% !important; box-shadow: var(--e2);
+}
+.flow-name { margin: 0; font: 700 20px/1.25 var(--font-display); color: var(--teal-900); }
+.flow-sub { margin: 2px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--muted-ink); }
+
+/* 1. what NASA sees: the datasets as small rows; the ones behind the call shown light up */
+.flow-data { display: grid; grid-template-columns: minmax(0, 1fr); gap: 6px; margin: 0; padding: 0; list-style: none; }
+.flow-data li {
+  display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 6px 10px 6px 7px;
+  background: var(--face-lo); border: var(--bw-1) solid var(--line); border-radius: var(--r-md) !important;
+  transition: background .3s var(--ease), border-color .3s var(--ease), box-shadow .3s var(--ease);
+}
+.flow-data .material-symbols-outlined {
+  display: grid; place-items: center; width: 30px; height: 30px; font-size: 18px; color: var(--teal-700);
+  background: var(--face-hi); border-radius: 50% !important; transition: background .3s var(--ease), color .3s var(--ease);
+}
+.flow-data b { display: block; font-size: 13px; line-height: 1.25; color: var(--ink-2); }
+.flow-data small { display: block; font-size: 11.5px; line-height: 1.3; color: var(--muted-ink); }
+.flow-data time { font-size: 11.5px; font-weight: 600; white-space: nowrap; color: var(--muted-ink); }
+.flow-data li.on time { color: var(--teal-700); }
+.flow-data li.on { background: var(--face-hi); border-color: var(--teal-500); box-shadow: var(--e2); }
+.flow-data li.on .material-symbols-outlined { color: var(--face-hi); background: var(--teal-700); }
+.flow-data li.on b { color: var(--teal-900); }
+.flow-key { display: flex; align-items: center; gap: 8px; margin: -2px 0 0; font-size: 12.5px; color: var(--muted-ink); }
+.flow-key-dot { width: 12px; height: 12px; background: var(--teal-700); border-radius: 50% !important; box-shadow: 0 0 0 3px var(--teal-100); }
+.flow-more {
+  display: inline-flex; align-items: center; gap: 4px; margin-top: auto; font-size: 14px; font-weight: 650; color: var(--teal-700);
+  text-decoration: none;
+}
+.flow-more:hover { color: var(--teal-900); text-decoration: underline; }
+.flow-more .material-symbols-outlined { font-size: 18px; }
+
+/* 2. Mati Kohon decides: the country on its slab, a satellite over it, a pin per sample place */
+.flow-pick { margin: 0; font: 650 12px/1.3 var(--font-body); letter-spacing: .04em; text-transform: uppercase; color: var(--muted-ink); }
+.flow-land { position: relative; width: min(100%, 250px); aspect-ratio: 721 / 1048; margin: 0 auto; }
+.flow-land svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
+.fl-top { fill: #CFE2DC; }
+.fl-side { fill: #93B2A7; }
+.fl-beam { stroke: var(--teal-500); stroke-width: 3; stroke-dasharray: 6 9; stroke-linecap: round; animation: landing-ring 1s linear infinite; }
+.fl-foot { fill: rgba(42, 138, 134, .22); stroke: var(--teal-500); stroke-width: 2; }
+.fl-pin {
+  position: absolute; display: flex; align-items: center; gap: 6px; padding: 0; font: 650 13px/1 var(--font-body); color: var(--teal-900);
+  background: none; border: 0; cursor: pointer; transform: translate(-9px, -50%);
+}
+.fl-pin-dot {
+  flex: none; width: 18px; height: 18px; background: var(--face-hi); border: 4px solid var(--teal-700); border-radius: 50% !important;
+  box-shadow: var(--e2); transition: transform .2s var(--ease), background .2s var(--ease);
+}
+.fl-pin-name { padding: 5px 9px; background: var(--face-hi); border-radius: var(--r-pill) !important; box-shadow: var(--e1); white-space: nowrap; }
+.fl-pin:hover .fl-pin-dot { transform: scale(1.15); }
+.fl-pin:hover .fl-pin-name { box-shadow: var(--e2); }
+.fl-pin[aria-pressed="true"] .fl-pin-dot { background: var(--teal-700); border-color: var(--face-hi); box-shadow: 0 0 0 4px var(--teal-700), var(--e2); }
+.fl-pin[aria-pressed="true"] .fl-pin-name { color: var(--face-hi); background: var(--teal-700); }
+.fl-pin:focus-visible { outline: none; }
+.fl-pin:focus-visible .fl-pin-name { outline: var(--bw-2) solid var(--teal-700); outline-offset: 2px; }
+.flow-why { margin: 0; padding: 10px 12px; font-size: 13.5px; line-height: 1.5; color: var(--text); background: var(--sunk); box-shadow: var(--inset); border-radius: var(--r-md) !important; }
+.flow-why b { display: block; color: var(--teal-900); }
+
+/* 3. the farmer hears: a phone with the call (its recording, the words) and the SMS after it */
+.phone { width: min(100%, 320px); margin: 0 auto; padding: 10px; background: var(--teal-900); border-radius: 30px !important; box-shadow: var(--e3); }
+.phone-screen {
+  display: grid; gap: 10px; padding: 16px 14px 14px; align-content: start;
+  background: var(--face-hi); border-radius: 22px !important;
+}
+.phone-screen > .lm-skel { width: 100%; }
+.phone-caller { display: grid; grid-template-columns: 42px minmax(0, 1fr) auto; align-items: center; gap: 10px; }
+.phone-avatar {
+  display: grid; place-items: center; width: 42px; height: 42px; font-size: 24px !important; color: var(--face-hi);
+  background: var(--teal-700); border-radius: 50% !important;
+}
+.phone-ring .phone-avatar { animation: phone-ring 1.6s var(--ease) 2; }
+@keyframes phone-ring { 0%, 100% { box-shadow: 0 0 0 0 rgba(42, 138, 134, .5); } 50% { box-shadow: 0 0 0 10px rgba(42, 138, 134, 0); } }
+.phone-who { display: grid; min-width: 0; }
+.phone-who b { font: 700 16px/1.2 var(--font-display); color: var(--teal-900); }
+.phone-who span { font-size: 12.5px; color: var(--muted-ink); }
+.phone-tag { padding: 3px 9px; font-size: 11.5px; font-weight: 650; color: var(--amber-deep); background: var(--amber-soft); border-radius: var(--r-pill) !important; }
+.phone-title { margin: 2px 0 0; font: 700 17px/1.3 var(--font-display); color: var(--ink); }
+.phone-player { display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 8px 10px 8px 8px; background: var(--sunk); box-shadow: var(--inset); border-radius: var(--r-pill) !important; }
+.phone-play {
+  display: grid; place-items: center; width: 46px; height: 46px; padding: 0; color: var(--face-hi); cursor: pointer;
+  background: var(--teal-700); border: 0; border-radius: 50% !important; box-shadow: var(--e2); transition: background .2s var(--ease), transform .2s var(--ease);
+}
+.phone-play:hover { background: var(--teal-600); transform: scale(1.05); }
+.phone-play:focus-visible { outline: var(--bw-2) solid var(--teal-700); outline-offset: 3px; }
+.phone-play .material-symbols-outlined { font-size: 28px; }
+.phone-play[disabled] { cursor: default; color: var(--muted-ink); background: var(--pressed); box-shadow: none; transform: none; }
+.phone-wave { display: flex; align-items: center; gap: 2px; height: 28px; min-width: 0; overflow: hidden; }
+.phone-wave i { flex: 1 1 0; min-width: 2px; max-width: 4px; background: var(--teal-300); border-radius: 2px !important; transition: background .2s linear; }
+.phone-wave i.played { background: var(--teal-700); }
+.phone-len { font: 600 13px var(--font-body); font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.phone-label { display: block; margin-bottom: 2px; font-size: 11.5px; font-weight: 650; letter-spacing: .04em; text-transform: uppercase; color: var(--muted-ink); }
+.phone-script { margin: 0; font-size: 14px; line-height: 1.6; color: var(--ink-2); }
+.phone-script.clamped { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.phone-more { justify-self: start; padding: 0; font: 650 13px var(--font-body); color: var(--teal-700); background: none; border: 0; cursor: pointer; text-decoration: underline; }
+.phone-gloss { margin: 0; font-size: 13px; line-height: 1.5; color: var(--text); }
+.phone-sms { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 8px; padding: 10px 12px; background: var(--teal-50); border-radius: 16px 16px 16px 4px !important; }
+.phone-sms > .material-symbols-outlined { font-size: 20px; color: var(--teal-700); }
+.phone-sms p { margin: 0; font-size: 13px; line-height: 1.5; color: var(--ink-2); }
+.phone-off { margin: 0; font-size: 12.5px; color: var(--muted-ink); }
+.phone-foot { display: flex; align-items: flex-start; gap: 8px; width: min(100%, 320px); margin: 0 auto; font-size: 12.5px; line-height: 1.5; color: var(--muted-ink); }
+.phone-foot .material-symbols-outlined { flex: none; font-size: 18px; color: var(--teal-700); }
+
+/* the numbers behind it, in one row */
+.story-proof { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 14px; margin: 28px 0 0; padding: 0; list-style: none; }
+.story-proof li { display: grid; gap: 2px; padding: 14px 16px; background: var(--face-hi); border-radius: var(--r-lg) !important; box-shadow: var(--e1); }
+.story-proof b { font: 700 28px/1.15 var(--font-display); color: var(--teal-900); }
+.story-proof span { font-size: 13.5px; line-height: 1.4; color: var(--muted-ink); }
+
+/* the NASA data: one small card per dataset */
+.data-wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 16px; margin: 0; padding: 0; list-style: none; text-align: left; }
+.data-card { display: grid; grid-template-columns: 44px minmax(0, 1fr); gap: 4px 14px; align-content: start; padding: 16px; background: var(--face); border-radius: var(--r-lg) !important; box-shadow: var(--e2); }
+.data-card > .material-symbols-outlined {
+  grid-row: span 4; display: grid; place-items: center; width: 44px; height: 44px; font-size: 23px; color: var(--teal-700);
+  background: var(--teal-50); border-radius: var(--r-md) !important;
+}
+.data-card h3 { margin: 0; font: 700 16px/1.3 var(--font-display); color: var(--teal-900); }
+.data-res { font-size: 12px; font-weight: 600; color: var(--muted-ink); }
+.data-card p { margin: 4px 0 0; font-size: 13.5px; line-height: 1.5; color: var(--text); }
+.data-card p.data-use { color: var(--ink-2); }
+.data-card p.data-use b { color: var(--teal-900); }
 
 /* how to explore: one card per role, its picture on top, the parts of the app it opens as rows (each starts Rongu's
    tour there), and the role's own way in at the foot; the role's colour marks the icon and the rows */
@@ -760,12 +901,18 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
 @media (max-width: 960px) { .path-grid { grid-template-columns: minmax(0, 1fr); max-width: 560px; margin: 0 auto; } }
 
 @media (max-width: 1180px) {
-  .landing-hero {
-    grid-template-columns: minmax(0, 1fr) 236px 280px; column-gap: 28px;
+  .story-hero { grid-template-columns: minmax(0, 1fr) 320px; gap: 28px; }
+  .story-flow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; }
+  .flow-step:not(:last-child)::after { display: none; }
+  .flow-sees { grid-column: 1 / -1; }
+  .flow-data { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .story-proof { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .landing-map {
+    grid-template-columns: minmax(0, 1fr) 280px; column-gap: 28px;
     grid-template-areas:
-      "head head  head"
-      "ctrl ctrl  side"
-      "map  place side";
+      "head head"
+      "ctrl ctrl"
+      "map  place";
   }
   .lm-ctrl { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
   .lm-label { display: none; }
@@ -779,17 +926,24 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
   .lm-place-rows { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 900px) {
-  .landing-hero { display: flex; flex-direction: column; align-items: stretch; gap: 18px; padding: 4px 0 0; }
+  .story-hero { display: flex; flex-direction: column; align-items: stretch; gap: 8px; padding: 4px 0 0; }
+  .story-copy { order: 1; }
+  .landing-side { order: 0; }
+  .story-title { font-size: clamp(30px, 7.4vw, 42px); }
+  .story-lead { font-size: 16px; }
+  .landing-side .landing-stage { width: min(100%, 300px); margin: 0 auto; aspect-ratio: 1.02; min-height: 0; }
+  .story-flow { grid-template-columns: minmax(0, 1fr); gap: 34px; max-width: 560px; margin-left: auto; margin-right: auto; }
+  .flow-sees { grid-column: auto; }
+  .flow-data { grid-template-columns: minmax(0, 1fr); }
+  .flow-step:not(:last-child)::after { display: grid; content: "arrow_downward"; top: auto; right: auto; bottom: -31px; left: 50%; transform: translateX(-50%); }
+  .story-proof { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .landing-map { display: flex; flex-direction: column; align-items: stretch; gap: 18px; }
   .lm-head { order: 0; }
-  .landing-side { order: 1; }
   .lm-ctrl { order: 2; }
   .lm-mapcol { order: 3; }
   .lm-place { order: 4; align-self: stretch; }
   .lm-canvas { height: auto; min-height: 0; aspect-ratio: 0.74; max-height: 560px; }
   .lm-3d { transform: perspective(1300px) rotateX(10deg); }
-  .lm-head h1 { font-size: clamp(24px, 6.4vw, 34px); }
-  .lm-sub { margin-bottom: 0; }
-  .landing-side .landing-stage { width: min(100%, 300px); margin: 0 auto; aspect-ratio: 1.02; min-height: 0; }
   .app-header { padding: 10px 16px; }
 }
 @media (max-width: 560px) {
@@ -799,7 +953,8 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
   .header-enter { padding: 7px 11px; }
   .header-enter span[data-i18n] { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; } /* the arrow alone, still read out */
   .landing-side .landing-stage { width: min(100%, 230px); }
-  .landing-side .landing-time { display: none; }
+  .flow-step { padding: 16px; }
+  .story-proof b { font-size: 24px; }
   .entry-screen { padding: 16px 12px 56px; }
   .landing-side .landing-say { left: 58%; max-width: 42%; padding: 9px 12px; font-size: 13.5px; }
   .landing-cta { flex: 1 1 100%; justify-content: center; }

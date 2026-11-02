@@ -94,60 +94,29 @@
   <section class="entry-screen" id="entryScreen" aria-labelledby="entryTitle">
     <div class="entry-inner">
       <div class="entry-step landing" id="entryChoose">
-        <!-- HERO: Rongu welcomes whoever arrives and offers to show them round (companion.js puts him on #landingRongu) -->
-        <div class="landing-hero">
-          <!-- THE COUNTRY TODAY: every upazila coloured by a NASA layer, now or year by year (landing-map.js) -->
-          <div class="landing-map" id="landingMap">
-            <div class="lm-head">
-              <h1 id="entryTitle" data-i18n="lm.title">বাংলাদেশ আজ, নাসার চোখে</h1>
-              <p class="lm-sub" data-i18n="lm.sub">৫৪৪টি উপজেলা। একটি স্তর বাছুন, উপজেলার উপর আঙুল রাখুন, বা সময়রেখা চালিয়ে ২৫ বছরের বদল দেখুন।</p>
+        <!-- HERO: the whole project in one look, from the sky to the field to the farmer's phone. Rongu welcomes whoever
+             arrives (companion.js puts him on #landingRongu). -->
+        <div class="story-hero">
+          <div class="story-copy">
+            <p class="story-kicker"><span class="material-symbols-outlined" aria-hidden="true">rocket_launch</span><span data-i18n="story.kicker">নাসা স্পেস অ্যাপস চ্যালেঞ্জ ২০২৬ · ফিল্ড শিফট</span></p>
+            <h1 id="entryTitle" class="story-title" data-i18n="story.title"><span>মহাকাশ থেকে দেখা,</span> <span>কৃষকের ফোনে বলা</span></h1>
+            <p class="story-lead" data-i18n="story.lead">মাটি কহন দেশের ৫৪৪টি উপজেলার জন্য নাসার ১৪টি তথ্যভান্ডার পড়ে: বৃষ্টি, খেতের সবুজ, বন্যার পানি, মাটির রস, তাপ আর মাটির নিচের পানি। তা থেকে ঠিক করে কী বুনবেন, কবে সেচ দেবেন, কবে জমির পানি নামবে, আর কৃষককে বাংলায় একটি ফোন কল ও এসএমএসে জানায়।</p>
+            <div class="landing-actions">
+              <button class="btn btn-primary landing-cta" type="button" onclick="ronguShow(0)">
+                <span class="material-symbols-outlined" aria-hidden="true">play_arrow</span>
+                <span data-i18n="landing.tour">রঙ্গুর সাথে পুরো সফর</span>
+              </button>
+              <button class="btn btn-secondary landing-cta" type="button" onclick="chooseRole('visitor')">
+                <span class="material-symbols-outlined" aria-hidden="true">travel_explore</span>
+                <span data-i18n="landing.explore">নিজে ঘুরে দেখুন</span>
+              </button>
             </div>
-            <div class="lm-ctrl">
-              <p class="lm-label" data-i18n="lm.when">কখন</p>
-              <div class="lm-modes" role="tablist" aria-label="Map time">
-                <button type="button" role="tab" class="on" aria-selected="true" data-mode="now"><span class="material-symbols-outlined" aria-hidden="true">radar</span><span data-i18n="lm.now">এখন</span></button>
-                <button type="button" role="tab" aria-selected="false" data-mode="years"><span class="material-symbols-outlined" aria-hidden="true">timeline</span><span data-i18n="lm.years">২৫ বছরে</span></button>
-              </div>
-              <div class="lm-timeline" id="lmTimeline" hidden>
-                <button class="lm-play" id="lmPlay" type="button"><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span></button>
-                <input type="range" id="lmYear" min="2001" max="2025" step="1" value="2025" aria-label="Year">
-                <output id="lmYearOut" for="lmYear"></output>
-              </div>
-              <p class="lm-label" data-i18n="lm.what">কী দেখবেন</p>
-              <div class="lm-layers" id="lmLayers" role="radiogroup" aria-label="Map layer"></div>
-            </div>
-            <div class="lm-mapcol">
-              <!-- what the map shows and for when, then its key (landing-map.js) -->
-              <div class="lm-maphead">
-                <p class="lm-maptitle" id="lmMapTitle"><span class="lm-skel lm-skel-maptitle"></span></p>
-                <p class="lm-when" id="lmWhen"></p>
-              </div>
-              <div class="lm-legend" id="lmLegend"></div>
-              <div class="lm-canvas" id="lmCanvas">
-                <div class="lm-3d">
-                  <svg class="lm-ghost" viewBox="-6 -6 721 1048" aria-hidden="true">
-                    <defs><path id="lmGhostLand" d="M60 0L64 14L72 15L73 19L78 20L79 25L83 24L84 29L93 26L94 32L102 36L105 40L103 41L105 48L110 46L112 47L112 53L122 55L124 65L129 65L130 57L138 56L137 51L141 46L136 44L136 38L139 37L139 33L142 33L144 28L155 38L162 37L165 40L166 50L170 51L173 54L168 60L175 60L179 64L172 66L173 80L185 84L191 90L189 94L193 94L204 103L209 103L214 97L216 103L223 105L229 100L229 103L233 104L232 110L238 108L238 100L243 94L240 88L241 76L238 74L240 71L246 71L246 66L252 68L253 65L254 74L260 79L264 78L267 83L266 86L269 87L271 90L271 97L282 108L279 110L279 114L285 114L275 134L278 142L276 150L279 152L284 168L280 180L280 193L275 206L277 222L280 223L284 223L288 219L296 220L300 224L310 227L318 233L352 238L358 243L367 245L379 241L398 241L402 237L406 243L420 239L426 243L434 244L464 237L494 236L504 241L508 240L510 242L516 242L520 245L524 245L525 248L538 246L541 241L546 241L545 246L551 249L558 247L560 243L566 245L568 241L574 243L578 240L602 241L614 239L625 243L630 249L634 247L644 256L651 258L656 257L658 262L670 265L669 276L674 275L676 279L679 279L679 292L672 291L670 295L664 295L651 285L641 286L642 296L647 298L648 312L650 314L643 326L640 348L637 352L629 350L628 357L631 365L626 366L623 373L618 374L604 372L604 383L599 378L594 380L596 392L591 412L587 412L586 406L582 405L580 401L567 397L569 412L558 409L556 402L554 402L550 418L542 424L510 417L514 428L511 434L511 440L500 437L495 442L495 448L491 448L488 452L492 462L488 468L489 475L486 479L478 477L476 482L477 487L485 488L484 494L478 492L478 501L486 510L484 515L491 520L496 538L502 542L498 548L500 549L501 557L503 560L503 575L507 585L510 590L515 591L511 566L516 554L518 557L522 558L527 568L530 570L529 575L532 577L535 594L537 594L536 601L540 606L544 605L546 607L549 607L551 603L562 603L571 594L570 590L576 590L578 587L575 572L568 552L578 543L582 534L590 528L596 529L595 524L600 521L595 488L598 480L602 479L605 489L612 494L616 494L617 488L620 489L628 479L631 479L632 483L637 485L637 492L640 491L642 482L645 481L649 485L649 502L653 509L655 528L658 530L659 536L663 541L661 548L666 562L659 562L660 584L665 592L662 612L673 618L678 643L683 645L695 738L698 739L696 746L691 744L697 756L698 779L701 786L698 791L697 808L697 836L704 873L708 882L708 885L696 892L690 870L683 869L680 873L672 872L670 862L663 853L657 854L654 863L646 861L644 872L636 878L638 894L632 902L632 905L635 906L636 911L639 912L645 921L645 940L651 952L658 975L652 970L635 940L633 930L612 902L611 882L607 870L597 856L602 852L603 850L596 849L592 855L580 844L584 842L581 831L587 828L587 825L583 818L592 789L589 787L582 812L579 812L581 804L581 783L585 779L590 782L590 777L585 766L586 758L584 748L581 747L578 741L576 730L569 722L564 694L558 682L543 666L537 656L526 648L521 637L519 637L518 643L512 639L512 642L498 644L498 646L508 646L514 651L516 654L513 662L503 661L496 650L494 650L497 664L489 680L484 680L474 693L468 690L458 675L429 654L409 618L406 619L400 616L398 612L403 608L399 604L398 571L398 563L402 560L402 556L395 545L378 549L393 563L394 570L380 584L380 586L386 583L386 585L382 593L381 589L378 588L377 595L384 598L388 582L395 586L396 596L386 604L392 612L394 622L404 630L404 634L401 636L404 648L407 646L404 641L406 637L406 640L412 646L412 652L415 658L408 648L405 651L411 663L417 668L419 681L433 696L429 709L433 709L436 701L438 708L434 719L435 712L429 712L430 720L425 746L417 756L416 760L408 768L403 781L395 785L393 780L391 780L389 786L386 787L386 790L374 800L371 798L374 792L368 795L364 790L366 786L360 790L360 794L351 792L348 789L355 770L368 759L370 755L374 757L383 744L388 736L389 728L386 728L383 731L384 738L377 740L377 743L379 744L375 744L354 768L353 763L351 763L341 792L335 799L330 800L318 797L314 790L305 786L306 776L313 771L313 768L310 770L300 768L300 774L295 776L292 774L292 766L286 755L288 741L284 742L284 754L278 756L283 781L279 788L281 794L276 791L268 794L266 791L263 791L260 794L256 792L252 794L251 790L248 790L256 804L251 807L240 805L242 813L236 814L232 807L233 800L230 796L234 791L233 768L230 768L227 762L224 762L224 764L227 779L222 782L220 790L222 802L213 812L205 808L204 800L201 802L198 795L192 796L194 820L182 824L184 813L179 798L173 801L165 798L166 791L162 782L165 768L157 752L162 744L161 734L149 720L152 715L148 713L148 702L146 699L149 696L149 688L144 676L140 674L143 664L140 664L139 660L144 650L139 648L136 641L143 634L145 626L142 622L135 620L134 609L128 610L129 601L127 600L132 597L130 584L135 582L139 577L139 574L147 566L142 567L137 566L136 563L126 562L118 565L115 561L107 559L108 556L104 551L108 549L109 542L113 540L112 535L114 527L118 526L119 520L111 522L98 510L94 501L86 502L88 496L84 496L83 494L85 490L84 482L86 473L82 472L86 470L87 466L85 458L93 456L98 457L106 449L110 448L108 420L104 420L103 417L111 412L110 390L105 384L94 385L88 384L87 382L84 382L82 387L78 379L64 373L58 374L48 372L39 362L28 359L21 352L-0 325L8 316L9 308L14 306L15 301L23 294L20 280L33 277L39 287L50 290L47 284L50 280L53 278L58 279L61 270L66 266L65 249L68 244L65 241L66 235L66 238L70 238L70 235L83 238L84 241L92 236L107 236L110 240L115 238L116 241L122 242L126 234L132 239L139 241L140 236L144 236L143 228L151 224L150 221L140 220L136 214L132 216L126 210L125 204L121 202L124 200L125 192L122 190L120 184L116 184L114 189L107 187L104 192L96 191L96 188L92 186L80 186L80 182L74 179L74 174L66 172L67 160L60 159L54 151L39 140L38 136L30 140L26 138L20 142L14 135L11 118L15 116L19 102L24 101L26 92L23 92L22 89L25 80L34 74L51 68L51 58L61 49L64 49L68 42L68 45L76 44L70 28L54 25L52 31L48 24L55 6ZM504 666L508 667L507 680L498 687L493 680L494 676ZM523 666L540 690L540 699L534 702L525 700L517 680L517 668ZM432 670L446 676L451 683L433 685L429 673ZM400 678L400 703L402 702L403 689L403 678ZM447 688L459 692L459 702L461 702L462 707L464 706L464 699L474 704L480 703L482 706L482 728L474 744L461 754L461 756L466 756L462 762L459 759L450 762L449 754L461 736L463 710L458 711L458 722L456 727L453 726L451 737L441 754L437 759L435 757L434 750L439 746L447 724L448 710L457 711L454 706L448 706L445 702L446 698L443 694ZM443 709L444 724L438 732L437 725ZM400 714L401 718L396 724L398 730L400 730L403 721L403 714ZM429 764L434 770L432 779L428 778L428 775L423 776L428 786L424 789L418 791L421 782L418 780L414 788L410 790L411 782L414 778L419 780ZM155 780L159 780L159 784L163 790L163 800L172 808L170 813L166 813L157 802L159 790L155 784Z"/></defs>
-                    <use href="#lmGhostLand" class="lm-ghost-side" transform="translate(0 22)"/>
-                    <use href="#lmGhostLand" class="lm-ghost-top"/>
-                  </svg>
-                  <canvas class="lm-base" id="lmBase" aria-hidden="true"></canvas>
-                  <svg id="lmSvg" role="img" aria-labelledby="entryTitle"></svg>
-                  <canvas class="lm-light" id="lmLight" aria-hidden="true"></canvas>
-                </div>
-                <div class="lm-tip" id="lmTip" hidden></div>
-                <p class="lm-wait" id="lmWait" data-i18n="lm.loading">মানচিত্র আসছে…</p>
-              </div>
-              <p class="lm-note" id="lmNote"><span class="lm-skel lm-skel-note"></span></p>
-            </div>
-            <div class="lm-place" id="lmPlace" aria-busy="true">
-              <span class="lm-skel lm-skel-title"></span>
-              <span class="lm-skel"></span>
-              <span class="lm-skel-grid"><span class="lm-skel"></span><span class="lm-skel"></span><span class="lm-skel"></span><span class="lm-skel"></span></span>
-              <span class="lm-skel lm-skel-btn"></span>
-            </div>
+            <p class="landing-time"><span class="material-symbols-outlined" aria-hidden="true">schedule</span> <span data-i18n="landing.time">পুরো সফর প্রায় ৫ মিনিট; যেকোনো সময় থামানো যায়।</span></p>
+            <p class="entry-checking" id="entryChecking" role="status" hidden>
+              <span class="material-symbols-outlined" aria-hidden="true">progress_activity</span>
+              <span data-i18n="entry.checking">আগের সেশন যাচাই হচ্ছে…</span>
+            </p>
           </div>
-
-          <!-- RONGU: the guide, beside the map; the tour and the way in -->
           <div class="landing-side">
             <div class="landing-stage" id="landingStage">
               <span class="landing-backdrop" aria-hidden="true"></span>
@@ -189,23 +158,125 @@
                 </svg>
               </span>
             </div>
-            <div class="landing-actions">
-              <button class="btn btn-primary landing-cta" type="button" onclick="ronguShow(0)">
-                <span class="material-symbols-outlined" aria-hidden="true">play_arrow</span>
-                <span data-i18n="landing.tour">রঙ্গুর সাথে পুরো সফর</span>
-              </button>
-              <button class="btn btn-secondary landing-cta" type="button" onclick="chooseRole('visitor')">
-                <span class="material-symbols-outlined" aria-hidden="true">travel_explore</span>
-                <span data-i18n="landing.explore">নিজে ঘুরে দেখুন</span>
-              </button>
-            </div>
-            <p class="landing-time"><span class="material-symbols-outlined" aria-hidden="true">schedule</span> <span data-i18n="landing.time">পুরো সফর প্রায় ৫ মিনিট; যেকোনো সময় থামানো যায়।</span></p>
-            <p class="entry-checking" id="entryChecking" role="status" hidden>
-              <span class="material-symbols-outlined" aria-hidden="true">progress_activity</span>
-              <span data-i18n="entry.checking">আগের সেশন যাচাই হচ্ছে…</span>
-            </p>
           </div>
         </div>
+
+        <!-- HOW IT WORKS, LIVE (landing-story.js): what NASA sees, what Mati Kohon makes of it at four places, and the call
+             a farmer there would get today; the data behind that call lights up in the first step -->
+        <ol class="story-flow" id="storyFlow">
+          <li class="flow-step flow-sees">
+            <div class="flow-head">
+              <span class="flow-num" aria-hidden="true" data-num="1">১</span>
+              <div><h2 class="flow-name" data-i18n="story.sees">নাসা দেখে</h2><p class="flow-sub" data-i18n="story.seesSub">স্যাটেলাইট থেকে প্রতিটি উপজেলার মাঠ, ২০০১ থেকে আজ পর্যন্ত</p></div>
+            </div>
+            <ul class="flow-data" id="flowData"></ul>
+            <p class="flow-key"><span class="flow-key-dot" aria-hidden="true"></span><span data-i18n="story.lit">রঙিনগুলো এই কলের পেছনের তথ্য</span></p>
+            <a class="flow-more" href="#nasaData"><span data-i18n="story.allData">নাসার সব তথ্য, কোনটি কী কাজে</span><span class="material-symbols-outlined" aria-hidden="true">south</span></a>
+          </li>
+          <li class="flow-step flow-decides">
+            <div class="flow-head">
+              <span class="flow-num" aria-hidden="true" data-num="2">২</span>
+              <div><h2 class="flow-name" data-i18n="story.decides">মাটি কহন ভাবে</h2><p class="flow-sub" data-i18n="story.decidesSub">প্রতিটি উপজেলায় ২৫টি মৌসুম আবার চালিয়ে ১৭টি ফসলের হিসাব, আজকের মাঠ মিলিয়ে একটি কাজের কথা</p></div>
+            </div>
+            <p class="flow-pick" id="flowPick" data-i18n="story.pick">একটি জায়গা বাছুন</p>
+            <div class="flow-land" id="flowLand" role="group" aria-labelledby="flowPick">
+              <svg viewBox="-6 -6 721 1048" aria-hidden="true">
+                <use href="#lmGhostLand" class="fl-side" transform="translate(0 22)"/>
+                <use href="#lmGhostLand" class="fl-top"/>
+                <ellipse class="fl-foot" id="flowFoot" cx="-99" cy="-99" rx="48" ry="22"/>
+                <line class="fl-beam" id="flowBeam" x1="637" y1="96" x2="637" y2="96"/>
+                <g class="fl-sat" transform="translate(575 34) scale(2)">
+                  <rect x="1" y="8" width="19" height="14" rx="1.5" fill="#2C5E86"/>
+                  <path d="M7.3 8v14M13.6 8v14M1 15h19" stroke="#86AFD3" stroke-width=".8"/>
+                  <path d="M20 15h5M39 15h3" stroke="#8A9094" stroke-width="1.4"/>
+                  <path d="M25 10h14v11H25z" fill="#D9A647"/>
+                  <path d="M25 10l3-3h11l-3 3z" fill="#F1CD7C"/>
+                  <rect x="42" y="8" width="19" height="14" rx="1.5" fill="#2C5E86"/>
+                  <path d="M48.3 8v14M54.6 8v14M42 15h19" stroke="#86AFD3" stroke-width=".8"/>
+                </g>
+              </svg>
+            </div>
+            <p class="flow-why" id="flowWhy" aria-live="polite"><span class="lm-skel"></span></p>
+          </li>
+          <li class="flow-step flow-hears">
+            <div class="flow-head">
+              <span class="flow-num" aria-hidden="true" data-num="3">৩</span>
+              <div><h2 class="flow-name" data-i18n="story.hears">কৃষক শোনেন</h2><p class="flow-sub" data-i18n="story.hearsSub">বাংলায় এক মিনিটের কম একটি কল, তারপর একটি এসএমএস</p></div>
+            </div>
+            <div class="phone" id="flowPhone" aria-busy="true"><div class="phone-screen"><span class="lm-skel lm-skel-title"></span><span class="lm-skel"></span><span class="lm-skel"></span><span class="lm-skel"></span></div></div>
+            <p class="phone-foot"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span><span data-i18n="story.approve">এটি নমুনা: কাউকে ফোন করা হয় না। আসল কল যায় কৃষকের সম্মতিতে, উপসহকারী কৃষি কর্মকর্তা প্রতিটি কল পড়ে অনুমোদন দিলে।</span></p>
+          </li>
+        </ol>
+
+        <!-- what stands behind it, in numbers (landing-story.js counts the datasets and dates the update) -->
+        <ul class="story-proof">
+          <li><b data-num="544">৫৪৪</b><span data-i18n="story.proof.upazilas">উপজেলা, প্রতিটির নিজের পরামর্শ</span></li>
+          <li><b data-num="25">২৫</b><span data-i18n="story.proof.seasons">মৌসুম ফিরে চালানো, ২০০১-২০২৫</span></li>
+          <li><b id="proofDatasets">১৪</b><span data-i18n="story.proof.datasets">নাসার তথ্যভান্ডার</span></li>
+          <li><b data-i18n="story.proof.gridNum">১ কিমি</b><span data-i18n="story.proof.grid">গ্রিডে শুধু ফসলি জমি</span></li>
+          <li><b data-i18n="story.proof.dailyNum">প্রতিদিন</b><span id="proofDaily">নাসার তথ্য হালনাগাদ</span></li>
+        </ul>
+
+        <!-- THE COUNTRY TODAY: every upazila coloured by a NASA layer, now or year by year (landing-map.js), for whoever
+             wants to look around themselves -->
+        <section class="landing-section lm-section" aria-labelledby="lmTitle">
+          <div class="landing-map" id="landingMap">
+            <div class="lm-head">
+              <h2 id="lmTitle" data-i18n="lm.title">বাংলাদেশ আজ, নাসার চোখে</h2>
+              <p class="lm-sub" data-i18n="lm.sub">৫৪৪টি উপজেলা। একটি স্তর বাছুন, উপজেলার উপর আঙুল রাখুন, বা সময়রেখা চালিয়ে ২৫ বছরের বদল দেখুন।</p>
+            </div>
+            <div class="lm-ctrl">
+              <p class="lm-label" data-i18n="lm.when">কখন</p>
+              <div class="lm-modes" role="tablist" aria-label="Map time">
+                <button type="button" role="tab" class="on" aria-selected="true" data-mode="now"><span class="material-symbols-outlined" aria-hidden="true">radar</span><span data-i18n="lm.now">এখন</span></button>
+                <button type="button" role="tab" aria-selected="false" data-mode="years"><span class="material-symbols-outlined" aria-hidden="true">timeline</span><span data-i18n="lm.years">২৫ বছরে</span></button>
+              </div>
+              <div class="lm-timeline" id="lmTimeline" hidden>
+                <button class="lm-play" id="lmPlay" type="button"><span class="material-symbols-outlined" aria-hidden="true">play_arrow</span></button>
+                <input type="range" id="lmYear" min="2001" max="2025" step="1" value="2025" aria-label="Year">
+                <output id="lmYearOut" for="lmYear"></output>
+              </div>
+              <p class="lm-label" data-i18n="lm.what">কী দেখবেন</p>
+              <div class="lm-layers" id="lmLayers" role="radiogroup" aria-label="Map layer"></div>
+            </div>
+            <div class="lm-mapcol">
+              <!-- what the map shows and for when, then its key (landing-map.js) -->
+              <div class="lm-maphead">
+                <p class="lm-maptitle" id="lmMapTitle"><span class="lm-skel lm-skel-maptitle"></span></p>
+                <p class="lm-when" id="lmWhen"></p>
+              </div>
+              <div class="lm-legend" id="lmLegend"></div>
+              <div class="lm-canvas" id="lmCanvas">
+                <div class="lm-3d">
+                  <svg class="lm-ghost" viewBox="-6 -6 721 1048" aria-hidden="true">
+                    <defs><path id="lmGhostLand" d="M60 0L64 14L72 15L73 19L78 20L79 25L83 24L84 29L93 26L94 32L102 36L105 40L103 41L105 48L110 46L112 47L112 53L122 55L124 65L129 65L130 57L138 56L137 51L141 46L136 44L136 38L139 37L139 33L142 33L144 28L155 38L162 37L165 40L166 50L170 51L173 54L168 60L175 60L179 64L172 66L173 80L185 84L191 90L189 94L193 94L204 103L209 103L214 97L216 103L223 105L229 100L229 103L233 104L232 110L238 108L238 100L243 94L240 88L241 76L238 74L240 71L246 71L246 66L252 68L253 65L254 74L260 79L264 78L267 83L266 86L269 87L271 90L271 97L282 108L279 110L279 114L285 114L275 134L278 142L276 150L279 152L284 168L280 180L280 193L275 206L277 222L280 223L284 223L288 219L296 220L300 224L310 227L318 233L352 238L358 243L367 245L379 241L398 241L402 237L406 243L420 239L426 243L434 244L464 237L494 236L504 241L508 240L510 242L516 242L520 245L524 245L525 248L538 246L541 241L546 241L545 246L551 249L558 247L560 243L566 245L568 241L574 243L578 240L602 241L614 239L625 243L630 249L634 247L644 256L651 258L656 257L658 262L670 265L669 276L674 275L676 279L679 279L679 292L672 291L670 295L664 295L651 285L641 286L642 296L647 298L648 312L650 314L643 326L640 348L637 352L629 350L628 357L631 365L626 366L623 373L618 374L604 372L604 383L599 378L594 380L596 392L591 412L587 412L586 406L582 405L580 401L567 397L569 412L558 409L556 402L554 402L550 418L542 424L510 417L514 428L511 434L511 440L500 437L495 442L495 448L491 448L488 452L492 462L488 468L489 475L486 479L478 477L476 482L477 487L485 488L484 494L478 492L478 501L486 510L484 515L491 520L496 538L502 542L498 548L500 549L501 557L503 560L503 575L507 585L510 590L515 591L511 566L516 554L518 557L522 558L527 568L530 570L529 575L532 577L535 594L537 594L536 601L540 606L544 605L546 607L549 607L551 603L562 603L571 594L570 590L576 590L578 587L575 572L568 552L578 543L582 534L590 528L596 529L595 524L600 521L595 488L598 480L602 479L605 489L612 494L616 494L617 488L620 489L628 479L631 479L632 483L637 485L637 492L640 491L642 482L645 481L649 485L649 502L653 509L655 528L658 530L659 536L663 541L661 548L666 562L659 562L660 584L665 592L662 612L673 618L678 643L683 645L695 738L698 739L696 746L691 744L697 756L698 779L701 786L698 791L697 808L697 836L704 873L708 882L708 885L696 892L690 870L683 869L680 873L672 872L670 862L663 853L657 854L654 863L646 861L644 872L636 878L638 894L632 902L632 905L635 906L636 911L639 912L645 921L645 940L651 952L658 975L652 970L635 940L633 930L612 902L611 882L607 870L597 856L602 852L603 850L596 849L592 855L580 844L584 842L581 831L587 828L587 825L583 818L592 789L589 787L582 812L579 812L581 804L581 783L585 779L590 782L590 777L585 766L586 758L584 748L581 747L578 741L576 730L569 722L564 694L558 682L543 666L537 656L526 648L521 637L519 637L518 643L512 639L512 642L498 644L498 646L508 646L514 651L516 654L513 662L503 661L496 650L494 650L497 664L489 680L484 680L474 693L468 690L458 675L429 654L409 618L406 619L400 616L398 612L403 608L399 604L398 571L398 563L402 560L402 556L395 545L378 549L393 563L394 570L380 584L380 586L386 583L386 585L382 593L381 589L378 588L377 595L384 598L388 582L395 586L396 596L386 604L392 612L394 622L404 630L404 634L401 636L404 648L407 646L404 641L406 637L406 640L412 646L412 652L415 658L408 648L405 651L411 663L417 668L419 681L433 696L429 709L433 709L436 701L438 708L434 719L435 712L429 712L430 720L425 746L417 756L416 760L408 768L403 781L395 785L393 780L391 780L389 786L386 787L386 790L374 800L371 798L374 792L368 795L364 790L366 786L360 790L360 794L351 792L348 789L355 770L368 759L370 755L374 757L383 744L388 736L389 728L386 728L383 731L384 738L377 740L377 743L379 744L375 744L354 768L353 763L351 763L341 792L335 799L330 800L318 797L314 790L305 786L306 776L313 771L313 768L310 770L300 768L300 774L295 776L292 774L292 766L286 755L288 741L284 742L284 754L278 756L283 781L279 788L281 794L276 791L268 794L266 791L263 791L260 794L256 792L252 794L251 790L248 790L256 804L251 807L240 805L242 813L236 814L232 807L233 800L230 796L234 791L233 768L230 768L227 762L224 762L224 764L227 779L222 782L220 790L222 802L213 812L205 808L204 800L201 802L198 795L192 796L194 820L182 824L184 813L179 798L173 801L165 798L166 791L162 782L165 768L157 752L162 744L161 734L149 720L152 715L148 713L148 702L146 699L149 696L149 688L144 676L140 674L143 664L140 664L139 660L144 650L139 648L136 641L143 634L145 626L142 622L135 620L134 609L128 610L129 601L127 600L132 597L130 584L135 582L139 577L139 574L147 566L142 567L137 566L136 563L126 562L118 565L115 561L107 559L108 556L104 551L108 549L109 542L113 540L112 535L114 527L118 526L119 520L111 522L98 510L94 501L86 502L88 496L84 496L83 494L85 490L84 482L86 473L82 472L86 470L87 466L85 458L93 456L98 457L106 449L110 448L108 420L104 420L103 417L111 412L110 390L105 384L94 385L88 384L87 382L84 382L82 387L78 379L64 373L58 374L48 372L39 362L28 359L21 352L-0 325L8 316L9 308L14 306L15 301L23 294L20 280L33 277L39 287L50 290L47 284L50 280L53 278L58 279L61 270L66 266L65 249L68 244L65 241L66 235L66 238L70 238L70 235L83 238L84 241L92 236L107 236L110 240L115 238L116 241L122 242L126 234L132 239L139 241L140 236L144 236L143 228L151 224L150 221L140 220L136 214L132 216L126 210L125 204L121 202L124 200L125 192L122 190L120 184L116 184L114 189L107 187L104 192L96 191L96 188L92 186L80 186L80 182L74 179L74 174L66 172L67 160L60 159L54 151L39 140L38 136L30 140L26 138L20 142L14 135L11 118L15 116L19 102L24 101L26 92L23 92L22 89L25 80L34 74L51 68L51 58L61 49L64 49L68 42L68 45L76 44L70 28L54 25L52 31L48 24L55 6ZM504 666L508 667L507 680L498 687L493 680L494 676ZM523 666L540 690L540 699L534 702L525 700L517 680L517 668ZM432 670L446 676L451 683L433 685L429 673ZM400 678L400 703L402 702L403 689L403 678ZM447 688L459 692L459 702L461 702L462 707L464 706L464 699L474 704L480 703L482 706L482 728L474 744L461 754L461 756L466 756L462 762L459 759L450 762L449 754L461 736L463 710L458 711L458 722L456 727L453 726L451 737L441 754L437 759L435 757L434 750L439 746L447 724L448 710L457 711L454 706L448 706L445 702L446 698L443 694ZM443 709L444 724L438 732L437 725ZM400 714L401 718L396 724L398 730L400 730L403 721L403 714ZM429 764L434 770L432 779L428 778L428 775L423 776L428 786L424 789L418 791L421 782L418 780L414 788L410 790L411 782L414 778L419 780ZM155 780L159 780L159 784L163 790L163 800L172 808L170 813L166 813L157 802L159 790L155 784Z"/></defs>
+                    <use href="#lmGhostLand" class="lm-ghost-side" transform="translate(0 22)"/>
+                    <use href="#lmGhostLand" class="lm-ghost-top"/>
+                  </svg>
+                  <canvas class="lm-base" id="lmBase" aria-hidden="true"></canvas>
+                  <svg id="lmSvg" role="img" aria-labelledby="lmTitle"></svg>
+                  <canvas class="lm-light" id="lmLight" aria-hidden="true"></canvas>
+                </div>
+                <div class="lm-tip" id="lmTip" hidden></div>
+                <p class="lm-wait" id="lmWait" data-i18n="lm.loading">মানচিত্র আসছে…</p>
+              </div>
+              <p class="lm-note" id="lmNote"><span class="lm-skel lm-skel-note"></span></p>
+            </div>
+            <div class="lm-place" id="lmPlace" aria-busy="true">
+              <span class="lm-skel lm-skel-title"></span>
+              <span class="lm-skel"></span>
+              <span class="lm-skel-grid"><span class="lm-skel"></span><span class="lm-skel"></span><span class="lm-skel"></span><span class="lm-skel"></span></span>
+              <span class="lm-skel lm-skel-btn"></span>
+            </div>
+          </div>
+        </section>
+
+        <!-- THE NASA DATA: each dataset, what it measures and what it changes for the farmer (landing-story.js) -->
+        <section class="landing-section nasa-data" id="nasaData" aria-labelledby="nasaDataTitle">
+          <h2 id="nasaDataTitle" data-i18n="story.dataTitle">নাসার যে তথ্য আমরা কাজে লাগাই</h2>
+          <p class="landing-sub" data-i18n="story.dataSub">প্রতিটি তথ্যভান্ডার কী মাপে, কতটা খুঁটিয়ে, আর কৃষকের জন্য কী বদলায়। ড্যাশবোর্ডের প্রতিটি সংখ্যা তার উৎসের নাম বলে।</p>
+          <ul class="data-wall" id="dataWall"></ul>
+        </section>
 
         <!-- HOW TO EXPLORE: one card per role, listing what it opens. A role's button goes straight in; any item starts
              Rongu's tour at that part (entering the role it needs). -->
@@ -2302,6 +2373,7 @@
   <script type="module" src="neo.js"></script>
   <script type="module" src="landing-map.js"></script>
   <script type="module" src="landing-orbit.js"></script>
+  <script type="module" src="landing-story.js"></script>
   <script type="module" src="companion.js"></script>
 </body>
 </html>
