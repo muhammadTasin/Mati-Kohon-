@@ -384,7 +384,7 @@ export const EN = {
   'overview.fieldsTitle': "This upazila's fields",
   'overview.lessGreenTitle': 'Where fields are less green than expected',
   'story.kicker': 'NASA Space Apps Challenge 2026 · Field Shift',
-  'story.title': "<span>Seen from space.</span> <span>Said on the farmer's phone.</span>",
+  'story.title': "<span>Seen from space.</span> <span>Said on the <em>farmer's phone</em>.</span>",
   'story.lead': 'Mati Kohon reads 14 NASA datasets for all 544 upazilas of Bangladesh: rain, field greenness, flood water, soil moisture, heat and groundwater. From them it works out what to sow, when to irrigate and when the flood water will leave, and tells the farmer in a Bangla phone call and SMS.',
   'story.sees': 'NASA sees',
   'story.seesSub': "Every upazila's fields from orbit, from 2001 to today",
