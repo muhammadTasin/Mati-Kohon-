@@ -181,8 +181,11 @@
             <p class="flow-pick" id="flowPick" data-i18n="story.pick">একটি জায়গা বাছুন</p>
             <div class="flow-land" id="flowLand" role="group" aria-labelledby="flowPick">
               <svg viewBox="-6 -6 721 1048" aria-hidden="true">
-                <use href="#lmGhostLand" class="fl-side" transform="translate(0 22)"/>
-                <use href="#lmGhostLand" class="fl-top"/>
+                <!-- a slab of soil under the country, a band of grass at its top edge, then the land itself
+                     (img/bd-land.svg: every upazila by its height, haor and salty coast, the big rivers) -->
+                <use href="#lmGhostLand" class="fl-soil" transform="translate(0 24)"/>
+                <use href="#lmGhostLand" class="fl-grass" transform="translate(0 7)"/>
+                <image href="img/bd-land.svg" x="-6" y="-6" width="721" height="1048"/>
                 <ellipse class="fl-foot" id="flowFoot" cx="-99" cy="-99" rx="48" ry="22"/>
                 <line class="fl-beam" id="flowBeam" x1="637" y1="96" x2="637" y2="96"/>
                 <g class="fl-sat" transform="translate(575 34) scale(2)">
@@ -196,6 +199,12 @@
                 </g>
               </svg>
             </div>
+            <ul class="fl-key">
+              <li><span class="fl-ramp" aria-hidden="true"><i style="background:#BFDCB2"></i><i style="background:#D2E4B4"></i><i style="background:#E5DBA6"></i><i style="background:#D5BC93"></i></span><span data-i18n="story.key.height">নিচু থেকে উঁচু জমি</span></li>
+              <li><i style="background:#9CCBC4" aria-hidden="true"></i><span data-i18n="story.key.haor">হাওর ও বিল</span></li>
+              <li><i style="background:#C9D3D6" aria-hidden="true"></i><span data-i18n="story.key.salt">লোনা উপকূল</span></li>
+              <li><i class="fl-river" aria-hidden="true"></i><span data-i18n="story.key.river">নদী</span></li>
+            </ul>
             <p class="flow-why" id="flowWhy" aria-live="polite"><span class="lm-skel"></span></p>
           </li>
           <li class="flow-step flow-hears">

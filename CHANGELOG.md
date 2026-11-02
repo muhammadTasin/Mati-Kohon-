@@ -20,6 +20,9 @@ What changed in Project EDEN, newest first, with who made each change and the br
 - **API:**
   - **Endpoints:** `GET /api/v1/landing/calls` and `/api/v1/landing/calls/:id/audio`.
   - **Recordings:** made once per script, so a busy page costs at most four a day, and never from a visitor's text.
+- **Colour in the two pictures** (`research/export/landing_maps.py`):
+  - **Bangladesh:** every upazila by its land. Haor and beel come from Landsat water and BRRI's patterns, the salty coast from SRDI's 2009 survey, and the rest from NASADEM height in four steps (floodplain to the Barind and the hills). The big rivers are drawn over it, on a slab of soil, with a small key.
+  - **The globe behind Rongu:** ocean, land and ice from Natural Earth's 1:110m land (public domain, 7 KB), a white grid, the night side shaded away from the page's light, and an amber pulse on Bangladesh as it turns past.
 - **Fix: upazila names in calls.** The call scripts said 190 of the 544 upazila names in English inside the Bangla voice, because the boundaries and the locations list spell them differently (Jessore and Jashore, Dharampasha and Dharmapasha). The names now match by sound within the district, and 462 are said in Bangla. The rest are mostly city thanas in Dhaka and Chattogram.
 
 ## 31 October 2026 · NISAR over the whole season, and the grid on MODIS pixel reliability (Tasrif, `feature/field-conditions`)

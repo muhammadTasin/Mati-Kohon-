@@ -1,8 +1,11 @@
-// The circle behind Rongu on the landing page is the Earth: a wire globe turning slowly, with a NASA satellite on a
-// tilted orbit around it. On the far side of its orbit the satellite goes behind the globe and behind Rongu; on the
+// The circle behind Rongu on the landing page is the Earth: a globe turning slowly, its ocean, its land (Natural
+// Earth, globe-land.js) with the ice white, a grid over it and its night side shaded away from the light (the page's
+// light comes from the top left), Bangladesh marked when it faces us, and a NASA satellite on a tilted orbit around it. On the far side of its orbit the satellite goes behind the globe and behind Rongu; on the
 // near side it passes in front of him (his canvas is a fixed layer, so the near half is lifted above it, but never
 // above the sticky header). Everything is plain SVG moved from one small loop that rests whenever the stage is out of
 // sight; with reduced motion the globe and the satellite stand still.
+
+import { ICE, LAND } from './globe-land.js';
 
 const stage = document.getElementById('landingStage');
 const sky = document.getElementById('landingSky');
@@ -14,9 +17,11 @@ const GLOBE_TILT = -12 * Math.PI / 180; // the Earth's axis on screen
 const ELEVATION = 18 * Math.PI / 180; // we look at the globe from a little above its equator
 const ORBIT_S = 13; // seconds for one orbit
 const SPIN_S = 70; // seconds for one turn of the globe
+const BD = [23.7, 90.35]; // Bangladesh, marked on the globe
+const RAD = Math.PI / 180;
 
 let box = null; // the stage's size and the disc's centre and radius, in stage pixels
-let globePath = null;
+let globePath = null, landPath = null, icePath = null, bdMark = null;
 
 /** Where the disc (.landing-backdrop) sits in the stage: its centre and radius. */
 function measure() {
@@ -52,8 +57,16 @@ function layout() {
     <defs><mask id="landingBehind" maskUnits="userSpaceOnUse" x="-50" y="-50" width="${box.w + 100}" height="${box.h + 100}">
       <rect x="-50" y="-50" width="${box.w + 100}" height="${box.h + 100}" fill="#fff"/>
       <circle cx="${box.cx}" cy="${box.cy}" r="${box.r * 0.99}" fill="#000"/>
+    </mask>
+    <mask id="landingNight" maskUnits="userSpaceOnUse" x="0" y="0" width="${box.w}" height="${box.h}">
+      <circle cx="${box.cx}" cy="${box.cy}" r="${box.r * 0.97}" fill="#fff"/>
+      <circle cx="${box.cx - box.r * 0.3}" cy="${box.cy - box.r * 0.34}" r="${box.r * 1.1}" fill="#000"/>
     </mask></defs>
+    <path class="landing-land"/>
+    <path class="landing-ice"/>
     <path class="landing-globe"/>
+    <circle class="landing-night" cx="${box.cx}" cy="${box.cy}" r="${box.r * 0.97}" mask="url(#landingNight)"/>
+    <g class="landing-bd"><circle class="landing-bd-ring" r="${(box.r * 0.09).toFixed(1)}"/><circle class="landing-bd-dot" r="${Math.max(3, box.r * 0.035).toFixed(1)}"/></g>
     <path class="landing-ring" mask="url(#landingBehind)"/>`;
   // the near half fades out in the middle, where Rongu stands
   const stops = [[0, 1], [0.3, 1], [0.42, 0], [0.58, 0], [0.7, 1], [1, 1]]
@@ -62,11 +75,37 @@ function layout() {
     <defs><linearGradient id="landingNearStroke" gradientUnits="userSpaceOnUse" x1="${box.cx - box.ro}" y1="0" x2="${box.cx + box.ro}" y2="0">${stops}</linearGradient></defs>
     <path class="landing-ring" style="stroke: url(#landingNearStroke)"/>`;
   globePath = sky.querySelector('.landing-globe');
+  landPath = sky.querySelector('.landing-land');
+  icePath = sky.querySelector('.landing-ice');
+  bdMark = sky.querySelector('.landing-bd');
   sky.querySelector('.landing-ring').setAttribute('d', arc(Math.PI, 2 * Math.PI));
   near.querySelector('.landing-ring').setAttribute('d', arc(0, Math.PI));
 }
 
-/** The wire globe at turn `spin`: parallels and meridians, only their near side. */
+/**
+ * Land rings on the globe: the near side as it is; where a coast goes round the back, its points are folded onto the
+ * rim (the horizon), so a continent half turned away ends cleanly at the edge.
+ */
+function rings(list, p, R) {
+  const rim = (x, y) => { const dx = x - box.cx, dy = y - box.cy, l = Math.hypot(dx, dy) || 1; return [box.cx + dx * R / l, box.cy + dy * R / l]; };
+  let d = '';
+  for (const ring of list) {
+    const pts = [];
+    for (let i = 0; i < ring.length; i += 2) pts.push(p(ring[i + 1] / 10 * RAD, ring[i] / 10 * RAD));
+    if (!pts.some(q => q[2] > 0)) continue;
+    let first = true;
+    const put = ([x, y]) => { d += `${first ? 'M' : 'L'}${x.toFixed(1)} ${y.toFixed(1)}`; first = false; };
+    pts.forEach((a, i) => {
+      const b = pts[(i + 1) % pts.length];
+      put(a[2] >= 0 ? a : rim(a[0], a[1]));
+      if ((a[2] >= 0) !== (b[2] >= 0)) { const t = a[2] / (a[2] - b[2]); put(rim(a[0] + (b[0] - a[0]) * t, a[1] + (b[1] - a[1]) * t)); }
+    });
+    d += 'Z';
+  }
+  return d;
+}
+
+/** The globe at turn `spin`: the land and the ice, the grid (parallels and meridians, their near side), Bangladesh. */
 function globe(spin) {
   const R = box.r * 0.97, ce = Math.cos(ELEVATION), se = Math.sin(ELEVATION);
   const cg = Math.cos(GLOBE_TILT), sg = Math.sin(GLOBE_TILT);
@@ -97,6 +136,11 @@ function globe(spin) {
     line(pts);
   }
   globePath.setAttribute('d', d);
+  landPath.setAttribute('d', rings(LAND.filter((_, i) => !ICE[i]), p, R));
+  icePath.setAttribute('d', rings(LAND.filter((_, i) => ICE[i]), p, R));
+  const [bx, by, bz] = p(BD[0] * RAD, BD[1] * RAD);
+  bdMark.setAttribute('transform', `translate(${bx.toFixed(1)} ${by.toFixed(1)})`);
+  bdMark.style.opacity = Math.max(0, Math.min(1, (bz / R - 0.15) / 0.25)).toFixed(2); // fades out toward the edge
 }
 
 /** The satellite at orbit angle t: bigger and in front on the near half, end-on at the sides, hidden behind the globe. */

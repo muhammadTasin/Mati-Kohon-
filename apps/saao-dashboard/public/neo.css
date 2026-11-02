@@ -659,12 +659,18 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
 .landing-stage { position: relative; aspect-ratio: 1.02; min-height: 360px; }
 .landing-backdrop {
   position: absolute; left: 50%; top: 8%; width: 76%; aspect-ratio: 1; transform: translateX(-50%);
-  background: var(--teal-50); border-radius: 50% !important; box-shadow: var(--inset);
+  background: #BBDCE8; border-radius: 50% !important; box-shadow: var(--e3), inset 0 0 0 3px rgba(255, 255, 255, .45); /* the ocean */
 }
 /* the disc is the Earth (landing-orbit.js): a wire globe, a dashed orbit, a satellite; its near half rises above
    Rongu's own layer (z-index over .rongu-dock's 1160) unless the stage has slid under the header */
 .landing-sky, .landing-near { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.landing-globe { fill: none; stroke: var(--teal-300); stroke-width: 1; stroke-linejoin: round; opacity: .75; }
+.landing-land { fill: #9CC487; stroke: #78A866; stroke-width: 1; stroke-linejoin: round; }
+.landing-ice { fill: #F4F6F2; stroke: #D3DEE0; stroke-width: 1; stroke-linejoin: round; }
+.landing-globe { fill: none; stroke: #FFFFFF; stroke-width: 1; stroke-linejoin: round; opacity: .5; }
+.landing-night { fill: #1E4A63; opacity: .14; } /* the side away from the page's top-left light */
+.landing-bd-dot { fill: var(--amber); stroke: var(--face-hi); stroke-width: 2; }
+.landing-bd-ring { fill: none; stroke: var(--amber); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: landing-bd 2.2s ease-out infinite; }
+@keyframes landing-bd { from { transform: scale(.35); opacity: .9; } to { transform: scale(1.3); opacity: 0; } }
 .landing-ring { fill: none; stroke: var(--teal-500); stroke-width: 1.5; stroke-dasharray: 3 7; stroke-linecap: round; opacity: .6; animation: landing-ring 1.4s linear infinite; }
 @keyframes landing-ring { to { stroke-dashoffset: -10; } }
 .landing-sat { position: absolute; left: 0; top: 0; width: 58px; opacity: 0; transform-origin: 50% 50%; pointer-events: none; filter: drop-shadow(0 4px 4px rgba(46, 32, 10, .28)); }
@@ -751,8 +757,17 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
 .flow-pick { margin: 0; font: 650 12px/1.3 var(--font-body); letter-spacing: .04em; text-transform: uppercase; color: var(--muted-ink); }
 .flow-land { position: relative; width: min(100%, 250px); aspect-ratio: 721 / 1048; margin: 0 auto; }
 .flow-land svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; }
-.fl-top { fill: #CFE2DC; }
-.fl-side { fill: #93B2A7; }
+.fl-soil { fill: #9C7B55; }
+.fl-grass { fill: #6F9659; }
+/* the land's key: the height as four steps, then the haor, the salty coast and the rivers */
+.fl-key { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; margin: -2px 0 0; padding: 0; list-style: none; font-size: 12px; color: var(--muted-ink); }
+.fl-key li { display: inline-flex; align-items: center; gap: 6px; }
+.fl-key i { display: block; width: 12px; height: 12px; border-radius: 3px !important; }
+.fl-key .fl-ramp { display: inline-flex; }
+.fl-key .fl-ramp i { width: 9px; border-radius: 0 !important; }
+.fl-key .fl-ramp i:first-child { border-radius: 3px 0 0 3px !important; }
+.fl-key .fl-ramp i:last-child { border-radius: 0 3px 3px 0 !important; }
+.fl-key .fl-river { width: 16px; height: 4px; background: #6FA6C6; border-radius: 2px !important; }
 .fl-beam { stroke: var(--teal-500); stroke-width: 3; stroke-dasharray: 6 9; stroke-linecap: round; animation: landing-ring 1s linear infinite; }
 .fl-foot { fill: rgba(42, 138, 134, .22); stroke: var(--teal-500); stroke-width: 2; }
 .fl-pin {
@@ -992,7 +1007,7 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
   .btn:hover, .role-card:hover { transform: none; }
   .ds-skeleton, .ds-skel-row, .climate-skel-row, .lm-ghost, .lm-skel, .landing-rongu-wait { animation: none; }
   .lm-canvas path.lm-lift.rise { animation: none; }
-  .landing-ring, .landing-sat-led { animation: none; }
+  .landing-ring, .landing-sat-led, .landing-bd-ring, .fl-beam { animation: none; }
 }
 @media print { .card, .stat-card { box-shadow: none; border: var(--bw-1) solid var(--line); } }
 

@@ -243,6 +243,8 @@ Picking a place turns the satellite's beam on it, changes the call, and lights u
 
 `GET /api/v1/landing/calls` builds the calls with the same rules as the real ones (`sampleCall` in `farmer_calls.ts`): the day's alert, drain date or reminder, else the season's rotation. Nothing is stored or sent, and nobody is dialled. `GET /api/v1/landing/calls/:id/audio` records each script once with the Google voice and keeps it (`services/api/src/landing.ts`). Without a voice set up, the phone shows the words only.
 
+The country in step 2 shows every upazila by its land (NASADEM height, the haor, the salty coast) with the big rivers. The globe behind Rongu carries Natural Earth's land (public domain). Both are drawn by `python research/export/landing_maps.py bd` and `world --src land-110m.json`.
+
 Below the steps come the numbers (544 upazilas, 25 seasons, 14 datasets, the 1 km grid, the daily update), the country map explorer, and a card for each of the 14 NASA datasets: what it measures, how finely, and what it changes for the farmer. One list in `landing-story.js` feeds the steps, the cards and the count.
 
 ### A map of Bangladesh
