@@ -664,10 +664,16 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
 /* the disc is the Earth (landing-orbit.js): a wire globe, a dashed orbit, a satellite; its near half rises above
    Rongu's own layer (z-index over .rongu-dock's 1160) unless the stage has slid under the header */
 .landing-sky, .landing-near { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
-.landing-land { fill: #9CC487; stroke: #78A866; stroke-width: 1; stroke-linejoin: round; }
-.landing-ice { fill: #F4F6F2; stroke: #D3DEE0; stroke-width: 1; stroke-linejoin: round; }
-.landing-globe { fill: none; stroke: #FFFFFF; stroke-width: 1; stroke-linejoin: round; opacity: .5; }
-.landing-night { fill: #1E4A63; opacity: .14; } /* the side away from the page's top-left light */
+.landing-land { fill: #9CC487; stroke: #86B673; stroke-width: 1; stroke-linejoin: round; }
+.landing-land-edge { fill: #5E8A50; }
+.landing-ice { fill: #F4F6F2; stroke: #DCE5E6; stroke-width: 1; stroke-linejoin: round; }
+.landing-ice-edge { fill: #B7C8CC; }
+.landing-globe { fill: none; stroke: #FFFFFF; stroke-width: 1; stroke-linejoin: round; opacity: .45; }
+/* the ball: flat steps of shade away from the light, a gloss and a bright rim on the lit side, a ring of air */
+.landing-shade { fill: #0E3347; }
+.landing-gloss ellipse { fill: #FFFFFF; }
+.landing-rim { fill: none; stroke: #FFFFFF; stroke-width: 3; stroke-linecap: round; opacity: .7; }
+.landing-halo { fill: none; stroke: #CFE9F2; opacity: .7; }
 .landing-bd-dot { fill: var(--amber); stroke: var(--face-hi); stroke-width: 2; }
 .landing-bd-ring { fill: none; stroke: var(--amber); stroke-width: 2; transform-box: fill-box; transform-origin: center; animation: landing-bd 2.2s ease-out infinite; }
 @keyframes landing-bd { from { transform: scale(.35); opacity: .9; } to { transform: scale(1.3); opacity: 0; } }
