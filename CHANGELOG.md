@@ -2,6 +2,16 @@
 
 What changed in Project EDEN, newest first, with who made each change and the branch it came from. Every branch below was merged into `main` on 1 October 2026.
 
+## 10 November 2026 · Evidence and reliability (Tasrif, `feature/evidence-reliability`)
+
+- **Three reproducible comparisons:** current practice, the calendar rule and the full system, with single-source removals (`scripts/evaluate_full_system.ts`, `research/evaluation/`). Negative and unchanged results are kept.
+- **Uncertainty that changes the answer:** costs, dates, winter soil water and salinity are perturbed (`input_sensitivity.ts`). A review or insufficient-evidence outcome withholds the final recommendation.
+- **Claims register:** `docs/claims-register.json` holds 18 public claims, each with its allowed and not-allowed wording. Headline wording now matches it.
+- **Freshness and narration:** dated, screened inputs (`freshness.ts`) and whole-message templates. Stale or future inputs cannot authorise current advice.
+- **Judge demo:** `/judge/` walks one farmer from the current rotation to an officer-reviewed Bangla message, in two minutes. The landing page's first button leads there.
+- **Drainage ranges:** NISAR and OPERA give a provisional regional range, not a date. The low-land call now asks for a field check instead of naming a seedbed date.
+- **CI:** `.github/workflows/verify.yml` runs the tests and uploads the reports.
+
 ## 3 November 2026 · The landing page tells the story, sky to phone (Tasrif, `feature/landing-story`)
 
 - **New hero:**
@@ -25,7 +35,7 @@ What changed in Project EDEN, newest first, with who made each change and the br
   - **The globe behind Rongu:** ocean, land and ice from Natural Earth's 1:110m land (public domain, 7 KB), a white grid, the night side shaded away from the page's light, and an amber pulse on Bangladesh as it turns past.
 - **Fix: upazila names in calls.** The call scripts said 190 of the 544 upazila names in English inside the Bangla voice, because the boundaries and the locations list spell them differently (Jessore and Jashore, Dharampasha and Dharmapasha). The names now match by sound within the district, and 462 are said in Bangla. The rest are mostly city thanas in Dhaka and Chattogram.
 
-## 31 October 2026 · NISAR over the whole season, and the grid on MODIS pixel reliability (Tasrif, `feature/field-conditions`)
+## 31 October 2026 · NISAR over the whole season, the grid on MODIS pixel reliability, and refreshing "now" (Tasrif, `feature/field-conditions`)
 
 - **NISAR season backfill:**
   - **Coverage:** `research/live/nisar_water.py --days 140` read 318 of 363 passes since 12 June 2026. `water_history.json` now holds a median of 21 radar readings per upazila, up from 3.
@@ -35,6 +45,11 @@ What changed in Project EDEN, newest first, with who made each change and the br
 - **Grid rebuilt on MODIS pixel reliability:** the 25-year MODIS cube had been built from the MODLAND bits of VI_Quality while the reliability layer was still downloading. With all 594 reliability layers in, 63 of about 100,000 figures moved:
   - **Small shifts:** percentiles moved by up to 5 points, and one year's crops-a-year figure moved by 0.1 in 9 upazilas.
   - **Unchanged:** the condition levels, the check list, the track record, the haor Boro dates and `research/pilots/field_grid_checks.json`.
+- **Refreshing "now"** (`research/acquire/grid_downloads.py --only now`, now on this branch):
+  - **What it fetches:** any VIIRS VJ113A2 or Terra MODIS composite NASA has published since the newest on disk, through a small AppEEARS task. NASA CMR says when a composite covers the whole box.
+  - **Watching:** `--watch-until` looks again every 3 hours and survives network errors.
+  - **Then:** `python research/grid/build.py`.
+  - **On 31 October:** 8-23 October is still the newest VIIRS composite anywhere, and 30 September the newest Terra MODIS; 16-31 October is due in early November.
 
 ## 31 October 2026 · Twenty-five years of the same fields (Tasrif, `feature/field-conditions`)
 
@@ -56,7 +71,7 @@ What changed in Project EDEN, newest first, with who made each change and the br
 - **One grid for the satellites:** `research/grid/` (`_grid.py`, `ndvi.py`, `esi.py`, `soil.py`, `build.py`) puts each upazila on a 1 km grid of its cropland only.
   - **Cropland:** ESA WorldCover 2021 at 10 m, counted on a 100 m grid and burnt together with the dashboard's upazila outlines.
   - **Sources on the grid:** MODIS MOD13A2 and NOAA-20 VIIRS 1 km NDVI, ECOSTRESS evaporative stress, SoilGrids.
-  - **Downloads:** `research/acquire/grid_downloads.py`, on `feature/data-jobs`.
+  - **Downloads:** `research/acquire/grid_downloads.py` (brought onto this branch from `feature/data-jobs` on 31 October).
 - **Crop greenness against what is expected** (`field_conditions.json`):
   - **Reading:** the latest 16 days of VIIRS on the MODIS scale.
   - **Comparison:** the same days of 2001-2025, with the 25-year greening trend taken out.

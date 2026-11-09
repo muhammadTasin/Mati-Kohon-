@@ -152,6 +152,12 @@ The downloads (`research/acquire/grid_downloads.py`, about 3 GB, outside git):
 - SoilGrids 250 m;
 - WorldCover.
 
+**Refreshing "now":** `python research/acquire/grid_downloads.py --only now` asks AppEEARS for any VIIRS or Terra MODIS composite NASA has published since the newest on disk, then `python research/grid/build.py` rebuilds.
+- **How it knows:** NASA CMR, which is public, says when a composite covers the whole country.
+- **Watching:** `--watch-until <day>` looks again every 3 hours.
+- **Timing:** VJ113A2 makes a 16-day composite every 8 days, published 1-9 days after it ends.
+- **Why MODIS too:** the confidence check needs a Terra MODIS composite within 8 days of the VIIRS one.
+
 SMAP 9 km soil moisture is being prepared by AppEEARS and is not used yet. The build writes `field_conditions.json`, its chart data and `greenness_upazila.json` for 501 upazilas (the rest are city areas).
 
 What it measures:
