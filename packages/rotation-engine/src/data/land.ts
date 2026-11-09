@@ -27,7 +27,21 @@ export interface LandRules {
 /** The OPERA share of the upazila the monsoon water must cover before its drain date stands for the land's. */
 export const OPERA_MIN_EXTRA = 0.1;
 
-/** When NASA OPERA radar saw this upazila's low (or very low) land drain in 2025, or null to keep the default. */
+/** Provisional readiness from the screened current regional recession range. */
+export function currentDrainReady(landType: LandType): MonthDay | null {
+  const range = LOC.conditions.current?.flood?.drain?.dateRange;
+  if ((landType === 'low' || landType === 'very_low') && Array.isArray(range) && range.length === 2) {
+    // Use the later end for provisional calendar feasibility; never turn a regional estimate into permission to plant.
+    const md = String(range[1]).slice(5, 10);
+    if (/^\d{2}-\d{2}$/.test(md)) {
+      const day = seasonDay(md);
+      if (day >= seasonDay('10-01') && day <= seasonDay('01-31')) return day < seasonDay('11-01') ? '11-01' : md;
+    }
+  }
+  return null;
+}
+
+/** Historical 2025 OPERA recession, separate from any current estimate. */
 export function radarReady(landType: LandType): MonthDay | null {
   const w = LOC.local.opera;
   const iso = landType === 'very_low' ? w?.drained90 : landType === 'low' ? w?.drained80 : null;
@@ -43,7 +57,7 @@ export function landRules(landType: LandType): LandRules {
     aman: !deep,
     kharif2: landType === 'high',
     kharif1: !deep,
-    ready: radarReady(landType) ?? (landType === 'very_low' ? '12-15' : landType === 'low' ? '12-01' : null),
+    ready: currentDrainReady(landType) ?? radarReady(landType) ?? (landType === 'very_low' ? '12-15' : landType === 'low' ? '12-01' : null),
   };
 }
 
@@ -79,6 +93,7 @@ export interface FlashFloodRisk {
  * after every burst of the spring.
  */
 export function flashFloodRisk(harvest: MonthDay): FlashFloodRisk | null {
+  if (LOC.conditions.experiment?.without === 'imerg_flood' || LOC.conditions.experiment?.calendarOnly) return null;
   const data = profileData().haorFlashFlood;
   const month = Number(harvest.slice(0, 2));
   if (!data || month >= 10 || month < 3 || (month === 3 && Number(harvest.slice(3)) < 15)) return null;

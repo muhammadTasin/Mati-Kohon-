@@ -181,6 +181,10 @@ body.state-entry .app-body { display: block; }
 .role-icon { background: var(--lime-soft); box-shadow: inset 0 0 0 1px var(--lime-line); }
 
 .card { padding: 20px 22px; }
+.decision-check { margin-bottom: 22px; }
+.decision-check ul { padding-left: 22px; }
+.decision-check li { margin: 12px 0; overflow-wrap: anywhere; }
+.decision-check .badge { white-space: normal; }
 .card-header { gap: 12px; margin-bottom: 14px; }
 .card-header h2, .card-header h3 { color: var(--deep); font-family: var(--font-display); font-size: 17.5px; line-height: 1.3; }
 .subtitle { color: var(--muted-ink); }
@@ -612,3 +616,5 @@ figure { margin: 0; }
 .map-year[hidden] { display: none; }
 .map-year-range { flex: 1 1 220px; min-width: 160px; }
 .map-year-val { font-weight: 700; color: var(--deep); min-width: 3.5em; font-size: 15px; }
+/* Keep the companion out of crop comparisons; the dedicated walkthrough has no overlay. */
+body.decision-focus .rongu-dock, body.decision-focus .rongu-spot { display: none !important; }

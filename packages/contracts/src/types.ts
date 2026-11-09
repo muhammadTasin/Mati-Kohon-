@@ -82,6 +82,9 @@ export interface MonthTimelineSlot {
 }
 
 export interface CandidateRotation {
+  /** Reproducible model inputs and constraint checks; never a field observation. */
+  modelInputs?: { id: string; aman?: string; rabi: string; kharif1?: string; kharif2?: string; isBaseline: boolean; tagBangla: string; tagEnglish: string };
+  feasibility?: { missedPlantingWindow: boolean; harvestRainfallExposure: number | null; salinityYieldShare: number | null; violations: string[]; winterSowing: string; winterHarvest: string; fieldReady: string | null };
   id: string;
   nameBangla: string;
   nameEnglish: string;
@@ -249,7 +252,32 @@ export interface IpmTip {
   needsSoilCard?: boolean;
 }
 
+/** Counterfactual score checks on the displayed shortlist, not a confidence probability or field validation. */
+export interface DecisionCheck {
+  method: 'displayed-score-ablation-v1';
+  scope: 'displayed_options_only';
+  weights: Record<string, number>;
+  nominalLeaderIds: string[];
+  recommendedOptionId: string | null;
+  scenarios: Array<{
+    id: string;
+    label: { bn: string; en: string };
+    neutralizedDimensions: string[];
+    leaderIds: string[];
+    scores: Array<{ optionId: string; score: number }>;
+    nominalLeaderRetained: boolean;
+  }>;
+}
+
 export interface AdviceJSON {
+  input_sensitivity?: {
+    status: 'stable_in_tested_ranges' | 'review_required' | 'insufficient_evidence';
+    recommendedOptionId: string | null;
+    message: { bn: string; en: string };
+    method: string;
+    scenarios: Array<{ id: string; label: { bn: string; en: string }; inputs: Record<string, number>; leaderId: string | null; leaderName: string | null; nominalLeaderRetained: boolean; feasible: boolean; irrigationMm: number | null; netReturnBdtHa: number | null }>;
+    limitations: string[];
+  };
   schema_version: '1.0';
   advice_id: string;
   created_at: string;
@@ -286,8 +314,35 @@ export interface AdviceJSON {
   current_rotation_note?: { bn: string; en: string } | null;
   season_calendar?: SeasonCalendarSummary | null;
   what_if?: WhatIfResult | null;
+  decision_check?: DecisionCheck;
+  /** A supplied fallow practice, represented with quantities rather than invented crop scores. */
+  current_practice_reference?: CurrentPracticeReference | null;
   /** The tool supports, and does not replace, the farmer's judgment and the officer's local knowledge. */
   disclaimer?: { bn: string; en: string };
+}
+
+export interface CurrentPracticeReference {
+  id: string;
+  kind: 'unranked_fallow_reference';
+  nameBangla: string;
+  nameEnglish: string;
+  amanVariety: string | null;
+  amanVarietyAssumed: boolean;
+  cropIds: string[];
+  irrigationExcludingAmanMm: number;
+  winterCropNetReturnBdtPerHa: number;
+  illustrativeAnnualNetReturnBdtPerHa: number;
+  amanRescueSeasons: number | null;
+  replaySeasons: number | null;
+  note: { bn: string; en: string };
+  sources: { water: string; income: string };
+  comparisons: Array<{
+    optionId: string;
+    /** Positive means MORE modeled demand than the stated practice, excluding Aman rescue water. */
+    addedIrrigationExcludingAmanMm: number | null;
+    illustrativeNetReturnChangeBdtPerHa: number | null;
+    amanRescueSeasonsChange: number | null;
+  }>;
 }
 
 /** What the engine knows about the place beyond the weather replay, and the notes that follow from it. */
@@ -306,7 +361,7 @@ export interface LocalContext {
   notesEnglish: string[];
   /** This week's NASA rice-blast and late-blight weather, and whether each matters to the first option's crops. */
   diseaseWeather?: { date: string; rules: Array<{ id: string; nameBangla: string; nameEnglish: string; status: string; days7: number; season: string | null; typicalDays: number | null; relevant: boolean }>; method: string } | null;
-  /** The district's groundwater budget: Boro land to move to a water-saving rotation to stop the GRACE-scale fall. */
+  /** Illustrative Boro irrigation-volume equivalent of the GRACE-scale storage trend, not aquifer recovery. */
   groundwaterBudget?: (Record<string, unknown> & { district: string; applies: boolean; trendMmPerYear: number; moveHaToLentil: number | null; moveShareToLentil: number | null; source: string; caution: string }) | null;
   /**
    * This week in the field (rotation-engine field_alerts.ts): a dry spell at Aman flowering, heat at rice flowering or

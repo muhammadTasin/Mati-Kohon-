@@ -112,7 +112,7 @@ export class IncomeDimensionPlugin implements IEvidenceDimensionPlugin {
   readonly isEnabled = true;
 
   evaluate(context: EvaluationContext): DimensionScoreResult {
-    const { crop: rabiCrop, catalog: rabiName } = rabiOf(context);
+    const { crop: rabiCrop, record: rabiRecord, catalog: rabiName } = rabiOf(context);
     const k1 = kharif1Of(context);
     const k2 = kharif2Of(context);
     const hasAman = Boolean(amanOrNull(context));
@@ -130,8 +130,12 @@ export class IncomeDimensionPlugin implements IEvidenceDimensionPlugin {
     const k2Local = k2 && k2Margin !== null ? localReturn(choiceIdOf(k2.crop.variety), k2Margin) : null;
     const local = [hasAman ? localReturn('aman', ILLUSTRATIVE_AMAN_GROSS_MARGIN_TK_PER_HA) : null, k2Local, rabiLocal, k1Local]
       .filter((r): r is LocalReturn => r !== null);
-    const total = local.reduce((sum, r) => sum + r.margin, 0);
-    const badYear = local.reduce((sum, r) => sum + r.badYear, 0);
+    const stress = LOC.conditions.experiment ?? {};
+    const irrigationMm = rabiRecord.netIrrigationMm + (k1?.record.netIrrigationMm ?? 0) + (k2?.record.netIrrigationMm ?? 0);
+    const extraCost = Math.round(irrigationMm * 10 * (stress.extraIrrigationCostBdtM3 ?? 0)
+      + local.length * (stress.extraCropCostBdtHa ?? 0));
+    const total = local.reduce((sum, r) => sum + r.margin, 0) - extraCost;
+    const badYear = local.reduce((sum, r) => sum + r.badYear, 0) - extraCost;
     // The score takes the middle of a typical and a bad price year: 0.2 at 20,000 Tk/ha or less, 0.96 near 180,000
     const incomeScore = clampScore(((total + badYear) / 2 - 20000) / 160000, 0.2, 0.96);
 
@@ -200,6 +204,7 @@ export class IncomeDimensionPlugin implements IEvidenceDimensionPlugin {
       summaryBangla: `নমুনা হিসাব: ${seasonsBangla} প্রায় ${bnNumber(total)} টাকা/হেক্টর নিট লাভ ধরা হয়েছে (দলের অনুমান ও BBS দর-ফলনের হিসাব; কৃষকের খরচ যাচাই বাকি)।${marketBangla}${badBangla}${standBangla}${leftBangla}${localBangla}${saltBangla}${fewBangla}`,
       summaryEnglish: `Illustrative: about ${enNumber(total)} BDT/ha over ${seasonsEnglish} (team estimates and BBS price-and-yield estimates; farmer costs not yet verified).${marketEnglish}${badEnglish}${standEnglish}${leftEnglish}${localEnglish}${saltEnglish}${fewEnglish}`,
       metrics: {
+        stressCostChangeBdtPerHa: extraCost,
         illustrativeTotalBdtPerHa: total,
         badPriceYearBdtPerHa: badYear,
         illustrativeRabiBdtPerHa: rabiLocal.standIn ? 'n/a' : rabiLocal.margin,

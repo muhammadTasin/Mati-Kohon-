@@ -14,6 +14,7 @@ import fs from 'node:fs';
 import type { AmanRecord, FertilizerDose, HeatExposure, MonthDay, RabiRecord } from './release_types.ts';
 import { AMAN_CATALOG, RABI_CATALOG, type RabiCatalogEntry } from './crop_catalog.ts';
 import { LOC } from './location.ts';
+import { stressRecord } from '../experiments.ts';
 import { enDate, seasonDay } from '../bn.ts';
 
 export type ChoiceSeason = 'Kharif-2' | 'Rabi' | 'Kharif-1';
@@ -214,13 +215,13 @@ function placeRows(id: string): Row[] {
 /** Research-release key ('BARI Masur-8') or crop-choice key ('sunflower@11-25') -> the replay record at this place. */
 export function recordFor(key: string): RabiRecord | undefined {
   const at = key.indexOf('@');
-  if (at < 0) return LOC.rabi[key];
+  if (at < 0) return stressRecord(LOC.rabi[key], Boolean(RABI_CATALOG[key]?.isRice));
   const id = key.slice(0, at);
   const sow = key.slice(at + 1);
   const crop = choiceReplay().crops[id];
   const row = placeRows(id).find(r => r[0] === sow);
   if (!crop || !row) return undefined;
-  return {
+  return stressRecord({
     key,
     replayLabel: `${crop.label}, sown ${enDate(sow)}`,
     sowing: row[0],
@@ -238,7 +239,7 @@ export function recordFor(key: string): RabiRecord | undefined {
       : null,
     fertilizer: LOC.srdi ? crop.fertilizer : null, // the crop doses are SRDI Talanda card (or BARI) numbers: only where there is a soil card
     districtYieldTPerHa: null,
-  };
+  }, Boolean(CHOICE_BY_ID[id]?.isRice), CHOICE_BY_ID[id]?.season === 'Rabi');
 }
 
 /** The crop facts behind a record key. */
@@ -292,7 +293,7 @@ export type Fit = { key: string } | { reason: 'window_closed' | 'aman_clash' | '
 export function rabiFit(crop: ChoiceCrop, ready: MonthDay | null, amanMaturity?: MonthDay): Fit {
   if (crop.releaseKeys) {
     for (const key of crop.releaseKeys) {
-      const r = LOC.rabi[key];
+      const r = recordFor(key);
       if (!r) continue;
       const last = key === 'BARI Gom 33 (Late)' ? r.sowing : r.sowingWindow?.[1] ?? r.sowing;
       if (!ready || seasonDay(ready) <= seasonDay(last)) return { key };

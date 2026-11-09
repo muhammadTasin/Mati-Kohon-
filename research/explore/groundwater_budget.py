@@ -1,4 +1,4 @@
-"""How much Boro land each district would move to a water-saving winter crop to stop its groundwater falling.
+"""Illustrative irrigation-volume equivalents of district groundwater storage trends.
 
 Inputs:
   - NASA GLDAS-2.2 groundwater storage (GRACE-assimilated), the trend per district point, 2003-07 to 2021-25, in mm
@@ -7,13 +7,14 @@ Inputs:
   - the district replay's net irrigation for Boro (BRRI dhan28) and for lentil (BARI Masur-8) and mustard
     (BARI Sarisha-14), NASA POWER + GPM IMERG, FAO-56 (national_replay.json);
   - each district's area from the upazila outlines (geoBoundaries ADM3, simplified; sinusoidal projection).
-Method: the yearly fall (mm x area) is the extra water pumped beyond what the aquifer gets back. Each hectare of
-Boro moved to lentil saves (Boro - lentil) net irrigation; the hectares to move = fall / saving, as a share of the
-district's Boro land (mustard alongside). Where Boro covers less than a tenth of the district (the hill districts),
+Method: compare the yearly storage trend volume (mm x area) with modeled net irrigation demand. Each hectare of
+Boro moved to lentil reduces demand by (Boro - lentil); equivalent hectares = trend volume / demand reduction.
+This is not a causal aquifer budget. Where Boro covers less than a tenth of the district (the hill districts),
 pumping for Boro is not the main draw, and where the fall is under 4 mm a year (the east and south, where much Boro
 is watered from rivers and beels) the budget would mostly measure surface water: both are marked as not applying.
 GRACE averages over hundreds of kilometres and GLDAS downscales it, so a
-district's trend is smooth: wells in the Barind tract fall faster, and this is a floor, not a well-by-well budget.
+district's trend is smooth. Recharge, return flows, irrigation source and other withdrawals are not modeled;
+the area is not a lower bound or a prediction that decline would stop.
 Output: packages/rotation-engine/src/data/groundwater_budget.json, research/pilots/groundwater_budget.csv
 Usage : python research/explore/groundwater_budget.py
 """
@@ -100,12 +101,12 @@ def main() -> None:
         "generatedOn": f"{date.today()}",
         "source": ("NASA GLDAS-2.2 groundwater storage (GRACE-assimilated) trend per district point; BBS Boro area "
                    f"{BBS_YEAR}; net irrigation from the district's NASA POWER + GPM IMERG replay (FAO-56)"),
-        "method": ("The yearly fall in groundwater storage (mm of water over the district's area) is the water pumped "
-                   "beyond what the aquifer gets back. Each hectare of Boro moved to lentil saves Boro's net "
-                   "irrigation minus lentil's; hectares to move = the fall / that saving."),
+        "method": ("Illustrative volume comparison: yearly modeled storage-trend volume divided by the modeled "
+                   "net irrigation-demand difference between Boro and lentil or mustard. The equivalent area "
+                   "is not a causal estimate of aquifer recovery."),
         "caution": ("GRACE sees hundreds of kilometres and GLDAS downscales it to 0.25 degree, so the trend is a "
-                    "smooth district average; Barind wells fall faster, so the area to move is a floor. Net "
-                    "irrigation leaves out canal and surface-water Boro and the water that seeps back."),
+                    "smooth district average. Recharge, return flows, irrigation source and other withdrawals "
+                    "are not modeled. This is not a lower bound or a prediction that groundwater decline stops."),
         "districts": {r["district"]: {k: v for k, v in r.items() if k != "district"} for r in rows},
     }
     OUT_JSON.write_text(json.dumps(out, ensure_ascii=False, indent=0, separators=(",", ":")), encoding="utf-8")

@@ -7,6 +7,7 @@ import type { AdviceJSON } from '@project-eden/contracts';
 import type { PlanOptionsRequest } from '../../../packages/rotation-engine/src/engine.ts';
 import { RotationEngine } from '../../../packages/rotation-engine/src/engine.ts';
 import { FeatureRegistry } from '../../../packages/rotation-engine/src/registry.ts';
+import { recentInput, MAX_INPUT_AGE_DAYS } from '../../../packages/rotation-engine/src/freshness.ts';
 import { placeFor } from '../../../packages/rotation-engine/src/data/location.ts';
 import { TemplateNarrator } from '../../../packages/narration-core/src/template_narrator.ts';
 import * as desk from './officer_desk.ts';
@@ -31,27 +32,29 @@ export function currentConditionsFor(place: ReturnType<typeof placeFor>): PlanOp
   const live = liveUpazila({ id: place.kind === 'pilot' ? 'ADM3_Tanore' : place.id });
   // NASA SMAP's root-zone percentile when it is less than a week old and defined here; NASA POWER otherwise
   const sm = live?.smap;
-  if (sm && ['dry', 'normal', 'wet'].includes(sm.status) && (live!.ageDays.smap ?? 99) <= 7) {
+  if (sm && ['dry', 'normal', 'wet'].includes(sm.status) && recentInput(sm.date, MAX_INPUT_AGE_DAYS.soil)) {
     return {
       date: sm.date,
       soilStatus: sm.status,
       soilPercentile: sm.rootzonePctl,
       sensor: 'SMAP',
       rain30PctOfNormal: live!.power?.rain30PctOfNormal ?? null,
+      rainDate: live!.power?.date ?? '',
       disease: live!.disease ?? null,
       field: live!.field ?? null,
       flood: floodFor(live!.id),
       source: 'NASA SMAP L4 root-zone soil moisture percentile, 9 km (research/live/smap_now.py); rain from NASA POWER',
     };
   }
-  if (!live?.power?.soilStatus) return undefined;
+  if (!live) return undefined;
   return {
     sensor: 'POWER',
-    date: live.power.date,
-    soilStatus: live.power.soilStatus,
-    soilRank: live.power.soilRank ?? null,
-    soilYears: live.power.soilYears ?? null,
-    rain30PctOfNormal: live.power.rain30PctOfNormal ?? null,
+    date: live.power?.date ?? '',
+    soilStatus: live.power?.soilStatus ?? 'unknown',
+    soilRank: live.power?.soilRank ?? null,
+    soilYears: live.power?.soilYears ?? null,
+    rain30PctOfNormal: live.power?.rain30PctOfNormal ?? null,
+    rainDate: live.power?.date ?? '',
     disease: live.disease ?? null,
     field: live.field ?? null,
     flood: floodFor(live.id),
@@ -81,6 +84,7 @@ export function planRequest(body: any): PlanOptionsRequest {
     currentRotation: currentRotationOf(body.currentRotation),
     constraints: constraintsOf(body.constraints),
     scenario: scenarioOf(body.scenario),
+    includeInputSensitivity: true,
   };
 }
 
@@ -136,7 +140,8 @@ export function voiceAnswer(body: any) {
  * officer's latest field observation takes priority over the request's land type, Aman variety and priorities.
  */
 export function adviseWithNarration(request: PlanOptionsRequest, farmerId?: string): AdviceJSON {
-  const advice = rotationEngine.generateAdvice(farmerId ? desk.planRequestForFarmer(farmerId, request) : request);
+  const resolved = farmerId ? desk.planRequestForFarmer(farmerId, request) : request;
+  const advice = rotationEngine.generateAdvice({ ...resolved, includeInputSensitivity: true });
   if (farmerId) advice.verification = desk.verificationFor(farmerId);
   if (advice.farmer_card) {
     const narration = templateNarrator.render(advice, advice.options[0]);

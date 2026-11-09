@@ -2,6 +2,39 @@
 
 What changed in Project EDEN, newest first, with who made each change and the branch it came from. Every branch below was merged into `main` on 1 October 2026.
 
+## 10 November 2026 · Evidence and reliability (Tasrif, `feature/evidence-reliability`)
+
+- **Three reproducible comparisons:** current practice, the calendar rule and the full system, with single-source removals (`scripts/evaluate_full_system.ts`, `research/evaluation/`). Negative and unchanged results are kept.
+- **Uncertainty that changes the answer:** costs, dates, winter soil water and salinity are perturbed (`input_sensitivity.ts`). A review or insufficient-evidence outcome withholds the final recommendation.
+- **Claims register:** `docs/claims-register.json` holds 18 public claims, each with its allowed and not-allowed wording. Headline wording now matches it.
+- **Freshness and narration:** dated, screened inputs (`freshness.ts`) and whole-message templates. Stale or future inputs cannot authorise current advice.
+- **Judge demo:** `/judge/` walks one farmer from the current rotation to an officer-reviewed Bangla message, in two minutes. The landing page's first button leads there.
+- **Drainage ranges:** NISAR and OPERA give a provisional regional range, not a date. The low-land call now asks for a field check instead of naming a seedbed date.
+- **CI:** `.github/workflows/verify.yml` runs the tests and uploads the reports.
+
+## 3 November 2026 · The landing page tells the story, sky to phone (Tasrif, `feature/landing-story`)
+
+- **New hero:**
+  - **Headline:** "মহাকাশ থেকে দেখা, কৃষকের ফোনে বলা" ("Seen from space. Said on the farmer's phone."), with the Space Apps 2026 Field Shift tag, beside Rongu.
+  - **Three linked steps:** NASA sees, Mati Kohon decides, the farmer hears.
+  - **Sample places:** four, each with today's real call.
+    - Chauhali's comes from NISAR: its water is falling about 4 points a week, the land is free around 2 December, and the call says to sow the Boro seedbed now.
+    - The others get their season's rotation.
+  - **The phone:** plays the Google bn-BD recording and shows the SMS.
+  - **Linked data:** the datasets behind each call light up.
+  - **Honesty:** every call says it is a sample and that real calls need consent and the SAAO's approval.
+- **New sections:**
+  - **Numbers row:** 544 upazilas, 25 seasons, 14 NASA datasets, the 1 km grid, and the date of the daily update.
+  - **Explorer:** the country map explorer moves under it, unchanged.
+  - **Data wall:** a new card for each of the 14 NASA datasets.
+- **API:**
+  - **Endpoints:** `GET /api/v1/landing/calls` and `/api/v1/landing/calls/:id/audio`.
+  - **Recordings:** made once per script, so a busy page costs at most four a day, and never from a visitor's text.
+- **Colour in the two pictures** (`research/export/landing_maps.py`):
+  - **Bangladesh:** every upazila by its land. Haor and beel come from Landsat water and BRRI's patterns, the salty coast from SRDI's 2009 survey, and the rest from NASADEM height in four steps (floodplain to the Barind and the hills). The big rivers are drawn over it, on a slab of soil, with a small key.
+  - **The globe behind Rongu:** ocean, land and ice from Natural Earth's 1:110m land (public domain, 7 KB), a white grid, the night side shaded away from the page's light, and an amber pulse on Bangladesh as it turns past.
+- **Fix: upazila names in calls.** The call scripts said 190 of the 544 upazila names in English inside the Bangla voice, because the boundaries and the locations list spell them differently (Jessore and Jashore, Dharampasha and Dharmapasha). The names now match by sound within the district, and 462 are said in Bangla. The rest are mostly city thanas in Dhaka and Chattogram.
+
 ## 31 October 2026 · NISAR over the whole season, the grid on MODIS pixel reliability, and refreshing "now" (Tasrif, `feature/field-conditions`)
 
 - **NISAR season backfill:**

@@ -13,6 +13,11 @@ import type {
   ThisSeasonFit,
 } from '@project-eden/contracts';
 import { FeatureRegistry } from './registry.ts';
+import { screenConditions } from './freshness.ts';
+import { decisionCheck } from './decision_check.ts';
+import { experimentalPlace, type ModelExperiment } from './experiments.ts';
+import { inputSensitivity } from './input_sensitivity.ts';
+import { fallowReference, compareWithFallow } from './current_practice.ts';
 import { RELEASE } from './data/tanore_replay_data.ts';
 import { LOC, NO_SOIL_CARD, placeFor, profileData, withPlace } from './data/location.ts';
 import { rotationDose } from './data/lookup.ts';
@@ -71,6 +76,8 @@ import {
 } from './bn.ts';
 
 export interface PlanOptionsRequest {
+  /** Input stress tests are opt-in for interactive planning, not a calibrated probability. */
+  includeInputSensitivity?: boolean;
   unionId: string;
   unionNameBangla: string;
   upazila: string;
@@ -94,6 +101,8 @@ export interface PlanOptionsRequest {
     soilPercentile?: number | null;
     sensor?: 'SMAP' | 'POWER';
     rain30PctOfNormal?: number | null;
+    /** Separate rain date when soil moisture comes from a different sensor. */
+    rainDate?: string;
     /** This week's rice-blast and potato late-blight weather from the daily NASA POWER update. */
     disease?: DiseaseNow | null;
     /** This week's field water and weather with a 7-day forecast (research/live/field_weather.py), for field_alerts.ts. */
@@ -207,7 +216,7 @@ interface CandidateSpec {
 const CANDIDATES: CandidateSpec[] = [
   { id: 'rot_dhan71_lentil', aman: 'BRRI dhan71', rabi: 'BARI Masur-8', isBaseline: false, tagBangla: 'পানি সাশ্রয়ী, মাটি সমৃদ্ধকারী', tagEnglish: 'water-saving, soil-building' },
   { id: 'rot_dhan71_mustard', aman: 'BRRI dhan71', rabi: 'BARI Sarisha-14', isBaseline: false, tagBangla: 'কম সেচের তেলফসল', tagEnglish: 'low-irrigation oilseed' },
-  { id: 'rot_dhan49_boro_conventional', aman: 'BRRI dhan49', rabi: 'BRRI dhan28', isBaseline: true, tagBangla: 'প্রচলিত, উচ্চ সেচ নির্ভর', tagEnglish: 'current practice, irrigation-heavy' },
+  { id: 'rot_dhan49_boro_conventional', aman: 'BRRI dhan49', rabi: 'BRRI dhan28', isBaseline: true, tagBangla: 'বোরো তুলনামূলক চক্র, উচ্চ সেচ নির্ভর', tagEnglish: 'Boro comparator, irrigation-heavy' },
   { id: 'rot_dhan49_wheat_early', aman: 'BRRI dhan49', rabi: 'BARI Gom 33 (Early)', isBaseline: false, tagBangla: 'ধান৪৯ রেখে সময়মতো গম', tagEnglish: 'keep dhan49, wheat on time' },
   { id: 'rot_dhan75_wheat_late', aman: 'BRRI dhan75', rabi: 'BARI Gom 33 (Late)', isBaseline: false, tagBangla: 'দেরিতে বোনা গম, তাপ ঝুঁকিপূর্ণ', tagEnglish: 'late-sown wheat, heat risk' },
 ];
@@ -570,7 +579,11 @@ export class RotationEngine {
       totalWeight += weight;
       weightedSum += (scores[plugin.id] || 0) * weight;
     }
-    const totalWeightedScore = totalWeight > 0 ? Number((weightedSum / totalWeight).toFixed(3)) : 0.5;
+    const calendar = LOC.conditions.experiment?.calendarOnly;
+    const winterRecord = recordFor(spec.rabi)!;
+    const totalWeightedScore = calendar
+      ? 1 - winterRecord.fieldDays / 1000 - (spec.aman ? seasonDay(LOC.aman[spec.aman].fieldFree) : 0) / 1000000
+      : totalWeight > 0 ? Number((weightedSum / totalWeight).toFixed(3)) : 0.5;
     return { scores, dimensionDetails, totalWeightedScore };
   }
 
@@ -755,6 +768,13 @@ export class RotationEngine {
     const tspKgHa = rotationDose(doseParts, 'tspKgHa');
     const riceCrops = (aman ? 1 : 0) + (rabiName.isRice ? 1 : 0) + (k1Name?.isRice ? 1 : 0);
     const option: CandidateRotation = {
+      modelInputs: { ...spec },
+      feasibility: {
+        missedPlantingWindow: !withinWindow || Boolean((mon.ready ?? landRules(request.landType).ready) && !relayDays && seasonDay((mon.ready ?? landRules(request.landType).ready)!) > seasonDay(rabi.sowing)),
+        harvestRainfallExposure: flashFloodExposed(request.landType) ? (() => { const f = flashFloodRisk(rabi.harvest); return f ? f.caught / f.seasons : null; })() : null,
+        salinityYieldShare: salinityEffect(choiceIdOf(spec.rabi))?.relativeYield ?? null,
+        violations: [], winterSowing: rabi.sowing, winterHarvest: rabi.harvest, fieldReady: mon.ready ?? landRules(request.landType).ready,
+      },
       id: spec.id,
       nameBangla: `${monsoonBangla} → ${rabiName.varietyBangla}${k1Bangla} (${spec.tagBangla})`,
       nameEnglish: `${monsoonEnglish} -> ${rabiVariety}${k1English} (${spec.tagEnglish})`,
@@ -773,6 +793,10 @@ export class RotationEngine {
       ipmActions,
       ledger,
     };
+    if (option.feasibility!.missedPlantingWindow) option.feasibility!.violations.push('planting_window_or_field_overlap');
+    if (harvestTooLate(request.landType, rabi.harvest)) option.feasibility!.violations.push('historical_rainfall_exposure');
+    if ((option.feasibility!.salinityYieldShare ?? 1) < SALT_LIMIT) option.feasibility!.violations.push('salinity_yield_assumption');
+    if (request.irrigation === 'none' && rabiName.isRice) option.feasibility!.violations.push('irrigation_unavailable');
     const cropIds = [aman ? 'aman' : spec.kharif2 ? choiceIdOf(spec.kharif2) : '', choiceIdOf(spec.rabi), spec.kharif1 ? choiceIdOf(spec.kharif1) : '']
       .filter(Boolean);
     option.stewardship = stewardshipTips(option, tspKgHa, riceCrops, cropIds);
@@ -1198,8 +1222,8 @@ export class RotationEngine {
     const no = (bn: string, en: string) => ({ spec: null, note: { bn, en } });
     const winter = CHOICE_BY_ID[String(cur.winter ?? '').toLowerCase()];
     if (!winter || winter.season !== 'Rabi') {
-      return no('শীতে কোনো ফসল না থাকলে (বছরে শুধু আমন) চক্রটি এখনো হিসাব করা যায় না; তুলনার জন্য প্রচলিত চক্র দেখানো হলো।',
-        'A year with no winter crop (Aman only) cannot be modelled yet; the usual rotation is shown for comparison.');
+      return no('আপনার দেওয়া পুরো চক্রটি এই জমি ও সময়সূচিতে এখনো হিসাব করা যায় না। আলাদা প্রচলিত চক্র দেখানো হয়েছে; সেটি আপনার চক্র নয়।',
+        'The complete current rotation supplied cannot be represented on this land and calendar yet. A separate usual rotation is shown; it is not your stated practice.');
     }
     const monsoon = String(cur.monsoon ?? 'aman').toLowerCase();
     let amanKey: string | undefined;
@@ -1469,14 +1493,13 @@ export class RotationEngine {
     if (drainNow && (request.landType === 'low' || request.landType === 'very_low')) {
       const freeBy = floodReading?.drain?.freeBy;
       const shift = freeBy && rules.ready ? seasonDay(freeBy.slice(5) as MonthDay) - seasonDay(rules.ready) : null;
-      const boro = rabiCat?.crop === 'Boro rice';
       const later = shift !== null && shift >= 10, sooner = shift !== null && shift <= -10;
       notesBangla.push(`${drainNow.bn}${later
-        ? ` এটি এই পরিকল্পনার ধরা তারিখের (~${bnDate(rules.ready!)}) প্রায় ${bnDigits(shift!)} দিন পরে: ${boro ? 'বোরোর বীজতলা এমনভাবে দিন যাতে জমি খালি হওয়ার দিন চারার বয়স ৩৫-৪৫ দিন হয়।' : 'রবি ফসল সেই অনুযায়ী দেরিতে বুনুন।'}`
-        : sooner ? ` এটি এই পরিকল্পনার ধরা তারিখের (~${bnDate(rules.ready!)}) প্রায় ${bnDigits(-shift!)} দিন আগে: রবি ফসল আগে বোনা যাবে।` : ''}`);
+        ? ` এটি এই পরিকল্পনার ধরা তারিখের (~${bnDate(rules.ready!)}) প্রায় ${bnDigits(shift!)} দিন পরে: কর্মকর্তার সাথে বোনার সময় ও চারার বয়স আবার যাচাই করুন।`
+        : sooner ? ` এটি এই পরিকল্পনার ধরা তারিখের (~${bnDate(rules.ready!)}) প্রায় ${bnDigits(-shift!)} দিন আগে; আগে বোনা যাবে কি না মাঠে যাচাই করুন।` : ''}`);
       notesEnglish.push(`${drainNow.en}${later
-        ? ` That is about ${shift} days after the date this plan assumes (~${enDate(rules.ready!)}): ${boro ? 'time the Boro seedbed so the seedlings are 35-45 days old when the land is free (BRRI).' : 'sow the winter crop correspondingly later.'}`
-        : sooner ? ` That is about ${-shift!} days before the date this plan assumes (~${enDate(rules.ready!)}): the winter crop can go in sooner.` : ''}`);
+        ? ` That is about ${shift} days after the date this plan assumes (~${enDate(rules.ready!)}): review sowing dates and seedling age with an officer.`
+        : sooner ? ` That is about ${-shift!} days before the date this plan assumes (~${enDate(rules.ready!)}); verify field readiness before considering earlier sowing.` : ''}`);
     }
 
     if (!rules.aman) {
@@ -1535,15 +1558,15 @@ export class RotationEngine {
       farmerLineEnglish = [farmerLineEnglish, 'The soil is dry this year: sow the winter crop without delay.'].filter(Boolean).join(' ');
     }
 
-    // The district's groundwater budget (NASA GRACE via GLDAS, BBS Boro area): the Boro land a water-saving rotation
-    // would need to take over to stop the fall, a floor at GRACE's scale
+    // A district-scale storage/irrigation volume comparison, not a causal budget of the aquifer.
     const budget = budgetHere();
     if (budget?.applies && budget.moveHaToLentil && budget.moveShareToLentil) {
-      const like = topWinter && topWinter.crop !== 'Boro rice' ? { bn: 'এই চক্রের মতো', en: 'like this one' } : { bn: 'মসুর বা সরিষার', en: 'with lentil or mustard' };
+      // moveHaToLentil is specifically the modeled lentil comparison, not whichever crop ranks first.
+      const like = { bn: 'মসুরের', en: 'with lentil' };
       const ha = Math.round(budget.moveHaToLentil / 100) * 100;
       const pctMove = Math.max(1, Math.round(budget.moveShareToLentil * 100));
-      notesBangla.push(`নাসার GRACE (GLDAS): এই জেলায় ভূগর্ভস্থ পানি বছরে প্রায় ${bnDigits(Math.abs(budget.trendMmPerYear))} মিমি কমছে। জেলার বোরো জমির প্রায় ${bnDigits(pctMove)}% (${bnDigits(ha.toLocaleString('en-US'))} হেক্টর) ${like.bn} কম-পানির চক্রে গেলে গড় পতন থামে; বরেন্দ্রের মতো সবচেয়ে ক্ষতিগ্রস্ত এলাকার নলকূপে পানি এর চেয়ে দ্রুত নামে, তাই এটি সর্বনিম্ন হিসাব।`);
-      notesEnglish.push(`NASA GRACE (GLDAS-2.2): groundwater under ${budget.district} district falls about ${Math.abs(budget.trendMmPerYear)} mm of water a year. Moving about ${pctMove}% of the district's Boro land (${ha.toLocaleString('en-US')} ha) to a rotation ${like.en} would stop the average fall; wells in the worst-hit areas, such as the Barind, fall faster than the district average, so this is a floor.`);
+      notesBangla.push(`নাসার GRACE (GLDAS): জেলার হিসাবে ভূগর্ভস্থ পানির সঞ্চয় বছরে প্রায় ${bnDigits(Math.abs(budget.trendMmPerYear))} মিমি কমার ধারা। সরল তুলনায় জেলার বোরো জমির প্রায় ${bnDigits(pctMove)}% (${bnDigits(ha.toLocaleString('en-US'))} হেক্টর) ${like.bn} চক্রে বদলালে মডেলের সেচ-চাহিদার হ্রাস ওই পরিমাণের সমান। এটি পানির স্তর ফিরবে বা পতন থামবে এমন পূর্বাভাস নয়; পুনর্ভরণ, ফেরত প্রবাহ ও অন্যান্য উত্তোলন এখানে মডেল করা হয়নি।`);
+      notesEnglish.push(`NASA GRACE (GLDAS-2.2): modeled groundwater storage under ${budget.district} trends down about ${Math.abs(budget.trendMmPerYear)} mm of water a year. In a simple volume comparison, shifting about ${pctMove}% of district Boro land (${ha.toLocaleString('en-US')} ha) to a rotation ${like.en} reduces modeled irrigation demand by an equivalent volume. This does not predict aquifer recovery or stopping the decline: recharge, return flows and other withdrawals are not modeled here.`);
     }
 
     // Soil salinity: SRDI's survey where it covers the upazila, else the coast's winter fallow as a sign of it
@@ -1684,7 +1707,20 @@ export class RotationEngine {
     };
   }
 
-  generateAdvice(request: PlanOptionsRequest): AdviceJSON {
+  /** Evaluate a comparator under the full inputs even if generation would reject it. */
+  measureOption(request: PlanOptionsRequest, option: CandidateRotation): CandidateRotation {
+    if (!option.modelInputs) throw new Error('Comparator lacks reproducible inputs');
+    const place = placeFor(request.unionId);
+    if (!place) throw new UnsupportedUnionError(request.unionId);
+    const screened = screenConditions(request.currentConditions, request.today ?? isoDate(new Date()));
+    const day = seasonDay((request.today ?? isoDate(new Date())).slice(5));
+    const current = screened.conditions ? { ...screened.conditions, dryStart: day >= seasonDay('09-01') && day <= seasonDay('12-15') && screened.conditions.soilStatus === 'dry' } : null;
+    this.landType = request.landType;
+    return withPlace({ ...place, conditions: { ...place.conditions, current, irrigation: request.irrigation ?? 'available' } },
+      () => this.evaluateRotation(option.modelInputs!, request, parseSeasonYear(request.season)));
+  }
+
+  generateAdvice(request: PlanOptionsRequest, experiment: ModelExperiment = {}): AdviceJSON {
     const place = placeFor(request.unionId);
     if (!place) {
       throw new UnsupportedUnionError(request.unionId);
@@ -1693,11 +1729,18 @@ export class RotationEngine {
     const today = request.today ? new Date(request.today) : new Date();
     const day = seasonDay(isoDate(today).slice(5));
     const sowingTime = day >= seasonDay('09-01') && day <= seasonDay('12-15');
-    const current = request.currentConditions
-      ? { ...request.currentConditions, dryStart: sowingTime && request.currentConditions.soilStatus === 'dry' }
+    const screened = screenConditions(request.currentConditions, isoDate(today));
+    const current = screened.conditions
+      ? { ...screened.conditions, dryStart: sowingTime && screened.conditions.soilStatus === 'dry' }
       : null;
     const irrigation = request.irrigation === 'none' ? 'none' : 'available';
-    return withPlace({ ...place, conditions: { ...place.conditions, current, irrigation } }, () => this.adviseHere(request));
+    const activePlace = experimentalPlace({ ...place, conditions: { ...place.conditions, current, irrigation } }, experiment);
+    const advice = withPlace(activePlace, () => this.adviseHere({ ...request, currentConditions: screened.conditions }));
+    advice.stale_or_missing_inputs.push(...screened.excluded);
+    if (request.includeInputSensitivity && !experiment.skipAnalysis) {
+      advice.input_sensitivity = inputSensitivity(advice, { ...request, currentConditions: screened.conditions }, place, e => this.generateAdvice(request, { ...e, skipAnalysis: true }));
+    }
+    return advice;
   }
 
   /** Advice for the place `LOC` currently points at (see data/location.ts). */
@@ -1717,16 +1760,26 @@ export class RotationEngine {
       : planLocally ? this.choicePlans(rules.aman ? request : { ...request, heroCrop: 'boro' }, seasonYear, true)
         : null;
     const useChoice = Boolean(choice && choice.options.length);
-    let specs = useChoice ? choice!.specs : CANDIDATES;
-    let options = useChoice ? choice!.options : this.rank(CANDIDATES, request, seasonYear);
+    const noFeasibleChoice = Boolean(choice && !useChoice);
+    // An empty low-land search must never fall back to upland Aman rotations.
+    // Keep one explicitly rejected comparator so existing explanation views remain inspectable.
+    const fallback: CandidateSpec[] = !rules.aman ? [{ id: 'unverified_fallow_boro_reference', rabi: 'BRRI dhan28', isBaseline: true,
+      tagBangla: 'উপযুক্ত চক্র পাওয়া যায়নি — শুধু তুলনা', tagEnglish: 'no feasible rotation found — comparator only' }] : CANDIDATES;
+    let specs = useChoice ? choice!.specs : fallback;
+    let options = useChoice ? choice!.options : this.rank(fallback, request, seasonYear);
+    if (noFeasibleChoice) for (const option of options) option.feasibility!.violations.push('no_feasible_rotation_for_request');
     if (planLocally && useChoice) ({ specs, options } = this.withCurrentPractice(specs, options, request, seasonYear, rules));
     let currentRotationNote: { bn: string; en: string } | null = null;
-    if (request.currentRotation?.winter) {
+    const currentPracticeReference = fallowReference(request);
+    if (currentPracticeReference) {
+      currentRotationNote = currentPracticeReference.note;
+    } else if (request.currentRotation?.winter) {
       const mine = this.withFarmerRotation(specs, options, request, seasonYear, rules);
       ({ specs, options } = mine);
       currentRotationNote = mine.note;
     }
     ({ specs, options } = this.atLeastThree(specs, options, request, seasonYear));
+    if (currentPracticeReference) compareWithFallow(currentPracticeReference, options);
 
     const bestSpec = specs.find(c => c.id === options[0].id)!;
     const altSpec = options[1] ? specs.find(c => c.id === options[1].id) : undefined;
@@ -1827,6 +1880,7 @@ export class RotationEngine {
       soilCard: Boolean(LOC.srdi),
       defaultPriorities: Boolean(request.defaultPriorities),
       groundwaterFalling: (LOC.conditions.groundwater?.trendMmPerYear ?? 0) < 0,
+      currentPracticeReference,
     });
     const scenario = request.scenario;
     return {
@@ -1859,6 +1913,8 @@ export class RotationEngine {
       ...(choice && wantsChoice ? { crop_choice: choice.result } : {}),
       local_context: local.context,
       reference_option_id: reference?.id ?? null,
+      decision_check: decisionCheck(options, request.farmerPriorities),
+      current_practice_reference: currentPracticeReference,
       current_rotation_note: currentRotationNote,
       season_calendar: calendarSummary(),
       what_if: scenario && (scenario.rainPct || scenario.warmingC) ? whatIf(options, scenario.rainPct ?? 0, scenario.warmingC ?? 0) : null,

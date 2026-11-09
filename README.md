@@ -233,6 +233,26 @@ The same grid holds every 16-day MODIS image since 2001. That record answers two
 - **But it vanishes:** within BRRI's regions (r −0.02, p 0.71), and over time. Upazilas whose Aman got earlier from 2001-05 to 2019-23 did not gain crops (Spearman −0.04, p 0.36).
 - **What it really is:** the north-west against the east and south, not a lever a farmer can pull. The app does not give it as advice.
 
+### The landing page: from the sky to the farmer's phone
+
+The first screen tells the whole project in one look. "Seen from space. Said on the farmer's phone." stands beside Rongu, and under it three linked steps:
+
+1. **NASA sees:** the datasets with the newest reading of each.
+2. **Mati Kohon decides:** the country with four sample places, each a different Bangladesh:
+   - Talanda in the dry Barind;
+   - Chauhali on the Jamuna chars;
+   - Dharampasha in the haor;
+   - Koyra on the salty coast.
+3. **The farmer hears:** a phone with the call a farmer there would get today, its Bangla recording, and the SMS after it.
+
+Picking a place turns the satellite's beam on it, changes the call, and lights up the datasets behind that call (NISAR for Chauhali's drain date, for example).
+
+`GET /api/v1/landing/calls` builds the calls with the same rules as the real ones (`sampleCall` in `farmer_calls.ts`): the day's alert, drain date or reminder, else the season's rotation. Nothing is stored or sent, and nobody is dialled. `GET /api/v1/landing/calls/:id/audio` records each script once with the Google voice and keeps it (`services/api/src/landing.ts`). Without a voice set up, the phone shows the words only.
+
+The country in step 2 shows every upazila by its land (NASADEM height, the haor, the salty coast) with the big rivers. The globe behind Rongu carries Natural Earth's land (public domain). Both are drawn by `python research/export/landing_maps.py bd` and `world --src land-110m.json`.
+
+Below the steps come the numbers (544 upazilas, 25 seasons, 14 datasets, the 1 km grid, the daily update), the country map explorer, and a card for each of the 14 NASA datasets: what it measures, how finely, and what it changes for the farmer. One list in `landing-story.js` feeds the steps, the cards and the count.
+
 ### A map of Bangladesh
 
 The overview's satellite card is a real map (Leaflet with NASA GIBS imagery). All 544 upazilas (geoBoundaries outlines, thinned to 0.74 MB by `python research/export/map_export.py`, sent gzipped) are coloured by one of ten layers: crops a year, its change since 2001-06 and winter greenness (MODIS); Boro irrigation need (NASA replay) and groundwater decline (GLDAS), both per district; rain in the last 7 days (IMERG), 30-day rain against normal and root-zone soil wetness (the daily NASA update); pesticide on rice (PEST-CHEMGRIDS) and soil organic matter (SRDI). Underneath: OpenStreetMap, NASA MODIS or VIIRS true colour from yesterday, or the Blue Marble; on top: NASA's 3-day MODIS flood map, IMERG rain, SMAP root-zone moisture and MODIS 8-day NDVI. Hover shows the value, a click shows the upazila's facts with a button that plans for it, choosing a place in the list flies the map there, and a table lists the district's upazilas. `GET /api/v1/map/upazilas` serves the values.
@@ -586,7 +606,7 @@ The yield model (`research/explore/yield_model.py`) still uses MODIS: HLS greenn
 - The pesticide numbers are PEST-CHEMGRIDS model estimates for 2020, not farm measurements.
 - Disease weather (rice blast, potato late blight) comes from NASA POWER daily minimum, maximum and dew point. The hours at 90% humidity are estimated, not measured, and the rules mark weather that favours a disease, not the disease itself. Daily data under-read the dewy winter nights behind neck blast in Boro, so Boro blast counts are a lower bound. Insects are covered by rules (no early insecticide spray), not by weather.
 - The pest score is rule-based until officers log pest counts.
-- Floods are not modelled for Barind land. The haor warning shows the 25-season hindcast and the season status; a live trigger needs a daily IMERG Early feed and river-gauge confirmation. Rotation advice is not modelled for the haor.
+- Haor Boro rotations and historical upstream-rainfall checks are modeled. The seasonal audit has seven directly labeled years and reports misses; it does not validate flood-arrival dates or warning lead time. Regional drainage ranges require field checks before planting. See `docs/evidence-reliability.md` and `docs/claims-register.json`.
 - Flooded-rice days stand in for methane; they are not a methane measurement.
 - The OPERA flood reading is optical: cloud hides the monsoon, so July-September readings are patchy, and OPERA's radar maps over Bangladesh stop on 16 July 2026. NISAR radar fills the gap from 17 June 2026, but its calibration is still PROVISIONAL, its water threshold rests on 18 pairs at 5 upazilas, it counts about 13 points less water than OPERA on the coast, and the season so far (12 June to 23 October 2026) has been read once; new passes are read daily. The drain pace is a straight line from the season's peak and is dated only within 45 days. Water on land normally dry in winter includes the usual monsoon water; last year's radar figure reads higher than the optical one. The HLS crop-loss map compares greenness, not yield, for one year against one year, and cloud leaves some upazilas with too little land seen.
 - NASA POWER weather arrives 2–3 days late and is not a forecast; the field alerts take their forecast from Open-Meteo's weather model. Their temperatures are grid values (a field can be 1-2 °C off), the paddy water balance assumes a bunded rainfed field with 2 mm/day seepage, and the crop stage comes from the plan's calendar, not the farmer's own transplanting date. River-erosion risk comes from station records and needs checking on the ground.

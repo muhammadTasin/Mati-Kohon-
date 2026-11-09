@@ -1,7 +1,6 @@
 /**
  * River erosion and riverbank vulnerability service for Bangladesh's major river corridors.
- * Integrates real hydrological station statistics from BWDB / FFWC annual reports (2010-2021),
- * CEGIS morphological vulnerability indices, and NASA GPM IMERG basin precipitation.
+ * Static demonstration values. Per-value source dates and a live basin feed are not yet wired up.
  *
  * NOTE: Local micro-erosion and bank collapses require ground validation and cannot be replaced
  * by satellite-scale data alone.
@@ -21,6 +20,8 @@ export interface RiverStationInfo {
   annualBankShiftEstimateBangla: string;
   morphologyStatusBangla: string;
   dataStatusBangla: string;
+  observedAt?: null;
+  sourceReference?: null;
 }
 
 export interface RiverCorridor {
@@ -31,23 +32,28 @@ export interface RiverCorridor {
   overallRiskBangla: string;
   primaryCauseBangla: string;
   basin30dRainMm: number;
+  rainfallObservedAt?: null;
+  rainfallSourceReference?: null;
   upstreamRainStatusBangla: string;
   stations: RiverStationInfo[];
   monitoringStretchesBangla: string;
 }
 
 export interface RiverErosionResponse {
+  dataMode: 'illustrative_static';
+  exampleLabeledAt: string;
   summaryDate: string;
   dataSources: {
     name: string;
     descriptionBangla: string;
-    type: 'measured' | 'modeled' | 'satellite';
+    type: 'reference';
   }[];
   activeRiverId: string;
   availableRivers: { id: string; nameBangla: string; nameEnglish: string }[];
   corridor: RiverCorridor;
   guidelinesBangla: string[];
   caveatBangla: string;
+  caveatEnglish: string;
 }
 
 const RIVERS_DATA: Record<string, RiverCorridor> = {
@@ -272,25 +278,31 @@ const RIVERS_DATA: Record<string, RiverCorridor> = {
 
 export function getRiverErosion(riverId = 'jamuna'): RiverErosionResponse {
   const normalizedKey = riverId.toLowerCase();
-  const corridor = RIVERS_DATA[normalizedKey] || RIVERS_DATA.jamuna;
+  const stored = RIVERS_DATA[normalizedKey] || RIVERS_DATA.jamuna;
+  const corridor = { ...stored, rainfallObservedAt: null, rainfallSourceReference: null, stations: stored.stations.map(s => ({ ...s,
+    observedAt: null, sourceReference: null,
+    dataStatusBangla: 'স্থির নমুনা; এই মানের তারিখ ও উদ্ধৃতি যাচাই বাকি',
+  })) };
 
   return {
-    summaryDate: '২০২৬ মৌসুম (BWDB/FFWC ও উপগ্রহ উপাত্ত)',
+    dataMode: 'illustrative_static',
+    exampleLabeledAt: '2026-11-07',
+    summaryDate: 'স্থির নমুনা; বর্তমান পর্যবেক্ষণ নয়',
     dataSources: [
       {
         name: 'BWDB / FFWC বার্ষিক বন্যা প্রতিবেদন (২০১০–২০২১)',
-        descriptionBangla: 'বাংলাদেশ পানি উন্নয়ন বোর্ডের ৯৫টি গেজিং স্টেশনের বিপদসীমা ও সর্বোচ্চ বন্যা স্তরের পরীক্ষিত রেকর্ড।',
-        type: 'measured',
+        descriptionBangla: 'যাচাইয়ের জন্য প্রাসঙ্গিক সূত্র; এই নমুনার প্রতিটি মানের তারিখ ও উদ্ধৃতি যুক্ত করা বাকি।',
+        type: 'reference',
       },
       {
         name: 'CEGIS নদীভাঙন পূর্বাভাস সমীক্ষা',
-        descriptionBangla: 'উপগ্রহ চিত্রে তীরবর্তী এলাকার ভূ-প্রাকৃতিক পরিবর্তন ও বার্ষিক ভাঙন পূর্বাভাস মডেল।',
-        type: 'modeled',
+        descriptionBangla: 'তীরের পরিবর্তন যাচাইয়ের প্রাসঙ্গিক সূত্র; এখানে সরাসরি মডেল যুক্ত নেই।',
+        type: 'reference',
       },
       {
         name: 'NASA GPM IMERG অববাহিকা বৃষ্টিপাত',
-        descriptionBangla: 'উজান অববাহিকায় বিগত ৩০ দিনের মোট বৃষ্টিপাত ও প্লাবন ঝুঁকি অনুমান।',
-        type: 'satellite',
+        descriptionBangla: 'ভবিষ্যৎ সংযোগের সূত্র; এখানে ৩০ দিনের বৃষ্টির মান স্থির নমুনা, বর্তমান উপগ্রহ পাঠ নয়।',
+        type: 'reference',
       },
     ],
     activeRiverId: corridor.riverId,
@@ -306,6 +318,7 @@ export function getRiverErosion(riverId = 'jamuna'): RiverErosionResponse {
       'ভাঙনপ্রবণ পাড়ে গভীর মূলযুক্ত ঘাস (যেমন ভেটিভার ঘাস) এবং কাশবনের বেষ্টনী মাটির বাঁধন ধরে রাখতে সাহায্য করে।',
       'পানি দ্রুত কমতে শুরু করলে পাড় ধসের ঝুঁকি সর্বোচ্চ থাকে; এসময় গবাদিপশু ও কৃষিসামগ্রী নিরাপদ উঁচু স্থানে রাখুন।',
     ],
-    caveatBangla: 'স্থানীয় নির্দিষ্ট প্লটের মাইক্রো-ভাঙন উপগ্রহ রেজোলিউশনে নিশ্চিত করা যায় না। যেকোনো আকস্মিক ভাঙনের ক্ষেত্রে স্থানীয় পানি উন্নয়ন বোর্ড কর্মকর্তা ও ইউনিয়ন পরিষদকে অবিলম্বে অবহিত করুন।',
+    caveatBangla: 'স্থির প্রদর্শনী নমুনা: পানির উচ্চতা, বৃষ্টি ও ঝুঁকির মান বর্তমান পর্যবেক্ষণ বা পূর্বাভাস নয়। বর্তমান অবস্থা স্থানীয় পানি উন্নয়ন বোর্ড ও বন্যা পূর্বাভাস কেন্দ্র থেকে যাচাই করুন।',
+    caveatEnglish: 'Static demonstration: water levels, rainfall and risk labels are not current observations or forecasts. Check current conditions with BWDB and FFWC.',
   };
 }

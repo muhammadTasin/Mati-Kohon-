@@ -1,0 +1,304 @@
+{
+  "schema": "temporal-model-comparison-v1",
+  "protocol": {
+    "version": "tanore-calendar-water-v1",
+    "site": "Tanore pilot point, medium-high land, irrigation available",
+    "trainYears": [
+      2001,
+      2015
+    ],
+    "evaluationYears": [
+      2016,
+      2024
+    ],
+    "calendarReferenceYear": 2001,
+    "calendarRule": "Among the fixed calendar-feasible candidates, choose the shortest winter field occupancy; break ties by earlier Aman field release, then id. No weather, scores, income or outcome values are read.",
+    "nasaWaterRule": "On the same feasible candidates, minimize training-period Aman rescue-irrigation frequency, then median winter net irrigation, then id. Freeze the chosen rotation before evaluating later seasons. This isolates a water-only policy; it is not the production seven-dimension ranking.",
+    "currentPracticeId": "rot_dhan49_boro_conventional",
+    "calendarSources": [
+      "research/crops/brri_rice_varieties.csv: seedbed windows and durations; replay uses their midpoint plus seven turnaround days",
+      "research/explore/connect_check.py: fixed winter sowing dates and durations, not weather-derived phenology",
+      "packages/rotation-engine/src/data/tanore_replay_data.ts: BARI/BWMRI sowing windows"
+    ],
+    "candidates": [
+      {
+        "id": "rot_dhan71_lentil",
+        "aman": "BRRI dhan71",
+        "winter": "Lentil (BARI Masur-8)",
+        "amanReady": "11-10",
+        "winterSow": "11-10",
+        "winterHarvest": "03-01",
+        "sowingWindow": [
+          "10-23",
+          "11-14"
+        ]
+      },
+      {
+        "id": "rot_dhan71_mustard",
+        "aman": "BRRI dhan71",
+        "winter": "Mustard (BARI Sarisha-14)",
+        "amanReady": "11-10",
+        "winterSow": "11-10",
+        "winterHarvest": "01-28",
+        "sowingWindow": [
+          "10-15",
+          "11-15"
+        ]
+      },
+      {
+        "id": "rot_dhan49_boro_conventional",
+        "aman": "BRRI dhan49",
+        "winter": "Boro (BRRI dhan28)",
+        "amanReady": "11-19",
+        "winterSow": "02-01",
+        "winterHarvest": "05-14",
+        "sowingWindow": null
+      },
+      {
+        "id": "rot_dhan49_wheat_early",
+        "aman": "BRRI dhan49",
+        "winter": "Wheat (BARI Gom 33), sown 20 Nov",
+        "amanReady": "11-19",
+        "winterSow": "11-20",
+        "winterHarvest": "03-04",
+        "sowingWindow": [
+          "11-15",
+          "11-30"
+        ]
+      },
+      {
+        "id": "rot_dhan75_wheat_late",
+        "aman": "BRRI dhan75",
+        "winter": "Wheat (BARI Gom 33), sown 10 Dec",
+        "amanReady": "12-02",
+        "winterSow": "12-10",
+        "winterHarvest": "03-24",
+        "sowingWindow": [
+          "11-15",
+          "11-30"
+        ]
+      }
+    ],
+    "limitations": [
+      "Calendar feasibility checks field release before sowing and known sowing windows. Boro uses its recorded fixed transplanting date; the release has no Boro sowing window, so window suitability is unverified and reported separately.",
+      "The existing replay and its parameters were developed with knowledge of the broader historical period. This retrospective temporal split is not an untouched holdout or external validation.",
+      "Both policies are evaluated on the same NASA-driven simulation. These are modeled irrigation demands and rescue events, not observed water savings, yields, income or farmer decisions.",
+      "The calendar-only rule is one transparent simple comparator, not a reconstruction of an agricultural officer's advice. Common candidate identities were already chosen by the project.",
+      "No winter observations for 2025-26 exist in the checked-in replay table; that season is excluded rather than imputed.",
+      "This pilot comparison does not validate the haor, coast, all 544 upazilas, or the production seven-dimension recommendation. Land constraints, crop output and economic trade-offs are not scored here.",
+      "Aman rescue frequency is a count, not an irrigation volume. Winter net irrigation excludes Aman rescue water. No combined annual saving is inferred."
+    ]
+  },
+  "commonFeasibleCandidateIds": [
+    "rot_dhan71_lentil",
+    "rot_dhan71_mustard",
+    "rot_dhan49_boro_conventional",
+    "rot_dhan49_wheat_early"
+  ],
+  "excludedByCalendar": [
+    "rot_dhan75_wheat_late"
+  ],
+  "unverifiedSowingWindowIds": [
+    "rot_dhan49_boro_conventional"
+  ],
+  "trainingYearsUsed": [
+    2001,
+    2002,
+    2003,
+    2004,
+    2005,
+    2006,
+    2007,
+    2008,
+    2009,
+    2010,
+    2011,
+    2012,
+    2013,
+    2014,
+    2015
+  ],
+  "evaluationYearsUsed": [
+    2016,
+    2017,
+    2018,
+    2019,
+    2020,
+    2021,
+    2022,
+    2023,
+    2024
+  ],
+  "selections": {
+    "calendar_only": "rot_dhan71_mustard",
+    "nasa_water_only": "rot_dhan71_mustard",
+    "usual_practice": "rot_dhan49_boro_conventional"
+  },
+  "selectionFinding": "same_choice_as_calendar_no_incremental_advantage",
+  "trainingMetrics": {
+    "rot_dhan71_lentil": {
+      "seasons": 15,
+      "amanRescueSeasons": 4,
+      "amanRescueRate": 0.2667,
+      "winterNetIrrigationMeanMm": 207.07,
+      "winterNetIrrigationMedianMm": 213.0
+    },
+    "rot_dhan71_mustard": {
+      "seasons": 15,
+      "amanRescueSeasons": 4,
+      "amanRescueRate": 0.2667,
+      "winterNetIrrigationMeanMm": 119.0,
+      "winterNetIrrigationMedianMm": 115.0
+    },
+    "rot_dhan49_boro_conventional": {
+      "seasons": 15,
+      "amanRescueSeasons": 6,
+      "amanRescueRate": 0.4,
+      "winterNetIrrigationMeanMm": 817.67,
+      "winterNetIrrigationMedianMm": 821.0
+    },
+    "rot_dhan49_wheat_early": {
+      "seasons": 15,
+      "amanRescueSeasons": 6,
+      "amanRescueRate": 0.4,
+      "winterNetIrrigationMeanMm": 205.27,
+      "winterNetIrrigationMedianMm": 211.0
+    }
+  },
+  "evaluationMetrics": {
+    "calendar_only": {
+      "seasons": 9,
+      "amanRescueSeasons": 3,
+      "amanRescueRate": 0.3333,
+      "winterNetIrrigationMeanMm": 101.67,
+      "winterNetIrrigationMedianMm": 96.0
+    },
+    "nasa_water_only": {
+      "seasons": 9,
+      "amanRescueSeasons": 3,
+      "amanRescueRate": 0.3333,
+      "winterNetIrrigationMeanMm": 101.67,
+      "winterNetIrrigationMedianMm": 96.0
+    },
+    "usual_practice": {
+      "seasons": 9,
+      "amanRescueSeasons": 3,
+      "amanRescueRate": 0.3333,
+      "winterNetIrrigationMeanMm": 742.67,
+      "winterNetIrrigationMedianMm": 768.0
+    }
+  },
+  "pairedComparisons": [
+    {
+      "nasaWaterPolicyVs": "calendar_only",
+      "pairedSeasons": [
+        {
+          "season": 2016,
+          "lessWinterIrrigationMm": 0.0,
+          "fewerAmanRescueEvents": 0
+        },
+        {
+          "season": 2017,
+          "lessWinterIrrigationMm": 0.0,
+          "fewerAmanRescueEvents": 0
+        },
+        {
+          "season": 2018,
+          "lessWinterIrrigationMm": 0.0,
+          "fewerAmanRescueEvents": 0
+        },
+        {
+          "season": 2019,
+          "lessWinterIrrigationMm": 0.0,
+          "fewerAmanRescueEvents": 0
+        },
+        {
+          "season": 2020,
+          "lessWinterIrrigationMm": 0.0,
+          "fewerAmanRescueEvents": 0
+        },
+        {
+          "season": 2021,
+          "lessWinterIrrigationMm": 0.0,
+          "fewerAmanRescueEvents": 0
+        },
+        {
+          "season": 2022,
+          "lessWinterIrrigationMm": 0.0,
+          "fewerAmanRescueEvents": 0
+        },
+        {
+          "season": 2023,
+          "lessWinterIrrigationMm": 0.0,
+          "fewerAmanRescueEvents": 0
+        },
+        {
+          "season": 2024,
+          "lessWinterIrrigationMm": 0.0,
+          "fewerAmanRescueEvents": 0
+        }
+      ],
+      "meanLessWinterIrrigationMm": 0.0,
+      "totalFewerAmanRescueEvents": 0
+    },
+    {
+      "nasaWaterPolicyVs": "usual_practice",
+      "pairedSeasons": [
+        {
+          "season": 2016,
+          "lessWinterIrrigationMm": 569.0,
+          "fewerAmanRescueEvents": 0
+        },
+        {
+          "season": 2017,
+          "lessWinterIrrigationMm": 501.0,
+          "fewerAmanRescueEvents": 0
+        },
+        {
+          "season": 2018,
+          "lessWinterIrrigationMm": 638.0,
+          "fewerAmanRescueEvents": 0
+        },
+        {
+          "season": 2019,
+          "lessWinterIrrigationMm": 511.0,
+          "fewerAmanRescueEvents": -1
+        },
+        {
+          "season": 2020,
+          "lessWinterIrrigationMm": 705.0,
+          "fewerAmanRescueEvents": 0
+        },
+        {
+          "season": 2021,
+          "lessWinterIrrigationMm": 649.0,
+          "fewerAmanRescueEvents": 0
+        },
+        {
+          "season": 2022,
+          "lessWinterIrrigationMm": 684.0,
+          "fewerAmanRescueEvents": 1
+        },
+        {
+          "season": 2023,
+          "lessWinterIrrigationMm": 786.0,
+          "fewerAmanRescueEvents": 0
+        },
+        {
+          "season": 2024,
+          "lessWinterIrrigationMm": 726.0,
+          "fewerAmanRescueEvents": 0
+        }
+      ],
+      "meanLessWinterIrrigationMm": 641.0,
+      "totalFewerAmanRescueEvents": 0
+    }
+  ],
+  "inputAndCodeSha256": {
+    "research/evaluation/temporal_protocol.json": "c39ad645bbae8c43cb9d7fdacdd3e7992361bfa8b5d4b63895015325a78223c7",
+    "research/evaluation/temporal_comparison.py": "81ece8e21268949da8eb5b4ed4462b906b425aa42e3c05666d2c4e62256c3cf4",
+    "research/pilots/connect_tanore_aman.csv": "23416ab40634ccee924ca76fc96e7836e0ea1d5a198b3e96a43b43afabb610ed",
+    "research/pilots/connect_tanore_rabi.csv": "ff760ee212edd3fb844556fb1cbf244c282e7e0d7d883cf927798abee8acb0a1",
+    "research/explore/connect_check.py": "52ca7edeeff9ca2f0a97b342c54ef56647b7f65d87c7b372f0ee84a6760fbd66"
+  }
+}

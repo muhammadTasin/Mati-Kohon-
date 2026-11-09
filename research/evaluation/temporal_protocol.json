@@ -1,0 +1,31 @@
+{
+  "version": "tanore-calendar-water-v1",
+  "site": "Tanore pilot point, medium-high land, irrigation available",
+  "trainYears": [2001, 2015],
+  "evaluationYears": [2016, 2024],
+  "calendarReferenceYear": 2001,
+  "calendarRule": "Among the fixed calendar-feasible candidates, choose the shortest winter field occupancy; break ties by earlier Aman field release, then id. No weather, scores, income or outcome values are read.",
+  "nasaWaterRule": "On the same feasible candidates, minimize training-period Aman rescue-irrigation frequency, then median winter net irrigation, then id. Freeze the chosen rotation before evaluating later seasons. This isolates a water-only policy; it is not the production seven-dimension ranking.",
+  "currentPracticeId": "rot_dhan49_boro_conventional",
+  "calendarSources": [
+    "research/crops/brri_rice_varieties.csv: seedbed windows and durations; replay uses their midpoint plus seven turnaround days",
+    "research/explore/connect_check.py: fixed winter sowing dates and durations, not weather-derived phenology",
+    "packages/rotation-engine/src/data/tanore_replay_data.ts: BARI/BWMRI sowing windows"
+  ],
+  "candidates": [
+    {"id":"rot_dhan71_lentil","aman":"BRRI dhan71","winter":"Lentil (BARI Masur-8)","amanReady":"11-10","winterSow":"11-10","winterHarvest":"03-01","sowingWindow":["10-23","11-14"]},
+    {"id":"rot_dhan71_mustard","aman":"BRRI dhan71","winter":"Mustard (BARI Sarisha-14)","amanReady":"11-10","winterSow":"11-10","winterHarvest":"01-28","sowingWindow":["10-15","11-15"]},
+    {"id":"rot_dhan49_boro_conventional","aman":"BRRI dhan49","winter":"Boro (BRRI dhan28)","amanReady":"11-19","winterSow":"02-01","winterHarvest":"05-14","sowingWindow":null},
+    {"id":"rot_dhan49_wheat_early","aman":"BRRI dhan49","winter":"Wheat (BARI Gom 33), sown 20 Nov","amanReady":"11-19","winterSow":"11-20","winterHarvest":"03-04","sowingWindow":["11-15","11-30"]},
+    {"id":"rot_dhan75_wheat_late","aman":"BRRI dhan75","winter":"Wheat (BARI Gom 33), sown 10 Dec","amanReady":"12-02","winterSow":"12-10","winterHarvest":"03-24","sowingWindow":["11-15","11-30"]}
+  ],
+  "limitations": [
+    "Calendar feasibility checks field release before sowing and known sowing windows. Boro uses its recorded fixed transplanting date; the release has no Boro sowing window, so window suitability is unverified and reported separately.",
+    "The existing replay and its parameters were developed with knowledge of the broader historical period. This retrospective temporal split is not an untouched holdout or external validation.",
+    "Both policies are evaluated on the same NASA-driven simulation. These are modeled irrigation demands and rescue events, not observed water savings, yields, income or farmer decisions.",
+    "The calendar-only rule is one transparent simple comparator, not a reconstruction of an agricultural officer's advice. Common candidate identities were already chosen by the project.",
+    "No winter observations for 2025-26 exist in the checked-in replay table; that season is excluded rather than imputed.",
+    "This pilot comparison does not validate the haor, coast, all 544 upazilas, or the production seven-dimension recommendation. Land constraints, crop output and economic trade-offs are not scored here.",
+    "Aman rescue frequency is a count, not an irrigation volume. Winter net irrigation excludes Aman rescue water. No combined annual saving is inferred."
+  ]
+}

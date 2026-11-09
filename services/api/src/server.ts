@@ -31,6 +31,7 @@ import { cropLossStatus, floodStatus, liveHaor, liveStatus, liveUpazila, liveUpa
 import { floodCheckList, greennessCheckList, mapLayers, mapYears } from './map_layers.ts';
 import { fieldConditionsView } from '../../../packages/rotation-engine/src/data/field_conditions.ts';
 import { askAiAssistant } from './ai_assistant.ts';
+import { landingAudio, landingCalls } from './landing.ts';
 import { cropMenu } from '../../../packages/rotation-engine/src/data/crop_choice.ts';
 import { cropsFromKeys, keypadMenu, landFromKey, replyFor, understand } from './voice.ts';
 import { adviseWithNarration, planRequest, rotationEngine, voiceAnswer } from './advice.ts';
@@ -1148,6 +1149,18 @@ const server = http.createServer(async (req, res) => {
 
     if (pathname === '/api/v1/data-release' && req.method === 'GET') {
       return sendJSON(res, 200, dataRelease());
+    }
+
+    // The landing page's sample calls: what a farmer at four places would hear today (nothing is sent), and their voice
+    if (pathname === '/api/v1/landing/calls' && req.method === 'GET') {
+      return sendJSON(res, 200, landingCalls());
+    }
+    const landingAudioMatch = /^\/api\/v1\/landing\/calls\/([a-z_]+)\/audio$/.exec(pathname);
+    if (landingAudioMatch && req.method === 'GET') {
+      const rec = await landingAudio(landingAudioMatch[1]);
+      if (!rec) throw new ApiError('not_found', 'No such sample call');
+      res.writeHead(200, { 'Content-Type': rec.contentType, 'Content-Length': rec.audio.length, 'Cache-Control': 'public, max-age=3600' });
+      return res.end(rec.audio);
     }
 
     // Unknown API paths are JSON 404s, never the HTML page.

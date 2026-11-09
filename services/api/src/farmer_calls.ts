@@ -37,8 +37,9 @@ import { bnDate, bnDateOf, bnDigits, bnGenitive, enDate } from '../../../package
 import { FORBIDDEN_TERMS } from '../../../packages/narration-core/src/dual_gate_validator.ts';
 import * as desk from './officer_desk.ts';
 import { adviseWithNarration, planRequest, voiceAnswer } from './advice.ts';
-import { speakable } from './voice.ts';
+import { replyFor, speakable } from './voice.ts';
 import { floodFor } from './live.ts';
+import { screenConditions } from '../../../packages/rotation-engine/src/freshness.ts';
 import { getLocationsPayload } from './locations.ts';
 import { broadcastReport, sendSystechCall, systechConfig, voiceblastHistory, type CallRoute } from './systech.ts';
 import { sendSms, smsParts } from './sms.ts';
@@ -111,16 +112,31 @@ const isDate = (s: unknown): s is string => typeof s === 'string' && /^\d{4}-\d{
 
 // ------------------------------------------------------------------ names
 let upazilaNames: Map<string, string> | null = null;
+let upazilaSounds: Map<string, string | null> | null = null;
 const norm = (s: string) => s.toLowerCase().replace(/[^a-z]/g, '');
+// The boundaries and the locations list spell a third of the names differently (Jessore and Jashore, Dharampasha and
+// Dharmapasha, Ullah Para and Ullapara), so those match by a rough sound: no vowels, h, w or y, no doubled letters,
+// b as p, and no "Sadar", within the same district. Matching the name alone or across districts was wrong too often
+// (Dhaka's Mirpur is not Kushtia's), so a name found only that way stays in English.
+const DISTRICT_SPELLING: Record<string, string> = { chittagong: 'chattogram', nawabganj: 'chapainababganj' };
+const sound = (s: string) => norm(s).replace(/sadar|upazila|thana/g, '').replace(/[aeiouwyh]/g, '').replace(/(.)\1+/g, '$1').replace(/b/g, 'p').replace(/v/g, 'b');
+const districtSound = (s: string) => sound(DISTRICT_SPELLING[norm(s)] ?? s);
 /** The upazila's name in Bangla from the locations list, matched by its English name and district; English otherwise. */
 export function upazilaNameBangla(place: Place): string {
-  if (!upazilaNames) {
+  if (!upazilaNames || !upazilaSounds) {
     upazilaNames = new Map();
+    upazilaSounds = new Map();
     for (const d of getLocationsPayload().districts) {
-      for (const u of d.upazilas) upazilaNames.set(`${norm(d.nameEn)}|${norm(u.nameEn)}`, u.nameBn);
+      for (const u of d.upazilas) {
+        upazilaNames.set(`${norm(d.nameEn)}|${norm(u.nameEn)}`, u.nameBn);
+        const key = `${districtSound(d.nameEn)}|${sound(u.nameEn)}`;
+        upazilaSounds.set(key, upazilaSounds.has(key) ? null : u.nameBn); // two names that sound alike: neither
+      }
     }
   }
-  return upazilaNames.get(`${norm(place.district)}|${norm(place.upazila)}`) ?? place.upazila;
+  return upazilaNames.get(`${norm(place.district)}|${norm(place.upazila)}`)
+    ?? upazilaSounds.get(`${districtSound(place.district)}|${sound(place.upazila)}`)
+    ?? place.upazila;
 }
 const upazilaBangla = (place: Place) => `${upazilaNameBangla(place)} উপজেলা`;
 
@@ -159,6 +175,8 @@ interface Candidate {
   actionBangla: string;
   smsBangla: string;
   questionId?: string;
+  /** The NASA data the call rests on (the landing page lights them up): power, imerg, nisar, opera, ... */
+  datasets?: string[];
 }
 
 const FLOOD_LAND = ['medium_low'];
@@ -197,38 +215,39 @@ function alertCandidates(farmer: FarmerRecord, place: Place, today: string): Can
         reasonBangla: reason,
         actionBangla: a.smsBangla,
         smsBangla: a.smsBangla,
+        datasets: a.id === 'flood_now' ? [n.sensor === 'nisar' ? 'nisar' : 'opera'] : ['imerg', 'power'],
       };
     });
 }
 
-/** October to January on low land: when this year's flood water will have left, and when to sow the Boro seedbed. */
+/** Low-land regional recession context, always requiring field review before planting. */
 function drainCandidate(farmer: FarmerRecord, place: Place, today: string): Candidate | null {
   const m = md(today);
   if (!LOW_LAND.includes(farmer.landType) || !(m >= '10-01' || m <= '01-31')) return null;
-  const d = floodFor(place.kind === 'pilot' ? 'ADM3_Tanore' : place.id)?.drain;
+  const raw = floodFor(place.kind === 'pilot' ? 'ADM3_Tanore' : place.id);
+  const d = screenConditions({ date: today, soilStatus: 'unknown', source: 'drainage review', flood: raw }, today).conditions?.flood?.drain;
   if (!d?.perWeek || !d.freeBy || daysBetween(today, d.freeBy) < 0) return null;
   const by = seenBy(d.to.sensor).bn;
   const upazila = upazilaBangla(place);
   const boro = cropsOf(farmer).includes('boro');
-  const seedbed = addDays(d.freeBy, -SEEDBED_AGE);
-  const action = boro
-    ? daysBetween(today, seedbed) > 3
-      ? `বোরোর বীজতলা দিন ${bnDate(md(seedbed))} নাগাদ, যাতে জমি খালি হওয়ার দিন চারার বয়স পঁয়ত্রিশ থেকে পঁয়তাল্লিশ দিন হয়।`
-      : 'বোরোর বীজতলা এখনই দিন, যাতে জমি খালি হলেই চারা রোপণ করা যায়।'
-    : 'জমি খালি হলেই রস থাকতে থাকতে রবি ফসল বুনুন।';
+  const action = `বোনার আগে জমির পানি, প্রবেশের পথ, মাটির কাজের উপযোগিতা ও লবণাক্ততা যাচাই করুন। ${boro ? 'বোরোর বীজতলা দেওয়ার সময়' : 'রবি ফসলের সময়'} কর্মকর্তার সাথে ঠিক করুন।`;
+  const estimate = d.dateRange
+    ? `আঞ্চলিক পানি নামার আনুমানিক সীমা ${bnDate(md(d.dateRange[0]))} থেকে ${bnDate(md(d.dateRange[1]))}। এটি নিশ্চিত তারিখ নয়।`
+    : `আঞ্চলিক পানির একটি ধারা ${bnDate(md(d.freeBy))} নাগাদ সীমা পার হওয়ার ইঙ্গিত দেয়; অনিশ্চয়তার সীমা নেই, জমি বোনার উপযোগিতা অজানা।`;
   return {
     kind: 'drain',
     key: `drain:${d.to.date}`,
     topic: 'drain',
     level: 'watch',
     emergency: false,
-    titleBangla: 'জমির পানি কবে নামবে',
-    titleEnglish: 'When the land will be free',
-    whyBangla: `নিচু জমি; ${by} হিসাবে ${bnGenitive(upazila)} পানি সপ্তাহে ~${bnDigits(Math.round(d.perWeek * 100))} ভাগ নামছে, জমি খালি ~${bnDate(md(d.freeBy))}।`,
-    whyEnglish: `Low land; ${seenBy(d.to.sensor).en} shows ${place.upazila}'s water falling ~${Math.round(d.perWeek * 100)} points a week, free around ${enDate(md(d.freeBy))}.`,
-    reasonBangla: `${by} হিসাবে ${bnGenitive(upazila)} জমির পানি সপ্তাহে প্রায় ${bnDigits(Math.round(d.perWeek * 100))} ভাগ করে নামছে; এভাবে নামলে নিচু জমি ${bnDate(md(d.freeBy))} নাগাদ খালি হবে।`,
+    titleBangla: 'আঞ্চলিক পানি নামার হিসাব',
+    titleEnglish: 'Regional recession estimate: field review required',
+    whyBangla: `${by}, ${upazila}: ${estimate}`,
+    whyEnglish: `${seenBy(d.to.sensor).en}, ${place.upazila}: regional recession estimate ${d.dateRange ? d.dateRange.join(' to ') : d.freeBy}. Not a verified planting date; check field access, soil workability and salinity.`,
+    reasonBangla: `${by}, ${upazila}: ${estimate}`,
     actionBangla: action,
-    smsBangla: `জমি খালি ~${bnDate(md(d.freeBy))}। ${boro ? (daysBetween(today, seedbed) > 3 ? `বোরোর বীজতলা ${bnDate(md(seedbed))} নাগাদ দিন।` : 'বোরোর বীজতলা এখনই দিন।') : 'খালি হলেই রবি ফসল বুনুন।'}`,
+    smsBangla: 'পানি নামার আঞ্চলিক হিসাব বোনার নিশ্চয়তা নয়। জমি ও মাটির উপযোগিতা কর্মকর্তার সাথে যাচাই করুন।',
+    datasets: [d.to.sensor === 'nisar' ? 'nisar' : 'opera'],
   };
 }
 
@@ -258,7 +277,7 @@ function reminderCandidates(farmer: FarmerRecord, place: Place, today: string): 
       const toOpen = daysBetween(today, open), toClose = daysBetween(today, close);
       const span = `${bnDate(window[0])} থেকে ${bnDate(window[1])}`;
       const base = {
-        kind: 'reminder' as const, topic: `reminder:${crop}`, level: 'advice' as const, emergency: false,
+        kind: 'reminder' as const, topic: `reminder:${crop}`, level: 'advice' as const, emergency: false, datasets: ['power', 'imerg'],
         reasonBangla: `আপনার এলাকায় ${act.bn} ভালো সময় ${span}।`,
       };
       if (toOpen >= 1 && toOpen <= OPENS_AHEAD) {
@@ -342,6 +361,45 @@ export function candidatesFor(farmer: FarmerRecord, today: string): Candidate[] 
     .filter(c => !used.has(c.key))
     .filter(c => c.emergency || c.kind === 'answer' || (!capped && !recentTopics.has(c.topic)))
     .sort((a, b) => RANK[a.emergency ? 'emergency' : a.kind] - RANK[b.emergency ? 'emergency' : b.kind]);
+}
+
+// ------------------------------------------------------------------ a sample call (the landing page)
+/** A farmer the landing page speaks for: nobody in the register, no number, never dialled. */
+export interface SampleFarmer {
+  id: string;
+  placeId: string;
+  landType: FarmerRecord['landType'];
+  crops: string[];
+  unionBangla?: string;
+  unionEnglish?: string;
+}
+
+/**
+ * What a farmer like this would hear today if they were registered: the day's best call (an alert, the drain date or
+ * a reminder), or else the season's plan, as the script and SMS. Nothing is stored, planned or sent.
+ */
+export function sampleCall(s: SampleFarmer, today = dhakaToday()) {
+  const farmer = {
+    ...s, nameBangla: '', nameEnglish: '', villageBangla: '', villageEnglish: '', phoneMasked: '', currentAmanCrop: '',
+    irrigation: 'unknown', sample: true,
+  } as unknown as FarmerRecord;
+  const place = placeOf(farmer);
+  const where = whereFor(farmer, place);
+  const best = candidatesFor(farmer, today)[0];
+  if (best) {
+    return {
+      kind: best.kind, level: best.level, titleBangla: best.titleBangla, titleEnglish: best.titleEnglish,
+      whyBangla: best.whyBangla, whyEnglish: best.whyEnglish, datasets: best.datasets ?? [], ...compose(farmer, best, where),
+    };
+  }
+  const reply = replyFor(adviseWithNarration({ ...planRequest({ unionId: place.id, landType: s.landType }), today }));
+  return {
+    kind: 'plan' as const, level: 'advice' as const, titleBangla: 'এই মৌসুমের ফসলচক্র', titleEnglish: "This season's rotation",
+    whyBangla: `${where.bn}: ঐতিহাসিক নাসা তথ্যের মডেল থেকে আলোচনার বিকল্প; প্রয়োজনীয় যাচাই বার্তায় আছে।`,
+    whyEnglish: `${where.en}: discussion options from a historical NASA-informed model; the message includes required checks.`,
+    datasets: ['power', 'imerg', 'nasadem', 'grace'],
+    scriptBangla: reply.speechBangla, smsBangla: reply.smsBangla, durationSeconds: reply.durationSecondsEstimate,
+  };
 }
 
 /**

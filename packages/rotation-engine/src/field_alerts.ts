@@ -56,6 +56,9 @@ export interface FloodDrain {
   to: { date: string; floodShare: number; sensor: 'opera' | 'nisar' };
   perWeek: number | null; // flood share lost per week; null when not falling yet
   freeBy: string | null; // when the flood share falls below 5% at that pace (or already did); null beyond 45 days
+  dateRange?: [string, string] | null;
+  rangeMethod?: string;
+  fieldCheckRequired?: boolean;
 }
 /** Flood water now from NASA OPERA DSWx-HLS (research/live/flood_now.py) or NASA-ISRO NISAR radar (nisar_water.py). */
 export interface FloodNow {
@@ -81,10 +84,14 @@ export function drainText(d: FloodDrain | null | undefined): { bn: string; en: s
   if (!d) return null;
   const pct = (x: number) => r0(x * 100);
   const by = d.from.sensor === d.to.sensor ? seenBy(d.to.sensor) : { bn: 'নাসার OPERA ও NISAR', en: 'NASA OPERA and NISAR' };
+  if (d.dateRange) return {
+    bn: `${by.bn} দিয়ে এলাকার বাড়তি পানি নামার আনুমানিক সীমা ${bnDate(d.dateRange[0].slice(5))}–${bnDate(d.dateRange[1].slice(5))}। এটি নিশ্চিত তারিখ নয়। বোনার আগে জমিতে ঢোকার পথ, মাটির কাজের উপযোগিতা ও লবণাক্ততা পরীক্ষা করুন।`,
+    en: `${by.en}: the regional water-recession estimate spans ${enDate(d.dateRange[0].slice(5))}–${enDate(d.dateRange[1].slice(5))}. This is a method/sampling range, not a confidence interval or planting guarantee. Check access, soil workability and salinity in the field.`,
+  };
   if (d.perWeek && d.freeBy) {
     return {
-      bn: `এ বছর (${by.bn}) পানি ${bnDate(d.from.date.slice(5))}-এর ${bnDigits(pct(d.from.floodShare))}% থেকে ${bnDate(d.to.date.slice(5))}-এ ${bnDigits(pct(d.to.floodShare))}%-এ নেমেছে, সপ্তাহে প্রায় ${bnDigits(pct(d.perWeek))} ভাগ; এভাবে নামলে জমি ~${bnDate(d.freeBy.slice(5))} নাগাদ খালি হবে।`,
-      en: `This year (${by.en}) the water has fallen from ${pct(d.from.floodShare)}% on ${enDate(d.from.date.slice(5))} to ${pct(d.to.floodShare)}% on ${enDate(d.to.date.slice(5))}, about ${pct(d.perWeek)} points a week; at that pace the land is free around ${enDate(d.freeBy.slice(5))}.`,
+      bn: `এ বছর (${by.bn}) এলাকার পানি ${bnDate(d.from.date.slice(5))}-এর ${bnDigits(pct(d.from.floodShare))}% থেকে ${bnDate(d.to.date.slice(5))}-এ ${bnDigits(pct(d.to.floodShare))}%-এ নেমেছে। একই হারে নামলে এলাকার পানির সীমা ~${bnDate(d.freeBy.slice(5))} নাগাদ পার হতে পারে; অনিশ্চয়তার সীমা নেই। এটি জমি বোনার উপযোগী হওয়ার নিশ্চয়তা নয়।`,
+      en: `This year (${by.en}) the water has fallen from ${pct(d.from.floodShare)}% on ${enDate(d.from.date.slice(5))} to ${pct(d.to.floodShare)}% on ${enDate(d.to.date.slice(5))}, about ${pct(d.perWeek)} points a week. A single-trend estimate crosses the regional water threshold around ${enDate(d.freeBy.slice(5))}; no uncertainty range is available. Field planting readiness is unverified.`,
     };
   }
   if (d.perWeek) {
@@ -94,7 +101,7 @@ export function drainText(d: FloodDrain | null | undefined): { bn: string; en: s
     };
   }
   if (d.freeBy) {
-    return { bn: `এ বছর (${by.bn}) জমির বাড়তি পানি ${bnDate(d.freeBy.slice(5))} নাগাদ নেমে গেছে।`, en: `This year (${by.en}) the extra water had left the land by ${enDate(d.freeBy.slice(5))}.` };
+    return { bn: `এ বছর (${by.bn}) ${bnDate(d.freeBy.slice(5))}-এ এলাকার বাড়তি পানির অংশ ৫%-এর নিচে ছিল। জমির কাজের উপযোগিতা মাঠে যাচাই করুন।`, en: `This year (${by.en}) the regional extra-water share was below 5% on ${enDate(d.freeBy.slice(5))}. Check field workability before planting.` };
   }
   if (d.to.floodShare >= FLOOD_WATCH) {
     return {
@@ -353,9 +360,9 @@ function floodNow(t: number, f: FloodNow, drained80: string | null | undefined):
   const drain = { bn: `${thisYear ? ` ${thisYear.bn}` : ''}${lastSeason.bn}`, en: `${thisYear ? ` ${thisYear.en}` : ''}${lastSeason.en}` };
   return {
     ...base,
-    textBangla: `${head.bn} জমির পানি নামলেই রবি ফসল বুনুন, রস থাকতে থাকতে।${drain.bn}`,
-    textEnglish: `${head.en} Sow the winter crop as each field drains, while the soil still holds water.${drain.en}`,
-    smsBangla: 'জমির পানি নামলেই রবি ফসল বুনুন।',
+    textBangla: `${head.bn} রবি ফসল বোনার আগে জমির পানি, মাটির কাজের উপযোগিতা ও বোনার সময় কর্মকর্তার সাথে যাচাই করুন।${drain.bn}`,
+    textEnglish: `${head.en} Before sowing a winter crop, check field water, soil workability and the sowing window with an officer.${drain.en}`,
+    smsBangla: 'রবি ফসল বোনার আগে জমির পানি ও মাটির উপযোগিতা কর্মকর্তার সাথে যাচাই করুন।',
   };
 }
 
