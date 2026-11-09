@@ -1,0 +1,169 @@
+{
+  "schema": "mati-kohon-claims-v1",
+  "reviewedAt": "2026-11-07",
+  "scope": "Public headline claims, model outputs and demonstration evidence. Repository sources below document implementation; they are not independent validation of the underlying science.",
+  "claims": [
+    {
+      "id": "irrigation-demand",
+      "calculation": "Historical crop water balance; irrigation mm times 10 equals m3/ha. Compare the same crop seasons against the stated current rotation, retaining signed differences.",
+      "sources": ["packages/rotation-engine/src/plugins/water.ts", "packages/rotation-engine/src/data/tanore_replay_data.ts", "research/explore/connect_check.py", "scripts/evaluate_full_system.ts"],
+      "assumptions": "Crop coefficients, durations, initial water storage and rice seepage are modeled. Annual comparison excludes Aman rescue volume; rescue frequency is separate. Irrigation source, delivery losses and return flows are not measured.",
+      "allowed": "The model estimates lower or higher crop irrigation demand than the named comparator.",
+      "notAllowed": "We saved six million litres, measured farm water savings, or replenished the aquifer.",
+      "status": "modeled"
+    },
+    {
+      "id": "groundwater-volume-equivalent",
+      "calculation": "District storage trend in mm/year times district area times 10; divide by modeled Boro-to-alternative irrigation difference per hectare to obtain an illustrative equivalent area.",
+      "sources": ["research/explore/groundwater_budget.py", "packages/rotation-engine/src/data/groundwater_budget.ts", "packages/rotation-engine/src/data/groundwater_budget.json"],
+      "assumptions": "GLDAS-2.2 GRACE-assimilated storage is modeled regional context. Recharge, return flows, other withdrawals and irrigation sources are omitted; a volume equivalence is not a causal water budget.",
+      "allowed": "Illustrative irrigation-volume equivalent of a modeled district storage trend.",
+      "notAllowed": "Changing this percentage of farms will stop groundwater decline or restore the aquifer.",
+      "status": "illustrative"
+    },
+    {
+      "id": "nasa-added-value",
+      "calculation": "Compare current practice, calendar-only selection and the seven-dimension model with fixed farmer priorities; remove GLDAS, current moisture, IMERG harvest risk and OPERA individually, with SRDI separately.",
+      "sources": ["scripts/evaluate_full_system.ts", "research/evaluation/full_system_comparison.json", "packages/rotation-engine/src/experiments.ts"],
+      "assumptions": "All outcomes are measured by the same model. Calendar candidates share the catalog and available sowing dates. The frozen cases have no current SMAP reading. Changes do not imply improvements.",
+      "allowed": "This input changes this modeled choice, or leaves it unchanged; no observed benefit is established.",
+      "notAllowed": "NASA improves outcomes in all three settings or current-moisture data helped when no reading was supplied.",
+      "status": "scenario_comparison"
+    },
+    {
+      "id": "temporal-water-comparison",
+      "calculation": "Select using 2001–2015, freeze the choice and evaluate 2016–2024. Both policies choose dhan71–mustard in this experiment.",
+      "sources": ["research/evaluation/temporal_protocol.json", "research/evaluation/temporal_comparison.py", "research/evaluation/temporal_comparison.json"],
+      "assumptions": "Retrospective simulated outcomes, previously explored parameters, nine complete later Aman–winter pairs. Not the production seven-dimension selector and not independent farm observations.",
+      "allowed": "No incremental advantage over the calendar rule in this frozen pilot experiment.",
+      "notAllowed": "A validated predictive advantage, pristine holdout, or nationwide result.",
+      "status": "negative_result"
+    },
+    {
+      "id": "nisar-opera-agreement",
+      "calculation": "Compare classified water pixels for nearby NISAR and OPERA observations using research/explore/nisar_calibration.py; report sample, threshold, dates and kappa with any percentage.",
+      "sources": ["research/explore/nisar_calibration.py", "research/floods/nisar_calibration.csv", "research/floods/nisar_calibration.csv.provenance.json"],
+      "assumptions": "OPERA is a satellite comparator, not ground truth. Thresholds were explored on these pairs. Repeated pixels are spatially correlated; coastal disagreement matters.",
+      "allowed": "About 83% cross-sensor water-classification agreement in the recorded paired sample; this is not planting-date validation.",
+      "notAllowed": "83.4% accurate planting dates, verified drainage forecasts, or 83% ground-truth accuracy.",
+      "status": "cross_sensor_comparison"
+    },
+    {
+      "id": "drainage-date-range",
+      "calculation": "Prefix-only same-sensor seasonal-peak and recent-trend slopes project the below-5% regional extra-water threshold. Envelope of both predictions widened by the observation gap, at most 14 days; maximum 45-day horizon.",
+      "sources": ["research/live/drainage.py", "research/evaluation/drainage_evaluation.py", "research/evaluation/drainage_evaluation.json", "packages/rotation-engine/src/data/land.ts"],
+      "assumptions": "Five pilot sites have no evaluable future threshold crossings in the stored sample. Broader 544-location exploration is post hoc; overlapping origins are not independent. Last-year proxy has a different water definition. Observation intervals are not exact drainage dates.",
+      "allowed": "A provisional regional method/sampling range. Later range endpoint informs tentative low-land calendar feasibility; check access, soil workability, water and salinity before planting.",
+      "notAllowed": "A calibrated confidence interval, safe planting date, validated flood-arrival forecast, or peak-method superiority over recent trend.",
+      "status": "exploratory_backtest"
+    },
+    {
+      "id": "haor-rainfall-watch",
+      "calculation": "All four stored rainfall thresholds versus seven directly labeled years: four flood and three no-flood, with 18 unknown. At 200 mm: two detected, two missed, zero of three negatives flagged.",
+      "sources": ["research/evaluation/haor_protocol.json", "research/evaluation/haor_evaluation.py", "research/evaluation/haor_evaluation.json"],
+      "assumptions": "Broad regional seasonal labels, explored historical IMERG Final data and no independent arrival dates. Indirect 2004 label is separate. Unknown is never negative.",
+      "allowed": "A historical rainfall association with explicit missed years and small event counts.",
+      "notAllowed": "Reliable warning lead time, zero false alarms generally, all floods detected, or avoided crop loss.",
+      "status": "small_sample_association"
+    },
+    {
+      "id": "soil-practice-score",
+      "calculation": "Winter crop base 0.9 legume, 0.45 rice or 0.7 other; crop-sequence and low-organic-matter modifiers, clamped 0.1–0.95. Fertilizer quantities only with applicable source inputs.",
+      "sources": ["packages/rotation-engine/src/plugins/soil.ts", "packages/rotation-engine/src/stewardship.ts", "research/export/soil_atlas_export.py"],
+      "assumptions": "Team-designed heuristic using crop traits and regional SRDI context. It is not a soil process model or before/after field measurement.",
+      "allowed": "A soil-practice preference score, with source-specific fertilizer information where available.",
+      "notAllowed": "Measured soil-health improvement, soil carbon sequestration, or a probability of soil recovery.",
+      "status": "heuristic"
+    },
+    {
+      "id": "coverage-544",
+      "calculation": "544 geoBoundaries ADM3 records joined to upazila context and district/pilot weather replays; native source resolution remains distinct from display geography.",
+      "sources": ["research/sites/adm3_centroids.csv", "packages/rotation-engine/src/data/location.ts", "packages/rotation-engine/src/data/national_replay.json", "packages/rotation-engine/src/data/upazila_profile.json"],
+      "assumptions": "Administrative coverage does not mean fresh complete observations or field-specific accuracy at every location. District climate can be shared by many upazilas. A 1 km greenness aggregation grid does not increase the resolution of other sources.",
+      "allowed": "544 upazila contexts combined with district weather replays, with source-specific resolution and missing data.",
+      "notAllowed": "544 independently validated weather models or 1 km precision for every measurement.",
+      "status": "coverage"
+    },
+    {
+      "id": "source-count-14",
+      "calculation": "Count entries in the landing DATASETS inventory: POWER, IMERG, MODIS, VIIRS, NISAR, OPERA, GRACE/GLDAS, NASADEM, SMAP, HLS, MERRA-2, ECOSTRESS, SEDAC and GIBS.",
+      "sources": ["apps/saao-dashboard/public/landing-story.js"],
+      "assumptions": "Fourteen source/service families, not fourteen independent predictors. POWER and MERRA-2 overlap; GRACE/GLDAS is grouped. ECOSTRESS is exploratory, GIBS is display, MODIS/VIIRS/HLS largely context. A source may be absent or stale for a place.",
+      "allowed": "14 NASA-linked source families and display services, with their distinct roles disclosed.",
+      "notAllowed": "Every decision combines 14 independent NASA measurements or all 14 are current at every field.",
+      "status": "inventory"
+    },
+    {
+      "id": "replay-seasons",
+      "calculation": "Aman history spans 2001–2025; the pilot winter source ends before a complete 2025–26 pair. The temporal comparison uses 24 complete pairs, split 15 training and 9 evaluation.",
+      "sources": ["packages/rotation-engine/src/data/tanore_replay_data.ts", "research/evaluation/temporal_comparison.py", "research/evaluation/temporal_protocol.json"],
+      "assumptions": "Different products and derived records have different dates; a headline history span is not the number of usable observations in every calculation.",
+      "allowed": "Historical replay with the period and available season count stated for the particular result.",
+      "notAllowed": "25 complete Aman–winter pairs in the pilot temporal comparison.",
+      "status": "coverage"
+    },
+    {
+      "id": "income",
+      "calculation": "Crop yield/price/cost assumptions plus straw or by-products where modeled; stress cost deltas per planted crop and irrigation m3. Local missing crop income can use a disclosed proxy.",
+      "sources": ["packages/rotation-engine/src/plugins/income.ts", "packages/rotation-engine/src/experiments.ts", "research/bbs/census_costs.csv", "research/bbs/harvest_prices.csv"],
+      "assumptions": "Published averages and team assumptions are not this farmer's present prices, realized yield, debt or household income. Fallow's non-crop costs and benefits are unknown.",
+      "allowed": "Illustrative net crop return under stated assumptions.",
+      "notAllowed": "Guaranteed profit, observed farmer income gain, or a forecast market price.",
+      "status": "illustrative"
+    },
+    {
+      "id": "input-robustness",
+      "calculation": "Rerun generation, calendars, checks and scores under costs ±5,000 BDT/ha per crop, irrigation +2 BDT/m3, Aman +7 days, winter ±10 days, initial water 25/75 mm, combined stress and coastal salinity ±25%; priorities fixed.",
+      "sources": ["packages/rotation-engine/src/input_sensitivity.ts", "packages/rotation-engine/src/experiments.ts", "test_input_sensitivity.ts"],
+      "assumptions": "Engineering bounds, not empirical distributions. Duration uses average daily demand, not a weather/phenology replay. Existing heat and Aman rescue frequencies stay fixed. The strong-salinity review threshold is a policy choice.",
+      "allowed": "Stable within tested assumptions, review required, or insufficient evidence; final recommendation withheld where appropriate.",
+      "notAllowed": "90% certain to succeed, robust to all climate uncertainty, or scientifically calibrated confidence.",
+      "status": "engineering_stress_test"
+    },
+    {
+      "id": "coastal-salinity",
+      "calculation": "SRDI 2009 area shares by salinity class, class-midpoint EC and crop tolerance curves yield a modeled regional crop suitability penalty.",
+      "sources": ["packages/rotation-engine/src/data/salinity.ts", "packages/rotation-engine/src/data/upazila_profile.json"],
+      "assumptions": "Old regional survey, seasonal salinity variation and unknown field EC. Not a NASA salinity measurement; field tests are needed.",
+      "allowed": "A regional salinity screening scenario informed by SRDI, with final choice withheld where evidence is insufficient.",
+      "notAllowed": "NASA measured this field's current soil salinity or validated its crop yield.",
+      "status": "regional_screening"
+    },
+    {
+      "id": "pesticide-and-ecology",
+      "calculation": "Crop-linked PEST-CHEMGRIDS estimates, crop rotation heuristics and ledger factors compare pesticide load and ecological practices.",
+      "sources": ["packages/rotation-engine/src/plugins/pest.ts", "packages/rotation-engine/src/stewardship.ts", "packages/rotation-engine/src/engine.ts"],
+      "assumptions": "Gridded estimates and generic factors are not actual applications, pesticide exposure, biodiversity counts or verified emissions. Lower score/load does not establish avoided health harm.",
+      "allowed": "Estimated pesticide load and practice-based ecological indicators for discussion.",
+      "notAllowed": "Measured pesticide reduction, health protection, carbon credits or biodiversity recovery.",
+      "status": "modeled_and_heuristic"
+    },
+    {
+      "id": "freshness-and-narration",
+      "calculation": "Screen each source independently: soil/rain/disease 7 days, field weather 2, flood/recession 21; reject future/invalid dates. Forecast starts today/tomorrow. Narration facts come from approved templates; an optional model selects only a permitted style.",
+      "sources": ["packages/rotation-engine/src/freshness.ts", "packages/narration-core/src/template_narrator.ts", "packages/narration-core/src/dual_gate_validator.ts", "services/api/src/advice.ts", "test_reliability.ts"],
+      "assumptions": "Age cutoffs are operational policy, not accuracy guarantees. Regional observations can miss field conditions. Exact template membership validates message integrity, not agronomy.",
+      "allowed": "Dated, screened observations and controlled narration with explicit uncertainty.",
+      "notAllowed": "Hallucination-proof science, always-live data or a scientifically validated message merely because text checks passed.",
+      "status": "engineering_controls"
+    },
+    {
+      "id": "erosion-and-cattle",
+      "calculation": "Erosion values are fixed authored examples with no per-value observation dates or citations. Cattle advice applies weather-based heat-stress rules.",
+      "sources": ["services/api/src/erosion.ts", "test_cattle.ts", "test_server.js"],
+      "assumptions": "Erosion reference organizations do not substantiate each example value. Cattle guidance has not been validated on local animals. Neither establishes crop-rotation skill.",
+      "allowed": "Secondary demonstration modules; erosion is explicitly illustrative static data, cattle is general rule-based heat guidance.",
+      "notAllowed": "A live erosion forecast, measured bank movement or validated animal-health outcome.",
+      "status": "secondary_demo"
+    },
+    {
+      "id": "human-validation",
+      "calculation": "Zero farmer/officer testing sessions reported by the project owner in this development task.",
+      "sources": ["docs/AI_USE.md", "docs/evidence-reliability.md"],
+      "assumptions": "Synthetic scenarios and officer-review rehearsal checkboxes are not interviews, field verification, consent or endorsements.",
+      "allowed": "A working hackathon prototype with reproducible tests; field and comprehension validation remain outstanding.",
+      "notAllowed": "Farmer-tested, officer-approved, adopted in practice or proven to improve livelihoods.",
+      "status": "not_yet_tested"
+    }
+  ]
+}

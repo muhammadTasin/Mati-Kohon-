@@ -19,7 +19,7 @@ export const CROP_NAMES = {
 };
 const ROTATION_CHOICES = {
   curMonsoon: ['aman', 'fallow', 'soybean', 'mungbean', 'sesame'],
-  curWinter: ['', 'boro', 'lentil', 'mustard', 'wheat', 'potato', 'maize', 'sunflower', 'chickpea', 'grasspea', 'sweetpotato', 'barley'],
+  curWinter: ['', 'fallow', 'boro', 'lentil', 'mustard', 'wheat', 'potato', 'maize', 'sunflower', 'chickpea', 'grasspea', 'sweetpotato', 'barley'],
   curSummer: ['', 'boro_late', 'mungbean', 'sesame', 'jute', 'aus'],
 };
 const ROLES = {
@@ -57,6 +57,54 @@ export function rotationFromSelects() {
 }
 
 const cropName = (id, tr) => tr(...(CROP_NAMES[id] ?? [id, id]));
+
+export function currentPracticeHtml(advice, { tr, escapeHtml, num }) {
+  const ref = advice.current_practice_reference;
+  if (!ref) return '';
+  const best = advice.options[0];
+  const lines = best?.review?.referenceId === ref.id ? best.review.benefits : [];
+  return `<section class="card decision-check" aria-label="${tr('আপনার এখনকার চাষ', 'Your current practice')}">
+    <div class="card-header"><h3>${tr('আপনার এখনকার চাষই তুলনার ভিত্তি', 'Compared with your actual practice')}</h3><span class="badge badge-neutral">${tr('স্কোর দেওয়া হয়নি', 'Unranked reference')}</span></div>
+    <p><strong>${escapeHtml(tr(ref.nameBangla, ref.nameEnglish))}</strong></p>
+    <p>${tr('আমন বাদে ফসলের সেচ', 'Crop irrigation excluding Aman')}: ${num(ref.irrigationExcludingAmanMm)} ${tr('মিমি', 'mm')}; ${tr('শীতের ফসলের আয়', 'winter crop return')}: ${num(ref.winterCropNetReturnBdtPerHa)} ${tr('টাকা/হেক্টর', 'BDT/ha')}.</p>
+    ${lines.length ? `<p><strong>${tr('প্রথম বিকল্পের লাভ ও বাড়তি চাহিদা', 'The first option: gains and added demands')}</strong></p><ul>${lines.map(l => `<li>${escapeHtml(tr(l.bn, l.en))}</li>`).join('')}</ul>` : ''}
+    <details class="fold"><summary>${tr('এই তুলনায় যা ধরা হয়েছে', 'Assumptions behind this comparison')}</summary><p class="disclaimer-note">${escapeHtml(tr(ref.note.bn, ref.note.en))}</p>
+      <p>${tr('বর্তমান চক্রের বার্ষিক নিট আয়ের নমুনা হিসাব', 'Illustrative annual net return of the current practice')}: ${num(ref.illustrativeAnnualNetReturnBdtPerHa)} ${tr('টাকা/হেক্টর', 'BDT/ha')}.</p>
+    </details>
+  </section>`;
+}
+
+/** A sensitivity check, never a probability of success. Keep the full shortlist and farmer weights fixed. */
+export function decisionCheckHtml(advice, { tr, escapeHtml, num }) {
+  const inputs = advice.input_sensitivity;
+  const stressHtml = inputs ? `<section class="card decision-check" aria-label="${tr('সিদ্ধান্তের অনিশ্চয়তা', 'Decision uncertainty')}">
+    <h3>${tr('এই সিদ্ধান্ত কতটা অনুমানের উপর নির্ভর করে?', 'How much does this choice depend on assumptions?')}</h3>
+    <p><strong>${escapeHtml(tr(inputs.message.bn, inputs.message.en))}</strong></p>
+    <p>${tr('কৃষকের অগ্রাধিকার একই রেখে খরচ, সময় ও মাটির পানির ইনপুট বদলে হিসাব আবার চালানো হয়েছে।', 'Farmer priorities stay fixed while costs, timing and initial soil water change and the model runs again.')}</p>
+    <details class="fold"><summary>${tr('ইনপুট বদলালে কোন চক্র এগিয়ে থাকে', 'See which inputs change the preferred plan')}</summary>
+    <ul>${inputs.scenarios.map(s => `<li><strong>${escapeHtml(tr(s.label.bn, s.label.en))}</strong>: ${escapeHtml(s.leaderName ?? tr('পর্যাপ্ত তথ্য নেই', 'Insufficient evidence'))} — ${s.nominalLeaderRetained ? tr('আগের পছন্দ থাকে', 'same choice') : tr('পছন্দ বদলায় বা সিদ্ধান্ত স্থগিত', 'choice changes or is deferred')}${s.irrigationMm === null ? '' : `; ${num(s.irrigationMm)} ${tr('মিমি সেচ', 'mm irrigation')}`}</li>`).join('')}</ul>
+    <p>${tr('এগুলো পরীক্ষার জন্য ধরা সীমা, কৃষকের মাপা খরচ নয়। মেয়াদ বদলালে পানির চাহিদা দৈনিক গড় দিয়ে বদলানো হয়; প্রতিদিনের আবহাওয়া আবার চালানো হয় না। কোনো স্কোর সফলতার সম্ভাবনা নয়।', 'These are stress-test ranges, not measured farmer costs. Duration changes use average daily water demand, not a new daily-weather replay. Scores are not success probabilities.')}</p></details></section>` : '';
+  const check = advice.decision_check;
+  if (!check?.scenarios?.length) return stressHtml;
+  const names = ids => ids.map(id => {
+    const option = advice.options.find(o => o.id === id);
+    return option ? tr(option.nameBangla, option.nameEnglish) : id;
+  }).join(' / ');
+  const changed = check.scenarios.filter(s => !s.nominalLeaderRetained).length;
+  const summary = changed
+    ? tr(`${num(changed)}টি পরীক্ষায় স্কোরে এগিয়ে থাকা চক্র বদলায়। স্থানীয় তথ্য মিলিয়ে তারপর বেছে নিন।`, `The score leader changes in ${changed} checks. Verify the uncertain inputs before choosing.`)
+    : tr('এই পরীক্ষাগুলোতে আগের স্কোর-নেতা এগিয়ে থাকে বা সমান হয়। এটি সফলতার নিশ্চয়তা নয়।', 'A current score leader stays ahead or ties in these checks. This is not a guarantee of success.');
+  const rows = check.scenarios.map(s => `<li><strong>${escapeHtml(tr(s.label.bn, s.label.en))}</strong><br>${escapeHtml(names(s.leaderIds))}${s.leaderIds.length > 1 ? ` — ${tr('সমান স্কোর', 'tied scores')}` : ''} <span class="badge ${s.nominalLeaderRetained ? 'badge-neutral' : 'badge-warning'}">${s.nominalLeaderRetained ? tr('আগের নেতা থাকে', 'Leader retained') : tr('নেতা বদলায়', 'Leader changes')}</span></li>`).join('');
+  return stressHtml + `<section class="card decision-check" aria-label="${tr('অনুমান বদলালে ফল', 'Assumption checks')}">
+    <div class="card-header"><h3>${tr('কোন অনুমান বদলালে সিদ্ধান্ত বদলায়?', 'Which assumptions change the leading option?')}</h3><span class="badge badge-warning">${tr('স্কোর পরীক্ষা', 'Score check')}</span></div>
+    <div class="card-body"><p>${escapeHtml(summary)}</p>
+    <details class="fold"><summary>${tr('পরীক্ষা ও সীমাবদ্ধতা দেখুন', 'See checks and limitations')}</summary>
+      <p>${tr('মূল হিসাবে সর্বোচ্চ স্কোর', 'Highest weighted score before checks')}: ${escapeHtml(names(check.nominalLeaderIds))}</p>
+      <ul>${rows}</ul>
+      <p class="disclaimer-note">${tr('শুধু এখানে দেখানো চক্রগুলো পরীক্ষা করা হয়েছে। কৃষকের অগ্রাধিকার একই রেখে নির্বাচিত স্কোর সবার জন্য ০.৫ ধরা হয়েছে। ফসলের পছন্দ ও শর্ত সুপারিশের ক্রম বদলাতে পারে। নতুন আবহাওয়া, ফলন বা দাম চালানো হয়নি; এটি মাঠের যাচাই বা সফলতার সম্ভাবনা নয়।', 'Only the displayed options are checked. Farmer priorities stay fixed; selected scores are set to 0.5 for every option. Crop requests and constraints can affect recommendation order. Weather, yields and prices are not rerun; this is not field validation or a probability of success.')}</p>
+    </details></div>
+  </section>`;
+}
 
 /** Badge, crop roles, constraint warnings and the five-part review for one comparison card. */
 export function reviewHtml(opt, { tr, escapeHtml }) {

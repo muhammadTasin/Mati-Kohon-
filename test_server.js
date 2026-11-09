@@ -15,10 +15,24 @@ const LANDING_AUDIO = path.join(os.tmpdir(), `eden-landing-audio-test-${process.
 // A NISAR radar flood reading three days old, written fresh each run (readings older than 21 days are not used)
 const NISAR = path.join(os.tmpdir(), `eden-nisar-test-${process.pid}.json`);
 const daysAgo = (n) => new Date(Date.now() - n * 86_400_000).toISOString().slice(0, 10);
+// Fixed values, explicitly old Tanore observations and one fresh Godagari record for the map's freshness contract.
+const LIVE = path.join(os.tmpdir(), `eden-live-test-${process.pid}.json`);
+const liveFixture = JSON.parse(fs.readFileSync('tests/fixtures/live_conditions_2026-10-01.json', 'utf8'));
+for (const row of liveFixture.upazilas) {
+  if (row.power) row.power.date = daysAgo(8);
+  if (row.disease) row.disease.date = daysAgo(8);
+  if (row.field) row.field.through = daysAgo(3);
+}
+const freshMapRow = liveFixture.upazilas.find(r => r.id === 'ADM3_Godagari');
+const oldMapRow = liveFixture.upazilas.find(r => r.id === 'ADM3_Tanore');
+freshMapRow.power.date = daysAgo(0);
+freshMapRow.disease.date = daysAgo(0);
+freshMapRow.field = { ...oldMapRow.field, through: daysAgo(1), forecast: null, paddyDryNext7: null };
+fs.writeFileSync(LIVE, JSON.stringify(liveFixture));
 fs.writeFileSync(NISAR, JSON.stringify({ source: 'test', made: new Date().toISOString(), window: [daysAgo(12), daysAgo(0)], passes: { found: 2, read: 2 },
   thresholds: { hhWaterDb: -10 }, summary: { upazilas: 1, withFloodShare: 1, floodAtLeast10pct: 1, floodAtLeast25pct: 1, draining: 1 },
   upazilas: { ADM3_Barhatta: { date: daysAgo(3), seenShare: 0.9, floodShare: 0.3, waterNow: 0.45, waterDry: 0.2, lastYearRadar: 0.01, sensor: 'nisar',
-    drain: { from: { date: daysAgo(20), floodShare: 0.45, sensor: 'opera' }, to: { date: daysAgo(3), floodShare: 0.3, sensor: 'nisar' }, perWeek: 0.062, freeBy: daysAgo(-30) } } } }));
+    drain: { from: { date: daysAgo(20), floodShare: 0.45, sensor: 'nisar' }, to: { date: daysAgo(3), floodShare: 0.3, sensor: 'nisar' }, perWeek: 0.062, freeBy: daysAgo(-30), dateRange: [daysAgo(-20), daysAgo(-40)] } } } }));
 // The demo officer login exists only with DEMO_MODE=true and a code; the tests make up a fresh code every run
 const OFFICER_CODE = crypto.randomBytes(12).toString('hex');
 // A stand-in for the Supabase Auth server (GET /auth/v1/user), so the manager routes can be tested over HTTP without a project:
@@ -52,7 +66,7 @@ const serverProc = spawn('node', ['--experimental-strip-types', 'services/api/sr
   // (the daily update rewrites the live file)
   env: { ...process.env, PORT, DEMO_MODE: 'true', EDEN_OFFICER_CODE: OFFICER_CODE, SUPABASE_URL: FAKE_SUPABASE_URL, SUPABASE_ANON_KEY: 'fake-anon-key', ...FAKE_SECRETS, OFFLINE: '1',
     EDEN_OFFICER_STORE: STORE, CATTLE_STORE_PATH: CATTLE_STORE, EDEN_LANDING_AUDIO: LANDING_AUDIO, SEED_DEMO_DATA: 'false', LLM_BASE_URL: '', TTS_BASE_URL: '', GOOGLE_TTS_CREDENTIALS: '', SMS_LIVE: '0', SMS_API_KEY: '', AWAJ_VOICE_SOURCE: '',
-    API_WRITE_TOKEN: '', AWAJ_LIVE: '0', CALL_PROVIDER: '', VOICEBLAST_LIVE: '0', BROADCAST_LIVE: '0', EDEN_LIVE_FILE: path.resolve('tests/fixtures/live_conditions_2026-10-01.json'), EDEN_FLOOD_FILE: path.resolve('tests/fixtures/no_flood_file.json'), EDEN_CROP_LOSS_FILE: path.resolve('tests/fixtures/crop_loss_fixture.json'),
+    API_WRITE_TOKEN: '', AWAJ_LIVE: '0', CALL_PROVIDER: '', VOICEBLAST_LIVE: '0', BROADCAST_LIVE: '0', EDEN_LIVE_FILE: LIVE, EDEN_FLOOD_FILE: path.resolve('tests/fixtures/no_flood_file.json'), EDEN_CROP_LOSS_FILE: path.resolve('tests/fixtures/crop_loss_fixture.json'),
     EDEN_NISAR_FILE: NISAR, EDEN_CALL_STORE: CALL_STORE, MISSED_CALL_KEY: 'test-missed-key', SMS_SECRET_KEY: '' },
 });
 
@@ -165,7 +179,8 @@ async function run() {
   const god = mapRows.upazilas.ADM3_Godagari;
   check(Object.keys(mapRows.upazilas).length === 544 && god.cropsNow !== undefined && god.boroIrrigationMm > 0 && god.pesticideRice?.length === 2 && god.organicMatter,
     'the map has 544 upazilas with MODIS, NASA replay, PEST-CHEMGRIDS and SRDI values');
-  check(Object.values(mapRows.upazilas).filter(r => r.rainStatus).length > 500, "the map carries the daily NASA update's rain and soil status");
+  check(Object.values(mapRows.upazilas).filter(r => r.rainStatus).length === 1 && god.rainStatus,
+    'only the fresh Godagari rain observation appears on the current map');
   check(god.springHotDays > 0 && god.winterColdNights >= 0 && god.preMonsoonErosiveDays > 0 && god.dryRootWet > 0 && god.dryRootWet < 1 && mapRows.sources.risk,
     'the map carries the season risks: spring heat, winter cold, soil-moving rain on bare fields and the dry-season root zone');
 
@@ -211,6 +226,14 @@ async function run() {
     "the farmer's rotation is one marked option, the reference for every option's review");
   check(fsAdvice.what_if?.rainPct === -20 && fsAdvice.what_if?.warmingC === 3, 'a what-if outside -20..20% rain and 0..3 C is clamped');
   check(fsAdvice.options.some(o => o.review.constraintFlags.length) && fsAdvice.disclaimer?.bn && fsAdvice.season_calendar?.trends?.length, 'constraints flag options; the disclaimer and the season calendar are sent');
+  const fallowAdvice = await (await fetch(`${BASE}/api/v1/advice`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
+    unionId: 'ADM3_Shyamnagar', currentAmanCrop: 'BRRI dhan49', currentRotation: { monsoon: 'aman', winter: 'fallow' },
+  }) })).json();
+  const fallowRef = fallowAdvice.current_practice_reference;
+  check(fallowRef?.kind === 'unranked_fallow_reference' && fallowRef.irrigationExcludingAmanMm === 0 && fallowAdvice.reference_option_id === null,
+    'the coastal fallow reference passes through the API without being replaced by Boro');
+  check(fallowAdvice.options.every(o => o.review.referenceId === fallowRef.id) && fallowRef.comparisons.every(c => c.addedIrrigationExcludingAmanMm >= 0),
+    'each option reports added demand against the fallow reference');
   const badRotation = await (await fetch(`${BASE}/api/v1/advice`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({
     unionId: 'talanda_tanore', currentRotation: { winter: '<script>' } }) })).json();
   check(!badRotation.options.some(o => o.farmerCurrent) && !badRotation.what_if, 'a malformed rotation is ignored; no scenario, no what-if');
@@ -220,9 +243,12 @@ async function run() {
     && years.upazilaCropsByYear?.ADM3_Tanore?.length === 25 && years.sources?.groundwater,
     'the map\'s time slider gets 25 years: district heat, heavy rain, dry-season soil and GLDAS groundwater (from 2003), and MODIS crops per upazila');
   console.log('✓ Field Shift: the farmer\'s rotation ranks', fsMine[0].rank, 'of', fsAdvice.options.length, '; what-if clamped; season risks on the map; 25 years for the slider');
-  check(Object.values(mapRows.upazilas).filter(r => r.blastStatus && r.lateBlightStatus).length > 500, 'the map carries this week\'s disease weather');
-  check(['high', 'watch', 'clear', 'none'].includes(mapRows.upazilas.ADM3_Tanore.amanDryStatus) && typeof mapRows.upazilas.ADM3_Tanore.paddyWaterMm === 'number'
-    && mapRows.upazilas.ADM3_Abhaynagar.amanDryStatus === null, 'the map carries this week\'s field alerts where the daily file has field water');
+  check(mapRows.upazilas.ADM3_Tanore.blastStatus === null && mapRows.upazilas.ADM3_Tanore.soilStatus === null
+    && mapRows.upazilas.ADM3_Godagari.blastStatus && mapRows.upazilas.ADM3_Godagari.soilStatus,
+    'old disease/soil observations are missing on the current map; fresh sources remain');
+  check(mapRows.upazilas.ADM3_Tanore.amanDryStatus === null && mapRows.upazilas.ADM3_Tanore.paddyWaterMm === null
+    && ['high', 'watch', 'clear', 'none'].includes(mapRows.upazilas.ADM3_Godagari.amanDryStatus)
+    && typeof mapRows.upazilas.ADM3_Godagari.paddyWaterMm === 'number', 'the map only issues field alerts from fresh conditions');
   const floodList = await (await fetch(`${BASE}/api/v1/flood/upazilas`)).json();
   check(floodList.status?.window === undefined && floodList.status?.radar?.summary?.upazilas === 1 && floodList.cropLoss?.year === 2026
     && floodList.upazilas.map(u => u.id).join() === 'ADM3_Barhatta,ADM3_Atpara' && floodList.upazilas[0].amanNotGreenPct === 45
@@ -342,7 +368,9 @@ async function run() {
   check((await post('/api/v1/officer/farmers', { ...farmerBody, consent: true }, session.token)).status === 400, 'one registration per number');
 
   // Season reminders on a fixed day: the lentil window closes 14 Nov, so on 6 Nov the lentil farmers hear it
-  const day1 = '2026-11-06', day2 = '2026-11-07', day3 = '2026-11-08';
+  // Keep this scheduling fixture away from today's answer queue: one-call-per-day still applies to answers.
+  const reminderYear = new Date().getUTCFullYear() - 1;
+  const day1 = `${reminderYear}-11-06`, day2 = `${reminderYear}-11-07`, day3 = `${reminderYear}-11-08`;
   const plan1 = await (await post('/api/v1/officer/calls/plan', { date: day1 }, session.token)).json();
   const mine1 = plan1.calls.find(c => c.farmerId === 'F07');
   check(mine1?.kind === 'reminder' && mine1.key.startsWith('reminder:lentil:close') && mine1.status === 'proposed', `the lentil farmer gets the closing-window reminder, got ${mine1?.key}`);
@@ -389,12 +417,12 @@ async function run() {
   const planToday = await (await post('/api/v1/officer/calls/plan', {}, session.token)).json();
   const haorCall = planToday.calls.find(c => c.farmerId === haorFarmer.id);
   if (todayMd >= '10-01' || todayMd <= '01-31') {
-    check(haorCall?.kind === 'drain' && haorCall.scriptBangla.includes('NISAR') && haorCall.scriptBangla.includes('বোরোর বীজতলা'), `the low-land farmer hears when the water will have left, got ${haorCall?.key}`);
+    check(haorCall?.kind === 'drain' && haorCall.scriptBangla.includes('NISAR') && haorCall.scriptBangla.includes('নিশ্চিত তারিখ নয়') && haorCall.scriptBangla.includes('যাচাই করুন'), `the low-land farmer must hear the range and field checks, got ${haorCall?.key}`);
   }
 
   // Questions come back through the officer; crop questions get the engine's draft
   const q1 = (await (await post('/api/v1/officer/questions', { farmerId: 'F07', textBangla: 'আমি সরিষা আর মসুর করতে চাই, কোনটা ভালো?', channel: 'phone' }, session.token)).json()).question;
-  check(q1.status === 'open' && q1.draftBangla.includes('মসুর') && !q1.draftBangla.startsWith('আসসালামু'), "the engine drafts an answer to a crop question");
+  check(q1.status === 'open' && /যাচাই|মিলিয়ে নিন/.test(q1.draftBangla) && !q1.draftBangla.startsWith('আসসালামু'), "an uncertain crop question gets a review request without a planting directive");
   const q2 = (await (await post('/api/v1/officer/questions', { farmerId: 'F07', textBangla: 'আমার গাভীর দুধ কমে গেছে কেন?' }, session.token)).json()).question;
   check(q2.draftBangla === '', 'no draft when the engine does not understand: the officer writes it');
   check((await post(`/api/v1/officer/questions/${q1.id}/answer`, { answerBangla: 'সুদ ছাড়া ঋণ নিন।' }, session.token)).status === 400, 'answers go through the banned-word filter');
@@ -499,6 +527,7 @@ async function run() {
   const dataErosion = await resErosion.json();
   check(resErosion.status === 200, 'erosion status');
   check(dataErosion.corridor.stations.length >= 3, 'erosion stations');
+  check(dataErosion.dataMode === 'illustrative_static' && dataErosion.caveatEnglish.includes('not current'), 'erosion is explicitly illustrative');
   check(dataErosion.corridor.stations[0].dangerLevelM > 0, 'station carries real danger level');
   console.log('✓ River Erosion status: 200, Corridor:', dataErosion.corridor.riverNameBangla, 'Stations:', dataErosion.corridor.stations.length);
 
@@ -956,6 +985,7 @@ function finish(code) {
   fs.rmSync(CALL_STORE, { force: true });
   fs.rmSync(CATTLE_STORE, { force: true });
   fs.rmSync(NISAR, { force: true });
+  fs.rmSync(LIVE, { force: true });
   fs.rmSync(LANDING_AUDIO, { recursive: true, force: true });
   process.exit(code);
 }

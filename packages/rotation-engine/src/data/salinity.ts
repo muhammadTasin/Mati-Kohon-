@@ -37,7 +37,7 @@ function relativeYield(sal: Salinity | null | undefined, tol: Tolerance): { y: n
   let y = Math.max(0, 1 - sal.salineShare);
   let half = 0;
   sal.classShares.forEach((share, k) => {
-    const at = Math.max(0, Math.min(1, 1 - (tol.slope / 100) * Math.max(0, classes[k] - tol.threshold)));
+    const at = Math.max(0, Math.min(1, 1 - (tol.slope / 100) * Math.max(0, classes[k] * (LOC.conditions.experiment?.salinityMultiplier ?? 1) - tol.threshold)));
     y += share * at;
     if (at <= 0.5) half += share;
   });
@@ -47,7 +47,7 @@ function relativeYield(sal: Salinity | null | undefined, tol: Tolerance): { y: n
 /** The best relative yield for a crop among the district's upazilas (those SRDI did not list at full yield). */
 const districtBest = new Map<string, number>();
 function bestInDistrict(district: string, cropId: string, tol: Tolerance): number {
-  const key = `${district}|${cropId}`;
+  const key = `${district}|${cropId}|${LOC.conditions.experiment?.salinityMultiplier ?? 1}`;
   if (!districtBest.has(key)) {
     const ys = listPlaces().filter(p => p.district === district)
       .map(p => relativeYield(profileData().upazilas[p.id]?.salinity, tol).y);

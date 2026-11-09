@@ -1,0 +1,20 @@
+{
+  "version": "haor-seasonal-audit-v1",
+  "years": [2001, 2025],
+  "season": ["03-15", "05-15"],
+  "thresholdsMm": [100, 150, 200, 250],
+  "signal": "Sohra maximum three-day IMERG rainfall during the season, from the existing hindcast CSV",
+  "labelPolicy": "Primary: explicit yes, late or short are positive; explicit no is negative. Not stated, absent reports and the June-only account for 2015 remain unknown. Do not read the hindcast's derived flash_flood column as independent truth.",
+  "sensitivityAnalyses": {
+    "excludeBroad2019Label": "The 2019 short label covers a broad northeastern and southeastern region, without a local arrival date. Repeat without it.",
+    "includeIndirect2004Label": "The existing hindcast infers 2004 from the 2010 report's comparison with 2004. Include it only as a separate sensitivity result."
+  },
+  "limitations": [
+    "This audits checked-in FFWC report extractions, not newly verified gauge observations. Labels are regional and do not establish flooding at an individual farm.",
+    "Thresholds and this historical series were already explored by the project. All existing thresholds are reported; none is selected or tuned here. This is not held-out forecast validation.",
+    "A same-season rainfall burst can occur after flooding. Arrival dates are unavailable, so seasonal association cannot establish warning lead time or timely crop protection.",
+    "IMERG Final historical rainfall is retrospective. Operational latency, provisional rainfall, gauge confirmation and message delivery are not evaluated.",
+    "Unknown years are excluded from confusion counts, never treated as no flood. Precision and recall apply only to this small, selectively labeled sample.",
+    "Always-watch and never-watch are seasonal reference policies, not reconstructions of an agricultural officer's advice. No threshold or production alert is changed by this audit."
+  ]
+}

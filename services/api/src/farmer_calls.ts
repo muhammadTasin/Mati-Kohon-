@@ -39,6 +39,7 @@ import * as desk from './officer_desk.ts';
 import { adviseWithNarration, planRequest, voiceAnswer } from './advice.ts';
 import { replyFor, speakable } from './voice.ts';
 import { floodFor } from './live.ts';
+import { screenConditions } from '../../../packages/rotation-engine/src/freshness.ts';
 import { getLocationsPayload } from './locations.ts';
 import { broadcastReport, sendSystechCall, systechConfig, voiceblastHistory, type CallRoute } from './systech.ts';
 import { sendSms, smsParts } from './sms.ts';
@@ -219,34 +220,33 @@ function alertCandidates(farmer: FarmerRecord, place: Place, today: string): Can
     });
 }
 
-/** October to January on low land: when this year's flood water will have left, and when to sow the Boro seedbed. */
+/** Low-land regional recession context, always requiring field review before planting. */
 function drainCandidate(farmer: FarmerRecord, place: Place, today: string): Candidate | null {
   const m = md(today);
   if (!LOW_LAND.includes(farmer.landType) || !(m >= '10-01' || m <= '01-31')) return null;
-  const d = floodFor(place.kind === 'pilot' ? 'ADM3_Tanore' : place.id)?.drain;
+  const raw = floodFor(place.kind === 'pilot' ? 'ADM3_Tanore' : place.id);
+  const d = screenConditions({ date: today, soilStatus: 'unknown', source: 'drainage review', flood: raw }, today).conditions?.flood?.drain;
   if (!d?.perWeek || !d.freeBy || daysBetween(today, d.freeBy) < 0) return null;
   const by = seenBy(d.to.sensor).bn;
   const upazila = upazilaBangla(place);
   const boro = cropsOf(farmer).includes('boro');
-  const seedbed = addDays(d.freeBy, -SEEDBED_AGE);
-  const action = boro
-    ? daysBetween(today, seedbed) > 3
-      ? `বোরোর বীজতলা দিন ${bnDate(md(seedbed))} নাগাদ, যাতে জমি খালি হওয়ার দিন চারার বয়স পঁয়ত্রিশ থেকে পঁয়তাল্লিশ দিন হয়।`
-      : 'বোরোর বীজতলা এখনই দিন, যাতে জমি খালি হলেই চারা রোপণ করা যায়।'
-    : 'জমি খালি হলেই রস থাকতে থাকতে রবি ফসল বুনুন।';
+  const action = `বোনার আগে জমির পানি, প্রবেশের পথ, মাটির কাজের উপযোগিতা ও লবণাক্ততা যাচাই করুন। ${boro ? 'বোরোর বীজতলা দেওয়ার সময়' : 'রবি ফসলের সময়'} কর্মকর্তার সাথে ঠিক করুন।`;
+  const estimate = d.dateRange
+    ? `আঞ্চলিক পানি নামার আনুমানিক সীমা ${bnDate(md(d.dateRange[0]))} থেকে ${bnDate(md(d.dateRange[1]))}। এটি নিশ্চিত তারিখ নয়।`
+    : `আঞ্চলিক পানির একটি ধারা ${bnDate(md(d.freeBy))} নাগাদ সীমা পার হওয়ার ইঙ্গিত দেয়; অনিশ্চয়তার সীমা নেই, জমি বোনার উপযোগিতা অজানা।`;
   return {
     kind: 'drain',
     key: `drain:${d.to.date}`,
     topic: 'drain',
     level: 'watch',
     emergency: false,
-    titleBangla: 'জমির পানি কবে নামবে',
-    titleEnglish: 'When the land will be free',
-    whyBangla: `নিচু জমি; ${by} হিসাবে ${bnGenitive(upazila)} পানি সপ্তাহে ~${bnDigits(Math.round(d.perWeek * 100))} ভাগ নামছে, জমি খালি ~${bnDate(md(d.freeBy))}।`,
-    whyEnglish: `Low land; ${seenBy(d.to.sensor).en} shows ${place.upazila}'s water falling ~${Math.round(d.perWeek * 100)} points a week, free around ${enDate(md(d.freeBy))}.`,
-    reasonBangla: `${by} হিসাবে ${bnGenitive(upazila)} জমির পানি সপ্তাহে প্রায় ${bnDigits(Math.round(d.perWeek * 100))} ভাগ করে নামছে; এভাবে নামলে নিচু জমি ${bnDate(md(d.freeBy))} নাগাদ খালি হবে।`,
+    titleBangla: 'আঞ্চলিক পানি নামার হিসাব',
+    titleEnglish: 'Regional recession estimate: field review required',
+    whyBangla: `${by}, ${upazila}: ${estimate}`,
+    whyEnglish: `${seenBy(d.to.sensor).en}, ${place.upazila}: regional recession estimate ${d.dateRange ? d.dateRange.join(' to ') : d.freeBy}. Not a verified planting date; check field access, soil workability and salinity.`,
+    reasonBangla: `${by}, ${upazila}: ${estimate}`,
     actionBangla: action,
-    smsBangla: `জমি খালি ~${bnDate(md(d.freeBy))}। ${boro ? (daysBetween(today, seedbed) > 3 ? `বোরোর বীজতলা ${bnDate(md(seedbed))} নাগাদ দিন।` : 'বোরোর বীজতলা এখনই দিন।') : 'খালি হলেই রবি ফসল বুনুন।'}`,
+    smsBangla: 'পানি নামার আঞ্চলিক হিসাব বোনার নিশ্চয়তা নয়। জমি ও মাটির উপযোগিতা কর্মকর্তার সাথে যাচাই করুন।',
     datasets: [d.to.sensor === 'nisar' ? 'nisar' : 'opera'],
   };
 }
@@ -395,8 +395,8 @@ export function sampleCall(s: SampleFarmer, today = dhakaToday()) {
   const reply = replyFor(adviseWithNarration({ ...planRequest({ unionId: place.id, landType: s.landType }), today }));
   return {
     kind: 'plan' as const, level: 'advice' as const, titleBangla: 'এই মৌসুমের ফসলচক্র', titleEnglish: "This season's rotation",
-    whyBangla: `${where.bn}: নাসার পঁচিশ মৌসুমের হিসাবে সবচেয়ে ভালো চক্র।`,
-    whyEnglish: `${where.en}: the best rotation over 25 seasons of NASA data.`,
+    whyBangla: `${where.bn}: ঐতিহাসিক নাসা তথ্যের মডেল থেকে আলোচনার বিকল্প; প্রয়োজনীয় যাচাই বার্তায় আছে।`,
+    whyEnglish: `${where.en}: discussion options from a historical NASA-informed model; the message includes required checks.`,
     datasets: ['power', 'imerg', 'nasadem', 'grace'],
     scriptBangla: reply.speechBangla, smsBangla: reply.smsBangla, durationSeconds: reply.durationSecondsEstimate,
   };

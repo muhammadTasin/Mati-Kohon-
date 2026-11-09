@@ -10,7 +10,7 @@ import { initBdMap } from './bd-map.js';
 import { initPortals } from './portals.js';
 import { initCalls } from './calls.js';
 import { cropStrip, renderCredits, showCreditsDialog } from './photos.js';
-import { calendarHtml, fillRotationSelects, reviewHtml, rotationFromSelects, seasonRiskHtml, whatIfHtml } from './review.js';
+import { calendarHtml, currentPracticeHtml, decisionCheckHtml, fillRotationSelects, reviewHtml, rotationFromSelects, seasonRiskHtml, whatIfHtml } from './review.js';
 import { accessToken, authConfig, supabaseSignOut } from './auth-client.js';
 
 let lang = 'bn';
@@ -48,6 +48,7 @@ const bnDigits = (value) => String(value).replace(/\d/g, d => BN_DIGITS[Number(d
 const num = (value) => (lang === 'en' ? String(value) : bnDigits(value)).replace(/(^|[\s(:])-(?=[0-9০-৯])/g, '$1−');
 const bigNum = (value) => Math.round(value).toLocaleString(lang === 'en' ? 'en-US' : 'bn-BD');
 const isoDate = (iso) => {
+  if (typeof iso !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(iso)) return '—';
   const [y, m, d] = iso.slice(0, 10).split('-').map(Number);
   return lang === 'en' ? `${d} ${EN_MONTHS[m - 1]} ${y}` : `${bnDigits(d)} ${BN_MONTHS[m - 1]} ${bnDigits(y)}`;
 };
@@ -164,6 +165,7 @@ function renderAll() {
 // ---------------------------------------------------------------------------
 
 window.switchScreen = function(screenId) {
+  document.body.classList.toggle('decision-focus', ['screen-planner', 'screen-comparison'].includes(screenId));
   document.querySelectorAll('.screen-section').forEach(sec => sec.classList.remove('active'));
   document.querySelectorAll('.nav-tab').forEach(tab => tab.classList.remove('active'));
   $(screenId)?.classList.add('active');
@@ -200,19 +202,25 @@ window.updateObsWeights = function() {
 function renderFieldWeek(fa) {
   const chip = { high: ['badge-danger', 'এখনই', 'Act now'], watch: ['badge-warning', 'নজরে রাখুন', 'Watch'], advice: ['badge-info', 'পরামর্শ', 'Advice'], clear: ['badge-success', 'কিছু লাগবে না', 'Nothing needed'] };
   if (!fa) {
-    setText('fieldWeekBadge', '—');
-    setHtml('fieldWeekList', `<li>${tr('দৈনিক নাসা হালনাগাদ এখনো চলেনি।', 'The daily NASA update has not run yet.')}</li>`);
+    const badge = $('fieldWeekBadge');
+    if (badge) { badge.className = 'badge badge-neutral'; badge.textContent = tr('সাম্প্রতিক তথ্য নেই', 'Recent data unavailable'); }
+    setHtml('fieldWeekList', `<li>${tr('সাম্প্রতিক আবহাওয়ার তথ্য নেই; মাঠের বর্তমান অবস্থা যাচাই করুন।', 'Recent field conditions are unavailable; check the current condition of the field.')}</li>`);
     setText('fieldWeekNote', '');
     return;
   }
   const top = fa.alerts[0];
+  const hasWeather = Boolean(fa.through);
   const [cls, bn, en] = top ? chip[top.level] : chip.clear;
   const badge = $('fieldWeekBadge');
-  if (badge) { badge.className = `badge ${top ? cls : 'badge-neutral'}`; badge.textContent = top ? tr(bn, en) : tr('এখন কোনো সতর্কতা নেই', 'No alerts now'); }
+  if (badge) { badge.className = `badge ${top ? cls : 'badge-neutral'}`; badge.textContent = top ? tr(bn, en) : hasWeather ? tr('এখন কোনো সতর্কতা নেই', 'No alerts now') : tr('সাম্প্রতিক আবহাওয়া নেই', 'Recent weather unavailable'); }
   setHtml('fieldWeekList', fa.alerts.length ? fa.alerts.map(a => {
     const [c, b, e] = chip[a.level] || chip.advice;
     return `<li><span><strong>${escapeHtml(tr(a.titleBangla, a.titleEnglish))}</strong><small>${fold(tr(a.textBangla, a.textEnglish), tr('আরও পড়ুন', 'Read more'))}</small></span><span class="badge ${c}">${tr(b, e)}</span></li>`;
-  }).join('') : `<li>${tr('এই সপ্তাহে প্রথম পছন্দের ফসলগুলোর কোনোটি খরা, গরম বা শীতে সংবেদনশীল পর্যায়ে নেই।', "None of the first option's crops is at a stage that dry spells, heat or cold harm this week.")}</li>`);
+  }).join('') : `<li>${hasWeather ? tr('এই সপ্তাহে প্রথম পছন্দের ফসলগুলোর কোনোটি খরা, গরম বা শীতে সংবেদনশীল পর্যায়ে নেই।', "None of the first option's crops is at a stage that dry spells, heat or cold harm this week.") : tr('সাম্প্রতিক আবহাওয়ার তথ্য নেই; সতর্কতা না থাকা মানে ঝুঁকি নেই এমন নয়।', 'Recent weather is unavailable; no alert does not mean no risk.')}</li>`);
+  if (!hasWeather) {
+    setText('fieldWeekNote', tr(`বন্যার পর্যবেক্ষণ: ${isoDate(fa.floodDate)}। সাম্প্রতিক আবহাওয়া ও পূর্বাভাস পাওয়া যায়নি।`, `Flood observation: ${isoDate(fa.floodDate)}. Recent field weather and forecast are unavailable.`));
+    return;
+  }
   setText('fieldWeekNote', tr(
     `নাসা POWER ${isoDate(fa.observedTo)} পর্যন্ত, বৃষ্টি ${fa.rainSource || '—'}; পূর্বাভাস Open-Meteo (আবহাওয়া মডেল, নাসা নয়)${fa.forecastFrom ? `, ${isoDate(fa.forecastFrom)} থেকে ৭ দিন` : ''}। তাপমাত্রা গ্রিডের মান; খেতে ১–২° কমবেশি হতে পারে।`,
     `NASA POWER to ${fa.observedTo}, rain from ${fa.rainSource || '—'}; forecast from Open-Meteo (a weather model, not NASA)${fa.forecastFrom ? `, 7 days from ${fa.forecastFrom}` : ''}. Temperatures are grid values; a field can be 1-2 °C off.`));
@@ -423,8 +431,8 @@ function renderOverview(o) {
   const gw = o.context.groundwater;
   const gb = o.local_context?.groundwaterBudget;
   const move = gb?.applies && gb.moveHaToLentil ? tr(
-    `; পতন থামাতে জেলার বোরোর ~${num(Math.max(1, Math.round(gb.moveShareToLentil * 100)))}% (${num(Math.round(gb.moveHaToLentil / 100) * 100)} হে.) মসুরের চক্রে`,
-    `; to stop it, ~${Math.max(1, Math.round(gb.moveShareToLentil * 100))}% of the district's Boro (${Math.round(gb.moveHaToLentil / 100) * 100} ha) to a lentil rotation`) : '';
+    `; সমপরিমাণ সেচ-চাহিদা কমার সরল হিসাবে বোরোর ~${num(Math.max(1, Math.round(gb.moveShareToLentil * 100)))}% (${num(Math.round(gb.moveHaToLentil / 100) * 100)} হে.) মসুরের চক্রে; পানির স্তর ফেরার পূর্বাভাস নয়`,
+    `; irrigation-volume equivalent: ~${Math.max(1, Math.round(gb.moveShareToLentil * 100))}% of district Boro (${Math.round(gb.moveHaToLentil / 100) * 100} ha) to lentil; not an aquifer-recovery forecast`) : '';
   setText('specGroundwater', gw ? tr(
     `বছরে ${num(gw.trendMmPerYear)} মিমি (${num(gw.period.replace(' to ', ' থেকে '))}: ${num(gw.changeMm)} মিমি)${move}`,
     `${gw.trendMmPerYear} mm a year (${gw.changeMm} mm, ${gw.period})${move}`,
@@ -701,6 +709,15 @@ function renderWarnings(w, amanReplay) {
   setHtml('haorChart', haorChartSvg(h));
   setText('haorLegend', tr('কমলা: বন্যার বছর (FFWC) • নীল: বন্যাহীন বছর • ধূসর: রিপোর্ট নেই', 'Orange: flood years (FFWC) • Blue: no-flood years • Grey: no report'));
   const watch = h.skill.find(s => s.thresholdMm === h.watchMm);
+  // The 2004 outcome is inferred from a later report, not a direct label. Keep it out of the primary count.
+  // Policy and the separate sensitivity results: research/evaluation/haor_protocol.json.
+  const directLabels = h.seasons.filter(s => s.label !== 'unlabelled' && s.year !== 2004);
+  const directFloods = directLabels.filter(s => s.label === 'flood');
+  const directNoFloods = directLabels.filter(s => s.label === 'no flood');
+  const missedYears = directFloods.filter(s => s.sohraMax3Mm < h.watchMm).map(s => s.year);
+  const caughtCount = directFloods.length - missedYears.length;
+  const falseAlarmCount = directNoFloods.filter(s => s.sohraMax3Mm >= h.watchMm).length;
+  const unknownCount = h.seasons.length - directLabels.length;
   const dhan28 = h.escapeOnCalendar.find(e => e.variety === 'BRRI dhan28');
   const others = h.escapeOnCalendar.filter(e => e.variety !== 'BRRI dhan28');
   const othersEarly = h.escapeTwoWeeksEarly.filter(e => e.variety !== 'BRRI dhan28');
@@ -709,14 +726,16 @@ function renderWarnings(w, amanReplay) {
   setHtml('haorFacts', [
     liveHaorLines(h.live),
     watch ? tr(
-      `<li><strong>২৫ বছরের পরীক্ষা:</strong> ${num(h.watchMm)} মিমি নিয়মে বন্যার বছর ধরা পড়ে ${ofText(watch.floodYearsCaught)}, বন্যাহীন বছরে ভুল সংকেত ${ofText(watch.noFloodYearsFlagged)}; সংকেত ${ofText(watch.seasonsFlagged)} মৌসুমে।</li>`,
-      `<li><strong>25-year hindcast:</strong> the ${h.watchMm} mm rule catches ${watch.floodYearsCaught} flood years, with false alarms in ${watch.noFloodYearsFlagged} no-flood years; it flags ${watch.seasonsFlagged} springs.</li>`,
+      `<li><strong>সীমিত ঐতিহাসিক পরীক্ষা:</strong> ${num(h.seasons.length)} বছরের মধ্যে সরাসরি শ্রেণিবদ্ধ ${num(directLabels.length)} বছর। ${num(h.watchMm)} মিমি বৃষ্টিসীমা বন্যার ${num(directFloods.length)} বছরের মধ্যে ${num(caughtCount)} বছরে পাওয়া যায়; বন্যাহীন ${num(directNoFloods.length)} বছরের মধ্যে ${num(falseAlarmCount)} বছরে ভুল সংকেত। বাকি ${num(unknownCount)} বছর এই পরীক্ষায় অজানা।</li>`,
+      `<li><strong>Limited historical check:</strong> ${directLabels.length} of ${h.seasons.length} years have direct labels. The ${h.watchMm} mm threshold is reached in ${caughtCount} of ${directFloods.length} flood years, with false alarms in ${falseAlarmCount} of ${directNoFloods.length} no-flood years. The other ${unknownCount} years are unknown in this check.</li>`,
     ) : '',
+    missedYears.length ? tr(`<li><strong>যে বন্যার বছর বাদ পড়ে:</strong> ${missedYears.map(y => num(y)).join(', ')}।</li>`, `<li><strong>Missed flood years:</strong> ${missedYears.join(', ')}.</li>`) : '',
+    tr('<li>২০০৪ সালের তথ্য পরের একটি রিপোর্টের তুলনা থেকে নেওয়া, তাই উপরের সরাসরি হিসাবে নেই। ২০১৯ সালের বিবরণ বিস্তৃত এলাকার, নির্দিষ্ট খেতের নয়। বন্যা পৌঁছানোর তারিখ না থাকায় কত আগে সতর্ক করা যেত তা যাচাই হয়নি; বৃষ্টির সংকেত বন্যার পরেও হতে পারে।</li>', '<li>The chart includes an indirect 2004 label inferred from a later report; the direct count above excludes it. The 2019 account covers a broad region, not an individual field. Flood-arrival dates are unavailable, so warning lead time is unverified; a rain signal could occur after flooding.</li>'),
     dhan28 ? tr(
-      `<li><strong>কোন বোরো বাঁচে:</strong> ${num(h.warningMm)} মিমির ঢলে ব্রি ধান২৮ পাকার আগে ধরা পড়েছে ${num(dhan28.bursts)}টির ${num(dhan28.burstsBeforeHarvest)}টিতে; অন্য ${num(others.length)}টি জাত (${others.map(e => num(e.variety.replace('BRRI dhan', ''))).join(', ')}) সর্বোচ্চ ${num(worstOther)}টিতে; দুই সপ্তাহ আগে বুনলে ${num(worstEarly)}টিতে।</li>`,
-      `<li><strong>Which Boro escapes:</strong> ${h.warningMm} mm bursts caught BRRI dhan28 before harvest in ${dhan28.burstsBeforeHarvest} of ${dhan28.bursts}; the other ${others.length} varieties (BRRI dhan${others.map(e => e.variety.replace('BRRI dhan', '')).join(', ')}) in at most ${worstOther}; sown two weeks early, ${worstEarly}.</li>`,
+      `<li><strong>বৃষ্টির সংকেত ও ফসলের সময়সূচি:</strong> ${num(h.warningMm)} মিমি বৃষ্টির সংকেত থাকা ${num(dhan28.bursts)} মৌসুমের ${num(dhan28.burstsBeforeHarvest)}টিতে সংকেতটি ব্রি ধান২৮-এর হিসাব করা পাকার তারিখের আগে। অন্য ${num(others.length)}টি জাতের ক্ষেত্রে সর্বোচ্চ ${num(worstOther)}টিতে; সেগুলো দুই সপ্তাহ আগে বুনলে সর্বোচ্চ ${num(worstEarly)}টিতে। এটি বন্যা থেকে ফসল বাঁচার প্রমাণ নয়।</li>`,
+      `<li><strong>Rainfall bursts versus crop calendars:</strong> in ${dhan28.burstsBeforeHarvest} of ${dhan28.bursts} seasons with a ${h.warningMm} mm burst, it occurs before BRRI dhan28's modeled maturity date. For the other ${others.length} varieties, at most ${worstOther}; with those varieties sown two weeks earlier, at most ${worstEarly}. This does not establish that crops escape flooding.</li>`,
     ) : '',
-    tr('<li>হাওরের ফসল চক্র এখনো মডেল করা হয়নি; এটি আগাম সতর্কতা ব্যবস্থা।</li>', '<li>Rotation advice is not modelled for the haor yet; this is the early-warning system.</li>'),
+    tr('<li>হাওরের বোরো চক্র ও আগাম বন্যার বৃষ্টিসীমা মডেল করা হয়েছে; সীমিত ঐতিহাসিক ঘটনার পরীক্ষা মাঠে যাচাই করা পূর্বাভাস নয়।</li>', '<li>Haor Boro rotations and flash-flood rainfall thresholds are modeled; checks against a small set of past events are not field-validated forecasts.</li>'),
   ].join(''));
 
   const n = w.warmNights;
@@ -776,7 +795,7 @@ function renderLedger(advice) {
       </tr></thead>
       <tbody>${rows.map(o => `
         <tr class="${o.isBaseline ? 'baseline-row' : o.rank === 1 ? 'top-row' : ''}">
-          <td>${escapeHtml(tr(o.nameBangla, o.nameEnglish))}${o.isBaseline ? ` <span class="tag tag-yellow">${tr('প্রচলিত', 'current practice')}</span>` : ''}</td>
+          <td>${escapeHtml(tr(o.nameBangla, o.nameEnglish))}${o.farmerCurrent ? ` <span class="tag tag-yellow">${tr('কৃষকের এখনকার চক্র', "Farmer's rotation now")}</span>` : o.isBaseline ? ` <span class="tag tag-yellow">${tr('বোরো তুলনামূলক চক্র', 'Boro comparator')}</span>` : ''}</td>
           <td>${bigNum(o.ledger.groundwaterPumpedM3PerHa)}</td>
           <td>${num(o.ledger.floodedRiceDays)}</td>
           <td>${o.ledger.ureaKgHa === null ? '—' : num(o.ledger.ureaKgHa)}</td>
@@ -832,6 +851,7 @@ window.runPlannerCalculation = async function(options = {}) {
       heroCrop: $('planHeroCrop')?.value || undefined,
       avoidCrops: $('planNoRice')?.checked ? ['rice'] : undefined,
       season: '2026-aman',
+      includeInputSensitivity: true,
       farmerPriorities: { water: weight('weightWater'), income: weight('weightIncome'), soil: weight('weightSoil'), pest: weight('weightPest'), ...extra },
       currentRotation: rotationFromSelects(),
       constraints: constraints.machinery || constraints.market ? constraints : undefined,
@@ -869,6 +889,8 @@ function selectedOption() {
 }
 
 function renderPlannerResults(advice) {
+  setHtml('plannerCurrentPracticeReference', currentPracticeHtml(advice, { tr, escapeHtml, num }));
+  setHtml('plannerDecisionCheck', decisionCheckHtml(advice, { tr, escapeHtml, num }));
   setText('plannerCountBadge', tr(`${num(advice.options.length)}টি বিকল্প তৈরি হয়েছে`, `${advice.options.length} options generated`));
 
   const note = $('thisSeasonNote');
@@ -894,7 +916,7 @@ function renderPlannerResults(advice) {
       </div>
       ${coverageTag(advice, opt.id)}
       <p class="candidate-meta">
-        ${tr('জমি খালি', 'Field free')}: <strong>${escapeHtml(tr(opt.fieldFreeDateBangla, opt.fieldFreeDateEnglish))}</strong>${opt.farmerCurrent ? ` <span class="tag tag-yellow">${tr('কৃষকের এখনকার চক্র', "the farmer's rotation now")}</span>` : opt.currentPractice ? ` <span class="tag tag-yellow">${tr('এখানে এখন যা চাষ হয় (BRRI)', 'what farmers here grow now (BRRI)')}</span>` : opt.isBaseline ? ` • ${tr('বর্তমান প্রচলিত চক্র', 'current practice')}` : ''}${opt.id === advice.this_season_option_id ? ` <span class="tag tag-green">${tr('এ মৌসুমে সম্ভব', 'possible this season')}</span>` : ''}
+        ${tr('জমি খালি', 'Field free')}: <strong>${escapeHtml(tr(opt.fieldFreeDateBangla, opt.fieldFreeDateEnglish))}</strong>${opt.farmerCurrent ? ` <span class="tag tag-yellow">${tr('কৃষকের এখনকার চক্র', "the farmer's rotation now")}</span>` : opt.currentPractice ? ` <span class="tag tag-yellow">${tr('এখানে এখন যা চাষ হয় (BRRI)', 'what farmers here grow now (BRRI)')}</span>` : opt.isBaseline ? ` • ${tr('বোরো তুলনামূলক চক্র', 'Boro comparator')}` : ''}${opt.id === advice.this_season_option_id ? ` <span class="tag tag-green">${tr('এ মৌসুমে সম্ভব', 'possible this season')}</span>` : ''}
       </p>
       <div class="candidate-action">${escapeHtml(tr(opt.approvedActionBangla[2] || '', (opt.approvedActionEnglish || [])[2] || ''))}</div>
     </div>
@@ -919,13 +941,15 @@ function dimensionTag(detail) {
 }
 
 function renderComparisonGrid(advice) {
+  setHtml('comparisonCurrentPracticeReference', currentPracticeHtml(advice, { tr, escapeHtml, num }));
+  setHtml('decisionCheck', decisionCheckHtml(advice, { tr, escapeHtml, num }));
   setHtml('comparisonCardsGrid', advice.options.map(opt => {
     const isRec = opt.rank === 1;
     return `
       <div class="comp-card ${isRec ? 'recommended' : ''}">
         <div class="comp-card-badge">
-          ${isRec ? `<span class="badge badge-success">${tr('সর্বোচ্চ সুপারিশ (১ নম্বর)', 'Top recommendation (rank 1)')}</span>` : `<span class="badge badge-neutral">${tr(`বিকল্প #${num(opt.rank)}`, `Option #${opt.rank}`)}</span>`}
-          ${opt.farmerCurrent ? `<span class="badge badge-warning">${tr('কৃষকের এখনকার চক্র', "Farmer's rotation now")}</span>` : opt.currentPractice ? `<span class="badge badge-warning">${tr('এখানে প্রচলিত (BRRI)', 'Usual here (BRRI)')}</span>` : opt.isBaseline ? `<span class="badge badge-warning">${tr('বর্তমান প্রচলিত', 'Current practice')}</span>` : ''}
+          ${isRec ? `<span class="badge badge-neutral">${advice.input_sensitivity?.recommendedOptionId === opt.id ? tr('পরীক্ষিত সীমায় প্রথম বিকল্প', 'Leading option in tested ranges') : tr('মডেলে প্রথম — যাচাই প্রয়োজন', 'Highest model rank — review required')}</span>` : `<span class="badge badge-neutral">${tr(`বিকল্প #${num(opt.rank)}`, `Option #${opt.rank}`)}</span>`}
+          ${opt.farmerCurrent ? `<span class="badge badge-warning">${tr('কৃষকের এখনকার চক্র', "Farmer's rotation now")}</span>` : opt.currentPractice ? `<span class="badge badge-warning">${tr('এখানে প্রচলিত (BRRI)', 'Usual here (BRRI)')}</span>` : opt.isBaseline ? `<span class="badge badge-warning">${tr('বোরো তুলনামূলক চক্র', 'Boro comparator')}</span>` : ''}
           ${opt.id === advice.reference_option_id && !opt.farmerCurrent ? `<span class="badge badge-neutral">${tr('তুলনার ভিত্তি', 'Reference')}</span>` : ''}
         </div>
         <h3 class="comp-card-title">${escapeHtml(tr(opt.nameBangla, opt.nameEnglish))}</h3>

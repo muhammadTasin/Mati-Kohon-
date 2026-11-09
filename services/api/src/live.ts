@@ -5,6 +5,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { recentInput, ageDays, screenFieldWeather, MAX_INPUT_AGE_DAYS } from '../../../packages/rotation-engine/src/freshness.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const FILE = process.env.EDEN_LIVE_FILE || path.resolve(__dirname, '../data/live/upazila_conditions.json');
@@ -81,7 +82,7 @@ function nisar() {
  * NASA-ISRO NISAR (radar), with this season's drainage from both; null when neither is recent.
  */
 export function floodFor(id: string) {
-  const fresh = (r: any) => (r && (daysSince(r.date) ?? 99) <= FLOOD_MAX_AGE_DAYS ? r : null);
+  const fresh = (r: any) => (r && recentInput(r.date, FLOOD_MAX_AGE_DAYS) ? r : null);
   const opera = fresh(flood()?.upazilas?.[id]);
   const radar = fresh(nisar()?.upazilas?.[id]);
   const r = opera && radar ? (radar.date >= opera.date ? radar : opera) : opera ?? radar;
@@ -89,7 +90,7 @@ export function floodFor(id: string) {
   return {
     date: r.date, seenShare: r.seenShare, floodShare: r.floodShare, waterNow: r.waterNow, waterDry: r.waterDry, lastYearRadar: r.lastYearRadar ?? null,
     sensor: r === radar ? 'nisar' as const : 'opera' as const,
-    drain: nisar()?.upazilas?.[id]?.drain ?? null,
+    drain: radar?.drain && recentInput(radar.drain.to?.date, FLOOD_MAX_AGE_DAYS) ? radar.drain : null,
   };
 }
 let lossCache: { mtime: number; data: Record<string, any> } | null = null;
@@ -123,8 +124,7 @@ export function floodStatus() {
   };
 }
 
-const daysSince = (iso: string | null | undefined) =>
-  iso ? Math.floor((Date.now() - Date.parse(`${iso}T00:00:00Z`)) / 86_400_000) : null;
+const daysSince = (iso: string | null | undefined) => ageDays(iso);
 
 /** When the file was made, which NASA sources it holds and how old each one is today. */
 export function liveStatus() {
@@ -146,20 +146,31 @@ export function liveUpazilas(district?: string) {
   const d = load();
   if (!d) return null;
   const rows = district ? d.upazilas.filter(u => u.district.toLowerCase() === district.toLowerCase()) : d.upazilas;
-  return rows.map(u => ({
-    id: u.id, name: u.name, district: u.district,
-    soilStatus: u.power.soilStatus, rainStatus: u.power.rainStatus, rain30PctOfNormal: u.power.rain30PctOfNormal,
-    rain7: u.imerg?.rain7 ?? u.power.rain7, tmax: u.power.tmax, hotDays7: u.power.hotDays7,
-    smapStatus: smapFor(u.id)?.status ?? null, smapPctl: smapFor(u.id)?.rootzonePctl ?? null,
-    blastDays7: u.disease?.riceBlast?.days7 ?? null, blastStatus: u.disease?.riceBlast?.status ?? null,
-    lateBlightDays7: u.disease?.lateBlight?.days7 ?? null, lateBlightStatus: u.disease?.lateBlight?.status ?? null,
-  }));
+  return rows.map(u => {
+    const power = recentInput(u.power?.date, MAX_INPUT_AGE_DAYS.soil) ? u.power : null;
+    const imerg = recentInput(u.imerg?.date, MAX_INPUT_AGE_DAYS.soil) ? u.imerg : null;
+    const sm = smapFor(u.id);
+    const smapReading = recentInput(sm?.date, MAX_INPUT_AGE_DAYS.soil) ? sm : null;
+    const disease = recentInput(u.disease?.date, MAX_INPUT_AGE_DAYS.disease) ? u.disease : null;
+    return {
+      id: u.id, name: u.name, district: u.district,
+      soilStatus: power?.soilStatus ?? null, rainStatus: power?.rainStatus ?? null, rain30PctOfNormal: power?.rain30PctOfNormal ?? null,
+      rain7: imerg?.rain7 ?? power?.rain7 ?? null, tmax: power?.tmax ?? null, hotDays7: power?.hotDays7 ?? null,
+      smapStatus: smapReading?.status ?? null, smapPctl: smapReading?.rootzonePctl ?? null,
+      blastDays7: disease?.riceBlast?.days7 ?? null, blastStatus: disease?.riceBlast?.status ?? null,
+      lateBlightDays7: disease?.lateBlight?.days7 ?? null, lateBlightStatus: disease?.lateBlight?.status ?? null,
+      observationDates: { power: u.power?.date ?? null, imerg: u.imerg?.date ?? null, smap: sm?.date ?? null, disease: u.disease?.date ?? null },
+    };
+  });
 }
 
 /** Every upazila's field record (field water, weather and the 7-day forecast) by id, for the map's field alerts. */
 export function liveFields(): Map<string, Record<string, any>> {
   const d = load();
-  return new Map((d?.upazilas ?? []).filter(u => u.field).map(u => [u.id, u.field]));
+  return new Map((d?.upazilas ?? []).flatMap(u => {
+    const { field } = screenFieldWeather(u.field);
+    return field ? [[u.id, field] as const] : [];
+  }));
 }
 
 /** One upazila by id, by name, or the nearest to a point. */

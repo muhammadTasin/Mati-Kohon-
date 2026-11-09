@@ -105,6 +105,18 @@ export function replyFor(advice: AdviceJSON, understood?: Pick<Understood, 'crop
   const choice = advice.crop_choice;
   const place = advice.scope.union_id === 'talanda_tanore' ? bnGenitive(advice.scope.union_name_bangla) : 'আপনার এলাকার';
   const asked = choice?.requested.map(r => r.cropBangla) ?? [];
+  if (advice.input_sensitivity && advice.input_sensitivity.status !== 'stable_in_tested_ranges') {
+    const message = advice.input_sensitivity.message.bn;
+    const speech = speakable(['আসসালামু আলাইকুম। মাটি কহন থেকে বলছি।',
+      asked.length ? `আপনি ${andJoin(asked)} করতে চেয়েছেন।` : '', message,
+      'বোনার আগে উপসহকারী কৃষি কর্মকর্তার সাথে বিকল্পগুলো আলোচনা করুন। ধন্যবাদ।'].filter(Boolean).join(' '));
+    const sms = `মাটি কহন: ${message} কর্মকর্তার সাথে আলোচনা করুন।`;
+    return { speechBangla: speech, smsBangla: sms, smsSegments: sms.length <= 70 ? 1 : Math.ceil(sms.length / 67),
+      durationSecondsEstimate: Math.max(20, Math.round(speech.length / 12)), topOptionId: top.id,
+      recommendedOptionId: null, recommendationWithheld: true,
+      understoodCrops: understood?.crops ?? choice?.requested.map(r => r.id) ?? [],
+      notModelled: understood?.notModelled ?? choice?.notModelled.map(n => n.id) ?? [] };
+  }
   const rabiAction = top.approvedActionBangla[2] ?? '';
   const rabiMm = water.rabiNetIrrigationMm;
   // Spoken notes: what the farmer must know (main crop, crops that compete, crops not modelled); not price gaps,

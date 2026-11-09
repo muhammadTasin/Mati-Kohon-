@@ -1,8 +1,7 @@
 /**
- * How much of a district's Boro land would move to a water-saving winter crop to stop its groundwater falling, from
+ * An illustrative irrigation-volume equivalent for a district's modeled groundwater storage trend, from
  * NASA GLDAS-2.2 (GRACE-assimilated) storage trends, BBS Boro area and the district replay's net irrigation
- * (research/explore/groundwater_budget.py). A district average at GRACE's scale: Barind wells fall faster, so the
- * area to move is a floor.
+ * (research/explore/groundwater_budget.py). This is not a causal aquifer budget or a forecast of recovery.
  */
 import fs from 'node:fs';
 import { LOC } from './location.ts';

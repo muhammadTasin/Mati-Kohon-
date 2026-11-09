@@ -1,8 +1,8 @@
 {
 "generatedOn":"2026-10-08",
 "source":"NASA GLDAS-2.2 groundwater storage (GRACE-assimilated) trend per district point; BBS Boro area 2024-25; net irrigation from the district's NASA POWER + GPM IMERG replay (FAO-56)",
-"method":"The yearly fall in groundwater storage (mm of water over the district's area) is the water pumped beyond what the aquifer gets back. Each hectare of Boro moved to lentil saves Boro's net irrigation minus lentil's; hectares to move = the fall / that saving.",
-"caution":"GRACE sees hundreds of kilometres and GLDAS downscales it to 0.25 degree, so the trend is a smooth district average; Barind wells fall faster, so the area to move is a floor. Net irrigation leaves out canal and surface-water Boro and the water that seeps back.",
+"method":"Illustrative volume comparison: yearly modeled storage-trend volume divided by the modeled net irrigation-demand difference between Boro and lentil or mustard. The equivalent area is not a causal estimate of aquifer recovery.",
+"caution":"GRACE sees hundreds of kilometres and GLDAS downscales it to 0.25 degree, so the trend is a smooth district average. Recharge, return flows, irrigation source and other withdrawals are not modeled. This is not a lower bound or a prediction that groundwater decline stops.",
 "districts":{
 "Bagerhat":{
 "trendMmPerYear":-1.7,

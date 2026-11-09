@@ -1,17 +1,13 @@
-# Pre-event research: data access and a first look
+# Research and development record
 
-This folder is **research, not the product.** The NASA Space Apps FAQ asks teams to start the actual
-project work when the hackathon begins (Bangladesh local events 13–14 Nov 2026 per the local guide; the global
-FAQ gives 14–15 Nov, so confirm with the organisers). Everything here
-checks which data we can get, how, and whether it says what we think it says. Product code gets
-written at the event. Disclose this folder, and any AI help with it, in `docs/AI_USE.md`.
+This folder contains data acquisition, exploratory analysis and reproducible evaluations used by the working product. Product development and AI-assisted reliability improvements were already underway before 7 November 2026. It is not accurate to describe this repository as research only or claim that all product code was written at the event. See `docs/AI_USE.md` for the assistance record and `docs/evidence-reliability.md` for evidence limits.
 
 ## Challenge 07, as officially summarised
 
 *Field Shift: Adapting Farms with NASA Data.* Build a decision-support tool that uses NASA Earth
 observations, **local soil information, crop characteristics and farmer priorities** to help farmers
 explore **crop-rotation strategies** that strengthen soil health and adapt to changing conditions.
-The full statement and datasets are due 28 Oct 2026. Re-read it then.
+This is the project's recorded challenge summary, not a claim that the latest organizer requirements have been verified here.
 
 ## What is already downloaded (no login needed)
 

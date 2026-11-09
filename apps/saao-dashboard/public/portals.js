@@ -687,15 +687,17 @@ export function initPortals(ctx) {
     if (!box) return;
     try {
       const data = await apiJson(`/api/v1/erosion?river=${encodeURIComponent(river)}`);
+      const illustrative = data.dataMode === 'illustrative_static';
       const stations = data.corridor?.stations || [];
-      box.innerHTML = stations.map(s => {
+      const notice = data.caveatBangla ? `<p class="disclaimer-note" role="note">${escapeHtml(tr(data.caveatBangla, data.caveatEnglish || data.caveatBangla))}</p>` : '';
+      box.innerHTML = notice + stations.map(s => {
         const level = s.recentPeakM ?? s.waterLevelM ?? null;
         const danger = s.dangerLevelM ?? null;
         const over = level != null && danger != null && level >= danger;
-        return `<div class="erosion-row ${over ? 'is-danger' : ''}">
+        return `<div class="erosion-row ${over && !illustrative ? 'is-danger' : ''}">
           <div><strong>${escapeHtml(tr(s.stationNameBangla || s.stationId, s.stationNameEnglish || s.stationId))}</strong>
             <small>${escapeHtml(s.districtBangla || '')} · ${escapeHtml(tr('বিপদসীমা', 'danger level'))} ${danger != null ? num(danger.toFixed(2)) : '—'} ${tr('মি', 'm')} · ${escapeHtml(tr('সাম্প্রতিক সর্বোচ্চ', 'recent peak'))} ${level != null ? num(level.toFixed(2)) : '—'} ${tr('মি', 'm')}${s.annualBankShiftEstimateBangla && lang() !== 'en' ? ` · তীর সরে ${escapeHtml(s.annualBankShiftEstimateBangla)}` : ''}</small></div>
-          <span class="badge ${/High/.test(s.riskLevelEnglish || '') || over ? 'badge-danger' : /Moderate/.test(s.riskLevelEnglish || '') ? 'badge-warning' : 'badge-success'}">${escapeHtml(tr(s.riskLevelBangla || (over ? 'বিপদসীমার ওপরে' : 'স্বাভাবিক'), s.riskLevelEnglish ? `${s.riskLevelEnglish} risk` : (over ? 'Above danger level' : 'Normal')))}</span>
+          <span class="badge ${illustrative ? 'badge-neutral' : /High/.test(s.riskLevelEnglish || '') || over ? 'badge-danger' : /Moderate/.test(s.riskLevelEnglish || '') ? 'badge-warning' : 'badge-success'}">${illustrative ? tr('নমুনা', 'Illustrative') : escapeHtml(tr(s.riskLevelBangla || (over ? 'বিপদসীমার ওপরে' : 'স্বাভাবিক'), s.riskLevelEnglish ? `${s.riskLevelEnglish} risk` : (over ? 'Above danger level' : 'Normal')))}</span>
         </div>`;
       }).join('') + (data.corridor?.sourceBangla || data.source ? `<p class="weather-source-note">${escapeHtml(tr(data.corridor?.sourceBangla || data.source || '', data.corridor?.source || data.source || ''))}</p>` : '');
     } catch (err) {

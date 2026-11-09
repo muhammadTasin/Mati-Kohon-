@@ -109,15 +109,15 @@ export function stewardshipTips(option: CandidateRotation, tspKgHa: number | nul
   if (!isBaseline && savedM3 > 0) {
     tips.push({
       kind: 'water',
-      bn: `প্রচলিত আমন–বোরো চক্রের চেয়ে বছরে বিঘাপ্রতি প্রায় ${bnNumber(perBigha(savedM3))} ঘনমিটার কম ভূগর্ভস্থ পানি তুলতে হয়।${trendBn}`,
-      en: `About ${enNumber(Math.round(perBigha(savedM3)))} m3 less groundwater pumped per bigha each year than the usual Aman-Boro rotation.${trendEn}`,
+      bn: `মডেলে প্রচলিত আমন–বোরো চক্রের চেয়ে বছরে বিঘাপ্রতি প্রায় ${bnNumber(perBigha(savedM3))} ঘনমিটার কম সেচের চাহিদা। এটি বাস্তবে ভূগর্ভস্থ পানি সাশ্রয়ের পরিমাপ নয়।${trendBn}`,
+      en: `Modeled irrigation demand is about ${enNumber(Math.round(perBigha(savedM3)))} m3 less per bigha each year than the usual Aman-Boro rotation; this is not measured groundwater savings.${trendEn}`,
       source: 'NASA POWER + GPM IMERG water replay; NASA GLDAS-2.2 (GRACE-assimilated) groundwater',
     });
   } else {
     tips.push({
       kind: 'water',
-      bn: `এই চক্রে বছরে বিঘাপ্রতি প্রায় ${bnNumber(perBigha(ledger.groundwaterPumpedM3PerHa))} ঘনমিটার ভূগর্ভস্থ পানি লাগে; সেচে ভেজানো-শুকানো (AWD) পদ্ধতিতে পানি বাঁচে।${trendBn}`,
-      en: `This rotation pumps about ${enNumber(Math.round(perBigha(ledger.groundwaterPumpedM3PerHa)))} m3 of groundwater per bigha a year; alternate wetting and drying saves water.${trendEn}`,
+      bn: `এই চক্রে মডেলের সেচ চাহিদা বছরে বিঘাপ্রতি প্রায় ${bnNumber(perBigha(ledger.groundwaterPumpedM3PerHa))} ঘনমিটার; জমিতে উপযোগী হলে ভেজানো-শুকানো (AWD) পদ্ধতি কর্মকর্তার সাথে আলোচনা করুন।${trendBn}`,
+      en: `Modeled irrigation demand is about ${enNumber(Math.round(perBigha(ledger.groundwaterPumpedM3PerHa)))} m3 per bigha a year; discuss field-appropriate alternate wetting and drying with an officer.${trendEn}`,
       source: 'NASA POWER + GPM IMERG water replay; BRRI alternate wetting and drying guidance',
     });
   }

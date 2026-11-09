@@ -97,8 +97,8 @@ export class SoilDimensionPlugin implements IEvidenceDimensionPlugin {
             source: LOC.srdi.source + ' — Talanda, medium-high land' + (atlas ? '; SRDI Soil Fertility Atlas 2020 classes for the upazila' : ''),
             timePeriod: 'current SRDI card',
             spatialResolution: 'Union (Talanda)',
-            measuredOrModeled: 'measured',
-            notesBangla: 'SRDI-র মাটি পরীক্ষাভিত্তিক ইউনিয়ন সার সুপারিশ; নিজের জমির মাটি পরীক্ষা হলে সেটিই আগে।',
+            measuredOrModeled: 'assumed',
+            notesBangla: 'স্কোরটি ফসলের ধরন ও দলের নিয়মভিত্তিক অনুমান, মাটির স্বাস্থ্যের পরিমাপ নয়। সারের তথ্য SRDI কার্ড থেকে; নিজের জমির পরীক্ষা আগে।',
           }
         : {
             source: 'No SRDI soil card for this area; no fertilizer amount is given' + (atlas ? '; SRDI Soil Fertility Atlas 2020 classes for the upazila' : ''),

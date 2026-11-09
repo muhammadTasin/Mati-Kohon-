@@ -36,7 +36,7 @@ const DATASETS = [
   { id: 'nisar', icon: 'radar', name: 'NISAR (NASA-ISRO)', short: ['মেঘের নিচে পানি', 'Water under cloud'],
     res: ['৮০ মি · প্রতি ১২ দিন, ২০২৫ থেকে', '80 m · every 12 days, since 2025'],
     what: ['এল-ব্যান্ড রাডার, বর্ষার মেঘ ভেদ করে দেখে', 'L-band radar that sees through monsoon cloud'],
-    use: ['মেঘের নিচের বন্যার পানি আর তা নামার গতি: জমি কবে খালি হবে, বোরোর বীজতলা কবে দেবেন', 'Flood water under cloud and how fast it leaves: when the land will be free, and when to sow the Boro seedbed'] },
+    use: ['আঞ্চলিক বন্যার পানি ও পানি নামার আনুমানিক সীমা; বোনার আগে জমি যাচাই জরুরি', 'Regional flood extent and a provisional recession range; field workability must be checked before planting'] },
   { id: 'opera', icon: 'flood', name: 'OPERA DSWx', short: ['বন্যার পানি', 'Flood water'],
     res: ['৩০ মি · ল্যান্ডস্যাট ও সেন্টিনেল-২ থেকে', '30 m · from Landsat and Sentinel-2'],
     what: ['ভূপৃষ্ঠের পানির মানচিত্র', 'Surface water maps'],

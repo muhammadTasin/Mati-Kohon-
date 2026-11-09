@@ -100,9 +100,10 @@
           <div class="story-copy">
             <p class="story-kicker"><span class="material-symbols-outlined" aria-hidden="true">rocket_launch</span><span data-i18n="story.kicker">নাসা স্পেস অ্যাপস চ্যালেঞ্জ ২০২৬ · ফিল্ড শিফট</span></p>
             <h1 id="entryTitle" class="story-title" data-i18n="story.title"><span>মহাকাশ থেকে দেখা,</span> <span><em>কৃষকের ফোনে</em> বলা</span></h1>
-            <p class="story-lead" data-i18n="story.lead">মাটি কহন দেশের ৫৪৪টি উপজেলার জন্য নাসার ১৪টি তথ্যভান্ডার পড়ে: বৃষ্টি, খেতের সবুজ, বন্যার পানি, মাটির রস, তাপ আর মাটির নিচের পানি। তা থেকে ঠিক করে কী বুনবেন, কবে সেচ দেবেন, কবে জমির পানি নামবে, আর কৃষককে বাংলায় একটি ফোন কল ও এসএমএসে জানায়।</p>
+            <p class="story-lead" data-i18n="story.lead">মাটি কহন ৫৪৪ উপজেলার প্রেক্ষাপটে নাসার তথ্য, স্থানীয় মাটি ও কৃষকের অগ্রাধিকার মিলিয়ে ফসল চক্র তুলনা করে। জেলার আবহাওয়ার হিসাব ও আঞ্চলিক পর্যবেক্ষণ জমির মাপ নয়। অনিশ্চয়তা দেখিয়ে কর্মকর্তার যাচাইয়ের জন্য বাংলা বার্তা তৈরি করে।</p>
             <div class="landing-actions">
-              <button class="btn btn-primary landing-cta" type="button" onclick="ronguShow(0)">
+              <a class="btn btn-primary landing-cta" href="/judge/index.html" data-i18n="landing.judge">২ মিনিটে একটি সিদ্ধান্ত দেখুন</a>
+              <button class="btn btn-secondary landing-cta" type="button" onclick="ronguShow(0)">
                 <span class="material-symbols-outlined" aria-hidden="true">play_arrow</span>
                 <span data-i18n="landing.tour">রঙ্গুর সাথে পুরো সফর</span>
               </button>
@@ -176,7 +177,7 @@
           <li class="flow-step flow-decides">
             <div class="flow-head">
               <span class="flow-num" aria-hidden="true" data-num="2">২</span>
-              <div><h2 class="flow-name" data-i18n="story.decides">মাটি কহন ভাবে</h2><p class="flow-sub" data-i18n="story.decidesSub">প্রতিটি উপজেলায় ২৫টি মৌসুম আবার চালিয়ে ১৭টি ফসলের হিসাব, আজকের মাঠ মিলিয়ে একটি কাজের কথা</p></div>
+              <div><h2 class="flow-name" data-i18n="story.decides">মাটি কহন ভাবে</h2><p class="flow-sub" data-i18n="story.decidesSub">জেলার ২৫ মৌসুমের আবহাওয়ার হিসাবের সাথে স্থানীয় জমি ও ফসলের তথ্য মিলিয়ে চক্রের তুলনা</p></div>
             </div>
             <p class="flow-pick" id="flowPick" data-i18n="story.pick">একটি জায়গা বাছুন</p>
             <div class="flow-land" id="flowLand" role="group" aria-labelledby="flowPick">
@@ -219,9 +220,9 @@
 
         <!-- what stands behind it, in numbers (landing-story.js counts the datasets and dates the update) -->
         <ul class="story-proof">
-          <li><b data-num="544">৫৪৪</b><span data-i18n="story.proof.upazilas">উপজেলা, প্রতিটির নিজের পরামর্শ</span></li>
+          <li><b data-num="544">৫৪৪</b><span data-i18n="story.proof.upazilas">উপজেলার প্রেক্ষাপট, জেলার আবহাওয়ার হিসাব</span></li>
           <li><b data-num="25">২৫</b><span data-i18n="story.proof.seasons">মৌসুম ফিরে চালানো, ২০০১-২০২৫</span></li>
-          <li><b id="proofDatasets">১৪</b><span data-i18n="story.proof.datasets">নাসার তথ্যভান্ডার</span></li>
+          <li><b id="proofDatasets">১৪</b><span data-i18n="story.proof.datasets">নাসা-সংযুক্ত তথ্য ও প্রদর্শনী সেবা</span></li>
           <li><b data-i18n="story.proof.gridNum">১ কিমি</b><span data-i18n="story.proof.grid">গ্রিডে শুধু ফসলি জমি</span></li>
           <li><b data-i18n="story.proof.dailyNum">প্রতিদিন</b><span id="proofDaily">নাসার তথ্য হালনাগাদ</span></li>
         </ul>
@@ -602,7 +603,7 @@
                 <span id="areaBannerText"></span>
                 <button class="btn btn-sm btn-primary" type="button" onclick="returnToMyArea()" data-i18n="area.back">আমার এলাকায় ফিরুন</button>
               </div>
-              <p data-i18n="overview.lead">বরেন্দ্র অঞ্চলের মাঝারি উঁচু জমিতে ভূগর্ভস্থ পানির চাপ কমাতে, মাটি ভালো রাখতে ও কীটনাশক কমাতে ২৫ মৌসুমের নাসা ডেটার ভিত্তিতে ফসল চক্র বাছাই।</p>
+              <p data-i18n="overview.lead">বরেন্দ্র অঞ্চলের মাঝারি উঁচু জমির ফসল চক্র তুলনায় নাসার ঐতিহাসিক আবহাওয়া, মডেলের সেচ চাহিদা ও মাটির পরিচর্যার নিয়ম ব্যবহার করা হয়। মাঠের ফলাফল এখনো যাচাই হয়নি।</p>
               <div class="banner-actions" data-roles="officer">
                 <button class="btn btn-primary" onclick="switchScreen('screen-planner')" data-i18n="overview.startPlanner">
                   + নতুন ফসল চক্র তুলনা শুরু করুন
@@ -1057,6 +1058,8 @@
           <div id="thisSeasonNote" class="this-season-note" hidden></div>
           <div id="localContextNote" class="local-context-note" hidden></div>
           <div id="cropChoiceNote" class="crop-choice-note" hidden></div>
+          <div id="plannerDecisionCheck"></div>
+          <div id="plannerCurrentPracticeReference"></div>
           <div id="plannerResultsContainer" class="candidate-list">
             <!-- Dynamically populated -->
           </div>
@@ -1081,6 +1084,8 @@
 
       <p id="comparisonDisclaimer" class="disclaimer-note" role="note" hidden></p>
       <div id="currentRotationNote" class="local-context-note" hidden></div>
+      <div id="decisionCheck" aria-live="polite"></div>
+      <div id="comparisonCurrentPracticeReference"></div>
 
       <!-- COMPARISON CARDS ROW -->
       <div id="comparisonCardsGrid" class="comparison-grid">
@@ -1268,7 +1273,7 @@
                 <tr><td>MODIS NDVI (MOD13A2) + VIIRS (VJ113A2)</td><td data-i18n="glossary.ndvi1kmNative">১ কিমি, ১৬ দিন</td><td data-i18n="glossary.ndvi1kmHere">উপজেলার ফসলি জমির ১ কিমি ঘর, জমির ভাগে ওজন; ২৫ বছরের ধারা বাদ দিয়ে এখনকার সবুজ, বছরে ফসল, গ্রীষ্মে খালি জমি</td></tr>
                 <tr><td>ECOSTRESS ESI</td><td data-i18n="glossary.esiNative">৭০ মি, অনিয়মিত</td><td data-i18n="glossary.esiHere">মার্চ–এপ্রিলের দিনের পরিষ্কার ছবিতে সবুজ ফসলি পিক্সেল: কতটায় পানির টান</td></tr>
                 <tr><td>SoilGrids 2.0</td><td data-i18n="glossary.sgNative">২৫০ মি</td><td data-i18n="glossary.sgHere">১ কিমিতে গড়, তারপর ফসলি জমিতে: মাটির ধরন আর ধরে রাখা পানি</td></tr>
-                <tr><td>MODIS NDVI (MOD13Q1)</td><td data-i18n="glossary.modisNative">২৫০ মি, ১৬ দিন</td><td data-i18n="glossary.modisHere">উপজেলার কেন্দ্রের পিক্সেল; মাসের মধ্যমা (মৌসুমের ক্যালেন্ডার)</td></tr>
+                <tr><td>MODIS NDVI (MOD13Q1)</td><td data-i18n="glossary.modisNative">২৫০ মি, ১৬ দিন</td><td data-i18n="glossary.modisHere">পুরোনো কেন্দ্র-পিক্সেলের মাসিক ধারা শুধু মৌসুমের ক্যালেন্ডারে; বর্তমান সবুজের মানচিত্রে ওপরের ফসলি জমির গ্রিড ব্যবহার হয়</td></tr>
                 <tr><td>HLS (Landsat + Sentinel-2)</td><td data-i18n="glossary.hlsNative">৩০ মি, ২–৩ দিন</td><td data-i18n="glossary.hlsHere">উপজেলার আমন জমির অংশ</td></tr>
                 <tr><td>OPERA DSWx, NISAR</td><td data-i18n="glossary.operaNative">৩০ মি / ২০ মি</td><td data-i18n="glossary.operaHere">উপজেলার জমির কত অংশ পানির নিচে</td></tr>
                 <tr><td>GRACE/GRACE-FO → GLDAS-2.2</td><td data-i18n="glossary.graceNative">০.২৫°, মাসিক</td><td data-i18n="glossary.graceHere">জেলার ভূগর্ভস্থ পানির ধারা</td></tr>
@@ -1297,7 +1302,7 @@
               <dt data-i18n="glossary.rootTerm">গভীর শিকড় (সরিষা, ভুট্টা, গম, সূর্যমুখী, তিল)</dt>
               <dd data-i18n="glossary.rootText">দেড় মিটার বা বেশি গভীর শিকড় ধান চাষের শক্ত স্তর ভেঙে নিচের পানি ও পুষ্টি তোলে, বৃষ্টির পানি মাটিতে ঢোকার পথ করে (FAO-56)।</dd>
               <dt data-i18n="glossary.dryTerm">কম সেচে হয় (খরা সহনশীল)</dt>
-              <dd data-i18n="glossary.dryText">এই জায়গার ২৫ মৌসুমের হিসাবে যে ফসলে ১০০ মিমির কম সেচ লাগে: মাটির রস আর বৃষ্টিতেই বেশিরভাগ চলে, ভূগর্ভস্থ পানি বাঁচে।</dd>
+              <dd data-i18n="glossary.dryText">ঐতিহাসিক মডেলে যে ফসলের সেচ চাহিদা ১০০ মিমির কম। এটি ভূগর্ভস্থ পানি সাশ্রয় বা জলাধারের পুনরুদ্ধারের পরিমাপ নয়।</dd>
             </dl>
           </details>
         </div>
@@ -1645,7 +1650,7 @@
         <div class="card">
           <div class="card-header">
             <h3><span class="material-symbols-outlined" aria-hidden="true">waves</span> <span data-i18n="erosion.title">নদীভাঙন ও নদীর পানির উচ্চতা (BWDB, CEGIS)</span></h3>
-            <p class="muted small" data-i18n="erosion.savedNote">সংরক্ষিত কপি: BWDB/FFWC বার্ষিক প্রতিবেদন (২০১০–২০২১) ও CEGIS সূচক থেকে কোডে বসানো সংখ্যা। এটি সরাসরি বা আজকের জলস্তর নয়, এবং কোনো সরাসরি BWDB সংযোগ নেই।</p>
+            <p class="muted small" data-i18n="erosion.savedNote">স্থির প্রদর্শনী নমুনা। প্রতিটি মানের তারিখ ও উদ্ধৃতি যাচাই বাকি। এখানে সরাসরি BWDB বা অববাহিকার বৃষ্টির সংযোগ নেই।</p>
             <select id="erosionRiverSelect" class="form-control erosion-select" onchange="fetchRiverErosion(this.value)" aria-label="River">
               <option value="jamuna" data-i18n="erosion.jamuna">যমুনা নদী</option>
               <option value="padma" data-i18n="erosion.padma">পদ্মা নদী</option>

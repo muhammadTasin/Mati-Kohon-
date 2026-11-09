@@ -103,7 +103,7 @@ export class WaterDimensionPlugin implements IEvidenceDimensionPlugin {
             }
           : { totalSeasonsSimulated: rabi.seasons, noAman: true }),
         ...(k2 ? { kharif2NetIrrigationMm: k2Mm, kharif2Crop: k2.catalog.crop } : {}),
-        rabiNetIrrigationMm: rabi.netIrrigationMm,
+        rabiNetIrrigationMm: rabiMm,
         rabiNetIrrigationRange: `${rabi.netIrrigationRangeMm[0]}-${rabi.netIrrigationRangeMm[1]} mm (p10-p90)`,
         groundwaterPumpedM3PerHa: pumpedM3PerHa,
         ...(k1 ? { kharif1NetIrrigationMm: k1Mm, kharif1Crop: k1.catalog.crop } : {}),

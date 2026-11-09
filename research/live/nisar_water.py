@@ -151,36 +151,8 @@ def dry_on(xs, ys, epsg: int, dry: dict) -> tuple[np.ndarray, np.ndarray]:
     return clear, water
 
 
-def drain(readings: list[list], today: date, coast: bool) -> dict | None:
-    """Pace and free-by date from an upazila's readings [date, floodShare, waterNow, sensor] since its peak."""
-    if not (f"{today:%m-%d}" >= DRAIN_FROM or f"{today:%m-%d}" <= "01-31"):
-        return None
-    start = date(today.year if today.month >= 10 else today.year - 1, 9, 1)
-    pts = [r for r in readings if r[1] is not None and date.fromisoformat(r[0]) >= start]
-    # One sensor where it can. On the coast OPERA counts ponds and water under rice that NISAR reads as land, so a
-    # fall from an OPERA reading to a NISAR one is partly the sensor: there only one sensor's readings are used
-    span = lambda rs: (date.fromisoformat(max(rs)[0]) - date.fromisoformat(min(rs)[0])).days if rs else 0  # noqa: E731
-    one = [rs for rs in ([r for r in pts if r[3] == "nisar"], [r for r in pts if r[3] == "opera"]) if len(rs) >= 2 and span(rs) >= MIN_GAP]
-    pts = one[0] if one else ([] if coast else pts)
-    if len(pts) < 2:
-        return None
-    peak = max(pts, key=lambda r: (r[1], r[0]))
-    last = max(pts, key=lambda r: r[0])
-    days = (date.fromisoformat(last[0]) - date.fromisoformat(peak[0])).days
-    out = {"from": {"date": peak[0], "floodShare": peak[1], "sensor": peak[3]},
-           "to": {"date": last[0], "floodShare": last[1], "sensor": last[3]}, "perWeek": None, "freeBy": None}
-    if last[1] < FREE_AT:
-        out["freeBy"] = last[0]
-        return out
-    if days < MIN_GAP or peak[1] - last[1] < MIN_DROP:
-        return out  # not falling yet, or too soon to tell
-    per_day = (peak[1] - last[1]) / days
-    out["perWeek"] = round(per_day * 7, 3)
-    # A straight line holds only a few weeks: water leaves the haor slowly in October and fast once the rivers fall,
-    # so a date further ahead than this is not given
-    ahead = round((last[1] - FREE_AT) / per_day)
-    out["freeBy"] = str(date.fromisoformat(last[0]) + timedelta(days=ahead)) if ahead <= MAX_AHEAD else None
-    return out
+# Shared with the prefix-only backtest; filters future readings and exposes a date range.
+from drainage import drain
 
 
 def main() -> None:

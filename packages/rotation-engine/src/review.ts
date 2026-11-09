@@ -9,6 +9,7 @@
  */
 import type {
   CandidateRotation,
+  CurrentPracticeReference,
   CropRoleId,
   OptionReview,
   ReviewLine,
@@ -22,6 +23,7 @@ import { CROP_TRAITS, DEEP_ROOT_M, LOW_WATER_MM, ROLE_TEXT, TRAITS_SOURCE } from
 import { CHOICE_BY_ID } from './data/crop_choice.ts';
 import { LOC } from './data/location.ts';
 import { marketFile, recentSwing } from './data/market_prices.ts';
+import { fallowComparisonLines } from './current_practice.ts';
 
 const DAYS_IN_MONTH = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
 const MONTH_START = [0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334];
@@ -177,6 +179,7 @@ export interface ReviewContext {
   soilCard: boolean;
   defaultPriorities: boolean;
   groundwaterFalling: boolean;
+  currentPracticeReference?: CurrentPracticeReference | null;
 }
 
 const DIM: Record<string, [string, string]> = {
@@ -271,7 +274,7 @@ function benefitLines(o: CandidateRotation, ref: CandidateRotation | null, roles
   const a = o.ledger, b = ref.ledger;
   if (a && b) {
     const water = b.groundwaterPumpedM3PerHa - a.groundwaterPumpedM3PerHa;
-    if (water >= 200) out.push(line(`বছরে হেক্টরে প্রায় ${bnDigits(Math.round(water / 100) * 100)} ঘনমিটার কম ভূগর্ভস্থ পানি তোলা লাগে।`, `About ${Math.round(water / 100) * 100} m³/ha less groundwater pumped a year.`, 'replay net irrigation (NASA POWER ET0, GPM IMERG)'));
+    if (water >= 200) out.push(line(`মডেলে বছরে হেক্টরে প্রায় ${bnDigits(Math.round(water / 100) * 100)} ঘনমিটার কম সেচের চাহিদা; বাস্তব পানি সাশ্রয় মাপা হয়নি।`, `About ${Math.round(water / 100) * 100} m³/ha lower modeled irrigation demand a year; actual water savings are unmeasured.`, 'replay net irrigation (NASA POWER ET0, GPM IMERG)'));
     if (a.ureaKgHa !== null && b.ureaKgHa !== null && b.ureaKgHa - a.ureaKgHa >= 20) out.push(line(`পুরো চক্রে হেক্টরে প্রায় ${bnDigits(b.ureaKgHa - a.ureaKgHa)} কেজি কম ইউরিয়া।`, `About ${b.ureaKgHa - a.ureaKgHa} kg/ha less urea over the rotation.`, 'SRDI soil card'));
     if (a.legume && !b.legume) out.push(line('ডাল ফসল মাটিতে নাইট্রোজেন যোগ করে, পরের ফসলে সার কম লাগে।', 'A legume adds nitrogen, so the next crop needs less fertilizer.'));
     if (b.floodedRiceDays - a.floodedRiceDays >= 30) out.push(line(`জলাবদ্ধ ধানের দিন ${bnDigits(b.floodedRiceDays - a.floodedRiceDays)}টি কম: মিথেন কম, মাটির গঠন ভালো থাকে।`, `${b.floodedRiceDays - a.floodedRiceDays} fewer days of flooded rice: less methane, better soil structure.`));
@@ -390,14 +393,14 @@ function constraintLines(o: CandidateRotation, ctx: ReviewContext): ReviewLine[]
 
 /** Fills each option's review, read against the reference (see referenceOf). */
 export function reviewOptions(options: CandidateRotation[], ctx: ReviewContext): CandidateRotation | null {
-  const ref = referenceOf(options);
+  const ref = ctx.currentPracticeReference ? null : referenceOf(options);
   for (const o of options) {
     const roles = cropRoles(o);
     o.review = {
-      referenceId: ref?.id ?? null,
+      referenceId: ctx.currentPracticeReference?.id ?? ref?.id ?? null,
       why: whyLines(o, ref, options.length, ctx, roles),
       evidence: evidenceLines(o, ctx),
-      benefits: benefitLines(o, ref, roles),
+      benefits: ctx.currentPracticeReference ? fallowComparisonLines(ctx.currentPracticeReference, o) : benefitLines(o, ref, roles),
       gaps: gapLines(o, ctx),
       checks: checkLines(o, ref, ctx),
       roles,

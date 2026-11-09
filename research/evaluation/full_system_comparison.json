@@ -1,0 +1,2387 @@
+{
+  "schema": "full-system-comparison-v1",
+  "asOf": "2026-11-06",
+  "dataRelease": "tanore-2026.09.30",
+  "drainageEvaluation": {
+    "historyMade": "2026-10-30T19:36:27+00:00",
+    "pilotSummary": {
+      "peak": {
+        "issued": 3,
+        "evaluable": 0,
+        "meanAbsoluteIntervalErrorDays": null,
+        "medianSignedIntervalErrorDays": null
+      },
+      "recent_trend": {
+        "issued": 2,
+        "evaluable": 0,
+        "meanAbsoluteIntervalErrorDays": null,
+        "medianSignedIntervalErrorDays": null
+      },
+      "last_year_proxy": {
+        "issued": 8,
+        "evaluable": 0,
+        "meanAbsoluteIntervalErrorDays": null,
+        "medianSignedIntervalErrorDays": null
+      }
+    },
+    "exploratorySites": 544,
+    "commonEvaluableCases": 49,
+    "commonMeanAbsoluteIntervalErrorDays": {
+      "peak": 3.65,
+      "recent_trend": 2.88,
+      "last_year_proxy": 28.08
+    },
+    "limitations": [
+      "At each October-December observation, forecast using only the prefix available on that date.",
+      "Compare seasonal peak-to-latest, a recent-trend baseline and last year's recorded 90%-recession date shifted one year.",
+      "The last-year proxy uses a different water definition and sensor; its errors are disclosed but cannot establish a fair same-target skill gain.",
+      "The target is bracketed by a wet and subsequent below-5% observation from the same sensor. Zero interval error means inside that bracket, not an exact date hit.",
+      "No later threshold crossing means right-censored, not success, failure or an imputed date. Report missing predictions separately.",
+      "Repeated origins overlap; they are not independent events. Regional water extent is not plot workability or observed planting.",
+      "Classification and calibration were developed using broader history. Prefix isolation prevents direct look-ahead but does not create a pristine holdout.",
+      "Date ranges are method/sampling envelopes, not calibrated confidence intervals. Require field checks; do not promise safe planting."
+    ]
+  },
+  "protocol": {
+    "calendar": "Same crop catalog and explicit land type. Remove salinity, groundwater, current moisture, OPERA readiness and IMERG harvest-risk inputs; choose shortest winter crop occupancy, then earlier Aman field release. Weather/income scores do not select the calendar plan. Evaluate the selected plan again with full inputs.",
+    "priorities": "Water 0.5, income 0.3, soil 0.2; unchanged in every run.",
+    "interpretation": [
+      "Scenario practices are stated examples, not farmer interviews.",
+      "Differences are model outputs, not measured water savings or validated crop benefits.",
+      "Calendar candidates still come from the project catalog, calendars and available replay sowing dates; this is not a reconstruction of officer advice.",
+      "No current observation is fabricated. Current-moisture removal can correctly have no effect in these dated release-only examples.",
+      "The full system includes local non-NASA evidence. Coastal salinity effects must be attributed to SRDI, not to NASA.",
+      "All interventions are shown, including no change and unfavorable results. No case was tuned to force a NASA advantage.",
+      "A null final recommendation means an officer must resolve missing or decision-sensitive inputs; ranked alternatives remain discussion material."
+    ]
+  },
+  "inputAndCodeSha256": {
+    "packages/contracts/src/index.ts": "a474538810f94489e7a8dde3a82abee6b46209608f7a6f0bf424d5147ed89b6e",
+    "packages/contracts/src/types.ts": "d399e97fe4c7dc74b345cdd52c5378822a6281a3d15cf7ed2667958125a31d19",
+    "packages/narration-core/src/bn_text.ts": "b4f840b699eb2843856a47fd1fe9c6dea14dee86b25999aad027ba416ba27255",
+    "packages/narration-core/src/dual_gate_validator.ts": "d694de250d0c42276db7955e1c39e140d7f2092415fa8c6686ac8e3f005f76d9",
+    "packages/narration-core/src/index.ts": "3c37c4f8c454b65738c8507ac25afbbebc38afa67641d15f0127c0dd4e3baf4d",
+    "packages/narration-core/src/template_narrator.ts": "ab9f35b4cccb89307889ede75a7d272751b04f4256e106af829bc97446f63f1e",
+    "packages/rotation-engine/src/bn.ts": "d10f110b2d8644d172dd3e5ae80db488677a5aad4c83e5c70b2f663323abbab7",
+    "packages/rotation-engine/src/current_practice.ts": "e16dbed23f2791a5fdf6e05c1173e9c352ae22289ee7b808cdce1ed2a47fe5a3",
+    "packages/rotation-engine/src/data/crop_catalog.ts": "c3feb1b28a2d0429c70ac7a6654e4001d3af6810db33c63af3a59c3eb355c91a",
+    "packages/rotation-engine/src/data/crop_choice.ts": "d8f2a18a5c23cbcd29e7ad9923933689c860c0261eeaadfa358d4bb89582ec15",
+    "packages/rotation-engine/src/data/crop_choice_replay.json": "2a7acb526ccce98080244d84847f206ee809590ae98f2d08b7ce3ef3f3fdeb49",
+    "packages/rotation-engine/src/data/crop_traits.ts": "f6a6227355f78a949d8619b31b43afdc16309ff595a5ab3119851e368dd34cc6",
+    "packages/rotation-engine/src/data/disease.ts": "e9e25fa27d69099e2499970ba4d1b474083151677a61adc4f185c2a06a434faa",
+    "packages/rotation-engine/src/data/disease_weather.json": "f12090aef2107b505a2c2f7c187e325fb2731cbf0dc823085f4fc08d11f42ad3",
+    "packages/rotation-engine/src/data/ecostress_pilot.json": "02f529d157b592c6c2eb9bfb5b986150fbb21f5f478a48c0c27c545939193467",
+    "packages/rotation-engine/src/data/field_conditions.json": "89757599f941df8d3dc2639a39c57f8e4208add43bb4d7c20cacb9ccaa63131d",
+    "packages/rotation-engine/src/data/field_conditions.ts": "808f9aff9ab591c8e1498a9dc92bd74ede077fa7d99cbfc01dae76b629d31d76",
+    "packages/rotation-engine/src/data/field_conditions_curves.json": "1d4d0a4c22d50ae152a10b6407d5f4674ee33aca87effcbcd827fbc2dd2a41e8",
+    "packages/rotation-engine/src/data/greenness_upazila.json": "2d224363997f6a8b6bff13125d50006ff736cc593bcfddd8931e0a1f3e30d121",
+    "packages/rotation-engine/src/data/groundwater_budget.json": "712916db321c3abefb8985a01db2984569cf524bebf9ead940f151ae66453415",
+    "packages/rotation-engine/src/data/groundwater_budget.ts": "5294a03b4182f02cf0f3baaf174f19187193cb4f7b8d43ad99f7edb32a358cce",
+    "packages/rotation-engine/src/data/ipm_catalog.ts": "a7d83e5d6546dc89110d28dbcece0c4ac167bf7b90102af5dfc2da4eb0da784c",
+    "packages/rotation-engine/src/data/land.ts": "5dcf20625f04bde793f983b16418e504b64a5f6a1934791288e3daa84e971b61",
+    "packages/rotation-engine/src/data/location.ts": "df30a0d917d76ef616b35091ded598f92d1886ae48fa723d82f90c166f730d4f",
+    "packages/rotation-engine/src/data/lookup.ts": "b5ca71bf49ec973e859be0e5e88f1d46c96aa6097faabef3f6d5a33fe8beaf85",
+    "packages/rotation-engine/src/data/market_prices.json": "03535f44efddf5e423e5878990e38fcdf4a6e373d04b6008bf9e1e8e106e5c32",
+    "packages/rotation-engine/src/data/market_prices.ts": "10f01a48530e7a3b1d7302d36ec250c1aef9bbb46bf7240e44bb4d586362206f",
+    "packages/rotation-engine/src/data/national_replay.json": "c7bf1090adc836cf2a16f2f98f3606491cffa206443496d8415add62b3e86e35",
+    "packages/rotation-engine/src/data/pesticide_load.json": "7e1784fff1c15db9f9d2b25bd1860abbcc1af91ed6d09f5c04999181a0729b8d",
+    "packages/rotation-engine/src/data/rainfed.ts": "35a82d0f4880e49dd14927186a9f0f3fad671cfee976a3072cc90bbc212a8706",
+    "packages/rotation-engine/src/data/rainfed_yield.json": "bbdca33a4d1ec0c889aca9ed22437c638b45a563a4a2cb905511a1741280d73b",
+    "packages/rotation-engine/src/data/release_types.ts": "96dac036c5da6b43fd298fd085e74a00c316210305c9087270d80ddfbe87b224",
+    "packages/rotation-engine/src/data/salinity.ts": "031bbfb7eb4467914cdd29452b7edae55307a7e40fc835cd94d7353b652fcb0b",
+    "packages/rotation-engine/src/data/season_calendar.json": "e87672bd1ee0d8901e8dff64b9f0d9e9f364a638885816c0bac4fab617eb7c45",
+    "packages/rotation-engine/src/data/season_calendar.ts": "87b8a603b5654c6f3d32c0b12d90f6267d8a1274defc6c4401da5e970c1254b9",
+    "packages/rotation-engine/src/data/soil_atlas.json": "477d99567b7dad7912444517e89b9baadb7171f1e452c6f07b08d4f12f1057b5",
+    "packages/rotation-engine/src/data/tanore_replay_data.ts": "a4ad3b2e9b844d4b3e1a0318e9ab48e3f7756ffb4e603173e6bf8033d34c490b",
+    "packages/rotation-engine/src/data/upazila_profile.json": "64bec3dccb3cf4083c16e5c21163bd7b79ee52e181e6118b8fa2e0388e7e6cbe",
+    "packages/rotation-engine/src/decision_check.ts": "4b301837c2c14c2e9520c9762f8d5dec520b0c4696f1e9bec5e9ce3b2ce18256",
+    "packages/rotation-engine/src/engine.ts": "876479370fc0c9bae98c77fe7d90fe1604ea312e210af0b38d7c9ec998a89827",
+    "packages/rotation-engine/src/experiments.ts": "e185a5780b36059214b3bb26084d714c4d4ed4bc6c792f4861f0165db9e5a332",
+    "packages/rotation-engine/src/field_alerts.ts": "2c4d14219c7ce5c08f884adbff311c57fe77e260c8e4dd67133a2789d195b83c",
+    "packages/rotation-engine/src/freshness.ts": "fba8c2dbd8b2cdfc1605bbe8178811251fa000e1217151252c6ca705e266bc2f",
+    "packages/rotation-engine/src/index.ts": "ed0ff921233b1636632cc6cc1674de4aae6a2e52209db1951bb21ad44d60e7b6",
+    "packages/rotation-engine/src/input_sensitivity.ts": "3d9fe03d8723f5faf2da28512f284d0201c837fc17c6fe82a3883675ebac018c",
+    "packages/rotation-engine/src/plugins/flood.ts": "c12cf7cfa90f4a5c2c440cb6574789cb1f6e71a6ec969f35e3d7eabf31f7cbda",
+    "packages/rotation-engine/src/plugins/fodder.ts": "0538500d894b1c26ad3bbc5b0b6f16957eeec5b98f8e3d82db51458906f90081",
+    "packages/rotation-engine/src/plugins/heat.ts": "5156be2704ef39291d1e44b025e421a1dfbb51dcdb65ae0feded04c81f26e634",
+    "packages/rotation-engine/src/plugins/income.ts": "02bfe0caff1f964392e4bc6e1b85d6dbb53adb631a67c52bcba29339f33a7965",
+    "packages/rotation-engine/src/plugins/pest.ts": "fa8ba20b338010794a357f3601de63f744c43592af934cf912f5f8b3f40ba8f0",
+    "packages/rotation-engine/src/plugins/soil.ts": "ec06010bdb3422b57de4954fe14b0c0dc23691b887eb9ddb00c7410d27ca180c",
+    "packages/rotation-engine/src/plugins/water.ts": "08730f6979838b9e543eb7fe1d4d8e9845a4b07002b1e4e5d179e64938e689f4",
+    "packages/rotation-engine/src/registry.ts": "267fddb6850b2de789f726b2d8b9217366c2839037a93e66d75d54957b87200f",
+    "packages/rotation-engine/src/review.ts": "57bf6b1c518dadaf05348f7f78057f9e5a9f1c58b709b864437d395fd54349db",
+    "packages/rotation-engine/src/stewardship.ts": "f95f94ab2c1095aa0b2af959ce345934ad3c49605f8c37a57dce68c4fbd17a44",
+    "packages/rotation-engine/src/understand.ts": "ea46208eabd4bcdd38909750dc8baeac92807a70318847e977cc0c72815797f7",
+    "research/evaluation/drainage_evaluation.json": "d7a72e006eba6adb9a6dc5bf3b1fb7156c06d2d4680688182b1565647f2c1ebf",
+    "scripts/evaluate_full_system.ts": "42068f04ff7afa4134e2c9a713efc97ad27d0e91a999cb5d9c30fae2ed79e961"
+  },
+  "cases": [
+    {
+      "id": "tanore",
+      "title": "Tanore: irrigation demand",
+      "request": {
+        "unionId": "talanda_tanore",
+        "unionNameBangla": "তালন্দ ইউনিয়ন",
+        "district": "Rajshahi",
+        "upazila": "Tanore",
+        "landType": "medium_high",
+        "season": "2026-aman",
+        "today": "2026-11-06",
+        "farmerPriorities": {
+          "water": 0.5,
+          "income": 0.3,
+          "soil": 0.2
+        },
+        "currentAmanCrop": "BRRI dhan49",
+        "currentRotation": {
+          "monsoon": "aman",
+          "winter": "boro"
+        },
+        "includeInputSensitivity": true
+      },
+      "current": {
+        "id": "rot_dhan49_boro_conventional",
+        "name": "BRRI dhan49 -> BRRI dhan28 (Boro comparator, irrigation-heavy)",
+        "nameBangla": "ব্রি ধান৪৯ → ব্রি ধান২৮ (বোরো তুলনামূলক চক্র, উচ্চ সেচ নির্ভর)",
+        "irrigationMm": 797,
+        "netReturnBdtHa": 106800,
+        "constraints": {
+          "missedPlantingWindow": false,
+          "harvestRainfallExposure": null,
+          "salinityYieldShare": null,
+          "violations": [],
+          "winterSowing": "02-01",
+          "winterHarvest": "05-14",
+          "fieldReady": "11-19"
+        },
+        "score": 0.381,
+        "cropSequence": [
+          {
+            "crop": "Aman rice",
+            "cropBangla": "আমন ধান",
+            "variety": "BRRI dhan49",
+            "varietyBangla": "ব্রি ধান৪৯",
+            "seasonType": "Aman",
+            "sowingWindow": "seedbed 15 Jun-15 Jul, transplant ~28 Jul",
+            "harvestWindow": "~12 Nov",
+            "durationDays": 135,
+            "daysToFieldFree": 114,
+            "sowingBangla": "২৮ জুলাই",
+            "harvestBangla": "১২ নভেম্বর"
+          },
+          {
+            "crop": "Boro rice",
+            "cropBangla": "বোরো ধান",
+            "variety": "BRRI dhan28",
+            "varietyBangla": "ব্রি ধান২৮",
+            "seasonType": "Rabi",
+            "sowingWindow": "transplant ~1 Feb",
+            "harvestWindow": "~14 May",
+            "durationDays": 102,
+            "daysToFieldFree": 102,
+            "sowingBangla": "১ ফেব্রুয়ারি",
+            "harvestBangla": "১৪ মে"
+          }
+        ]
+      },
+      "calendar": {
+        "id": "rot_dhan71_mustard",
+        "name": "BRRI dhan71 -> BARI Sarisha-14 (low-irrigation oilseed)",
+        "nameBangla": "ব্রি ধান৭১ → বারি সরিষা-১৪ (কম সেচের তেলফসল)",
+        "irrigationMm": 114,
+        "netReturnBdtHa": 102800,
+        "constraints": {
+          "missedPlantingWindow": false,
+          "harvestRainfallExposure": null,
+          "salinityYieldShare": null,
+          "violations": [],
+          "winterSowing": "11-10",
+          "winterHarvest": "01-28",
+          "fieldReady": "11-10"
+        },
+        "score": 0.689,
+        "cropSequence": [
+          {
+            "crop": "Aman rice",
+            "cropBangla": "আমন ধান",
+            "variety": "BRRI dhan71",
+            "varietyBangla": "ব্রি ধান৭১",
+            "seasonType": "Aman",
+            "sowingWindow": "seedbed 5 Jul-15 Jul, transplant ~1 Aug",
+            "harvestWindow": "~3 Nov",
+            "durationDays": 116,
+            "daysToFieldFree": 101,
+            "sowingBangla": "১ আগস্ট",
+            "harvestBangla": "৩ নভেম্বর"
+          },
+          {
+            "crop": "Mustard",
+            "cropBangla": "সরিষা",
+            "variety": "BARI Sarisha-14",
+            "varietyBangla": "বারি সরিষা-১৪",
+            "seasonType": "Rabi",
+            "sowingWindow": "15 Oct-15 Nov (BARI handbook); replay sows 10 Nov",
+            "harvestWindow": "~28 Jan",
+            "durationDays": 79,
+            "daysToFieldFree": 79,
+            "sowingBangla": "১০ নভেম্বর",
+            "harvestBangla": "২৮ জানুয়ারি"
+          }
+        ]
+      },
+      "full": {
+        "id": "rot_dhan71_lentil",
+        "name": "BRRI dhan71 -> BARI Masur-8 (water-saving, soil-building)",
+        "nameBangla": "ব্রি ধান৭১ → বারি মসুর-৮ (পানি সাশ্রয়ী, মাটি সমৃদ্ধকারী)",
+        "irrigationMm": 199,
+        "netReturnBdtHa": 102900,
+        "constraints": {
+          "missedPlantingWindow": false,
+          "harvestRainfallExposure": null,
+          "salinityYieldShare": null,
+          "violations": [],
+          "winterSowing": "11-10",
+          "winterHarvest": "03-01",
+          "fieldReady": "11-10"
+        },
+        "score": 0.712,
+        "cropSequence": [
+          {
+            "crop": "Aman rice",
+            "cropBangla": "আমন ধান",
+            "variety": "BRRI dhan71",
+            "varietyBangla": "ব্রি ধান৭১",
+            "seasonType": "Aman",
+            "sowingWindow": "seedbed 5 Jul-15 Jul, transplant ~1 Aug",
+            "harvestWindow": "~3 Nov",
+            "durationDays": 116,
+            "daysToFieldFree": 101,
+            "sowingBangla": "১ আগস্ট",
+            "harvestBangla": "৩ নভেম্বর"
+          },
+          {
+            "crop": "Lentil",
+            "cropBangla": "মসুর",
+            "variety": "BARI Masur-8",
+            "varietyBangla": "বারি মসুর-৮",
+            "seasonType": "Rabi",
+            "sowingWindow": "23 Oct-14 Nov (BARI handbook); replay sows 10 Nov",
+            "harvestWindow": "~1 Mar",
+            "durationDays": 111,
+            "daysToFieldFree": 111,
+            "sowingBangla": "১০ নভেম্বর",
+            "harvestBangla": "১ মার্চ"
+          }
+        ]
+      },
+      "finalRecommendationId": null,
+      "comparison": {
+        "choiceChangedVsCalendar": true,
+        "modeledIrrigationDifferenceVsCalendarMm": 85,
+        "calendarConstraintViolations": 0,
+        "fullConstraintViolations": 0
+      },
+      "interventions": [
+        {
+          "id": "gldas",
+          "source": "NASA GLDAS groundwater trend",
+          "intervention": "Remove the local groundwater trend; irrigation-stress multiplier returns to one.",
+          "chosen": {
+            "id": "rot_dhan71_lentil",
+            "name": "BRRI dhan71 -> BARI Masur-8 (water-saving, soil-building)",
+            "nameBangla": "ব্রি ধান৭১ → বারি মসুর-৮ (পানি সাশ্রয়ী, মাটি সমৃদ্ধকারী)",
+            "irrigationMm": 199,
+            "netReturnBdtHa": 102900,
+            "constraints": {
+              "missedPlantingWindow": false,
+              "harvestRainfallExposure": null,
+              "salinityYieldShare": null,
+              "violations": [],
+              "winterSowing": "11-10",
+              "winterHarvest": "03-01",
+              "fieldReady": "11-10"
+            },
+            "score": 0.712,
+            "cropSequence": [
+              {
+                "crop": "Aman rice",
+                "cropBangla": "আমন ধান",
+                "variety": "BRRI dhan71",
+                "varietyBangla": "ব্রি ধান৭১",
+                "seasonType": "Aman",
+                "sowingWindow": "seedbed 5 Jul-15 Jul, transplant ~1 Aug",
+                "harvestWindow": "~3 Nov",
+                "durationDays": 116,
+                "daysToFieldFree": 101,
+                "sowingBangla": "১ আগস্ট",
+                "harvestBangla": "৩ নভেম্বর"
+              },
+              {
+                "crop": "Lentil",
+                "cropBangla": "মসুর",
+                "variety": "BARI Masur-8",
+                "varietyBangla": "বারি মসুর-৮",
+                "seasonType": "Rabi",
+                "sowingWindow": "23 Oct-14 Nov (BARI handbook); replay sows 10 Nov",
+                "harvestWindow": "~1 Mar",
+                "durationDays": 111,
+                "daysToFieldFree": 111,
+                "sowingBangla": "১০ নভেম্বর",
+                "harvestBangla": "১ মার্চ"
+              }
+            ]
+          },
+          "choiceChanged": false,
+          "candidateIds": [
+            "rot_dhan71_lentil",
+            "rot_dhan71_mustard",
+            "rot_dhan49_wheat_early",
+            "rot_dhan75_wheat_late",
+            "rot_dhan49_boro_conventional"
+          ],
+          "nominalChoiceStillOffered": true
+        },
+        {
+          "id": "smap",
+          "source": "NASA SMAP/POWER current soil moisture",
+          "intervention": "Remove the current soil-moisture classification and dry-start increment. No effect is expected without a fresh current reading.",
+          "chosen": {
+            "id": "rot_dhan71_lentil",
+            "name": "BRRI dhan71 -> BARI Masur-8 (water-saving, soil-building)",
+            "nameBangla": "ব্রি ধান৭১ → বারি মসুর-৮ (পানি সাশ্রয়ী, মাটি সমৃদ্ধকারী)",
+            "irrigationMm": 199,
+            "netReturnBdtHa": 102900,
+            "constraints": {
+              "missedPlantingWindow": false,
+              "harvestRainfallExposure": null,
+              "salinityYieldShare": null,
+              "violations": [],
+              "winterSowing": "11-10",
+              "winterHarvest": "03-01",
+              "fieldReady": "11-10"
+            },
+            "score": 0.712,
+            "cropSequence": [
+              {
+                "crop": "Aman rice",
+                "cropBangla": "আমন ধান",
+                "variety": "BRRI dhan71",
+                "varietyBangla": "ব্রি ধান৭১",
+                "seasonType": "Aman",
+                "sowingWindow": "seedbed 5 Jul-15 Jul, transplant ~1 Aug",
+                "harvestWindow": "~3 Nov",
+                "durationDays": 116,
+                "daysToFieldFree": 101,
+                "sowingBangla": "১ আগস্ট",
+                "harvestBangla": "৩ নভেম্বর"
+              },
+              {
+                "crop": "Lentil",
+                "cropBangla": "মসুর",
+                "variety": "BARI Masur-8",
+                "varietyBangla": "বারি মসুর-৮",
+                "seasonType": "Rabi",
+                "sowingWindow": "23 Oct-14 Nov (BARI handbook); replay sows 10 Nov",
+                "harvestWindow": "~1 Mar",
+                "durationDays": 111,
+                "daysToFieldFree": 111,
+                "sowingBangla": "১০ নভেম্বর",
+                "harvestBangla": "১ মার্চ"
+              }
+            ]
+          },
+          "choiceChanged": false,
+          "candidateIds": [
+            "rot_dhan71_lentil",
+            "rot_dhan71_mustard",
+            "rot_dhan49_wheat_early",
+            "rot_dhan75_wheat_late",
+            "rot_dhan49_boro_conventional"
+          ],
+          "nominalChoiceStillOffered": true
+        },
+        {
+          "id": "imerg_flood",
+          "source": "NASA GPM IMERG historical upstream rainfall",
+          "intervention": "Remove historical rainfall-burst exposure from harvest constraints and scores; this does not remove the rainfall used by the water replay.",
+          "chosen": {
+            "id": "rot_dhan71_lentil",
+            "name": "BRRI dhan71 -> BARI Masur-8 (water-saving, soil-building)",
+            "nameBangla": "ব্রি ধান৭১ → বারি মসুর-৮ (পানি সাশ্রয়ী, মাটি সমৃদ্ধকারী)",
+            "irrigationMm": 199,
+            "netReturnBdtHa": 102900,
+            "constraints": {
+              "missedPlantingWindow": false,
+              "harvestRainfallExposure": null,
+              "salinityYieldShare": null,
+              "violations": [],
+              "winterSowing": "11-10",
+              "winterHarvest": "03-01",
+              "fieldReady": "11-10"
+            },
+            "score": 0.712,
+            "cropSequence": [
+              {
+                "crop": "Aman rice",
+                "cropBangla": "আমন ধান",
+                "variety": "BRRI dhan71",
+                "varietyBangla": "ব্রি ধান৭১",
+                "seasonType": "Aman",
+                "sowingWindow": "seedbed 5 Jul-15 Jul, transplant ~1 Aug",
+                "harvestWindow": "~3 Nov",
+                "durationDays": 116,
+                "daysToFieldFree": 101,
+                "sowingBangla": "১ আগস্ট",
+                "harvestBangla": "৩ নভেম্বর"
+              },
+              {
+                "crop": "Lentil",
+                "cropBangla": "মসুর",
+                "variety": "BARI Masur-8",
+                "varietyBangla": "বারি মসুর-৮",
+                "seasonType": "Rabi",
+                "sowingWindow": "23 Oct-14 Nov (BARI handbook); replay sows 10 Nov",
+                "harvestWindow": "~1 Mar",
+                "durationDays": 111,
+                "daysToFieldFree": 111,
+                "sowingBangla": "১০ নভেম্বর",
+                "harvestBangla": "১ মার্চ"
+              }
+            ]
+          },
+          "choiceChanged": false,
+          "candidateIds": [
+            "rot_dhan71_lentil",
+            "rot_dhan71_mustard",
+            "rot_dhan49_wheat_early",
+            "rot_dhan75_wheat_late",
+            "rot_dhan49_boro_conventional"
+          ],
+          "nominalChoiceStillOffered": true
+        },
+        {
+          "id": "opera",
+          "source": "NASA OPERA water recession",
+          "intervention": "Remove historical and current recession inputs; land readiness falls back to its calendar default.",
+          "chosen": {
+            "id": "rot_dhan71_lentil",
+            "name": "BRRI dhan71 -> BARI Masur-8 (water-saving, soil-building)",
+            "nameBangla": "ব্রি ধান৭১ → বারি মসুর-৮ (পানি সাশ্রয়ী, মাটি সমৃদ্ধকারী)",
+            "irrigationMm": 199,
+            "netReturnBdtHa": 102900,
+            "constraints": {
+              "missedPlantingWindow": false,
+              "harvestRainfallExposure": null,
+              "salinityYieldShare": null,
+              "violations": [],
+              "winterSowing": "11-10",
+              "winterHarvest": "03-01",
+              "fieldReady": "11-10"
+            },
+            "score": 0.712,
+            "cropSequence": [
+              {
+                "crop": "Aman rice",
+                "cropBangla": "আমন ধান",
+                "variety": "BRRI dhan71",
+                "varietyBangla": "ব্রি ধান৭১",
+                "seasonType": "Aman",
+                "sowingWindow": "seedbed 5 Jul-15 Jul, transplant ~1 Aug",
+                "harvestWindow": "~3 Nov",
+                "durationDays": 116,
+                "daysToFieldFree": 101,
+                "sowingBangla": "১ আগস্ট",
+                "harvestBangla": "৩ নভেম্বর"
+              },
+              {
+                "crop": "Lentil",
+                "cropBangla": "মসুর",
+                "variety": "BARI Masur-8",
+                "varietyBangla": "বারি মসুর-৮",
+                "seasonType": "Rabi",
+                "sowingWindow": "23 Oct-14 Nov (BARI handbook); replay sows 10 Nov",
+                "harvestWindow": "~1 Mar",
+                "durationDays": 111,
+                "daysToFieldFree": 111,
+                "sowingBangla": "১০ নভেম্বর",
+                "harvestBangla": "১ মার্চ"
+              }
+            ]
+          },
+          "choiceChanged": false,
+          "candidateIds": [
+            "rot_dhan71_lentil",
+            "rot_dhan71_mustard",
+            "rot_dhan49_wheat_early",
+            "rot_dhan75_wheat_late",
+            "rot_dhan49_boro_conventional"
+          ],
+          "nominalChoiceStillOffered": true
+        },
+        {
+          "id": "srdi_salinity",
+          "source": "SRDI soil salinity (not NASA)",
+          "intervention": "Remove regional salinity penalties and exclusions. Report separately; this cannot be attributed to NASA.",
+          "chosen": {
+            "id": "rot_dhan71_lentil",
+            "name": "BRRI dhan71 -> BARI Masur-8 (water-saving, soil-building)",
+            "nameBangla": "ব্রি ধান৭১ → বারি মসুর-৮ (পানি সাশ্রয়ী, মাটি সমৃদ্ধকারী)",
+            "irrigationMm": 199,
+            "netReturnBdtHa": 102900,
+            "constraints": {
+              "missedPlantingWindow": false,
+              "harvestRainfallExposure": null,
+              "salinityYieldShare": null,
+              "violations": [],
+              "winterSowing": "11-10",
+              "winterHarvest": "03-01",
+              "fieldReady": "11-10"
+            },
+            "score": 0.712,
+            "cropSequence": [
+              {
+                "crop": "Aman rice",
+                "cropBangla": "আমন ধান",
+                "variety": "BRRI dhan71",
+                "varietyBangla": "ব্রি ধান৭১",
+                "seasonType": "Aman",
+                "sowingWindow": "seedbed 5 Jul-15 Jul, transplant ~1 Aug",
+                "harvestWindow": "~3 Nov",
+                "durationDays": 116,
+                "daysToFieldFree": 101,
+                "sowingBangla": "১ আগস্ট",
+                "harvestBangla": "৩ নভেম্বর"
+              },
+              {
+                "crop": "Lentil",
+                "cropBangla": "মসুর",
+                "variety": "BARI Masur-8",
+                "varietyBangla": "বারি মসুর-৮",
+                "seasonType": "Rabi",
+                "sowingWindow": "23 Oct-14 Nov (BARI handbook); replay sows 10 Nov",
+                "harvestWindow": "~1 Mar",
+                "durationDays": 111,
+                "daysToFieldFree": 111,
+                "sowingBangla": "১০ নভেম্বর",
+                "harvestBangla": "১ মার্চ"
+              }
+            ]
+          },
+          "choiceChanged": false,
+          "candidateIds": [
+            "rot_dhan71_lentil",
+            "rot_dhan71_mustard",
+            "rot_dhan49_wheat_early",
+            "rot_dhan75_wheat_late",
+            "rot_dhan49_boro_conventional"
+          ],
+          "nominalChoiceStillOffered": true
+        }
+      ],
+      "uncertainty": {
+        "status": "review_required",
+        "recommendedOptionId": null,
+        "message": {
+          "bn": "খরচ বা সময়ের অনুমান বদলালে পছন্দ বদলায়। চূড়ান্ত সিদ্ধান্তের আগে সেচের খরচ ও বোনার সময় মিলিয়ে নিন।",
+          "en": "The choice depends on cost or timing assumptions. Check actual irrigation costs and sowing dates before making a final planting decision."
+        },
+        "method": "input-stress-rerun-v1",
+        "scenarios": [
+          {
+            "id": "irrigation_cost",
+            "label": {
+              "bn": "সেচের খরচ ঘনমিটারে ২ টাকা বাড়লে",
+              "en": "Irrigation costs +2 BDT/m³"
+            },
+            "inputs": {
+              "extraIrrigationCostBdtM3": 2
+            },
+            "leaderId": "rot_dhan71_lentil",
+            "leaderName": "BRRI dhan71 -> BARI Masur-8 (water-saving, soil-building)",
+            "nominalLeaderRetained": true,
+            "feasible": true,
+            "irrigationMm": 199,
+            "netReturnBdtHa": 98920
+          },
+          {
+            "id": "crop_cost_high",
+            "label": {
+              "bn": "ফসলপ্রতি খরচ হেক্টরে ৫০০০ টাকা বাড়লে",
+              "en": "Crop costs +5,000 BDT/ha per crop"
+            },
+            "inputs": {
+              "extraCropCostBdtHa": 5000
+            },
+            "leaderId": "rot_dhan71_lentil",
+            "leaderName": "BRRI dhan71 -> BARI Masur-8 (water-saving, soil-building)",
+            "nominalLeaderRetained": true,
+            "feasible": true,
+            "irrigationMm": 199,
+            "netReturnBdtHa": 92900
+          },
+          {
+            "id": "crop_cost_low",
+            "label": {
+              "bn": "ফসলপ্রতি খরচ হেক্টরে ৫০০০ টাকা কমলে",
+              "en": "Crop costs −5,000 BDT/ha per crop"
+            },
+            "inputs": {
+              "extraCropCostBdtHa": -5000
+            },
+            "leaderId": "rot_dhan71_lentil",
+            "leaderName": "BRRI dhan71 -> BARI Masur-8 (water-saving, soil-building)",
+            "nominalLeaderRetained": true,
+            "feasible": true,
+            "irrigationMm": 199,
+            "netReturnBdtHa": 112900
+          },
+          {
+            "id": "aman_late",
+            "label": {
+              "bn": "আমন কাটতে ৭ দিন দেরি হলে",
+              "en": "Aman maturity delayed 7 days"
+            },
+            "inputs": {
+              "amanDelayDays": 7
+            },
+            "leaderId": "rot_dhan49_boro_conventional",
+            "leaderName": "BRRI dhan49 -> BRRI dhan28 (Boro comparator, irrigation-heavy)",
+            "nominalLeaderRetained": false,
+            "feasible": true,
+            "irrigationMm": 797,
+            "netReturnBdtHa": 106800
+          },
+          {
+            "id": "winter_long",
+            "label": {
+              "bn": "শীতের ফসল ১০ দিন বেশি নিলে",
+              "en": "Winter crop duration +10 days"
+            },
+            "inputs": {
+              "winterDurationDays": 10
+            },
+            "leaderId": "rot_dhan71_lentil",
+            "leaderName": "BRRI dhan71 -> BARI Masur-8 (water-saving, soil-building)",
+            "nominalLeaderRetained": true,
+            "feasible": true,
+            "irrigationMm": 223,
+            "netReturnBdtHa": 102900
+          },
+          {
+            "id": "winter_short",
+            "label": {
+              "bn": "শীতের ফসল ১০ দিন কম নিলে",
+              "en": "Winter crop duration −10 days"
+            },
+            "inputs": {
+              "winterDurationDays": -10
+            },
+            "leaderId": "rot_dhan71_lentil",
+            "leaderName": "BRRI dhan71 -> BARI Masur-8 (water-saving, soil-building)",
+            "nominalLeaderRetained": true,
+            "feasible": true,
+            "irrigationMm": 175,
+            "netReturnBdtHa": 102900
+          },
+          {
+            "id": "soil_dry",
+            "label": {
+              "bn": "মাটিতে শুরুর পানি ২৫ মিমি হলে",
+              "en": "Initial soil water 25 mm instead of 50"
+            },
+            "inputs": {
+              "initialSoilWaterMm": 25
+            },
+            "leaderId": "rot_dhan71_lentil",
+            "leaderName": "BRRI dhan71 -> BARI Masur-8 (water-saving, soil-building)",
+            "nominalLeaderRetained": true,
+            "feasible": true,
+            "irrigationMm": 224,
+            "netReturnBdtHa": 102900
+          },
+          {
+            "id": "soil_wet",
+            "label": {
+              "bn": "মাটিতে শুরুর পানি ৭৫ মিমি হলে",
+              "en": "Initial soil water 75 mm instead of 50"
+            },
+            "inputs": {
+              "initialSoilWaterMm": 75
+            },
+            "leaderId": "rot_dhan71_lentil",
+            "leaderName": "BRRI dhan71 -> BARI Masur-8 (water-saving, soil-building)",
+            "nominalLeaderRetained": true,
+            "feasible": true,
+            "irrigationMm": 174,
+            "netReturnBdtHa": 102900
+          },
+          {
+            "id": "combined",
+            "label": {
+              "bn": "খরচ, দেরি ও শুকনো মাটি একসাথে",
+              "en": "Higher costs, delayed crops and drier soil together"
+            },
+            "inputs": {
+              "extraIrrigationCostBdtM3": 2,
+              "extraCropCostBdtHa": 5000,
+              "amanDelayDays": 7,
+              "winterDurationDays": 10,
+              "initialSoilWaterMm": 25
+            },
+            "leaderId": "rot_dhan49_boro_conventional",
+            "leaderName": "BRRI dhan49 -> BRRI dhan28 (Boro comparator, irrigation-heavy)",
+            "nominalLeaderRetained": false,
+            "feasible": true,
+            "irrigationMm": 874,
+            "netReturnBdtHa": 79320
+          }
+        ],
+        "limitations": [
+          "Farmer priorities stay fixed; candidates, calendars, constraint checks and all seven scores are recomputed.",
+          "Ranges are transparent engineering stress assumptions, not measured farmer cost ranges or probability distributions.",
+          "Duration changes shift calendars and scale water use by average daily demand; they do not rerun daily weather or phenology. Aman rescue frequencies and heat exposure stay at their release values.",
+          "Regional salinity is from 2009; the strong-salinity abstention threshold (20% of land) is a conservative review policy, not a calibrated cutoff."
+        ]
+      },
+      "alternatives": [
+        {
+          "id": "rot_dhan71_lentil",
+          "name": "BRRI dhan71 -> BARI Masur-8 (water-saving, soil-building)",
+          "nameBangla": "ব্রি ধান৭১ → বারি মসুর-৮ (পানি সাশ্রয়ী, মাটি সমৃদ্ধকারী)",
+          "irrigationMm": 199,
+          "netReturnBdtHa": 102900,
+          "constraints": {
+            "missedPlantingWindow": false,
+            "harvestRainfallExposure": null,
+            "salinityYieldShare": null,
+            "violations": [],
+            "winterSowing": "11-10",
+            "winterHarvest": "03-01",
+            "fieldReady": "11-10"
+          },
+          "score": 0.712,
+          "cropSequence": [
+            {
+              "crop": "Aman rice",
+              "cropBangla": "আমন ধান",
+              "variety": "BRRI dhan71",
+              "varietyBangla": "ব্রি ধান৭১",
+              "seasonType": "Aman",
+              "sowingWindow": "seedbed 5 Jul-15 Jul, transplant ~1 Aug",
+              "harvestWindow": "~3 Nov",
+              "durationDays": 116,
+              "daysToFieldFree": 101,
+              "sowingBangla": "১ আগস্ট",
+              "harvestBangla": "৩ নভেম্বর"
+            },
+            {
+              "crop": "Lentil",
+              "cropBangla": "মসুর",
+              "variety": "BARI Masur-8",
+              "varietyBangla": "বারি মসুর-৮",
+              "seasonType": "Rabi",
+              "sowingWindow": "23 Oct-14 Nov (BARI handbook); replay sows 10 Nov",
+              "harvestWindow": "~1 Mar",
+              "durationDays": 111,
+              "daysToFieldFree": 111,
+              "sowingBangla": "১০ নভেম্বর",
+              "harvestBangla": "১ মার্চ"
+            }
+          ]
+        },
+        {
+          "id": "rot_dhan71_mustard",
+          "name": "BRRI dhan71 -> BARI Sarisha-14 (low-irrigation oilseed)",
+          "nameBangla": "ব্রি ধান৭১ → বারি সরিষা-১৪ (কম সেচের তেলফসল)",
+          "irrigationMm": 114,
+          "netReturnBdtHa": 102800,
+          "constraints": {
+            "missedPlantingWindow": false,
+            "harvestRainfallExposure": null,
+            "salinityYieldShare": null,
+            "violations": [],
+            "winterSowing": "11-10",
+            "winterHarvest": "01-28",
+            "fieldReady": "11-10"
+          },
+          "score": 0.689,
+          "cropSequence": [
+            {
+              "crop": "Aman rice",
+              "cropBangla": "আমন ধান",
+              "variety": "BRRI dhan71",
+              "varietyBangla": "ব্রি ধান৭১",
+              "seasonType": "Aman",
+              "sowingWindow": "seedbed 5 Jul-15 Jul, transplant ~1 Aug",
+              "harvestWindow": "~3 Nov",
+              "durationDays": 116,
+              "daysToFieldFree": 101,
+              "sowingBangla": "১ আগস্ট",
+              "harvestBangla": "৩ নভেম্বর"
+            },
+            {
+              "crop": "Mustard",
+              "cropBangla": "সরিষা",
+              "variety": "BARI Sarisha-14",
+              "varietyBangla": "বারি সরিষা-১৪",
+              "seasonType": "Rabi",
+              "sowingWindow": "15 Oct-15 Nov (BARI handbook); replay sows 10 Nov",
+              "harvestWindow": "~28 Jan",
+              "durationDays": 79,
+              "daysToFieldFree": 79,
+              "sowingBangla": "১০ নভেম্বর",
+              "harvestBangla": "২৮ জানুয়ারি"
+            }
+          ]
+        },
+        {
+          "id": "rot_dhan49_wheat_early",
+          "name": "BRRI dhan49 -> BARI Gom 33 (Early) (keep dhan49, wheat on time)",
+          "nameBangla": "ব্রি ধান৪৯ → বারি গম-৩৩ (ধান৪৯ রেখে সময়মতো গম)",
+          "irrigationMm": 198,
+          "netReturnBdtHa": 105500,
+          "constraints": {
+            "missedPlantingWindow": false,
+            "harvestRainfallExposure": null,
+            "salinityYieldShare": null,
+            "violations": [],
+            "winterSowing": "11-20",
+            "winterHarvest": "03-04",
+            "fieldReady": "11-19"
+          },
+          "score": 0.66,
+          "cropSequence": [
+            {
+              "crop": "Aman rice",
+              "cropBangla": "আমন ধান",
+              "variety": "BRRI dhan49",
+              "varietyBangla": "ব্রি ধান৪৯",
+              "seasonType": "Aman",
+              "sowingWindow": "seedbed 15 Jun-15 Jul, transplant ~28 Jul",
+              "harvestWindow": "~12 Nov",
+              "durationDays": 135,
+              "daysToFieldFree": 114,
+              "sowingBangla": "২৮ জুলাই",
+              "harvestBangla": "১২ নভেম্বর"
+            },
+            {
+              "crop": "Wheat",
+              "cropBangla": "গম",
+              "variety": "BARI Gom 33 (Early)",
+              "varietyBangla": "বারি গম-৩৩",
+              "seasonType": "Rabi",
+              "sowingWindow": "15 Nov-30 Nov (BWMRI variety page); replay sows 20 Nov",
+              "harvestWindow": "~4 Mar",
+              "durationDays": 104,
+              "daysToFieldFree": 104,
+              "sowingBangla": "২০ নভেম্বর",
+              "harvestBangla": "৪ মার্চ"
+            }
+          ]
+        }
+      ],
+      "narration": {
+        "bangla": "মাটি কহন থেকে বলছি। খরচ বা সময়ের অনুমান বদলালে পছন্দ বদলায়। চূড়ান্ত সিদ্ধান্তের আগে সেচের খরচ ও বোনার সময় মিলিয়ে নিন। প্রশ্ন থাকলে আপনার উপসহকারী কৃষি কর্মকর্তার (SAAO) সাথে কথা বলুন। ধন্যবাদ।",
+        "english": "This is Mati Kohon calling. The choice depends on cost or timing assumptions. Check actual irrigation costs and sowing dates before making a final planting decision. Please discuss the options with your Sub-Assistant Agriculture Officer before planting. Thank you."
+      },
+      "officerReview": [
+        "Confirm the field is accessible and ready for sowing.",
+        "Check actual irrigation access, price and crop costs.",
+        "Explain the trade-off to the farmer and record their choice before sending advice."
+      ]
+    },
+    {
+      "id": "haor",
+      "title": "Khaliajuri: harvest timing and flood exposure",
+      "request": {
+        "unionId": "ADM3_Khaliajuri",
+        "unionNameBangla": "Khaliajuri উপজেলা",
+        "district": "Netrakona",
+        "upazila": "Khaliajuri",
+        "landType": "low",
+        "season": "2026-aman",
+        "today": "2026-11-06",
+        "farmerPriorities": {
+          "water": 0.5,
+          "income": 0.3,
+          "soil": 0.2
+        },
+        "currentAmanCrop": "BRRI dhan49",
+        "currentRotation": {
+          "monsoon": "fallow",
+          "winter": "boro"
+        },
+        "includeInputSensitivity": true
+      },
+      "current": {
+        "id": "rot_fallow_boro",
+        "name": "Monsoon fallow -> BRRI dhan28 (medium irrigation, Boro rice; no rice in the monsoon)",
+        "nameBangla": "বর্ষায় জমি খালি → ব্রি ধান২৮ (মাঝারি সেচ, বোরো ধান; বর্ষায় ধান নেই)",
+        "irrigationMm": 448,
+        "netReturnBdtHa": 65000,
+        "constraints": {
+          "missedPlantingWindow": false,
+          "harvestRainfallExposure": 0.84,
+          "salinityYieldShare": null,
+          "violations": [
+            "historical_rainfall_exposure"
+          ],
+          "winterSowing": "02-01",
+          "winterHarvest": "05-14",
+          "fieldReady": "12-11"
+        },
+        "score": 0.55,
+        "cropSequence": [
+          {
+            "crop": "Monsoon fallow",
+            "cropBangla": "বর্ষায় জমি খালি",
+            "variety": "none",
+            "varietyBangla": "জমি খালি",
+            "seasonType": "Kharif-2",
+            "fallow": true,
+            "sowingWindow": "-",
+            "harvestWindow": "-",
+            "durationDays": 0,
+            "daysToFieldFree": 0
+          },
+          {
+            "crop": "Boro rice",
+            "cropBangla": "বোরো ধান",
+            "variety": "BRRI dhan28",
+            "varietyBangla": "ব্রি ধান২৮",
+            "seasonType": "Rabi",
+            "sowingWindow": "transplant ~1 Feb",
+            "harvestWindow": "~14 May",
+            "durationDays": 102,
+            "daysToFieldFree": 102,
+            "sowingBangla": "১ ফেব্রুয়ারি",
+            "harvestBangla": "১৪ মে"
+          }
+        ]
+      },
+      "calendar": {
+        "id": "rot_fallow_boro_early",
+        "name": "Monsoon fallow -> BRRI dhan88 (irrigation-heavy, Boro rice; no rice in the monsoon)",
+        "nameBangla": "বর্ষায় জমি খালি → ব্রি ধান৮৮ (বেশি সেচ, বোরো ধান; বর্ষায় ধান নেই)",
+        "irrigationMm": 629,
+        "netReturnBdtHa": 65000,
+        "constraints": {
+          "missedPlantingWindow": false,
+          "harvestRainfallExposure": 0.24,
+          "salinityYieldShare": null,
+          "violations": [],
+          "winterSowing": "12-23",
+          "winterHarvest": "04-03",
+          "fieldReady": "12-11"
+        },
+        "score": 0.537,
+        "cropSequence": [
+          {
+            "crop": "Monsoon fallow",
+            "cropBangla": "বর্ষায় জমি খালি",
+            "variety": "none",
+            "varietyBangla": "জমি খালি",
+            "seasonType": "Kharif-2",
+            "fallow": true,
+            "sowingWindow": "-",
+            "harvestWindow": "-",
+            "durationDays": 0,
+            "daysToFieldFree": 0
+          },
+          {
+            "crop": "Boro rice",
+            "cropBangla": "বোরো ধান",
+            "variety": "BRRI dhan88",
+            "varietyBangla": "ব্রি ধান৮৮",
+            "seasonType": "Rabi",
+            "sowingWindow": "23 Dec-7 Jan (BRRI factsheet: seedbed 15-30 Nov, 35-40-day seedlings); replay sows 23 Dec",
+            "harvestWindow": "~3 Apr",
+            "durationDays": 101,
+            "daysToFieldFree": 101,
+            "sowingBangla": "২৩ ডিসেম্বর",
+            "harvestBangla": "৩ এপ্রিল"
+          }
+        ]
+      },
+      "full": {
+        "id": "rot_fallow_boro_early",
+        "name": "Monsoon fallow -> BRRI dhan88 (irrigation-heavy, Boro rice; no rice in the monsoon)",
+        "nameBangla": "বর্ষায় জমি খালি → ব্রি ধান৮৮ (বেশি সেচ, বোরো ধান; বর্ষায় ধান নেই)",
+        "irrigationMm": 629,
+        "netReturnBdtHa": 65000,
+        "constraints": {
+          "missedPlantingWindow": false,
+          "harvestRainfallExposure": 0.24,
+          "salinityYieldShare": null,
+          "violations": [],
+          "winterSowing": "12-23",
+          "winterHarvest": "04-03",
+          "fieldReady": "12-11"
+        },
+        "score": 0.537,
+        "cropSequence": [
+          {
+            "crop": "Monsoon fallow",
+            "cropBangla": "বর্ষায় জমি খালি",
+            "variety": "none",
+            "varietyBangla": "জমি খালি",
+            "seasonType": "Kharif-2",
+            "fallow": true,
+            "sowingWindow": "-",
+            "harvestWindow": "-",
+            "durationDays": 0,
+            "daysToFieldFree": 0
+          },
+          {
+            "crop": "Boro rice",
+            "cropBangla": "বোরো ধান",
+            "variety": "BRRI dhan88",
+            "varietyBangla": "ব্রি ধান৮৮",
+            "seasonType": "Rabi",
+            "sowingWindow": "23 Dec-7 Jan (BRRI factsheet: seedbed 15-30 Nov, 35-40-day seedlings); replay sows 23 Dec",
+            "harvestWindow": "~3 Apr",
+            "durationDays": 101,
+            "daysToFieldFree": 101,
+            "sowingBangla": "২৩ ডিসেম্বর",
+            "harvestBangla": "৩ এপ্রিল"
+          }
+        ]
+      },
+      "finalRecommendationId": null,
+      "comparison": {
+        "choiceChangedVsCalendar": false,
+        "modeledIrrigationDifferenceVsCalendarMm": 0,
+        "calendarConstraintViolations": 0,
+        "fullConstraintViolations": 0
+      },
+      "interventions": [
+        {
+          "id": "gldas",
+          "source": "NASA GLDAS groundwater trend",
+          "intervention": "Remove the local groundwater trend; irrigation-stress multiplier returns to one.",
+          "chosen": {
+            "id": "rot_fallow_boro_early",
+            "name": "Monsoon fallow -> BRRI dhan88 (irrigation-heavy, Boro rice; no rice in the monsoon)",
+            "nameBangla": "বর্ষায় জমি খালি → ব্রি ধান৮৮ (বেশি সেচ, বোরো ধান; বর্ষায় ধান নেই)",
+            "irrigationMm": 629,
+            "netReturnBdtHa": 65000,
+            "constraints": {
+              "missedPlantingWindow": false,
+              "harvestRainfallExposure": 0.24,
+              "salinityYieldShare": null,
+              "violations": [],
+              "winterSowing": "12-23",
+              "winterHarvest": "04-03",
+              "fieldReady": "12-11"
+            },
+            "score": 0.537,
+            "cropSequence": [
+              {
+                "crop": "Monsoon fallow",
+                "cropBangla": "বর্ষায় জমি খালি",
+                "variety": "none",
+                "varietyBangla": "জমি খালি",
+                "seasonType": "Kharif-2",
+                "fallow": true,
+                "sowingWindow": "-",
+                "harvestWindow": "-",
+                "durationDays": 0,
+                "daysToFieldFree": 0
+              },
+              {
+                "crop": "Boro rice",
+                "cropBangla": "বোরো ধান",
+                "variety": "BRRI dhan88",
+                "varietyBangla": "ব্রি ধান৮৮",
+                "seasonType": "Rabi",
+                "sowingWindow": "23 Dec-7 Jan (BRRI factsheet: seedbed 15-30 Nov, 35-40-day seedlings); replay sows 23 Dec",
+                "harvestWindow": "~3 Apr",
+                "durationDays": 101,
+                "daysToFieldFree": 101,
+                "sowingBangla": "২৩ ডিসেম্বর",
+                "harvestBangla": "৩ এপ্রিল"
+              }
+            ]
+          },
+          "choiceChanged": false,
+          "candidateIds": [
+            "rot_fallow_boro_early"
+          ],
+          "nominalChoiceStillOffered": true
+        },
+        {
+          "id": "smap",
+          "source": "NASA SMAP/POWER current soil moisture",
+          "intervention": "Remove the current soil-moisture classification and dry-start increment. No effect is expected without a fresh current reading.",
+          "chosen": {
+            "id": "rot_fallow_boro_early",
+            "name": "Monsoon fallow -> BRRI dhan88 (irrigation-heavy, Boro rice; no rice in the monsoon)",
+            "nameBangla": "বর্ষায় জমি খালি → ব্রি ধান৮৮ (বেশি সেচ, বোরো ধান; বর্ষায় ধান নেই)",
+            "irrigationMm": 629,
+            "netReturnBdtHa": 65000,
+            "constraints": {
+              "missedPlantingWindow": false,
+              "harvestRainfallExposure": 0.24,
+              "salinityYieldShare": null,
+              "violations": [],
+              "winterSowing": "12-23",
+              "winterHarvest": "04-03",
+              "fieldReady": "12-11"
+            },
+            "score": 0.537,
+            "cropSequence": [
+              {
+                "crop": "Monsoon fallow",
+                "cropBangla": "বর্ষায় জমি খালি",
+                "variety": "none",
+                "varietyBangla": "জমি খালি",
+                "seasonType": "Kharif-2",
+                "fallow": true,
+                "sowingWindow": "-",
+                "harvestWindow": "-",
+                "durationDays": 0,
+                "daysToFieldFree": 0
+              },
+              {
+                "crop": "Boro rice",
+                "cropBangla": "বোরো ধান",
+                "variety": "BRRI dhan88",
+                "varietyBangla": "ব্রি ধান৮৮",
+                "seasonType": "Rabi",
+                "sowingWindow": "23 Dec-7 Jan (BRRI factsheet: seedbed 15-30 Nov, 35-40-day seedlings); replay sows 23 Dec",
+                "harvestWindow": "~3 Apr",
+                "durationDays": 101,
+                "daysToFieldFree": 101,
+                "sowingBangla": "২৩ ডিসেম্বর",
+                "harvestBangla": "৩ এপ্রিল"
+              }
+            ]
+          },
+          "choiceChanged": false,
+          "candidateIds": [
+            "rot_fallow_boro_early"
+          ],
+          "nominalChoiceStillOffered": true
+        },
+        {
+          "id": "imerg_flood",
+          "source": "NASA GPM IMERG historical upstream rainfall",
+          "intervention": "Remove historical rainfall-burst exposure from harvest constraints and scores; this does not remove the rainfall used by the water replay.",
+          "chosen": {
+            "id": "rot_fallow_boro",
+            "name": "Monsoon fallow -> BRRI dhan28 (medium irrigation, Boro rice; no rice in the monsoon)",
+            "nameBangla": "বর্ষায় জমি খালি → ব্রি ধান২৮ (মাঝারি সেচ, বোরো ধান; বর্ষায় ধান নেই)",
+            "irrigationMm": 448,
+            "netReturnBdtHa": 65000,
+            "constraints": {
+              "missedPlantingWindow": false,
+              "harvestRainfallExposure": 0.84,
+              "salinityYieldShare": null,
+              "violations": [
+                "historical_rainfall_exposure"
+              ],
+              "winterSowing": "02-01",
+              "winterHarvest": "05-14",
+              "fieldReady": "12-11"
+            },
+            "score": 0.55,
+            "cropSequence": [
+              {
+                "crop": "Monsoon fallow",
+                "cropBangla": "বর্ষায় জমি খালি",
+                "variety": "none",
+                "varietyBangla": "জমি খালি",
+                "seasonType": "Kharif-2",
+                "fallow": true,
+                "sowingWindow": "-",
+                "harvestWindow": "-",
+                "durationDays": 0,
+                "daysToFieldFree": 0
+              },
+              {
+                "crop": "Boro rice",
+                "cropBangla": "বোরো ধান",
+                "variety": "BRRI dhan28",
+                "varietyBangla": "ব্রি ধান২৮",
+                "seasonType": "Rabi",
+                "sowingWindow": "transplant ~1 Feb",
+                "harvestWindow": "~14 May",
+                "durationDays": 102,
+                "daysToFieldFree": 102,
+                "sowingBangla": "১ ফেব্রুয়ারি",
+                "harvestBangla": "১৪ মে"
+              }
+            ]
+          },
+          "choiceChanged": true,
+          "candidateIds": [
+            "rot_fallow_boro",
+            "rot_fallow_boro_early"
+          ],
+          "nominalChoiceStillOffered": true
+        },
+        {
+          "id": "opera",
+          "source": "NASA OPERA water recession",
+          "intervention": "Remove historical and current recession inputs; land readiness falls back to its calendar default.",
+          "chosen": {
+            "id": "rot_fallow_boro_early",
+            "name": "Monsoon fallow -> BRRI dhan88 (irrigation-heavy, Boro rice; no rice in the monsoon)",
+            "nameBangla": "বর্ষায় জমি খালি → ব্রি ধান৮৮ (বেশি সেচ, বোরো ধান; বর্ষায় ধান নেই)",
+            "irrigationMm": 629,
+            "netReturnBdtHa": 65000,
+            "constraints": {
+              "missedPlantingWindow": false,
+              "harvestRainfallExposure": 0.24,
+              "salinityYieldShare": null,
+              "violations": [],
+              "winterSowing": "12-23",
+              "winterHarvest": "04-03",
+              "fieldReady": "12-11"
+            },
+            "score": 0.537,
+            "cropSequence": [
+              {
+                "crop": "Monsoon fallow",
+                "cropBangla": "বর্ষায় জমি খালি",
+                "variety": "none",
+                "varietyBangla": "জমি খালি",
+                "seasonType": "Kharif-2",
+                "fallow": true,
+                "sowingWindow": "-",
+                "harvestWindow": "-",
+                "durationDays": 0,
+                "daysToFieldFree": 0
+              },
+              {
+                "crop": "Boro rice",
+                "cropBangla": "বোরো ধান",
+                "variety": "BRRI dhan88",
+                "varietyBangla": "ব্রি ধান৮৮",
+                "seasonType": "Rabi",
+                "sowingWindow": "23 Dec-7 Jan (BRRI factsheet: seedbed 15-30 Nov, 35-40-day seedlings); replay sows 23 Dec",
+                "harvestWindow": "~3 Apr",
+                "durationDays": 101,
+                "daysToFieldFree": 101,
+                "sowingBangla": "২৩ ডিসেম্বর",
+                "harvestBangla": "৩ এপ্রিল"
+              }
+            ]
+          },
+          "choiceChanged": false,
+          "candidateIds": [
+            "rot_fallow_boro_early"
+          ],
+          "nominalChoiceStillOffered": true
+        },
+        {
+          "id": "srdi_salinity",
+          "source": "SRDI soil salinity (not NASA)",
+          "intervention": "Remove regional salinity penalties and exclusions. Report separately; this cannot be attributed to NASA.",
+          "chosen": {
+            "id": "rot_fallow_boro_early",
+            "name": "Monsoon fallow -> BRRI dhan88 (irrigation-heavy, Boro rice; no rice in the monsoon)",
+            "nameBangla": "বর্ষায় জমি খালি → ব্রি ধান৮৮ (বেশি সেচ, বোরো ধান; বর্ষায় ধান নেই)",
+            "irrigationMm": 629,
+            "netReturnBdtHa": 65000,
+            "constraints": {
+              "missedPlantingWindow": false,
+              "harvestRainfallExposure": 0.24,
+              "salinityYieldShare": null,
+              "violations": [],
+              "winterSowing": "12-23",
+              "winterHarvest": "04-03",
+              "fieldReady": "12-11"
+            },
+            "score": 0.537,
+            "cropSequence": [
+              {
+                "crop": "Monsoon fallow",
+                "cropBangla": "বর্ষায় জমি খালি",
+                "variety": "none",
+                "varietyBangla": "জমি খালি",
+                "seasonType": "Kharif-2",
+                "fallow": true,
+                "sowingWindow": "-",
+                "harvestWindow": "-",
+                "durationDays": 0,
+                "daysToFieldFree": 0
+              },
+              {
+                "crop": "Boro rice",
+                "cropBangla": "বোরো ধান",
+                "variety": "BRRI dhan88",
+                "varietyBangla": "ব্রি ধান৮৮",
+                "seasonType": "Rabi",
+                "sowingWindow": "23 Dec-7 Jan (BRRI factsheet: seedbed 15-30 Nov, 35-40-day seedlings); replay sows 23 Dec",
+                "harvestWindow": "~3 Apr",
+                "durationDays": 101,
+                "daysToFieldFree": 101,
+                "sowingBangla": "২৩ ডিসেম্বর",
+                "harvestBangla": "৩ এপ্রিল"
+              }
+            ]
+          },
+          "choiceChanged": false,
+          "candidateIds": [
+            "rot_fallow_boro_early"
+          ],
+          "nominalChoiceStillOffered": true
+        }
+      ],
+      "uncertainty": {
+        "status": "insufficient_evidence",
+        "recommendedOptionId": null,
+        "message": {
+          "bn": "চূড়ান্ত ফসল বাছার মতো তথ্য নেই। জমির লবণাক্ততা, পানি ও সময় কর্মকর্তা দিয়ে যাচাই করুন; বিকল্পগুলো আলোচনার জন্য।",
+          "en": "Insufficient evidence for a final crop choice. Verify field salinity, water and timing with an officer; these plans are discussion options."
+        },
+        "method": "input-stress-rerun-v1",
+        "scenarios": [
+          {
+            "id": "irrigation_cost",
+            "label": {
+              "bn": "সেচের খরচ ঘনমিটারে ২ টাকা বাড়লে",
+              "en": "Irrigation costs +2 BDT/m³"
+            },
+            "inputs": {
+              "extraIrrigationCostBdtM3": 2
+            },
+            "leaderId": "rot_fallow_boro_early",
+            "leaderName": "Monsoon fallow -> BRRI dhan88 (irrigation-heavy, Boro rice; no rice in the monsoon)",
+            "nominalLeaderRetained": true,
+            "feasible": true,
+            "irrigationMm": 629,
+            "netReturnBdtHa": 52420
+          },
+          {
+            "id": "crop_cost_high",
+            "label": {
+              "bn": "ফসলপ্রতি খরচ হেক্টরে ৫০০০ টাকা বাড়লে",
+              "en": "Crop costs +5,000 BDT/ha per crop"
+            },
+            "inputs": {
+              "extraCropCostBdtHa": 5000
+            },
+            "leaderId": "rot_fallow_boro_early",
+            "leaderName": "Monsoon fallow -> BRRI dhan88 (irrigation-heavy, Boro rice; no rice in the monsoon)",
+            "nominalLeaderRetained": true,
+            "feasible": true,
+            "irrigationMm": 629,
+            "netReturnBdtHa": 60000
+          },
+          {
+            "id": "crop_cost_low",
+            "label": {
+              "bn": "ফসলপ্রতি খরচ হেক্টরে ৫০০০ টাকা কমলে",
+              "en": "Crop costs −5,000 BDT/ha per crop"
+            },
+            "inputs": {
+              "extraCropCostBdtHa": -5000
+            },
+            "leaderId": "rot_fallow_boro_early",
+            "leaderName": "Monsoon fallow -> BRRI dhan88 (irrigation-heavy, Boro rice; no rice in the monsoon)",
+            "nominalLeaderRetained": true,
+            "feasible": true,
+            "irrigationMm": 629,
+            "netReturnBdtHa": 70000
+          },
+          {
+            "id": "aman_late",
+            "label": {
+              "bn": "আমন কাটতে ৭ দিন দেরি হলে",
+              "en": "Aman maturity delayed 7 days"
+            },
+            "inputs": {
+              "amanDelayDays": 7
+            },
+            "leaderId": "rot_fallow_boro_early",
+            "leaderName": "Monsoon fallow -> BRRI dhan88 (irrigation-heavy, Boro rice; no rice in the monsoon)",
+            "nominalLeaderRetained": true,
+            "feasible": true,
+            "irrigationMm": 629,
+            "netReturnBdtHa": 65000
+          },
+          {
+            "id": "winter_long",
+            "label": {
+              "bn": "শীতের ফসল ১০ দিন বেশি নিলে",
+              "en": "Winter crop duration +10 days"
+            },
+            "inputs": {
+              "winterDurationDays": 10
+            },
+            "leaderId": null,
+            "leaderName": null,
+            "nominalLeaderRetained": false,
+            "feasible": false,
+            "irrigationMm": null,
+            "netReturnBdtHa": null
+          },
+          {
+            "id": "winter_short",
+            "label": {
+              "bn": "শীতের ফসল ১০ দিন কম নিলে",
+              "en": "Winter crop duration −10 days"
+            },
+            "inputs": {
+              "winterDurationDays": -10
+            },
+            "leaderId": "rot_fallow_boro_early",
+            "leaderName": "Monsoon fallow -> BRRI dhan88 (irrigation-heavy, Boro rice; no rice in the monsoon)",
+            "nominalLeaderRetained": true,
+            "feasible": true,
+            "irrigationMm": 570,
+            "netReturnBdtHa": 65000
+          },
+          {
+            "id": "soil_dry",
+            "label": {
+              "bn": "মাটিতে শুরুর পানি ২৫ মিমি হলে",
+              "en": "Initial soil water 25 mm instead of 50"
+            },
+            "inputs": {
+              "initialSoilWaterMm": 25
+            },
+            "leaderId": "rot_fallow_boro_early",
+            "leaderName": "Monsoon fallow -> BRRI dhan88 (irrigation-heavy, Boro rice; no rice in the monsoon)",
+            "nominalLeaderRetained": true,
+            "feasible": true,
+            "irrigationMm": 629,
+            "netReturnBdtHa": 65000
+          },
+          {
+            "id": "soil_wet",
+            "label": {
+              "bn": "মাটিতে শুরুর পানি ৭৫ মিমি হলে",
+              "en": "Initial soil water 75 mm instead of 50"
+            },
+            "inputs": {
+              "initialSoilWaterMm": 75
+            },
+            "leaderId": "rot_fallow_boro_early",
+            "leaderName": "Monsoon fallow -> BRRI dhan88 (irrigation-heavy, Boro rice; no rice in the monsoon)",
+            "nominalLeaderRetained": true,
+            "feasible": true,
+            "irrigationMm": 629,
+            "netReturnBdtHa": 65000
+          },
+          {
+            "id": "combined",
+            "label": {
+              "bn": "খরচ, দেরি ও শুকনো মাটি একসাথে",
+              "en": "Higher costs, delayed crops and drier soil together"
+            },
+            "inputs": {
+              "extraIrrigationCostBdtM3": 2,
+              "extraCropCostBdtHa": 5000,
+              "amanDelayDays": 7,
+              "winterDurationDays": 10,
+              "initialSoilWaterMm": 25
+            },
+            "leaderId": null,
+            "leaderName": null,
+            "nominalLeaderRetained": false,
+            "feasible": false,
+            "irrigationMm": null,
+            "netReturnBdtHa": null
+          }
+        ],
+        "limitations": [
+          "Farmer priorities stay fixed; candidates, calendars, constraint checks and all seven scores are recomputed.",
+          "Ranges are transparent engineering stress assumptions, not measured farmer cost ranges or probability distributions.",
+          "Duration changes shift calendars and scale water use by average daily demand; they do not rerun daily weather or phenology. Aman rescue frequencies and heat exposure stay at their release values.",
+          "Regional salinity is from 2009; the strong-salinity abstention threshold (20% of land) is a conservative review policy, not a calibrated cutoff."
+        ]
+      },
+      "alternatives": [
+        {
+          "id": "rot_fallow_boro_early",
+          "name": "Monsoon fallow -> BRRI dhan88 (irrigation-heavy, Boro rice; no rice in the monsoon)",
+          "nameBangla": "বর্ষায় জমি খালি → ব্রি ধান৮৮ (বেশি সেচ, বোরো ধান; বর্ষায় ধান নেই)",
+          "irrigationMm": 629,
+          "netReturnBdtHa": 65000,
+          "constraints": {
+            "missedPlantingWindow": false,
+            "harvestRainfallExposure": 0.24,
+            "salinityYieldShare": null,
+            "violations": [],
+            "winterSowing": "12-23",
+            "winterHarvest": "04-03",
+            "fieldReady": "12-11"
+          },
+          "score": 0.537,
+          "cropSequence": [
+            {
+              "crop": "Monsoon fallow",
+              "cropBangla": "বর্ষায় জমি খালি",
+              "variety": "none",
+              "varietyBangla": "জমি খালি",
+              "seasonType": "Kharif-2",
+              "fallow": true,
+              "sowingWindow": "-",
+              "harvestWindow": "-",
+              "durationDays": 0,
+              "daysToFieldFree": 0
+            },
+            {
+              "crop": "Boro rice",
+              "cropBangla": "বোরো ধান",
+              "variety": "BRRI dhan88",
+              "varietyBangla": "ব্রি ধান৮৮",
+              "seasonType": "Rabi",
+              "sowingWindow": "23 Dec-7 Jan (BRRI factsheet: seedbed 15-30 Nov, 35-40-day seedlings); replay sows 23 Dec",
+              "harvestWindow": "~3 Apr",
+              "durationDays": 101,
+              "daysToFieldFree": 101,
+              "sowingBangla": "২৩ ডিসেম্বর",
+              "harvestBangla": "৩ এপ্রিল"
+            }
+          ]
+        },
+        {
+          "id": "rot_fallow_boro",
+          "name": "Monsoon fallow -> BRRI dhan28 (medium irrigation, Boro rice; no rice in the monsoon)",
+          "nameBangla": "বর্ষায় জমি খালি → ব্রি ধান২৮ (মাঝারি সেচ, বোরো ধান; বর্ষায় ধান নেই)",
+          "irrigationMm": 448,
+          "netReturnBdtHa": 65000,
+          "constraints": {
+            "missedPlantingWindow": false,
+            "harvestRainfallExposure": 0.84,
+            "salinityYieldShare": null,
+            "violations": [
+              "historical_rainfall_exposure"
+            ],
+            "winterSowing": "02-01",
+            "winterHarvest": "05-14",
+            "fieldReady": "12-11"
+          },
+          "score": 0.55,
+          "cropSequence": [
+            {
+              "crop": "Monsoon fallow",
+              "cropBangla": "বর্ষায় জমি খালি",
+              "variety": "none",
+              "varietyBangla": "জমি খালি",
+              "seasonType": "Kharif-2",
+              "fallow": true,
+              "sowingWindow": "-",
+              "harvestWindow": "-",
+              "durationDays": 0,
+              "daysToFieldFree": 0
+            },
+            {
+              "crop": "Boro rice",
+              "cropBangla": "বোরো ধান",
+              "variety": "BRRI dhan28",
+              "varietyBangla": "ব্রি ধান২৮",
+              "seasonType": "Rabi",
+              "sowingWindow": "transplant ~1 Feb",
+              "harvestWindow": "~14 May",
+              "durationDays": 102,
+              "daysToFieldFree": 102,
+              "sowingBangla": "১ ফেব্রুয়ারি",
+              "harvestBangla": "১৪ মে"
+            }
+          ]
+        },
+        {
+          "id": "unplanted_reference",
+          "name": "Leave the year unplanted (unranked reference)",
+          "nameBangla": "সারা বছর খালি রাখা (স্কোরবিহীন তুলনা)",
+          "irrigationMm": 0,
+          "netReturnBdtHa": 0,
+          "score": null,
+          "constraints": null,
+          "cropSequence": [],
+          "note": "Zero crop irrigation and crop return only; land costs, livelihoods and non-crop benefits are unknown. Not a recommendation."
+        }
+      ],
+      "narration": {
+        "bangla": "মাটি কহন থেকে বলছি। চূড়ান্ত ফসল বাছার মতো তথ্য নেই। জমির লবণাক্ততা, পানি ও সময় কর্মকর্তা দিয়ে যাচাই করুন; বিকল্পগুলো আলোচনার জন্য। প্রশ্ন থাকলে আপনার উপসহকারী কৃষি কর্মকর্তার (SAAO) সাথে কথা বলুন। ধন্যবাদ।",
+        "english": "This is Mati Kohon calling. Insufficient evidence for a final crop choice. Verify field salinity, water and timing with an officer; these plans are discussion options. Please discuss the options with your Sub-Assistant Agriculture Officer before planting. Thank you."
+      },
+      "officerReview": [
+        "Confirm the field is accessible and ready for sowing.",
+        "Check actual irrigation access, price and crop costs.",
+        "Confirm river levels and field drainage; rainfall bursts are not flood-arrival dates.",
+        "Explain the trade-off to the farmer and record their choice before sending advice."
+      ]
+    },
+    {
+      "id": "coast",
+      "title": "Shyamnagar: salinity and winter fallow",
+      "request": {
+        "unionId": "ADM3_Shyamnagar",
+        "unionNameBangla": "Shyamnagar উপজেলা",
+        "district": "Satkhira",
+        "upazila": "Shyamnagar",
+        "landType": "medium_high",
+        "season": "2026-aman",
+        "today": "2026-11-06",
+        "farmerPriorities": {
+          "water": 0.5,
+          "income": 0.3,
+          "soil": 0.2
+        },
+        "currentAmanCrop": "BRRI dhan49",
+        "currentRotation": {
+          "monsoon": "aman",
+          "winter": "fallow"
+        },
+        "includeInputSensitivity": true
+      },
+      "current": {
+        "id": "reference_brri_dhan49_fallow",
+        "name": "BRRI dhan49 -> winter fallow -> summer fallow",
+        "nameBangla": "ব্রি ধান৪৯ → শীতে পতিত → গ্রীষ্মে পতিত",
+        "irrigationMm": 0,
+        "netReturnBdtHa": 42800,
+        "constraints": null,
+        "score": null
+      },
+      "calendar": {
+        "id": "rot_dhan87_mustard",
+        "name": "BRRI dhan87 -> BARI Sarisha-14 (water-saving, oilseed)",
+        "nameBangla": "ব্রি ধান৮৭ → বারি সরিষা-১৪ (পানি সাশ্রয়ী, তেলফসল)",
+        "irrigationMm": 119,
+        "netReturnBdtHa": -7500,
+        "constraints": {
+          "missedPlantingWindow": false,
+          "harvestRainfallExposure": null,
+          "salinityYieldShare": 0.06,
+          "violations": [
+            "salinity_yield_assumption"
+          ],
+          "winterSowing": "11-10",
+          "winterHarvest": "01-28",
+          "fieldReady": "11-06"
+        },
+        "score": 0.7,
+        "cropSequence": [
+          {
+            "crop": "Aman rice",
+            "cropBangla": "আমন ধান",
+            "variety": "BRRI dhan87",
+            "varietyBangla": "ব্রি ধান৮৭",
+            "seasonType": "Aman",
+            "sowingWindow": "seedbed 15 Jun-7 Jul, transplant ~24 Jul",
+            "harvestWindow": "~30 Oct",
+            "durationDays": 127,
+            "daysToFieldFree": 105,
+            "sowingBangla": "২৪ জুলাই",
+            "harvestBangla": "৩০ অক্টোবর"
+          },
+          {
+            "crop": "Mustard",
+            "cropBangla": "সরিষা",
+            "variety": "BARI Sarisha-14",
+            "varietyBangla": "বারি সরিষা-১৪",
+            "seasonType": "Rabi",
+            "sowingWindow": "15 Oct-15 Nov (BARI handbook); replay sows 10 Nov",
+            "harvestWindow": "~28 Jan",
+            "durationDays": 79,
+            "daysToFieldFree": 79,
+            "sowingBangla": "১০ নভেম্বর",
+            "harvestBangla": "২৮ জানুয়ারি"
+          }
+        ]
+      },
+      "full": {
+        "id": "rot_dhan87_barley",
+        "name": "BRRI dhan87 -> BARI Barley-7 (water-saving, grain crop)",
+        "nameBangla": "ব্রি ধান৮৭ → বারি বার্লি-৭ (পানি সাশ্রয়ী, দানাশস্য)",
+        "irrigationMm": 190,
+        "netReturnBdtHa": 53800,
+        "constraints": {
+          "missedPlantingWindow": false,
+          "harvestRainfallExposure": null,
+          "salinityYieldShare": 0.69,
+          "violations": [],
+          "winterSowing": "11-08",
+          "winterHarvest": "02-27",
+          "fieldReady": "11-06"
+        },
+        "score": 0.687,
+        "cropSequence": [
+          {
+            "crop": "Aman rice",
+            "cropBangla": "আমন ধান",
+            "variety": "BRRI dhan87",
+            "varietyBangla": "ব্রি ধান৮৭",
+            "seasonType": "Aman",
+            "sowingWindow": "seedbed 15 Jun-7 Jul, transplant ~24 Jul",
+            "harvestWindow": "~30 Oct",
+            "durationDays": 127,
+            "daysToFieldFree": 105,
+            "sowingBangla": "২৪ জুলাই",
+            "harvestBangla": "৩০ অক্টোবর"
+          },
+          {
+            "crop": "Barley",
+            "cropBangla": "যব",
+            "variety": "BARI Barley-7",
+            "varietyBangla": "বারি বার্লি-৭",
+            "seasonType": "Rabi",
+            "sowingWindow": "8 Nov-14 Dec (BARI Krishi Projukti Hatboi (crops/bari_production_technology.csv)); replay sows 8 Nov",
+            "harvestWindow": "~27 Feb",
+            "durationDays": 111,
+            "daysToFieldFree": 111,
+            "sowingBangla": "৮ নভেম্বর",
+            "harvestBangla": "২৭ ফেব্রুয়ারি"
+          }
+        ]
+      },
+      "finalRecommendationId": null,
+      "comparison": {
+        "choiceChangedVsCalendar": true,
+        "modeledIrrigationDifferenceVsCalendarMm": 71,
+        "calendarConstraintViolations": 1,
+        "fullConstraintViolations": 0
+      },
+      "interventions": [
+        {
+          "id": "gldas",
+          "source": "NASA GLDAS groundwater trend",
+          "intervention": "Remove the local groundwater trend; irrigation-stress multiplier returns to one.",
+          "chosen": {
+            "id": "rot_dhan87_barley",
+            "name": "BRRI dhan87 -> BARI Barley-7 (water-saving, grain crop)",
+            "nameBangla": "ব্রি ধান৮৭ → বারি বার্লি-৭ (পানি সাশ্রয়ী, দানাশস্য)",
+            "irrigationMm": 190,
+            "netReturnBdtHa": 53800,
+            "constraints": {
+              "missedPlantingWindow": false,
+              "harvestRainfallExposure": null,
+              "salinityYieldShare": 0.69,
+              "violations": [],
+              "winterSowing": "11-08",
+              "winterHarvest": "02-27",
+              "fieldReady": "11-06"
+            },
+            "score": 0.687,
+            "cropSequence": [
+              {
+                "crop": "Aman rice",
+                "cropBangla": "আমন ধান",
+                "variety": "BRRI dhan87",
+                "varietyBangla": "ব্রি ধান৮৭",
+                "seasonType": "Aman",
+                "sowingWindow": "seedbed 15 Jun-7 Jul, transplant ~24 Jul",
+                "harvestWindow": "~30 Oct",
+                "durationDays": 127,
+                "daysToFieldFree": 105,
+                "sowingBangla": "২৪ জুলাই",
+                "harvestBangla": "৩০ অক্টোবর"
+              },
+              {
+                "crop": "Barley",
+                "cropBangla": "যব",
+                "variety": "BARI Barley-7",
+                "varietyBangla": "বারি বার্লি-৭",
+                "seasonType": "Rabi",
+                "sowingWindow": "8 Nov-14 Dec (BARI Krishi Projukti Hatboi (crops/bari_production_technology.csv)); replay sows 8 Nov",
+                "harvestWindow": "~27 Feb",
+                "durationDays": 111,
+                "daysToFieldFree": 111,
+                "sowingBangla": "৮ নভেম্বর",
+                "harvestBangla": "২৭ ফেব্রুয়ারি"
+              }
+            ]
+          },
+          "choiceChanged": false,
+          "candidateIds": [
+            "rot_dhan87_barley",
+            "rot_dhan71_sunflower",
+            "rot_dhan49_sunflower",
+            "rot_dhan71_barley_sunflower_kharif",
+            "rot_dhan71_sunflower_boro_late"
+          ],
+          "nominalChoiceStillOffered": true
+        },
+        {
+          "id": "smap",
+          "source": "NASA SMAP/POWER current soil moisture",
+          "intervention": "Remove the current soil-moisture classification and dry-start increment. No effect is expected without a fresh current reading.",
+          "chosen": {
+            "id": "rot_dhan87_barley",
+            "name": "BRRI dhan87 -> BARI Barley-7 (water-saving, grain crop)",
+            "nameBangla": "ব্রি ধান৮৭ → বারি বার্লি-৭ (পানি সাশ্রয়ী, দানাশস্য)",
+            "irrigationMm": 190,
+            "netReturnBdtHa": 53800,
+            "constraints": {
+              "missedPlantingWindow": false,
+              "harvestRainfallExposure": null,
+              "salinityYieldShare": 0.69,
+              "violations": [],
+              "winterSowing": "11-08",
+              "winterHarvest": "02-27",
+              "fieldReady": "11-06"
+            },
+            "score": 0.687,
+            "cropSequence": [
+              {
+                "crop": "Aman rice",
+                "cropBangla": "আমন ধান",
+                "variety": "BRRI dhan87",
+                "varietyBangla": "ব্রি ধান৮৭",
+                "seasonType": "Aman",
+                "sowingWindow": "seedbed 15 Jun-7 Jul, transplant ~24 Jul",
+                "harvestWindow": "~30 Oct",
+                "durationDays": 127,
+                "daysToFieldFree": 105,
+                "sowingBangla": "২৪ জুলাই",
+                "harvestBangla": "৩০ অক্টোবর"
+              },
+              {
+                "crop": "Barley",
+                "cropBangla": "যব",
+                "variety": "BARI Barley-7",
+                "varietyBangla": "বারি বার্লি-৭",
+                "seasonType": "Rabi",
+                "sowingWindow": "8 Nov-14 Dec (BARI Krishi Projukti Hatboi (crops/bari_production_technology.csv)); replay sows 8 Nov",
+                "harvestWindow": "~27 Feb",
+                "durationDays": 111,
+                "daysToFieldFree": 111,
+                "sowingBangla": "৮ নভেম্বর",
+                "harvestBangla": "২৭ ফেব্রুয়ারি"
+              }
+            ]
+          },
+          "choiceChanged": false,
+          "candidateIds": [
+            "rot_dhan87_barley",
+            "rot_dhan71_sunflower",
+            "rot_dhan49_sunflower",
+            "rot_dhan71_barley_sunflower_kharif",
+            "rot_dhan71_sunflower_boro_late"
+          ],
+          "nominalChoiceStillOffered": true
+        },
+        {
+          "id": "imerg_flood",
+          "source": "NASA GPM IMERG historical upstream rainfall",
+          "intervention": "Remove historical rainfall-burst exposure from harvest constraints and scores; this does not remove the rainfall used by the water replay.",
+          "chosen": {
+            "id": "rot_dhan87_barley",
+            "name": "BRRI dhan87 -> BARI Barley-7 (water-saving, grain crop)",
+            "nameBangla": "ব্রি ধান৮৭ → বারি বার্লি-৭ (পানি সাশ্রয়ী, দানাশস্য)",
+            "irrigationMm": 190,
+            "netReturnBdtHa": 53800,
+            "constraints": {
+              "missedPlantingWindow": false,
+              "harvestRainfallExposure": null,
+              "salinityYieldShare": 0.69,
+              "violations": [],
+              "winterSowing": "11-08",
+              "winterHarvest": "02-27",
+              "fieldReady": "11-06"
+            },
+            "score": 0.687,
+            "cropSequence": [
+              {
+                "crop": "Aman rice",
+                "cropBangla": "আমন ধান",
+                "variety": "BRRI dhan87",
+                "varietyBangla": "ব্রি ধান৮৭",
+                "seasonType": "Aman",
+                "sowingWindow": "seedbed 15 Jun-7 Jul, transplant ~24 Jul",
+                "harvestWindow": "~30 Oct",
+                "durationDays": 127,
+                "daysToFieldFree": 105,
+                "sowingBangla": "২৪ জুলাই",
+                "harvestBangla": "৩০ অক্টোবর"
+              },
+              {
+                "crop": "Barley",
+                "cropBangla": "যব",
+                "variety": "BARI Barley-7",
+                "varietyBangla": "বারি বার্লি-৭",
+                "seasonType": "Rabi",
+                "sowingWindow": "8 Nov-14 Dec (BARI Krishi Projukti Hatboi (crops/bari_production_technology.csv)); replay sows 8 Nov",
+                "harvestWindow": "~27 Feb",
+                "durationDays": 111,
+                "daysToFieldFree": 111,
+                "sowingBangla": "৮ নভেম্বর",
+                "harvestBangla": "২৭ ফেব্রুয়ারি"
+              }
+            ]
+          },
+          "choiceChanged": false,
+          "candidateIds": [
+            "rot_dhan87_barley",
+            "rot_dhan71_sunflower",
+            "rot_dhan49_sunflower",
+            "rot_dhan71_barley_sunflower_kharif",
+            "rot_dhan71_sunflower_boro_late"
+          ],
+          "nominalChoiceStillOffered": true
+        },
+        {
+          "id": "opera",
+          "source": "NASA OPERA water recession",
+          "intervention": "Remove historical and current recession inputs; land readiness falls back to its calendar default.",
+          "chosen": {
+            "id": "rot_dhan87_barley",
+            "name": "BRRI dhan87 -> BARI Barley-7 (water-saving, grain crop)",
+            "nameBangla": "ব্রি ধান৮৭ → বারি বার্লি-৭ (পানি সাশ্রয়ী, দানাশস্য)",
+            "irrigationMm": 190,
+            "netReturnBdtHa": 53800,
+            "constraints": {
+              "missedPlantingWindow": false,
+              "harvestRainfallExposure": null,
+              "salinityYieldShare": 0.69,
+              "violations": [],
+              "winterSowing": "11-08",
+              "winterHarvest": "02-27",
+              "fieldReady": "11-06"
+            },
+            "score": 0.687,
+            "cropSequence": [
+              {
+                "crop": "Aman rice",
+                "cropBangla": "আমন ধান",
+                "variety": "BRRI dhan87",
+                "varietyBangla": "ব্রি ধান৮৭",
+                "seasonType": "Aman",
+                "sowingWindow": "seedbed 15 Jun-7 Jul, transplant ~24 Jul",
+                "harvestWindow": "~30 Oct",
+                "durationDays": 127,
+                "daysToFieldFree": 105,
+                "sowingBangla": "২৪ জুলাই",
+                "harvestBangla": "৩০ অক্টোবর"
+              },
+              {
+                "crop": "Barley",
+                "cropBangla": "যব",
+                "variety": "BARI Barley-7",
+                "varietyBangla": "বারি বার্লি-৭",
+                "seasonType": "Rabi",
+                "sowingWindow": "8 Nov-14 Dec (BARI Krishi Projukti Hatboi (crops/bari_production_technology.csv)); replay sows 8 Nov",
+                "harvestWindow": "~27 Feb",
+                "durationDays": 111,
+                "daysToFieldFree": 111,
+                "sowingBangla": "৮ নভেম্বর",
+                "harvestBangla": "২৭ ফেব্রুয়ারি"
+              }
+            ]
+          },
+          "choiceChanged": false,
+          "candidateIds": [
+            "rot_dhan87_barley",
+            "rot_dhan71_sunflower",
+            "rot_dhan49_sunflower",
+            "rot_dhan71_barley_sunflower_kharif",
+            "rot_dhan71_sunflower_boro_late"
+          ],
+          "nominalChoiceStillOffered": true
+        },
+        {
+          "id": "srdi_salinity",
+          "source": "SRDI soil salinity (not NASA)",
+          "intervention": "Remove regional salinity penalties and exclusions. Report separately; this cannot be attributed to NASA.",
+          "chosen": {
+            "id": "rot_dhan71_mustard",
+            "name": "BRRI dhan71 -> BARI Sarisha-14 (low-irrigation oilseed)",
+            "nameBangla": "ব্রি ধান৭১ → বারি সরিষা-১৪ (কম সেচের তেলফসল)",
+            "irrigationMm": 119,
+            "netReturnBdtHa": -7500,
+            "constraints": {
+              "missedPlantingWindow": false,
+              "harvestRainfallExposure": null,
+              "salinityYieldShare": 0.06,
+              "violations": [
+                "salinity_yield_assumption"
+              ],
+              "winterSowing": "11-10",
+              "winterHarvest": "01-28",
+              "fieldReady": "11-10"
+            },
+            "score": 0.7,
+            "cropSequence": [
+              {
+                "crop": "Aman rice",
+                "cropBangla": "আমন ধান",
+                "variety": "BRRI dhan71",
+                "varietyBangla": "ব্রি ধান৭১",
+                "seasonType": "Aman",
+                "sowingWindow": "seedbed 5 Jul-15 Jul, transplant ~1 Aug",
+                "harvestWindow": "~3 Nov",
+                "durationDays": 116,
+                "daysToFieldFree": 101,
+                "sowingBangla": "১ আগস্ট",
+                "harvestBangla": "৩ নভেম্বর"
+              },
+              {
+                "crop": "Mustard",
+                "cropBangla": "সরিষা",
+                "variety": "BARI Sarisha-14",
+                "varietyBangla": "বারি সরিষা-১৪",
+                "seasonType": "Rabi",
+                "sowingWindow": "15 Oct-15 Nov (BARI handbook); replay sows 10 Nov",
+                "harvestWindow": "~28 Jan",
+                "durationDays": 79,
+                "daysToFieldFree": 79,
+                "sowingBangla": "১০ নভেম্বর",
+                "harvestBangla": "২৮ জানুয়ারি"
+              }
+            ]
+          },
+          "choiceChanged": true,
+          "candidateIds": [
+            "rot_dhan71_mustard",
+            "rot_dhan71_grasspea",
+            "rot_dhan75_grasspea_jute",
+            "rot_dhan49_chickpea",
+            "rot_dhan71_lentil"
+          ],
+          "nominalChoiceStillOffered": false
+        }
+      ],
+      "uncertainty": {
+        "status": "insufficient_evidence",
+        "recommendedOptionId": null,
+        "message": {
+          "bn": "চূড়ান্ত ফসল বাছার মতো তথ্য নেই। জমির লবণাক্ততা, পানি ও সময় কর্মকর্তা দিয়ে যাচাই করুন; বিকল্পগুলো আলোচনার জন্য।",
+          "en": "Insufficient evidence for a final crop choice. Verify field salinity, water and timing with an officer; these plans are discussion options."
+        },
+        "method": "input-stress-rerun-v1",
+        "scenarios": [
+          {
+            "id": "irrigation_cost",
+            "label": {
+              "bn": "সেচের খরচ ঘনমিটারে ২ টাকা বাড়লে",
+              "en": "Irrigation costs +2 BDT/m³"
+            },
+            "inputs": {
+              "extraIrrigationCostBdtM3": 2
+            },
+            "leaderId": "rot_dhan87_barley",
+            "leaderName": "BRRI dhan87 -> BARI Barley-7 (water-saving, grain crop)",
+            "nominalLeaderRetained": true,
+            "feasible": true,
+            "irrigationMm": 190,
+            "netReturnBdtHa": 50000
+          },
+          {
+            "id": "crop_cost_high",
+            "label": {
+              "bn": "ফসলপ্রতি খরচ হেক্টরে ৫০০০ টাকা বাড়লে",
+              "en": "Crop costs +5,000 BDT/ha per crop"
+            },
+            "inputs": {
+              "extraCropCostBdtHa": 5000
+            },
+            "leaderId": "rot_dhan87_barley",
+            "leaderName": "BRRI dhan87 -> BARI Barley-7 (water-saving, grain crop)",
+            "nominalLeaderRetained": true,
+            "feasible": true,
+            "irrigationMm": 190,
+            "netReturnBdtHa": 43800
+          },
+          {
+            "id": "crop_cost_low",
+            "label": {
+              "bn": "ফসলপ্রতি খরচ হেক্টরে ৫০০০ টাকা কমলে",
+              "en": "Crop costs −5,000 BDT/ha per crop"
+            },
+            "inputs": {
+              "extraCropCostBdtHa": -5000
+            },
+            "leaderId": "rot_dhan87_barley",
+            "leaderName": "BRRI dhan87 -> BARI Barley-7 (water-saving, grain crop)",
+            "nominalLeaderRetained": true,
+            "feasible": true,
+            "irrigationMm": 190,
+            "netReturnBdtHa": 63800
+          },
+          {
+            "id": "aman_late",
+            "label": {
+              "bn": "আমন কাটতে ৭ দিন দেরি হলে",
+              "en": "Aman maturity delayed 7 days"
+            },
+            "inputs": {
+              "amanDelayDays": 7
+            },
+            "leaderId": "rot_dhan87_sunflower",
+            "leaderName": "BRRI dhan87 -> BARI Sunflower-2 (water-saving, oilseed)",
+            "nominalLeaderRetained": false,
+            "feasible": true,
+            "irrigationMm": 184,
+            "netReturnBdtHa": 18100
+          },
+          {
+            "id": "winter_long",
+            "label": {
+              "bn": "শীতের ফসল ১০ দিন বেশি নিলে",
+              "en": "Winter crop duration +10 days"
+            },
+            "inputs": {
+              "winterDurationDays": 10
+            },
+            "leaderId": "rot_dhan71_sunflower",
+            "leaderName": "BRRI dhan71 -> BARI Sunflower-2 (water-saving, oilseed)",
+            "nominalLeaderRetained": false,
+            "feasible": true,
+            "irrigationMm": 209,
+            "netReturnBdtHa": 18100
+          },
+          {
+            "id": "winter_short",
+            "label": {
+              "bn": "শীতের ফসল ১০ দিন কম নিলে",
+              "en": "Winter crop duration −10 days"
+            },
+            "inputs": {
+              "winterDurationDays": -10
+            },
+            "leaderId": "rot_dhan49_sunflower",
+            "leaderName": "BRRI dhan49 -> BARI Sunflower-2 (water-saving, oilseed)",
+            "nominalLeaderRetained": false,
+            "feasible": true,
+            "irrigationMm": 170,
+            "netReturnBdtHa": 18100
+          },
+          {
+            "id": "soil_dry",
+            "label": {
+              "bn": "মাটিতে শুরুর পানি ২৫ মিমি হলে",
+              "en": "Initial soil water 25 mm instead of 50"
+            },
+            "inputs": {
+              "initialSoilWaterMm": 25
+            },
+            "leaderId": "rot_dhan71_sunflower",
+            "leaderName": "BRRI dhan71 -> BARI Sunflower-2 (water-saving, oilseed)",
+            "nominalLeaderRetained": false,
+            "feasible": true,
+            "irrigationMm": 209,
+            "netReturnBdtHa": 18100
+          },
+          {
+            "id": "soil_wet",
+            "label": {
+              "bn": "মাটিতে শুরুর পানি ৭৫ মিমি হলে",
+              "en": "Initial soil water 75 mm instead of 50"
+            },
+            "inputs": {
+              "initialSoilWaterMm": 75
+            },
+            "leaderId": "rot_dhan49_sunflower",
+            "leaderName": "BRRI dhan49 -> BARI Sunflower-2 (water-saving, oilseed)",
+            "nominalLeaderRetained": false,
+            "feasible": true,
+            "irrigationMm": 172,
+            "netReturnBdtHa": 18100
+          },
+          {
+            "id": "combined",
+            "label": {
+              "bn": "খরচ, দেরি ও শুকনো মাটি একসাথে",
+              "en": "Higher costs, delayed crops and drier soil together"
+            },
+            "inputs": {
+              "extraIrrigationCostBdtM3": 2,
+              "extraCropCostBdtHa": 5000,
+              "amanDelayDays": 7,
+              "winterDurationDays": 10,
+              "initialSoilWaterMm": 25
+            },
+            "leaderId": "rot_dhan87_sunflower",
+            "leaderName": "BRRI dhan87 -> BARI Sunflower-2 (water-saving, oilseed)",
+            "nominalLeaderRetained": false,
+            "feasible": true,
+            "irrigationMm": 234,
+            "netReturnBdtHa": 3420
+          },
+          {
+            "id": "salt_lower",
+            "label": {
+              "bn": "লবণাক্ততার অনুমান ২৫% কম হলে",
+              "en": "Assumed salinity 25% lower"
+            },
+            "inputs": {
+              "salinityMultiplier": 0.75
+            },
+            "leaderId": "rot_dhan87_barley",
+            "leaderName": "BRRI dhan87 -> BARI Barley-7 (water-saving, grain crop)",
+            "nominalLeaderRetained": true,
+            "feasible": true,
+            "irrigationMm": 190,
+            "netReturnBdtHa": 77100
+          },
+          {
+            "id": "salt_higher",
+            "label": {
+              "bn": "লবণাক্ততার অনুমান ২৫% বেশি হলে",
+              "en": "Assumed salinity 25% higher"
+            },
+            "inputs": {
+              "salinityMultiplier": 1.25
+            },
+            "leaderId": "rot_dhan87_barley",
+            "leaderName": "BRRI dhan87 -> BARI Barley-7 (water-saving, grain crop)",
+            "nominalLeaderRetained": true,
+            "feasible": true,
+            "irrigationMm": 190,
+            "netReturnBdtHa": 31900
+          }
+        ],
+        "limitations": [
+          "Farmer priorities stay fixed; candidates, calendars, constraint checks and all seven scores are recomputed.",
+          "Ranges are transparent engineering stress assumptions, not measured farmer cost ranges or probability distributions.",
+          "Duration changes shift calendars and scale water use by average daily demand; they do not rerun daily weather or phenology. Aman rescue frequencies and heat exposure stay at their release values.",
+          "Regional salinity is from 2009; the strong-salinity abstention threshold (20% of land) is a conservative review policy, not a calibrated cutoff."
+        ]
+      },
+      "alternatives": [
+        {
+          "id": "rot_dhan87_barley",
+          "name": "BRRI dhan87 -> BARI Barley-7 (water-saving, grain crop)",
+          "nameBangla": "ব্রি ধান৮৭ → বারি বার্লি-৭ (পানি সাশ্রয়ী, দানাশস্য)",
+          "irrigationMm": 190,
+          "netReturnBdtHa": 53800,
+          "constraints": {
+            "missedPlantingWindow": false,
+            "harvestRainfallExposure": null,
+            "salinityYieldShare": 0.69,
+            "violations": [],
+            "winterSowing": "11-08",
+            "winterHarvest": "02-27",
+            "fieldReady": "11-06"
+          },
+          "score": 0.687,
+          "cropSequence": [
+            {
+              "crop": "Aman rice",
+              "cropBangla": "আমন ধান",
+              "variety": "BRRI dhan87",
+              "varietyBangla": "ব্রি ধান৮৭",
+              "seasonType": "Aman",
+              "sowingWindow": "seedbed 15 Jun-7 Jul, transplant ~24 Jul",
+              "harvestWindow": "~30 Oct",
+              "durationDays": 127,
+              "daysToFieldFree": 105,
+              "sowingBangla": "২৪ জুলাই",
+              "harvestBangla": "৩০ অক্টোবর"
+            },
+            {
+              "crop": "Barley",
+              "cropBangla": "যব",
+              "variety": "BARI Barley-7",
+              "varietyBangla": "বারি বার্লি-৭",
+              "seasonType": "Rabi",
+              "sowingWindow": "8 Nov-14 Dec (BARI Krishi Projukti Hatboi (crops/bari_production_technology.csv)); replay sows 8 Nov",
+              "harvestWindow": "~27 Feb",
+              "durationDays": 111,
+              "daysToFieldFree": 111,
+              "sowingBangla": "৮ নভেম্বর",
+              "harvestBangla": "২৭ ফেব্রুয়ারি"
+            }
+          ]
+        },
+        {
+          "id": "rot_dhan71_sunflower",
+          "name": "BRRI dhan71 -> BARI Sunflower-2 (water-saving, oilseed)",
+          "nameBangla": "ব্রি ধান৭১ → বারি সূর্যমুখী-২ (পানি সাশ্রয়ী, তেলফসল)",
+          "irrigationMm": 184,
+          "netReturnBdtHa": 18100,
+          "constraints": {
+            "missedPlantingWindow": false,
+            "harvestRainfallExposure": null,
+            "salinityYieldShare": 0.54,
+            "violations": [],
+            "winterSowing": "11-15",
+            "winterHarvest": "02-22",
+            "fieldReady": "11-10"
+          },
+          "score": 0.687,
+          "cropSequence": [
+            {
+              "crop": "Aman rice",
+              "cropBangla": "আমন ধান",
+              "variety": "BRRI dhan71",
+              "varietyBangla": "ব্রি ধান৭১",
+              "seasonType": "Aman",
+              "sowingWindow": "seedbed 5 Jul-15 Jul, transplant ~1 Aug",
+              "harvestWindow": "~3 Nov",
+              "durationDays": 116,
+              "daysToFieldFree": 101,
+              "sowingBangla": "১ আগস্ট",
+              "harvestBangla": "৩ নভেম্বর"
+            },
+            {
+              "crop": "Sunflower",
+              "cropBangla": "সূর্যমুখী",
+              "variety": "BARI Sunflower-2",
+              "varietyBangla": "বারি সূর্যমুখী-২",
+              "seasonType": "Rabi",
+              "sowingWindow": "15 Nov-15 Dec (BARI Krishi Projukti Hatboi (crops/bari_production_technology.csv)); replay sows 15 Nov",
+              "harvestWindow": "~22 Feb",
+              "durationDays": 99,
+              "daysToFieldFree": 99,
+              "sowingBangla": "১৫ নভেম্বর",
+              "harvestBangla": "২২ ফেব্রুয়ারি"
+            }
+          ]
+        },
+        {
+          "id": "rot_dhan49_sunflower",
+          "name": "BRRI dhan49 -> BARI Sunflower-2 (water-saving, oilseed)",
+          "nameBangla": "ব্রি ধান৪৯ → বারি সূর্যমুখী-২ (পানি সাশ্রয়ী, তেলফসল)",
+          "irrigationMm": 197,
+          "netReturnBdtHa": 18100,
+          "constraints": {
+            "missedPlantingWindow": false,
+            "harvestRainfallExposure": null,
+            "salinityYieldShare": 0.54,
+            "violations": [],
+            "winterSowing": "11-25",
+            "winterHarvest": "03-04",
+            "fieldReady": "11-19"
+          },
+          "score": 0.683,
+          "cropSequence": [
+            {
+              "crop": "Aman rice",
+              "cropBangla": "আমন ধান",
+              "variety": "BRRI dhan49",
+              "varietyBangla": "ব্রি ধান৪৯",
+              "seasonType": "Aman",
+              "sowingWindow": "seedbed 15 Jun-15 Jul, transplant ~28 Jul",
+              "harvestWindow": "~12 Nov",
+              "durationDays": 135,
+              "daysToFieldFree": 114,
+              "sowingBangla": "২৮ জুলাই",
+              "harvestBangla": "১২ নভেম্বর"
+            },
+            {
+              "crop": "Sunflower",
+              "cropBangla": "সূর্যমুখী",
+              "variety": "BARI Sunflower-2",
+              "varietyBangla": "বারি সূর্যমুখী-২",
+              "seasonType": "Rabi",
+              "sowingWindow": "15 Nov-15 Dec (BARI Krishi Projukti Hatboi (crops/bari_production_technology.csv)); replay sows 25 Nov",
+              "harvestWindow": "~4 Mar",
+              "durationDays": 99,
+              "daysToFieldFree": 99,
+              "sowingBangla": "২৫ নভেম্বর",
+              "harvestBangla": "৪ মার্চ"
+            }
+          ]
+        }
+      ],
+      "narration": {
+        "bangla": "মাটি কহন থেকে বলছি। চূড়ান্ত ফসল বাছার মতো তথ্য নেই। জমির লবণাক্ততা, পানি ও সময় কর্মকর্তা দিয়ে যাচাই করুন; বিকল্পগুলো আলোচনার জন্য। প্রশ্ন থাকলে আপনার উপসহকারী কৃষি কর্মকর্তার (SAAO) সাথে কথা বলুন। ধন্যবাদ।",
+        "english": "This is Mati Kohon calling. Insufficient evidence for a final crop choice. Verify field salinity, water and timing with an officer; these plans are discussion options. Please discuss the options with your Sub-Assistant Agriculture Officer before planting. Thank you."
+      },
+      "officerReview": [
+        "Confirm the field is accessible and ready for sowing.",
+        "Check actual irrigation access, price and crop costs.",
+        "Measure field salinity; the 2009 regional survey does not settle this field.",
+        "Explain the trade-off to the farmer and record their choice before sending advice."
+      ]
+    }
+  ]
+}

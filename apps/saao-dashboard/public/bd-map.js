@@ -57,7 +57,7 @@ export const LAYERS = [ // also read by the landing page's map (landing-map.js)
   { id: 'groundwater', group: 'water', name: ['ভূগর্ভস্থ পানি কমার হার', 'Groundwater falling'], note: ['মিমি/বছর, নাসা GLDAS (GRACE), জেলা', 'mm a year, NASA GLDAS (GRACE), district'],
     value: r => (r.groundwaterMmPerYear == null ? null : -r.groundwaterMmPerYear), breaks: [2, 3, 4, 5, 6], colors: AMBER.slice(1), digits: 1,
     unit: ['মিমি/বছর', 'mm/yr'], source: 'water', district: true },
-  { id: 'boroToMove', group: 'water', name: ['পানির পতন থামাতে বোরো জমি সরাতে হবে', 'Boro land to move to stop the fall'], note: ['% বোরো জমি মসুরের চক্রে, নাসা GRACE (GLDAS) ও BBS, জেলা; সর্বনিম্ন হিসাব', '% of Boro land to a lentil rotation, NASA GRACE (GLDAS) and BBS, district; a floor'],
+  { id: 'boroToMove', group: 'water', name: ['সমপরিমাণ সেচ কমানোর বোরো জমি', 'Boro irrigation-volume equivalent'], note: ['% বোরো জমি মসুরের চক্রে; GRACE (GLDAS) ও BBS-এর সরল তুলনা, পানির স্তর ফেরার পূর্বাভাস নয়', '% of Boro land to lentil; simple GRACE (GLDAS) and BBS volume comparison, not aquifer recovery'],
     value: r => r.boroToMovePct, breaks: [1, 2, 3, 5, 8], colors: AMBER.slice(1), digits: 1, unit: ['%', '%'], source: 'water', district: true },
   { id: 'cropCondition', group: 'now', name: ['খেতের সবুজ, প্রত্যাশার তুলনায়', 'Crop greenness against expected'],
     note: ['নাসা VIIRS, শেষ ১৬ দিন; ২৫ বছরের ধারা বাদ দিয়ে, শুধু ফসলি জমি', 'NASA VIIRS, the last 16 days; the 25-year trend taken out, cropland only'],
@@ -282,7 +282,7 @@ export function initBdMap({ tr, num, isoDate, escapeHtml, choose, currentId }) {
     const districtNote = s.district ? `<p class="map-caveat">${tr('জেলার পয়েন্টের মান: একই জেলার সব উপজেলায় একই রং।', 'District-point value: every upazila of a district shares its colour.')}</p>` : '';
     const liveNote = s.source === 'live' ? `<p class="map-caveat">${tr('নাসা POWER-এর সাম্প্রতিক সপ্তাহগুলো আর্কাইভের চেয়ে শুকনো পড়ে; SMAP দিয়ে মেলানো পর্যন্ত "শুকনো" অস্থায়ী।', "NASA POWER's newest weeks read drier than its archive; treat 'dry' as provisional until SMAP confirms it.")}</p>` : '';
     const pestNote = s.source === 'pesticide' ? `<p class="map-caveat">${tr('মডেলের অনুমান (মাটি শোধনের ফিউমিগ্যান্ট বাদে), মাঠের মাপ নয়।', 'A model estimate (soil fumigants left out), not a farm measurement.')}</p>` : '';
-    const cropNote = s.source === 'crops' ? `<p class="map-caveat">${tr('উপজেলার কেন্দ্রের একটি ২৫০ মি পিক্সেল: প্রসঙ্গ হিসেবে দেখুন।', 'One 250 m pixel at the upazila centre: read it as context.')}</p>` : '';
+    const cropNote = s.source === 'crops' ? `<p class="map-caveat">${tr('চাষের জমির ১ কিমি গ্রিডে উপগ্রহের গড়: নির্দিষ্ট খেতের মাপ নয়।', 'Satellite averages on a 1 km cropland grid, not measurements of an individual field.')}</p>` : '';
     document.getElementById('mapLegend').innerHTML = `
       <div class="map-legend-title"><strong>${escapeHtml(tr(s.name[0], s.name[1]))}${s.yearly ? ` · ${num(YEARLY.year)}` : ''}</strong> <span>${escapeHtml(tr(s.note[0], s.note[1]))}</span></div>
       <ul class="map-legend-list">

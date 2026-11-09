@@ -1,0 +1,1736 @@
+{
+  "schema": "model-comparison-v2",
+  "asOf": "2026-11-05",
+  "method": "Offline model comparison plus displayed-score ablations",
+  "interpretation": [
+    "Scenario baselines are specified examples, not reported practices of interviewed farmers.",
+    "The coastal fallow baseline has no rank or invented soil/pest scores. Added irrigation is a demand increase, not a saving. Aman rescue volume is excluded.",
+    "Differences compare outputs of the same model; they do not establish measured benefits or predictive accuracy.",
+    "Score ablations keep the generated shortlist and farmer weights fixed. They cannot isolate all NASA contributions because candidate generation and other dimensions also use NASA data.",
+    "No independent calendar-only baseline, held-out replay or field evaluation is implemented by this report.",
+    "No uncertainty probabilities are calibrated. Income is illustrative and soil scores are heuristics."
+  ],
+  "inputAndCodeSha256": {
+    "packages/rotation-engine/src/bn.ts": "d10f110b2d8644d172dd3e5ae80db488677a5aad4c83e5c70b2f663323abbab7",
+    "packages/rotation-engine/src/current_practice.ts": "e16dbed23f2791a5fdf6e05c1173e9c352ae22289ee7b808cdce1ed2a47fe5a3",
+    "packages/rotation-engine/src/data/crop_catalog.ts": "c3feb1b28a2d0429c70ac7a6654e4001d3af6810db33c63af3a59c3eb355c91a",
+    "packages/rotation-engine/src/data/crop_choice.ts": "d8f2a18a5c23cbcd29e7ad9923933689c860c0261eeaadfa358d4bb89582ec15",
+    "packages/rotation-engine/src/data/crop_choice_replay.json": "2a7acb526ccce98080244d84847f206ee809590ae98f2d08b7ce3ef3f3fdeb49",
+    "packages/rotation-engine/src/data/crop_traits.ts": "f6a6227355f78a949d8619b31b43afdc16309ff595a5ab3119851e368dd34cc6",
+    "packages/rotation-engine/src/data/disease.ts": "e9e25fa27d69099e2499970ba4d1b474083151677a61adc4f185c2a06a434faa",
+    "packages/rotation-engine/src/data/disease_weather.json": "f12090aef2107b505a2c2f7c187e325fb2731cbf0dc823085f4fc08d11f42ad3",
+    "packages/rotation-engine/src/data/ecostress_pilot.json": "02f529d157b592c6c2eb9bfb5b986150fbb21f5f478a48c0c27c545939193467",
+    "packages/rotation-engine/src/data/field_conditions.json": "89757599f941df8d3dc2639a39c57f8e4208add43bb4d7c20cacb9ccaa63131d",
+    "packages/rotation-engine/src/data/field_conditions.ts": "808f9aff9ab591c8e1498a9dc92bd74ede077fa7d99cbfc01dae76b629d31d76",
+    "packages/rotation-engine/src/data/field_conditions_curves.json": "1d4d0a4c22d50ae152a10b6407d5f4674ee33aca87effcbcd827fbc2dd2a41e8",
+    "packages/rotation-engine/src/data/greenness_upazila.json": "2d224363997f6a8b6bff13125d50006ff736cc593bcfddd8931e0a1f3e30d121",
+    "packages/rotation-engine/src/data/groundwater_budget.json": "712916db321c3abefb8985a01db2984569cf524bebf9ead940f151ae66453415",
+    "packages/rotation-engine/src/data/groundwater_budget.ts": "5294a03b4182f02cf0f3baaf174f19187193cb4f7b8d43ad99f7edb32a358cce",
+    "packages/rotation-engine/src/data/ipm_catalog.ts": "a7d83e5d6546dc89110d28dbcece0c4ac167bf7b90102af5dfc2da4eb0da784c",
+    "packages/rotation-engine/src/data/land.ts": "5dcf20625f04bde793f983b16418e504b64a5f6a1934791288e3daa84e971b61",
+    "packages/rotation-engine/src/data/location.ts": "df30a0d917d76ef616b35091ded598f92d1886ae48fa723d82f90c166f730d4f",
+    "packages/rotation-engine/src/data/lookup.ts": "b5ca71bf49ec973e859be0e5e88f1d46c96aa6097faabef3f6d5a33fe8beaf85",
+    "packages/rotation-engine/src/data/market_prices.json": "03535f44efddf5e423e5878990e38fcdf4a6e373d04b6008bf9e1e8e106e5c32",
+    "packages/rotation-engine/src/data/market_prices.ts": "10f01a48530e7a3b1d7302d36ec250c1aef9bbb46bf7240e44bb4d586362206f",
+    "packages/rotation-engine/src/data/national_replay.json": "c7bf1090adc836cf2a16f2f98f3606491cffa206443496d8415add62b3e86e35",
+    "packages/rotation-engine/src/data/pesticide_load.json": "7e1784fff1c15db9f9d2b25bd1860abbcc1af91ed6d09f5c04999181a0729b8d",
+    "packages/rotation-engine/src/data/rainfed.ts": "35a82d0f4880e49dd14927186a9f0f3fad671cfee976a3072cc90bbc212a8706",
+    "packages/rotation-engine/src/data/rainfed_yield.json": "bbdca33a4d1ec0c889aca9ed22437c638b45a563a4a2cb905511a1741280d73b",
+    "packages/rotation-engine/src/data/release_types.ts": "96dac036c5da6b43fd298fd085e74a00c316210305c9087270d80ddfbe87b224",
+    "packages/rotation-engine/src/data/salinity.ts": "031bbfb7eb4467914cdd29452b7edae55307a7e40fc835cd94d7353b652fcb0b",
+    "packages/rotation-engine/src/data/season_calendar.json": "e87672bd1ee0d8901e8dff64b9f0d9e9f364a638885816c0bac4fab617eb7c45",
+    "packages/rotation-engine/src/data/season_calendar.ts": "87b8a603b5654c6f3d32c0b12d90f6267d8a1274defc6c4401da5e970c1254b9",
+    "packages/rotation-engine/src/data/soil_atlas.json": "477d99567b7dad7912444517e89b9baadb7171f1e452c6f07b08d4f12f1057b5",
+    "packages/rotation-engine/src/data/tanore_replay_data.ts": "a4ad3b2e9b844d4b3e1a0318e9ab48e3f7756ffb4e603173e6bf8033d34c490b",
+    "packages/rotation-engine/src/data/upazila_profile.json": "64bec3dccb3cf4083c16e5c21163bd7b79ee52e181e6118b8fa2e0388e7e6cbe",
+    "packages/rotation-engine/src/decision_check.ts": "4b301837c2c14c2e9520c9762f8d5dec520b0c4696f1e9bec5e9ce3b2ce18256",
+    "packages/rotation-engine/src/engine.ts": "876479370fc0c9bae98c77fe7d90fe1604ea312e210af0b38d7c9ec998a89827",
+    "packages/rotation-engine/src/experiments.ts": "e185a5780b36059214b3bb26084d714c4d4ed4bc6c792f4861f0165db9e5a332",
+    "packages/rotation-engine/src/field_alerts.ts": "2c4d14219c7ce5c08f884adbff311c57fe77e260c8e4dd67133a2789d195b83c",
+    "packages/rotation-engine/src/freshness.ts": "fba8c2dbd8b2cdfc1605bbe8178811251fa000e1217151252c6ca705e266bc2f",
+    "packages/rotation-engine/src/index.ts": "ed0ff921233b1636632cc6cc1674de4aae6a2e52209db1951bb21ad44d60e7b6",
+    "packages/rotation-engine/src/input_sensitivity.ts": "2f3f2f19bd277e890d120514c6061ebd9867a0230819999c778cd32eb60ff3de",
+    "packages/rotation-engine/src/plugins/flood.ts": "c12cf7cfa90f4a5c2c440cb6574789cb1f6e71a6ec969f35e3d7eabf31f7cbda",
+    "packages/rotation-engine/src/plugins/fodder.ts": "0538500d894b1c26ad3bbc5b0b6f16957eeec5b98f8e3d82db51458906f90081",
+    "packages/rotation-engine/src/plugins/heat.ts": "5156be2704ef39291d1e44b025e421a1dfbb51dcdb65ae0feded04c81f26e634",
+    "packages/rotation-engine/src/plugins/income.ts": "02bfe0caff1f964392e4bc6e1b85d6dbb53adb631a67c52bcba29339f33a7965",
+    "packages/rotation-engine/src/plugins/pest.ts": "fa8ba20b338010794a357f3601de63f744c43592af934cf912f5f8b3f40ba8f0",
+    "packages/rotation-engine/src/plugins/soil.ts": "ec06010bdb3422b57de4954fe14b0c0dc23691b887eb9ddb00c7410d27ca180c",
+    "packages/rotation-engine/src/plugins/water.ts": "08730f6979838b9e543eb7fe1d4d8e9845a4b07002b1e4e5d179e64938e689f4",
+    "packages/rotation-engine/src/registry.ts": "267fddb6850b2de789f726b2d8b9217366c2839037a93e66d75d54957b87200f",
+    "packages/rotation-engine/src/review.ts": "57bf6b1c518dadaf05348f7f78057f9e5a9f1c58b709b864437d395fd54349db",
+    "packages/rotation-engine/src/stewardship.ts": "f95f94ab2c1095aa0b2af959ce345934ad3c49605f8c37a57dce68c4fbd17a44",
+    "packages/rotation-engine/src/understand.ts": "ea46208eabd4bcdd38909750dc8baeac92807a70318847e977cc0c72815797f7",
+    "scripts/evaluate_decisions.ts": "900d6af6232af92b658dfb2567b22a7a65b5435a80232df158ddce5b931daa9d"
+  },
+  "cases": [
+    {
+      "id": "barind",
+      "question": "Water demand in the Barind",
+      "request": {
+        "unionId": "talanda_tanore",
+        "unionNameBangla": "তালন্দ ইউনিয়ন",
+        "upazila": "Tanore",
+        "district": "Rajshahi",
+        "landType": "medium_high",
+        "season": "2026-aman",
+        "today": "2026-11-05",
+        "farmerPriorities": {
+          "water": 0.5,
+          "income": 0.3,
+          "soil": 0.2
+        },
+        "defaultPriorities": true,
+        "currentRotation": {
+          "monsoon": "aman",
+          "winter": "boro"
+        }
+      },
+      "dataRelease": "tanore-2026.09.30",
+      "displayedOptionCount": 5,
+      "baselineStatus": "scenario_baseline_represented",
+      "baselineRepresentation": "ranked_rotation",
+      "baselineNote": null,
+      "baseline": {
+        "id": "rot_dhan49_boro_conventional",
+        "name": "BRRI dhan49 -> BRRI dhan28 (Boro comparator, irrigation-heavy)",
+        "rank": 5,
+        "score": 0.381,
+        "scores": {
+          "water": 0.29,
+          "heat": 0.2,
+          "flood": 0.95,
+          "soil": 0.42,
+          "fodder": 0.88,
+          "income": 0.37,
+          "pest": 0.31
+        },
+        "fieldFreeDate": "19 Nov",
+        "modeledIrrigationExcludingAmanMm": 797,
+        "amanRescueSeasons": 9,
+        "replaySeasons": 25,
+        "illustrativeNetReturnBdtPerHa": 106800,
+        "provenance": {
+          "water": {
+            "kind": "modeled",
+            "source": "NASA POWER (FAO-56 Penman-Monteith ET0) + GPM IMERG Final daily rain; 25-season paddy water balance (research/explore/connect_check.py); irrigation weighted by the NASA GLDAS-2.2 (GRACE-assimilated) groundwater trend",
+            "timePeriod": "2001-2025",
+            "spatialResolution": "Tanore pilot point: IMERG 0.1° (~10 km), POWER 0.5° x 0.625°"
+          },
+          "heat": {
+            "kind": "modeled",
+            "source": "NASA POWER daily Tmax, bias-corrected by month against BMD station 41895 Shah Mokhdum (NOAA GSOD); research/explore/heat_windows.py",
+            "timePeriod": "2001-2025",
+            "spatialResolution": "POWER 0.5° x 0.625° cell at the Tanore pilot point"
+          },
+          "flood": {
+            "kind": "assumed",
+            "source": "Land-type class from the SRDI Talanda union card",
+            "timePeriod": "static",
+            "spatialResolution": "Land-type class"
+          },
+          "soil": {
+            "kind": "assumed",
+            "source": "SRDI Fertilizer Recommendation System union card (frs.srdi.gov.bd) — Talanda, medium-high land; SRDI Soil Fertility Atlas 2020 classes for the upazila",
+            "timePeriod": "current SRDI card",
+            "spatialResolution": "Union (Talanda)"
+          },
+          "fodder": {
+            "kind": "assumed",
+            "source": "FAO Gridded Livestock of the World v4, cattle 2015 (Gilbert et al. 2018); residue classes are team estimates",
+            "timePeriod": "2015",
+            "spatialResolution": "District (Rajshahi)"
+          },
+          "income": {
+            "kind": "assumed",
+            "source": "Net return per hectare: team estimate (crop_catalog.ts) for Aman; team estimate (crop_catalog.ts); moved by Rajshahi's BBS 2022-25 yields against the national yields; and by half of each crop's market-price move against food prices since its value's year (DAM via WFP, WFP Bangladesh food prices (HDX, CC BY-IGO), republishing DAM's market prices), where 10+ district or 5+ division markets carry it; a bad price year at each crop's lowest BBS harvest price of 2021-22 to 2024-25. Pending: farmer cost interviews",
+            "timePeriod": "BBS yields 2022-23 to 2024-25; harvest prices 2021-22 to 2024-25; market prices to the latest month WFP holds",
+            "spatialResolution": "District (Rajshahi)"
+          },
+          "pest": {
+            "kind": "assumed",
+            "source": "Rotation IPM rules (team) from BRRI/BARI IPM guidance, SRDI Talanda card, BWMRI/BRRI variety pages; NASA SEDAC PEST-CHEMGRIDS v1.01 (2020) pesticide estimate for the upazila; NASA POWER disease-weather days 2001-2025 (BLASTAM-style wet hours, Hutton criteria); no field pest counts yet",
+            "timePeriod": "rules; pest sightings come from SAAO field observations",
+            "spatialResolution": "Rotation level"
+          }
+        }
+      },
+      "recommended": {
+        "id": "rot_dhan71_lentil",
+        "name": "BRRI dhan71 -> BARI Masur-8 (water-saving, soil-building)",
+        "rank": 1,
+        "score": 0.712,
+        "scores": {
+          "water": 0.76,
+          "heat": 0.95,
+          "flood": 0.95,
+          "soil": 0.93,
+          "fodder": 0.82,
+          "income": 0.35,
+          "pest": 0.95
+        },
+        "fieldFreeDate": "10 Nov",
+        "modeledIrrigationExcludingAmanMm": 199,
+        "amanRescueSeasons": 7,
+        "replaySeasons": 25,
+        "illustrativeNetReturnBdtPerHa": 102900,
+        "provenance": {
+          "water": {
+            "kind": "modeled",
+            "source": "NASA POWER (FAO-56 Penman-Monteith ET0) + GPM IMERG Final daily rain; 25-season paddy water balance (research/explore/connect_check.py); irrigation weighted by the NASA GLDAS-2.2 (GRACE-assimilated) groundwater trend",
+            "timePeriod": "2001-2025",
+            "spatialResolution": "Tanore pilot point: IMERG 0.1° (~10 km), POWER 0.5° x 0.625°"
+          },
+          "heat": {
+            "kind": "modeled",
+            "source": "NASA POWER daily Tmax, bias-corrected by month against BMD station 41895 Shah Mokhdum (NOAA GSOD); research/explore/heat_windows.py",
+            "timePeriod": "2001-2025",
+            "spatialResolution": "POWER 0.5° x 0.625° cell at the Tanore pilot point"
+          },
+          "flood": {
+            "kind": "assumed",
+            "source": "Land-type class from the SRDI Talanda union card",
+            "timePeriod": "static",
+            "spatialResolution": "Land-type class"
+          },
+          "soil": {
+            "kind": "assumed",
+            "source": "SRDI Fertilizer Recommendation System union card (frs.srdi.gov.bd) — Talanda, medium-high land; SRDI Soil Fertility Atlas 2020 classes for the upazila",
+            "timePeriod": "current SRDI card",
+            "spatialResolution": "Union (Talanda)"
+          },
+          "fodder": {
+            "kind": "assumed",
+            "source": "FAO Gridded Livestock of the World v4, cattle 2015 (Gilbert et al. 2018); residue classes are team estimates",
+            "timePeriod": "2015",
+            "spatialResolution": "District (Rajshahi)"
+          },
+          "income": {
+            "kind": "assumed",
+            "source": "Net return per hectare: team estimate (crop_catalog.ts) for Aman; team estimate (crop_catalog.ts); moved by Rajshahi's BBS 2022-25 yields against the national yields; and by half of each crop's market-price move against food prices since its value's year (DAM via WFP, WFP Bangladesh food prices (HDX, CC BY-IGO), republishing DAM's market prices), where 10+ district or 5+ division markets carry it; a bad price year at each crop's lowest BBS harvest price of 2021-22 to 2024-25. Pending: farmer cost interviews",
+            "timePeriod": "BBS yields 2022-23 to 2024-25; harvest prices 2021-22 to 2024-25; market prices to the latest month WFP holds",
+            "spatialResolution": "District (Rajshahi)"
+          },
+          "pest": {
+            "kind": "assumed",
+            "source": "Rotation IPM rules (team) from BRRI/BARI IPM guidance, SRDI Talanda card, BWMRI/BRRI variety pages; NASA SEDAC PEST-CHEMGRIDS v1.01 (2020) pesticide estimate for the upazila; NASA POWER disease-weather days 2001-2025 (BLASTAM-style wet hours, Hutton criteria); no field pest counts yet",
+            "timePeriod": "rules; pest sightings come from SAAO field observations",
+            "spatialResolution": "Rotation level"
+          }
+        }
+      },
+      "modeledDifferenceVsScenarioBaseline": {
+        "lessIrrigationExcludingAmanMm": 598,
+        "addedIrrigationExcludingAmanMm": -598,
+        "illustrativeNetReturnChangeBdtPerHa": -3900
+      },
+      "displayedOptions": [
+        {
+          "id": "rot_dhan71_lentil",
+          "name": "BRRI dhan71 -> BARI Masur-8 (water-saving, soil-building)",
+          "rank": 1,
+          "score": 0.712,
+          "scores": {
+            "water": 0.76,
+            "heat": 0.95,
+            "flood": 0.95,
+            "soil": 0.93,
+            "fodder": 0.82,
+            "income": 0.35,
+            "pest": 0.95
+          },
+          "fieldFreeDate": "10 Nov",
+          "modeledIrrigationExcludingAmanMm": 199,
+          "amanRescueSeasons": 7,
+          "replaySeasons": 25,
+          "illustrativeNetReturnBdtPerHa": 102900,
+          "provenance": {
+            "water": {
+              "kind": "modeled",
+              "source": "NASA POWER (FAO-56 Penman-Monteith ET0) + GPM IMERG Final daily rain; 25-season paddy water balance (research/explore/connect_check.py); irrigation weighted by the NASA GLDAS-2.2 (GRACE-assimilated) groundwater trend",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "Tanore pilot point: IMERG 0.1° (~10 km), POWER 0.5° x 0.625°"
+            },
+            "heat": {
+              "kind": "modeled",
+              "source": "NASA POWER daily Tmax, bias-corrected by month against BMD station 41895 Shah Mokhdum (NOAA GSOD); research/explore/heat_windows.py",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "POWER 0.5° x 0.625° cell at the Tanore pilot point"
+            },
+            "flood": {
+              "kind": "assumed",
+              "source": "Land-type class from the SRDI Talanda union card",
+              "timePeriod": "static",
+              "spatialResolution": "Land-type class"
+            },
+            "soil": {
+              "kind": "assumed",
+              "source": "SRDI Fertilizer Recommendation System union card (frs.srdi.gov.bd) — Talanda, medium-high land; SRDI Soil Fertility Atlas 2020 classes for the upazila",
+              "timePeriod": "current SRDI card",
+              "spatialResolution": "Union (Talanda)"
+            },
+            "fodder": {
+              "kind": "assumed",
+              "source": "FAO Gridded Livestock of the World v4, cattle 2015 (Gilbert et al. 2018); residue classes are team estimates",
+              "timePeriod": "2015",
+              "spatialResolution": "District (Rajshahi)"
+            },
+            "income": {
+              "kind": "assumed",
+              "source": "Net return per hectare: team estimate (crop_catalog.ts) for Aman; team estimate (crop_catalog.ts); moved by Rajshahi's BBS 2022-25 yields against the national yields; and by half of each crop's market-price move against food prices since its value's year (DAM via WFP, WFP Bangladesh food prices (HDX, CC BY-IGO), republishing DAM's market prices), where 10+ district or 5+ division markets carry it; a bad price year at each crop's lowest BBS harvest price of 2021-22 to 2024-25. Pending: farmer cost interviews",
+              "timePeriod": "BBS yields 2022-23 to 2024-25; harvest prices 2021-22 to 2024-25; market prices to the latest month WFP holds",
+              "spatialResolution": "District (Rajshahi)"
+            },
+            "pest": {
+              "kind": "assumed",
+              "source": "Rotation IPM rules (team) from BRRI/BARI IPM guidance, SRDI Talanda card, BWMRI/BRRI variety pages; NASA SEDAC PEST-CHEMGRIDS v1.01 (2020) pesticide estimate for the upazila; NASA POWER disease-weather days 2001-2025 (BLASTAM-style wet hours, Hutton criteria); no field pest counts yet",
+              "timePeriod": "rules; pest sightings come from SAAO field observations",
+              "spatialResolution": "Rotation level"
+            }
+          }
+        },
+        {
+          "id": "rot_dhan71_mustard",
+          "name": "BRRI dhan71 -> BARI Sarisha-14 (low-irrigation oilseed)",
+          "rank": 2,
+          "score": 0.689,
+          "scores": {
+            "water": 0.82,
+            "heat": 0.95,
+            "flood": 0.95,
+            "soil": 0.7,
+            "fodder": 0.65,
+            "income": 0.35,
+            "pest": 0.89
+          },
+          "fieldFreeDate": "10 Nov",
+          "modeledIrrigationExcludingAmanMm": 114,
+          "amanRescueSeasons": 7,
+          "replaySeasons": 25,
+          "illustrativeNetReturnBdtPerHa": 102800,
+          "provenance": {
+            "water": {
+              "kind": "modeled",
+              "source": "NASA POWER (FAO-56 Penman-Monteith ET0) + GPM IMERG Final daily rain; 25-season paddy water balance (research/explore/connect_check.py); irrigation weighted by the NASA GLDAS-2.2 (GRACE-assimilated) groundwater trend",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "Tanore pilot point: IMERG 0.1° (~10 km), POWER 0.5° x 0.625°"
+            },
+            "heat": {
+              "kind": "modeled",
+              "source": "NASA POWER daily Tmax, bias-corrected by month against BMD station 41895 Shah Mokhdum (NOAA GSOD); research/explore/heat_windows.py",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "POWER 0.5° x 0.625° cell at the Tanore pilot point"
+            },
+            "flood": {
+              "kind": "assumed",
+              "source": "Land-type class from the SRDI Talanda union card",
+              "timePeriod": "static",
+              "spatialResolution": "Land-type class"
+            },
+            "soil": {
+              "kind": "assumed",
+              "source": "SRDI Fertilizer Recommendation System union card (frs.srdi.gov.bd) — Talanda, medium-high land; SRDI Soil Fertility Atlas 2020 classes for the upazila",
+              "timePeriod": "current SRDI card",
+              "spatialResolution": "Union (Talanda)"
+            },
+            "fodder": {
+              "kind": "assumed",
+              "source": "FAO Gridded Livestock of the World v4, cattle 2015 (Gilbert et al. 2018); residue classes are team estimates",
+              "timePeriod": "2015",
+              "spatialResolution": "District (Rajshahi)"
+            },
+            "income": {
+              "kind": "assumed",
+              "source": "Net return per hectare: team estimate (crop_catalog.ts) for Aman; team estimate (crop_catalog.ts); moved by Rajshahi's BBS 2022-25 yields against the national yields; and by half of each crop's market-price move against food prices since its value's year (DAM via WFP, WFP Bangladesh food prices (HDX, CC BY-IGO), republishing DAM's market prices), where 10+ district or 5+ division markets carry it; a bad price year at each crop's lowest BBS harvest price of 2021-22 to 2024-25. Pending: farmer cost interviews",
+              "timePeriod": "BBS yields 2022-23 to 2024-25; harvest prices 2021-22 to 2024-25; market prices to the latest month WFP holds",
+              "spatialResolution": "District (Rajshahi)"
+            },
+            "pest": {
+              "kind": "assumed",
+              "source": "Rotation IPM rules (team) from BRRI/BARI IPM guidance, SRDI Talanda card, BWMRI/BRRI variety pages; NASA SEDAC PEST-CHEMGRIDS v1.01 (2020) pesticide estimate for the upazila; NASA POWER disease-weather days 2001-2025 (BLASTAM-style wet hours, Hutton criteria); no field pest counts yet",
+              "timePeriod": "rules; pest sightings come from SAAO field observations",
+              "spatialResolution": "Rotation level"
+            }
+          }
+        },
+        {
+          "id": "rot_dhan49_wheat_early",
+          "name": "BRRI dhan49 -> BARI Gom 33 (Early) (keep dhan49, wheat on time)",
+          "rank": 3,
+          "score": 0.66,
+          "scores": {
+            "water": 0.73,
+            "heat": 0.6,
+            "flood": 0.95,
+            "soil": 0.7,
+            "fodder": 0.88,
+            "income": 0.4,
+            "pest": 0.92
+          },
+          "fieldFreeDate": "19 Nov",
+          "modeledIrrigationExcludingAmanMm": 198,
+          "amanRescueSeasons": 9,
+          "replaySeasons": 25,
+          "illustrativeNetReturnBdtPerHa": 105500,
+          "provenance": {
+            "water": {
+              "kind": "modeled",
+              "source": "NASA POWER (FAO-56 Penman-Monteith ET0) + GPM IMERG Final daily rain; 25-season paddy water balance (research/explore/connect_check.py); irrigation weighted by the NASA GLDAS-2.2 (GRACE-assimilated) groundwater trend",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "Tanore pilot point: IMERG 0.1° (~10 km), POWER 0.5° x 0.625°"
+            },
+            "heat": {
+              "kind": "modeled",
+              "source": "NASA POWER daily Tmax, bias-corrected by month against BMD station 41895 Shah Mokhdum (NOAA GSOD); research/explore/heat_windows.py",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "POWER 0.5° x 0.625° cell at the Tanore pilot point"
+            },
+            "flood": {
+              "kind": "assumed",
+              "source": "Land-type class from the SRDI Talanda union card",
+              "timePeriod": "static",
+              "spatialResolution": "Land-type class"
+            },
+            "soil": {
+              "kind": "assumed",
+              "source": "SRDI Fertilizer Recommendation System union card (frs.srdi.gov.bd) — Talanda, medium-high land; SRDI Soil Fertility Atlas 2020 classes for the upazila",
+              "timePeriod": "current SRDI card",
+              "spatialResolution": "Union (Talanda)"
+            },
+            "fodder": {
+              "kind": "assumed",
+              "source": "FAO Gridded Livestock of the World v4, cattle 2015 (Gilbert et al. 2018); residue classes are team estimates",
+              "timePeriod": "2015",
+              "spatialResolution": "District (Rajshahi)"
+            },
+            "income": {
+              "kind": "assumed",
+              "source": "Net return per hectare: team estimate (crop_catalog.ts) for Aman; team estimate (crop_catalog.ts); moved by Rajshahi's BBS 2022-25 yields against the national yields; and by half of each crop's market-price move against food prices since its value's year (DAM via WFP, WFP Bangladesh food prices (HDX, CC BY-IGO), republishing DAM's market prices), where 10+ district or 5+ division markets carry it; a bad price year at each crop's lowest BBS harvest price of 2021-22 to 2024-25. Pending: farmer cost interviews",
+              "timePeriod": "BBS yields 2022-23 to 2024-25; harvest prices 2021-22 to 2024-25; market prices to the latest month WFP holds",
+              "spatialResolution": "District (Rajshahi)"
+            },
+            "pest": {
+              "kind": "assumed",
+              "source": "Rotation IPM rules (team) from BRRI/BARI IPM guidance, SRDI Talanda card, BWMRI/BRRI variety pages; NASA SEDAC PEST-CHEMGRIDS v1.01 (2020) pesticide estimate for the upazila; NASA POWER disease-weather days 2001-2025 (BLASTAM-style wet hours, Hutton criteria); no field pest counts yet",
+              "timePeriod": "rules; pest sightings come from SAAO field observations",
+              "spatialResolution": "Rotation level"
+            }
+          }
+        },
+        {
+          "id": "rot_dhan75_wheat_late",
+          "name": "BRRI dhan75 -> BARI Gom 33 (Late) (late-sown wheat, heat risk)",
+          "rank": 4,
+          "score": 0.528,
+          "scores": {
+            "water": 0.55,
+            "heat": 0.1,
+            "flood": 0.95,
+            "soil": 0.7,
+            "fodder": 0.88,
+            "income": 0.28,
+            "pest": 0.77
+          },
+          "fieldFreeDate": "2 Dec",
+          "modeledIrrigationExcludingAmanMm": 234,
+          "amanRescueSeasons": 20,
+          "replaySeasons": 25,
+          "illustrativeNetReturnBdtPerHa": 86500,
+          "provenance": {
+            "water": {
+              "kind": "modeled",
+              "source": "NASA POWER (FAO-56 Penman-Monteith ET0) + GPM IMERG Final daily rain; 25-season paddy water balance (research/explore/connect_check.py); irrigation weighted by the NASA GLDAS-2.2 (GRACE-assimilated) groundwater trend",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "Tanore pilot point: IMERG 0.1° (~10 km), POWER 0.5° x 0.625°"
+            },
+            "heat": {
+              "kind": "modeled",
+              "source": "NASA POWER daily Tmax, bias-corrected by month against BMD station 41895 Shah Mokhdum (NOAA GSOD); research/explore/heat_windows.py",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "POWER 0.5° x 0.625° cell at the Tanore pilot point"
+            },
+            "flood": {
+              "kind": "assumed",
+              "source": "Land-type class from the SRDI Talanda union card",
+              "timePeriod": "static",
+              "spatialResolution": "Land-type class"
+            },
+            "soil": {
+              "kind": "assumed",
+              "source": "SRDI Fertilizer Recommendation System union card (frs.srdi.gov.bd) — Talanda, medium-high land; SRDI Soil Fertility Atlas 2020 classes for the upazila",
+              "timePeriod": "current SRDI card",
+              "spatialResolution": "Union (Talanda)"
+            },
+            "fodder": {
+              "kind": "assumed",
+              "source": "FAO Gridded Livestock of the World v4, cattle 2015 (Gilbert et al. 2018); residue classes are team estimates",
+              "timePeriod": "2015",
+              "spatialResolution": "District (Rajshahi)"
+            },
+            "income": {
+              "kind": "assumed",
+              "source": "Net return per hectare: team estimate (crop_catalog.ts) for Aman; team estimate (crop_catalog.ts); moved by Rajshahi's BBS 2022-25 yields against the national yields; and by half of each crop's market-price move against food prices since its value's year (DAM via WFP, WFP Bangladesh food prices (HDX, CC BY-IGO), republishing DAM's market prices), where 10+ district or 5+ division markets carry it; a bad price year at each crop's lowest BBS harvest price of 2021-22 to 2024-25. Pending: farmer cost interviews",
+              "timePeriod": "BBS yields 2022-23 to 2024-25; harvest prices 2021-22 to 2024-25; market prices to the latest month WFP holds",
+              "spatialResolution": "District (Rajshahi)"
+            },
+            "pest": {
+              "kind": "assumed",
+              "source": "Rotation IPM rules (team) from BRRI/BARI IPM guidance, SRDI Talanda card, BWMRI/BRRI variety pages; NASA SEDAC PEST-CHEMGRIDS v1.01 (2020) pesticide estimate for the upazila; NASA POWER disease-weather days 2001-2025 (BLASTAM-style wet hours, Hutton criteria); no field pest counts yet",
+              "timePeriod": "rules; pest sightings come from SAAO field observations",
+              "spatialResolution": "Rotation level"
+            }
+          }
+        },
+        {
+          "id": "rot_dhan49_boro_conventional",
+          "name": "BRRI dhan49 -> BRRI dhan28 (Boro comparator, irrigation-heavy)",
+          "rank": 5,
+          "score": 0.381,
+          "scores": {
+            "water": 0.29,
+            "heat": 0.2,
+            "flood": 0.95,
+            "soil": 0.42,
+            "fodder": 0.88,
+            "income": 0.37,
+            "pest": 0.31
+          },
+          "fieldFreeDate": "19 Nov",
+          "modeledIrrigationExcludingAmanMm": 797,
+          "amanRescueSeasons": 9,
+          "replaySeasons": 25,
+          "illustrativeNetReturnBdtPerHa": 106800,
+          "provenance": {
+            "water": {
+              "kind": "modeled",
+              "source": "NASA POWER (FAO-56 Penman-Monteith ET0) + GPM IMERG Final daily rain; 25-season paddy water balance (research/explore/connect_check.py); irrigation weighted by the NASA GLDAS-2.2 (GRACE-assimilated) groundwater trend",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "Tanore pilot point: IMERG 0.1° (~10 km), POWER 0.5° x 0.625°"
+            },
+            "heat": {
+              "kind": "modeled",
+              "source": "NASA POWER daily Tmax, bias-corrected by month against BMD station 41895 Shah Mokhdum (NOAA GSOD); research/explore/heat_windows.py",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "POWER 0.5° x 0.625° cell at the Tanore pilot point"
+            },
+            "flood": {
+              "kind": "assumed",
+              "source": "Land-type class from the SRDI Talanda union card",
+              "timePeriod": "static",
+              "spatialResolution": "Land-type class"
+            },
+            "soil": {
+              "kind": "assumed",
+              "source": "SRDI Fertilizer Recommendation System union card (frs.srdi.gov.bd) — Talanda, medium-high land; SRDI Soil Fertility Atlas 2020 classes for the upazila",
+              "timePeriod": "current SRDI card",
+              "spatialResolution": "Union (Talanda)"
+            },
+            "fodder": {
+              "kind": "assumed",
+              "source": "FAO Gridded Livestock of the World v4, cattle 2015 (Gilbert et al. 2018); residue classes are team estimates",
+              "timePeriod": "2015",
+              "spatialResolution": "District (Rajshahi)"
+            },
+            "income": {
+              "kind": "assumed",
+              "source": "Net return per hectare: team estimate (crop_catalog.ts) for Aman; team estimate (crop_catalog.ts); moved by Rajshahi's BBS 2022-25 yields against the national yields; and by half of each crop's market-price move against food prices since its value's year (DAM via WFP, WFP Bangladesh food prices (HDX, CC BY-IGO), republishing DAM's market prices), where 10+ district or 5+ division markets carry it; a bad price year at each crop's lowest BBS harvest price of 2021-22 to 2024-25. Pending: farmer cost interviews",
+              "timePeriod": "BBS yields 2022-23 to 2024-25; harvest prices 2021-22 to 2024-25; market prices to the latest month WFP holds",
+              "spatialResolution": "District (Rajshahi)"
+            },
+            "pest": {
+              "kind": "assumed",
+              "source": "Rotation IPM rules (team) from BRRI/BARI IPM guidance, SRDI Talanda card, BWMRI/BRRI variety pages; NASA SEDAC PEST-CHEMGRIDS v1.01 (2020) pesticide estimate for the upazila; NASA POWER disease-weather days 2001-2025 (BLASTAM-style wet hours, Hutton criteria); no field pest counts yet",
+              "timePeriod": "rules; pest sightings come from SAAO field observations",
+              "spatialResolution": "Rotation level"
+            }
+          }
+        }
+      ],
+      "decisionCheck": {
+        "method": "displayed-score-ablation-v1",
+        "scope": "displayed_options_only",
+        "weights": {
+          "water": 0.5,
+          "heat": 0.05,
+          "flood": 0.05,
+          "soil": 0.2,
+          "fodder": 0.05,
+          "income": 0.3,
+          "pest": 0.05
+        },
+        "nominalLeaderIds": [
+          "rot_dhan71_lentil"
+        ],
+        "recommendedOptionId": "rot_dhan71_lentil",
+        "scenarios": [
+          {
+            "id": "without_income",
+            "label": {
+              "bn": "নমুনা আয়ের পার্থক্য বাদ দিলে",
+              "en": "Without illustrative income differences"
+            },
+            "neutralizedDimensions": [
+              "income"
+            ],
+            "leaderIds": [
+              "rot_dhan71_lentil"
+            ],
+            "scores": [
+              {
+                "optionId": "rot_dhan71_lentil",
+                "score": 0.7496
+              },
+              {
+                "optionId": "rot_dhan71_mustard",
+                "score": 0.7267
+              },
+              {
+                "optionId": "rot_dhan49_wheat_early",
+                "score": 0.6854
+              },
+              {
+                "optionId": "rot_dhan75_wheat_late",
+                "score": 0.5833
+              },
+              {
+                "optionId": "rot_dhan49_boro_conventional",
+                "score": 0.4133
+              }
+            ],
+            "nominalLeaderRetained": true
+          },
+          {
+            "id": "without_soil",
+            "label": {
+              "bn": "মাটির অনুমানভিত্তিক স্কোর বাদ দিলে",
+              "en": "Without the soil practice score"
+            },
+            "neutralizedDimensions": [
+              "soil"
+            ],
+            "leaderIds": [
+              "rot_dhan71_mustard"
+            ],
+            "scores": [
+              {
+                "optionId": "rot_dhan71_lentil",
+                "score": 0.6404
+              },
+              {
+                "optionId": "rot_dhan71_mustard",
+                "score": 0.6558
+              },
+              {
+                "optionId": "rot_dhan49_wheat_early",
+                "score": 0.6271
+              },
+              {
+                "optionId": "rot_dhan75_wheat_late",
+                "score": 0.495
+              },
+              {
+                "optionId": "rot_dhan49_boro_conventional",
+                "score": 0.3942
+              }
+            ],
+            "nominalLeaderRetained": false
+          },
+          {
+            "id": "without_heuristics",
+            "label": {
+              "bn": "আয় ও নিয়মভিত্তিক স্কোর বাদ দিলে",
+              "en": "Without income and rule-based scores"
+            },
+            "neutralizedDimensions": [
+              "income",
+              "soil",
+              "pest",
+              "fodder"
+            ],
+            "leaderIds": [
+              "rot_dhan71_mustard"
+            ],
+            "scores": [
+              {
+                "optionId": "rot_dhan71_lentil",
+                "score": 0.6458
+              },
+              {
+                "optionId": "rot_dhan71_mustard",
+                "score": 0.6708
+              },
+              {
+                "optionId": "rot_dhan49_wheat_early",
+                "score": 0.6187
+              },
+              {
+                "optionId": "rot_dhan75_wheat_late",
+                "score": 0.5229
+              },
+              {
+                "optionId": "rot_dhan49_boro_conventional",
+                "score": 0.4188
+              }
+            ],
+            "nominalLeaderRetained": false
+          },
+          {
+            "id": "without_water_heat",
+            "label": {
+              "bn": "পানি ও তাপের স্কোর বাদ দিলে",
+              "en": "Without water and heat scores"
+            },
+            "neutralizedDimensions": [
+              "water",
+              "heat"
+            ],
+            "leaderIds": [
+              "rot_dhan71_lentil"
+            ],
+            "scores": [
+              {
+                "optionId": "rot_dhan71_lentil",
+                "score": 0.585
+              },
+              {
+                "optionId": "rot_dhan71_mustard",
+                "score": 0.5371
+              },
+              {
+                "optionId": "rot_dhan49_wheat_early",
+                "score": 0.5604
+              },
+              {
+                "optionId": "rot_dhan75_wheat_late",
+                "score": 0.5242
+              },
+              {
+                "optionId": "rot_dhan49_boro_conventional",
+                "score": 0.4808
+              }
+            ],
+            "nominalLeaderRetained": true
+          }
+        ]
+      },
+      "warnings": [
+        {
+          "dataset": "DAM farm-gate prices and farmer cost survey",
+          "issue": "Not collected yet; income uses illustrative team estimates",
+          "affectedDimension": "income"
+        },
+        {
+          "dataset": "Farmer interviews in Talanda",
+          "issue": "Priority weights are defaults until interviews",
+          "affectedDimension": "all"
+        },
+        {
+          "dataset": "Flood model for Barind land",
+          "issue": "Not modelled; land-type assumption from the SRDI card",
+          "affectedDimension": "flood"
+        }
+      ]
+    },
+    {
+      "id": "haor",
+      "question": "Boro and flash-flood exposure on low land",
+      "request": {
+        "unionId": "ADM3_Khaliajuri",
+        "unionNameBangla": "Khaliajuri উপজেলা",
+        "upazila": "Khaliajuri",
+        "district": "Netrakona",
+        "landType": "low",
+        "season": "2026-aman",
+        "today": "2026-11-05",
+        "farmerPriorities": {
+          "water": 0.5,
+          "income": 0.3,
+          "soil": 0.2
+        },
+        "defaultPriorities": true,
+        "currentRotation": {
+          "monsoon": "fallow",
+          "winter": "boro"
+        }
+      },
+      "dataRelease": "tanore-2026.09.30",
+      "displayedOptionCount": 1,
+      "baselineStatus": "scenario_baseline_represented",
+      "baselineRepresentation": "ranked_rotation",
+      "baselineNote": null,
+      "baseline": {
+        "id": "rot_fallow_boro_early",
+        "name": "Monsoon fallow -> BRRI dhan88 (irrigation-heavy, Boro rice; no rice in the monsoon)",
+        "rank": 1,
+        "score": 0.537,
+        "scores": {
+          "water": 0.65,
+          "heat": 0.95,
+          "flood": 0.71,
+          "soil": 0.45,
+          "fodder": 0.78,
+          "income": 0.2,
+          "pest": 0.95
+        },
+        "fieldFreeDate": "all monsoon",
+        "modeledIrrigationExcludingAmanMm": 629,
+        "amanRescueSeasons": null,
+        "replaySeasons": 24,
+        "illustrativeNetReturnBdtPerHa": 65000,
+        "provenance": {
+          "water": {
+            "kind": "modeled",
+            "source": "NASA POWER (FAO-56 Penman-Monteith ET0) + GPM IMERG Final daily rain; 25-season paddy water balance (research/explore/national_replay.py); other crops: the same FAO-56 method per sowing date (research/explore/crop_choice_replay.py); irrigation weighted by the NASA GLDAS-2.2 (GRACE-assimilated) groundwater trend",
+            "timePeriod": "2001-2025",
+            "spatialResolution": "Netrakona district point: IMERG 0.1° (~10 km), POWER 0.5° x 0.625°"
+          },
+          "heat": {
+            "kind": "modeled",
+            "source": "NASA POWER daily Tmax, bias-corrected by month against BMD station 41895 Shah Mokhdum (NOAA GSOD); research/explore/heat_windows.py",
+            "timePeriod": "2001-2025",
+            "spatialResolution": "POWER 0.5° x 0.625° cell at the Tanore pilot point"
+          },
+          "flood": {
+            "kind": "modeled",
+            "source": "Land-type class: the farmer's, or the upazila default from NASA NASADEM, Landsat surface water and BRRI's 2014-15 survey; GPM IMERG Final 3-day rain at Sohra (Meghalaya), 15 Mar-15 May 2001-2025, against FFWC's Annual Flood Reports (research/explore/flash_flood_hindcast.py)",
+            "timePeriod": "2001-2025 springs",
+            "spatialResolution": "Upstream IMERG cell (Sohra, Meghalaya) for the haor districts"
+          },
+          "soil": {
+            "kind": "assumed",
+            "source": "No SRDI soil card for this area; no fertilizer amount is given; SRDI Soil Fertility Atlas 2020 classes for the upazila",
+            "timePeriod": "not available",
+            "spatialResolution": "not available"
+          },
+          "fodder": {
+            "kind": "assumed",
+            "source": "FAO Gridded Livestock of the World v4, cattle 2015 (Gilbert et al. 2018); residue classes are team estimates",
+            "timePeriod": "2015",
+            "spatialResolution": "District (Netrakona)"
+          },
+          "income": {
+            "kind": "assumed",
+            "source": "Net return per hectare: team estimate (crop_catalog.ts), as for BRRI dhan28; moved by Netrakona's BBS 2022-25 yields against the national yields; and by half of each crop's market-price move against food prices since its value's year (DAM via WFP, WFP Bangladesh food prices (HDX, CC BY-IGO), republishing DAM's market prices), where 10+ district or 5+ division markets carry it; a bad price year at each crop's lowest BBS harvest price of 2021-22 to 2024-25. Pending: farmer cost interviews",
+            "timePeriod": "BBS yields 2022-23 to 2024-25; harvest prices 2021-22 to 2024-25; market prices to the latest month WFP holds",
+            "spatialResolution": "District (Netrakona)"
+          },
+          "pest": {
+            "kind": "assumed",
+            "source": "Rotation IPM rules (team) from BRRI/BARI IPM guidance, BWMRI/BRRI variety pages; NASA SEDAC PEST-CHEMGRIDS v1.01 (2020) pesticide estimate for the upazila; NASA POWER disease-weather days 2001-2025 (BLASTAM-style wet hours, Hutton criteria); no field pest counts yet",
+            "timePeriod": "rules; pest sightings come from SAAO field observations",
+            "spatialResolution": "Rotation level"
+          }
+        }
+      },
+      "recommended": {
+        "id": "rot_fallow_boro_early",
+        "name": "Monsoon fallow -> BRRI dhan88 (irrigation-heavy, Boro rice; no rice in the monsoon)",
+        "rank": 1,
+        "score": 0.537,
+        "scores": {
+          "water": 0.65,
+          "heat": 0.95,
+          "flood": 0.71,
+          "soil": 0.45,
+          "fodder": 0.78,
+          "income": 0.2,
+          "pest": 0.95
+        },
+        "fieldFreeDate": "all monsoon",
+        "modeledIrrigationExcludingAmanMm": 629,
+        "amanRescueSeasons": null,
+        "replaySeasons": 24,
+        "illustrativeNetReturnBdtPerHa": 65000,
+        "provenance": {
+          "water": {
+            "kind": "modeled",
+            "source": "NASA POWER (FAO-56 Penman-Monteith ET0) + GPM IMERG Final daily rain; 25-season paddy water balance (research/explore/national_replay.py); other crops: the same FAO-56 method per sowing date (research/explore/crop_choice_replay.py); irrigation weighted by the NASA GLDAS-2.2 (GRACE-assimilated) groundwater trend",
+            "timePeriod": "2001-2025",
+            "spatialResolution": "Netrakona district point: IMERG 0.1° (~10 km), POWER 0.5° x 0.625°"
+          },
+          "heat": {
+            "kind": "modeled",
+            "source": "NASA POWER daily Tmax, bias-corrected by month against BMD station 41895 Shah Mokhdum (NOAA GSOD); research/explore/heat_windows.py",
+            "timePeriod": "2001-2025",
+            "spatialResolution": "POWER 0.5° x 0.625° cell at the Tanore pilot point"
+          },
+          "flood": {
+            "kind": "modeled",
+            "source": "Land-type class: the farmer's, or the upazila default from NASA NASADEM, Landsat surface water and BRRI's 2014-15 survey; GPM IMERG Final 3-day rain at Sohra (Meghalaya), 15 Mar-15 May 2001-2025, against FFWC's Annual Flood Reports (research/explore/flash_flood_hindcast.py)",
+            "timePeriod": "2001-2025 springs",
+            "spatialResolution": "Upstream IMERG cell (Sohra, Meghalaya) for the haor districts"
+          },
+          "soil": {
+            "kind": "assumed",
+            "source": "No SRDI soil card for this area; no fertilizer amount is given; SRDI Soil Fertility Atlas 2020 classes for the upazila",
+            "timePeriod": "not available",
+            "spatialResolution": "not available"
+          },
+          "fodder": {
+            "kind": "assumed",
+            "source": "FAO Gridded Livestock of the World v4, cattle 2015 (Gilbert et al. 2018); residue classes are team estimates",
+            "timePeriod": "2015",
+            "spatialResolution": "District (Netrakona)"
+          },
+          "income": {
+            "kind": "assumed",
+            "source": "Net return per hectare: team estimate (crop_catalog.ts), as for BRRI dhan28; moved by Netrakona's BBS 2022-25 yields against the national yields; and by half of each crop's market-price move against food prices since its value's year (DAM via WFP, WFP Bangladesh food prices (HDX, CC BY-IGO), republishing DAM's market prices), where 10+ district or 5+ division markets carry it; a bad price year at each crop's lowest BBS harvest price of 2021-22 to 2024-25. Pending: farmer cost interviews",
+            "timePeriod": "BBS yields 2022-23 to 2024-25; harvest prices 2021-22 to 2024-25; market prices to the latest month WFP holds",
+            "spatialResolution": "District (Netrakona)"
+          },
+          "pest": {
+            "kind": "assumed",
+            "source": "Rotation IPM rules (team) from BRRI/BARI IPM guidance, BWMRI/BRRI variety pages; NASA SEDAC PEST-CHEMGRIDS v1.01 (2020) pesticide estimate for the upazila; NASA POWER disease-weather days 2001-2025 (BLASTAM-style wet hours, Hutton criteria); no field pest counts yet",
+            "timePeriod": "rules; pest sightings come from SAAO field observations",
+            "spatialResolution": "Rotation level"
+          }
+        }
+      },
+      "modeledDifferenceVsScenarioBaseline": {
+        "lessIrrigationExcludingAmanMm": 0,
+        "addedIrrigationExcludingAmanMm": 0,
+        "illustrativeNetReturnChangeBdtPerHa": 0
+      },
+      "displayedOptions": [
+        {
+          "id": "rot_fallow_boro_early",
+          "name": "Monsoon fallow -> BRRI dhan88 (irrigation-heavy, Boro rice; no rice in the monsoon)",
+          "rank": 1,
+          "score": 0.537,
+          "scores": {
+            "water": 0.65,
+            "heat": 0.95,
+            "flood": 0.71,
+            "soil": 0.45,
+            "fodder": 0.78,
+            "income": 0.2,
+            "pest": 0.95
+          },
+          "fieldFreeDate": "all monsoon",
+          "modeledIrrigationExcludingAmanMm": 629,
+          "amanRescueSeasons": null,
+          "replaySeasons": 24,
+          "illustrativeNetReturnBdtPerHa": 65000,
+          "provenance": {
+            "water": {
+              "kind": "modeled",
+              "source": "NASA POWER (FAO-56 Penman-Monteith ET0) + GPM IMERG Final daily rain; 25-season paddy water balance (research/explore/national_replay.py); other crops: the same FAO-56 method per sowing date (research/explore/crop_choice_replay.py); irrigation weighted by the NASA GLDAS-2.2 (GRACE-assimilated) groundwater trend",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "Netrakona district point: IMERG 0.1° (~10 km), POWER 0.5° x 0.625°"
+            },
+            "heat": {
+              "kind": "modeled",
+              "source": "NASA POWER daily Tmax, bias-corrected by month against BMD station 41895 Shah Mokhdum (NOAA GSOD); research/explore/heat_windows.py",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "POWER 0.5° x 0.625° cell at the Tanore pilot point"
+            },
+            "flood": {
+              "kind": "modeled",
+              "source": "Land-type class: the farmer's, or the upazila default from NASA NASADEM, Landsat surface water and BRRI's 2014-15 survey; GPM IMERG Final 3-day rain at Sohra (Meghalaya), 15 Mar-15 May 2001-2025, against FFWC's Annual Flood Reports (research/explore/flash_flood_hindcast.py)",
+              "timePeriod": "2001-2025 springs",
+              "spatialResolution": "Upstream IMERG cell (Sohra, Meghalaya) for the haor districts"
+            },
+            "soil": {
+              "kind": "assumed",
+              "source": "No SRDI soil card for this area; no fertilizer amount is given; SRDI Soil Fertility Atlas 2020 classes for the upazila",
+              "timePeriod": "not available",
+              "spatialResolution": "not available"
+            },
+            "fodder": {
+              "kind": "assumed",
+              "source": "FAO Gridded Livestock of the World v4, cattle 2015 (Gilbert et al. 2018); residue classes are team estimates",
+              "timePeriod": "2015",
+              "spatialResolution": "District (Netrakona)"
+            },
+            "income": {
+              "kind": "assumed",
+              "source": "Net return per hectare: team estimate (crop_catalog.ts), as for BRRI dhan28; moved by Netrakona's BBS 2022-25 yields against the national yields; and by half of each crop's market-price move against food prices since its value's year (DAM via WFP, WFP Bangladesh food prices (HDX, CC BY-IGO), republishing DAM's market prices), where 10+ district or 5+ division markets carry it; a bad price year at each crop's lowest BBS harvest price of 2021-22 to 2024-25. Pending: farmer cost interviews",
+              "timePeriod": "BBS yields 2022-23 to 2024-25; harvest prices 2021-22 to 2024-25; market prices to the latest month WFP holds",
+              "spatialResolution": "District (Netrakona)"
+            },
+            "pest": {
+              "kind": "assumed",
+              "source": "Rotation IPM rules (team) from BRRI/BARI IPM guidance, BWMRI/BRRI variety pages; NASA SEDAC PEST-CHEMGRIDS v1.01 (2020) pesticide estimate for the upazila; NASA POWER disease-weather days 2001-2025 (BLASTAM-style wet hours, Hutton criteria); no field pest counts yet",
+              "timePeriod": "rules; pest sightings come from SAAO field observations",
+              "spatialResolution": "Rotation level"
+            }
+          }
+        }
+      ],
+      "decisionCheck": {
+        "method": "displayed-score-ablation-v1",
+        "scope": "displayed_options_only",
+        "weights": {
+          "water": 0.5,
+          "heat": 0.05,
+          "flood": 0.05,
+          "soil": 0.2,
+          "fodder": 0.05,
+          "income": 0.3,
+          "pest": 0.05
+        },
+        "nominalLeaderIds": [
+          "rot_fallow_boro_early"
+        ],
+        "recommendedOptionId": "rot_fallow_boro_early",
+        "scenarios": [
+          {
+            "id": "without_income",
+            "label": {
+              "bn": "নমুনা আয়ের পার্থক্য বাদ দিলে",
+              "en": "Without illustrative income differences"
+            },
+            "neutralizedDimensions": [
+              "income"
+            ],
+            "leaderIds": [
+              "rot_fallow_boro_early"
+            ],
+            "scores": [
+              {
+                "optionId": "rot_fallow_boro_early",
+                "score": 0.6121
+              }
+            ],
+            "nominalLeaderRetained": true
+          },
+          {
+            "id": "without_soil",
+            "label": {
+              "bn": "মাটির অনুমানভিত্তিক স্কোর বাদ দিলে",
+              "en": "Without the soil practice score"
+            },
+            "neutralizedDimensions": [
+              "soil"
+            ],
+            "leaderIds": [
+              "rot_fallow_boro_early"
+            ],
+            "scores": [
+              {
+                "optionId": "rot_fallow_boro_early",
+                "score": 0.5454
+              }
+            ],
+            "nominalLeaderRetained": true
+          },
+          {
+            "id": "without_heuristics",
+            "label": {
+              "bn": "আয় ও নিয়মভিত্তিক স্কোর বাদ দিলে",
+              "en": "Without income and rule-based scores"
+            },
+            "neutralizedDimensions": [
+              "income",
+              "soil",
+              "pest",
+              "fodder"
+            ],
+            "leaderIds": [
+              "rot_fallow_boro_early"
+            ],
+            "scores": [
+              {
+                "optionId": "rot_fallow_boro_early",
+                "score": 0.59
+              }
+            ],
+            "nominalLeaderRetained": true
+          },
+          {
+            "id": "without_water_heat",
+            "label": {
+              "bn": "পানি ও তাপের স্কোর বাদ দিলে",
+              "en": "Without water and heat scores"
+            },
+            "neutralizedDimensions": [
+              "water",
+              "heat"
+            ],
+            "leaderIds": [
+              "rot_fallow_boro_early"
+            ],
+            "scores": [
+              {
+                "optionId": "rot_fallow_boro_early",
+                "score": 0.4558
+              }
+            ],
+            "nominalLeaderRetained": true
+          }
+        ]
+      },
+      "warnings": [
+        {
+          "dataset": "DAM farm-gate prices and farmer cost survey",
+          "issue": "Not collected yet; income uses illustrative team estimates",
+          "affectedDimension": "income"
+        },
+        {
+          "dataset": "Farmer interviews in Talanda",
+          "issue": "Priority weights are defaults until interviews",
+          "affectedDimension": "all"
+        },
+        {
+          "dataset": "River flood model",
+          "issue": "Not modelled; the land type is the farmer's",
+          "affectedDimension": "flood"
+        },
+        {
+          "dataset": "SRDI soil card (fertilizer)",
+          "issue": "No soil card for this area: no fertilizer advice, and the pest score is partial (no nitrogen term), not comparable with the pilot's",
+          "affectedDimension": "pest"
+        },
+        {
+          "dataset": "Heat limits for crops outside crop_parameters.csv",
+          "issue": "Literature values, marked as assumed in the crop-choice replay",
+          "affectedDimension": "heat"
+        }
+      ]
+    },
+    {
+      "id": "coast",
+      "question": "A winter crop under coastal salinity assumptions",
+      "request": {
+        "unionId": "ADM3_Shyamnagar",
+        "unionNameBangla": "Shyamnagar উপজেলা",
+        "upazila": "Shyamnagar",
+        "district": "Satkhira",
+        "landType": "medium_high",
+        "season": "2026-aman",
+        "today": "2026-11-05",
+        "farmerPriorities": {
+          "water": 0.5,
+          "income": 0.3,
+          "soil": 0.2
+        },
+        "defaultPriorities": true,
+        "currentRotation": {
+          "monsoon": "aman",
+          "winter": "fallow"
+        }
+      },
+      "dataRelease": "tanore-2026.09.30",
+      "displayedOptionCount": 5,
+      "baselineStatus": "scenario_baseline_represented",
+      "baselineRepresentation": "unranked_fallow_reference",
+      "baselineNote": {
+        "bn": "আপনার চাষের সাথে তুলনা; স্কোর দিয়ে ক্রমে রাখা হয়নি। শীত ও গ্রীষ্মে ফসল নেই, তাই ওই ফসলের সেচ ও আয় শূন্য। আমনের সম্পূরক সেচের পরিমাণ ধরা হয়নি। জমি পতিত রাখার অন্যান্য খরচ বা লাভ জানা নেই। আমনের জাত বলা হয়নি: তুলনার জন্য ব্রি ধান৪৯ ধরা হয়েছে।",
+        "en": "Your stated practice, shown without a ranking score. No winter or summer crop means zero irrigation and crop return for those crops. Aman rescue-irrigation volume is excluded. Other costs or benefits of leaving land fallow are unknown. Aman variety was not supplied: BRRI dhan49 is assumed for this reference."
+      },
+      "baseline": {
+        "id": "reference_brri_dhan49_fallow",
+        "name": "BRRI dhan49 -> winter fallow -> summer fallow",
+        "rank": null,
+        "score": null,
+        "scores": null,
+        "modeledIrrigationExcludingAmanMm": 0,
+        "illustrativeNetReturnBdtPerHa": 42800,
+        "amanRescueSeasons": 0,
+        "replaySeasons": 25,
+        "amanVarietyAssumed": true,
+        "provenance": {
+          "water": "Zero winter/summer planted-crop irrigation by definition; Aman rescue frequency from the local NASA POWER + GPM IMERG replay, 2001-2025. No total annual irrigation volume is inferred.",
+          "income": "The same illustrative Aman return used by the income plugin (team estimate, district BBS yield and market adjustments); zero winter/summer crop return. Farmer costs are unverified."
+        }
+      },
+      "recommended": {
+        "id": "rot_dhan71_sunflower",
+        "name": "BRRI dhan71 -> BARI Sunflower-2 (water-saving, oilseed)",
+        "rank": 1,
+        "score": 0.687,
+        "scores": {
+          "water": 0.9,
+          "heat": 0.95,
+          "flood": 0.95,
+          "soil": 0.7,
+          "fodder": 0.65,
+          "income": 0.2,
+          "pest": 0.94
+        },
+        "fieldFreeDate": "10 Nov",
+        "modeledIrrigationExcludingAmanMm": 184,
+        "amanRescueSeasons": 0,
+        "replaySeasons": 25,
+        "illustrativeNetReturnBdtPerHa": 18100,
+        "provenance": {
+          "water": {
+            "kind": "modeled",
+            "source": "NASA POWER (FAO-56 Penman-Monteith ET0) + GPM IMERG Final daily rain; 25-season paddy water balance (research/explore/national_replay.py); other crops: the same FAO-56 method per sowing date (research/explore/crop_choice_replay.py); irrigation weighted by the NASA GLDAS-2.2 (GRACE-assimilated) groundwater trend",
+            "timePeriod": "2001-2025",
+            "spatialResolution": "Satkhira district point: IMERG 0.1° (~10 km), POWER 0.5° x 0.625°"
+          },
+          "heat": {
+            "kind": "modeled",
+            "source": "NASA POWER daily Tmax, bias-corrected by month against BMD station 41895 Shah Mokhdum (NOAA GSOD); research/explore/heat_windows.py",
+            "timePeriod": "2001-2025",
+            "spatialResolution": "POWER 0.5° x 0.625° cell at the Tanore pilot point"
+          },
+          "flood": {
+            "kind": "assumed",
+            "source": "Land-type class: the farmer's, or the upazila default from NASA NASADEM, Landsat surface water and BRRI's 2014-15 survey",
+            "timePeriod": "static",
+            "spatialResolution": "Land-type class"
+          },
+          "soil": {
+            "kind": "assumed",
+            "source": "No SRDI soil card for this area; no fertilizer amount is given; SRDI Soil Fertility Atlas 2020 classes for the upazila",
+            "timePeriod": "not available",
+            "spatialResolution": "not available"
+          },
+          "fodder": {
+            "kind": "assumed",
+            "source": "FAO Gridded Livestock of the World v4, cattle 2015 (Gilbert et al. 2018); residue classes are team estimates",
+            "timePeriod": "2015",
+            "spatialResolution": "District (Satkhira)"
+          },
+          "income": {
+            "kind": "assumed",
+            "source": "Net return per hectare: team estimate (crop_catalog.ts) for Aman; no price and cost data yet; moved by Satkhira's BBS 2022-25 yields against the national yields; and by half of each crop's market-price move against food prices since its value's year (DAM via WFP, WFP Bangladesh food prices (HDX, CC BY-IGO), republishing DAM's market prices), where 10+ district or 5+ division markets carry it; a bad price year at each crop's lowest BBS harvest price of 2021-22 to 2024-25. Pending: farmer cost interviews",
+            "timePeriod": "BBS yields 2022-23 to 2024-25; harvest prices 2021-22 to 2024-25; market prices to the latest month WFP holds",
+            "spatialResolution": "District (Satkhira)"
+          },
+          "pest": {
+            "kind": "assumed",
+            "source": "Rotation IPM rules (team) from BRRI/BARI IPM guidance, BWMRI/BRRI variety pages; NASA SEDAC PEST-CHEMGRIDS v1.01 (2020) pesticide estimate for the upazila; NASA POWER disease-weather days 2001-2025 (BLASTAM-style wet hours, Hutton criteria); no field pest counts yet",
+            "timePeriod": "rules; pest sightings come from SAAO field observations",
+            "spatialResolution": "Rotation level"
+          }
+        }
+      },
+      "modeledDifferenceVsScenarioBaseline": {
+        "lessIrrigationExcludingAmanMm": -184,
+        "addedIrrigationExcludingAmanMm": 184,
+        "illustrativeNetReturnChangeBdtPerHa": -24700
+      },
+      "displayedOptions": [
+        {
+          "id": "rot_dhan71_sunflower",
+          "name": "BRRI dhan71 -> BARI Sunflower-2 (water-saving, oilseed)",
+          "rank": 1,
+          "score": 0.687,
+          "scores": {
+            "water": 0.9,
+            "heat": 0.95,
+            "flood": 0.95,
+            "soil": 0.7,
+            "fodder": 0.65,
+            "income": 0.2,
+            "pest": 0.94
+          },
+          "fieldFreeDate": "10 Nov",
+          "modeledIrrigationExcludingAmanMm": 184,
+          "amanRescueSeasons": 0,
+          "replaySeasons": 25,
+          "illustrativeNetReturnBdtPerHa": 18100,
+          "provenance": {
+            "water": {
+              "kind": "modeled",
+              "source": "NASA POWER (FAO-56 Penman-Monteith ET0) + GPM IMERG Final daily rain; 25-season paddy water balance (research/explore/national_replay.py); other crops: the same FAO-56 method per sowing date (research/explore/crop_choice_replay.py); irrigation weighted by the NASA GLDAS-2.2 (GRACE-assimilated) groundwater trend",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "Satkhira district point: IMERG 0.1° (~10 km), POWER 0.5° x 0.625°"
+            },
+            "heat": {
+              "kind": "modeled",
+              "source": "NASA POWER daily Tmax, bias-corrected by month against BMD station 41895 Shah Mokhdum (NOAA GSOD); research/explore/heat_windows.py",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "POWER 0.5° x 0.625° cell at the Tanore pilot point"
+            },
+            "flood": {
+              "kind": "assumed",
+              "source": "Land-type class: the farmer's, or the upazila default from NASA NASADEM, Landsat surface water and BRRI's 2014-15 survey",
+              "timePeriod": "static",
+              "spatialResolution": "Land-type class"
+            },
+            "soil": {
+              "kind": "assumed",
+              "source": "No SRDI soil card for this area; no fertilizer amount is given; SRDI Soil Fertility Atlas 2020 classes for the upazila",
+              "timePeriod": "not available",
+              "spatialResolution": "not available"
+            },
+            "fodder": {
+              "kind": "assumed",
+              "source": "FAO Gridded Livestock of the World v4, cattle 2015 (Gilbert et al. 2018); residue classes are team estimates",
+              "timePeriod": "2015",
+              "spatialResolution": "District (Satkhira)"
+            },
+            "income": {
+              "kind": "assumed",
+              "source": "Net return per hectare: team estimate (crop_catalog.ts) for Aman; no price and cost data yet; moved by Satkhira's BBS 2022-25 yields against the national yields; and by half of each crop's market-price move against food prices since its value's year (DAM via WFP, WFP Bangladesh food prices (HDX, CC BY-IGO), republishing DAM's market prices), where 10+ district or 5+ division markets carry it; a bad price year at each crop's lowest BBS harvest price of 2021-22 to 2024-25. Pending: farmer cost interviews",
+              "timePeriod": "BBS yields 2022-23 to 2024-25; harvest prices 2021-22 to 2024-25; market prices to the latest month WFP holds",
+              "spatialResolution": "District (Satkhira)"
+            },
+            "pest": {
+              "kind": "assumed",
+              "source": "Rotation IPM rules (team) from BRRI/BARI IPM guidance, BWMRI/BRRI variety pages; NASA SEDAC PEST-CHEMGRIDS v1.01 (2020) pesticide estimate for the upazila; NASA POWER disease-weather days 2001-2025 (BLASTAM-style wet hours, Hutton criteria); no field pest counts yet",
+              "timePeriod": "rules; pest sightings come from SAAO field observations",
+              "spatialResolution": "Rotation level"
+            }
+          }
+        },
+        {
+          "id": "rot_dhan87_barley",
+          "name": "BRRI dhan87 -> BARI Barley-7 (water-saving, grain crop)",
+          "rank": 2,
+          "score": 0.687,
+          "scores": {
+            "water": 0.9,
+            "heat": 0.71,
+            "flood": 0.95,
+            "soil": 0.7,
+            "fodder": 0.88,
+            "income": 0.2,
+            "pest": 0.94
+          },
+          "fieldFreeDate": "6 Nov",
+          "modeledIrrigationExcludingAmanMm": 190,
+          "amanRescueSeasons": 0,
+          "replaySeasons": 25,
+          "illustrativeNetReturnBdtPerHa": 53800,
+          "provenance": {
+            "water": {
+              "kind": "modeled",
+              "source": "NASA POWER (FAO-56 Penman-Monteith ET0) + GPM IMERG Final daily rain; 25-season paddy water balance (research/explore/national_replay.py); other crops: the same FAO-56 method per sowing date (research/explore/crop_choice_replay.py); irrigation weighted by the NASA GLDAS-2.2 (GRACE-assimilated) groundwater trend",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "Satkhira district point: IMERG 0.1° (~10 km), POWER 0.5° x 0.625°"
+            },
+            "heat": {
+              "kind": "modeled",
+              "source": "NASA POWER daily Tmax, bias-corrected by month against BMD station 41895 Shah Mokhdum (NOAA GSOD); research/explore/heat_windows.py",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "POWER 0.5° x 0.625° cell at the Tanore pilot point"
+            },
+            "flood": {
+              "kind": "assumed",
+              "source": "Land-type class: the farmer's, or the upazila default from NASA NASADEM, Landsat surface water and BRRI's 2014-15 survey",
+              "timePeriod": "static",
+              "spatialResolution": "Land-type class"
+            },
+            "soil": {
+              "kind": "assumed",
+              "source": "No SRDI soil card for this area; no fertilizer amount is given; SRDI Soil Fertility Atlas 2020 classes for the upazila",
+              "timePeriod": "not available",
+              "spatialResolution": "not available"
+            },
+            "fodder": {
+              "kind": "assumed",
+              "source": "FAO Gridded Livestock of the World v4, cattle 2015 (Gilbert et al. 2018); residue classes are team estimates",
+              "timePeriod": "2015",
+              "spatialResolution": "District (Satkhira)"
+            },
+            "income": {
+              "kind": "assumed",
+              "source": "Net return per hectare: team estimate (crop_catalog.ts) for Aman; no price and cost data yet; moved by Satkhira's BBS 2022-25 yields against the national yields; and by half of each crop's market-price move against food prices since its value's year (DAM via WFP, WFP Bangladesh food prices (HDX, CC BY-IGO), republishing DAM's market prices), where 10+ district or 5+ division markets carry it; a bad price year at each crop's lowest BBS harvest price of 2021-22 to 2024-25. Pending: farmer cost interviews",
+              "timePeriod": "BBS yields 2022-23 to 2024-25; harvest prices 2021-22 to 2024-25; market prices to the latest month WFP holds",
+              "spatialResolution": "District (Satkhira)"
+            },
+            "pest": {
+              "kind": "assumed",
+              "source": "Rotation IPM rules (team) from BRRI/BARI IPM guidance, BWMRI/BRRI variety pages; NASA SEDAC PEST-CHEMGRIDS v1.01 (2020) pesticide estimate for the upazila; NASA POWER disease-weather days 2001-2025 (BLASTAM-style wet hours, Hutton criteria); no field pest counts yet",
+              "timePeriod": "rules; pest sightings come from SAAO field observations",
+              "spatialResolution": "Rotation level"
+            }
+          }
+        },
+        {
+          "id": "rot_dhan87_sunflower",
+          "name": "BRRI dhan87 -> BARI Sunflower-2 (water-saving, oilseed)",
+          "rank": 3,
+          "score": 0.687,
+          "scores": {
+            "water": 0.9,
+            "heat": 0.95,
+            "flood": 0.95,
+            "soil": 0.7,
+            "fodder": 0.65,
+            "income": 0.2,
+            "pest": 0.94
+          },
+          "fieldFreeDate": "6 Nov",
+          "modeledIrrigationExcludingAmanMm": 184,
+          "amanRescueSeasons": 0,
+          "replaySeasons": 25,
+          "illustrativeNetReturnBdtPerHa": 18100,
+          "provenance": {
+            "water": {
+              "kind": "modeled",
+              "source": "NASA POWER (FAO-56 Penman-Monteith ET0) + GPM IMERG Final daily rain; 25-season paddy water balance (research/explore/national_replay.py); other crops: the same FAO-56 method per sowing date (research/explore/crop_choice_replay.py); irrigation weighted by the NASA GLDAS-2.2 (GRACE-assimilated) groundwater trend",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "Satkhira district point: IMERG 0.1° (~10 km), POWER 0.5° x 0.625°"
+            },
+            "heat": {
+              "kind": "modeled",
+              "source": "NASA POWER daily Tmax, bias-corrected by month against BMD station 41895 Shah Mokhdum (NOAA GSOD); research/explore/heat_windows.py",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "POWER 0.5° x 0.625° cell at the Tanore pilot point"
+            },
+            "flood": {
+              "kind": "assumed",
+              "source": "Land-type class: the farmer's, or the upazila default from NASA NASADEM, Landsat surface water and BRRI's 2014-15 survey",
+              "timePeriod": "static",
+              "spatialResolution": "Land-type class"
+            },
+            "soil": {
+              "kind": "assumed",
+              "source": "No SRDI soil card for this area; no fertilizer amount is given; SRDI Soil Fertility Atlas 2020 classes for the upazila",
+              "timePeriod": "not available",
+              "spatialResolution": "not available"
+            },
+            "fodder": {
+              "kind": "assumed",
+              "source": "FAO Gridded Livestock of the World v4, cattle 2015 (Gilbert et al. 2018); residue classes are team estimates",
+              "timePeriod": "2015",
+              "spatialResolution": "District (Satkhira)"
+            },
+            "income": {
+              "kind": "assumed",
+              "source": "Net return per hectare: team estimate (crop_catalog.ts) for Aman; no price and cost data yet; moved by Satkhira's BBS 2022-25 yields against the national yields; and by half of each crop's market-price move against food prices since its value's year (DAM via WFP, WFP Bangladesh food prices (HDX, CC BY-IGO), republishing DAM's market prices), where 10+ district or 5+ division markets carry it; a bad price year at each crop's lowest BBS harvest price of 2021-22 to 2024-25. Pending: farmer cost interviews",
+              "timePeriod": "BBS yields 2022-23 to 2024-25; harvest prices 2021-22 to 2024-25; market prices to the latest month WFP holds",
+              "spatialResolution": "District (Satkhira)"
+            },
+            "pest": {
+              "kind": "assumed",
+              "source": "Rotation IPM rules (team) from BRRI/BARI IPM guidance, BWMRI/BRRI variety pages; NASA SEDAC PEST-CHEMGRIDS v1.01 (2020) pesticide estimate for the upazila; NASA POWER disease-weather days 2001-2025 (BLASTAM-style wet hours, Hutton criteria); no field pest counts yet",
+              "timePeriod": "rules; pest sightings come from SAAO field observations",
+              "spatialResolution": "Rotation level"
+            }
+          }
+        },
+        {
+          "id": "rot_dhan71_barley_sunflower_kharif",
+          "name": "BRRI dhan71 -> BARI Barley-7 -> BARI Sunflower-2 (water-saving, grain crop; sunflower before Aman)",
+          "rank": 4,
+          "score": 0.657,
+          "scores": {
+            "water": 0.88,
+            "heat": 0.42,
+            "flood": 0.95,
+            "soil": 0.65,
+            "fodder": 0.9,
+            "income": 0.2,
+            "pest": 0.91
+          },
+          "fieldFreeDate": "10 Nov",
+          "modeledIrrigationExcludingAmanMm": 220,
+          "amanRescueSeasons": 0,
+          "replaySeasons": 25,
+          "illustrativeNetReturnBdtPerHa": 53800,
+          "provenance": {
+            "water": {
+              "kind": "modeled",
+              "source": "NASA POWER (FAO-56 Penman-Monteith ET0) + GPM IMERG Final daily rain; 25-season paddy water balance (research/explore/national_replay.py); other crops: the same FAO-56 method per sowing date (research/explore/crop_choice_replay.py); irrigation weighted by the NASA GLDAS-2.2 (GRACE-assimilated) groundwater trend",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "Satkhira district point: IMERG 0.1° (~10 km), POWER 0.5° x 0.625°"
+            },
+            "heat": {
+              "kind": "modeled",
+              "source": "NASA POWER daily Tmax, bias-corrected by month against BMD station 41895 Shah Mokhdum (NOAA GSOD); research/explore/heat_windows.py",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "POWER 0.5° x 0.625° cell at the Tanore pilot point"
+            },
+            "flood": {
+              "kind": "assumed",
+              "source": "Land-type class: the farmer's, or the upazila default from NASA NASADEM, Landsat surface water and BRRI's 2014-15 survey",
+              "timePeriod": "static",
+              "spatialResolution": "Land-type class"
+            },
+            "soil": {
+              "kind": "assumed",
+              "source": "No SRDI soil card for this area; no fertilizer amount is given; SRDI Soil Fertility Atlas 2020 classes for the upazila",
+              "timePeriod": "not available",
+              "spatialResolution": "not available"
+            },
+            "fodder": {
+              "kind": "assumed",
+              "source": "FAO Gridded Livestock of the World v4, cattle 2015 (Gilbert et al. 2018); residue classes are team estimates",
+              "timePeriod": "2015",
+              "spatialResolution": "District (Satkhira)"
+            },
+            "income": {
+              "kind": "assumed",
+              "source": "Net return per hectare: team estimate (crop_catalog.ts) for Aman; no price and cost data yet; moved by Satkhira's BBS 2022-25 yields against the national yields; and by half of each crop's market-price move against food prices since its value's year (DAM via WFP, WFP Bangladesh food prices (HDX, CC BY-IGO), republishing DAM's market prices), where 10+ district or 5+ division markets carry it; a bad price year at each crop's lowest BBS harvest price of 2021-22 to 2024-25. Pending: farmer cost interviews",
+              "timePeriod": "BBS yields 2022-23 to 2024-25; harvest prices 2021-22 to 2024-25; market prices to the latest month WFP holds",
+              "spatialResolution": "District (Satkhira)"
+            },
+            "pest": {
+              "kind": "assumed",
+              "source": "Rotation IPM rules (team) from BRRI/BARI IPM guidance, BWMRI/BRRI variety pages; NASA SEDAC PEST-CHEMGRIDS v1.01 (2020) pesticide estimate for the upazila; NASA POWER disease-weather days 2001-2025 (BLASTAM-style wet hours, Hutton criteria); no field pest counts yet",
+              "timePeriod": "rules; pest sightings come from SAAO field observations",
+              "spatialResolution": "Rotation level"
+            }
+          }
+        },
+        {
+          "id": "rot_dhan71_sunflower_boro_late",
+          "name": "BRRI dhan71 -> BARI Sunflower-2 -> BRRI dhan28 (irrigation-heavy, oilseed; then a late Boro)",
+          "rank": 5,
+          "score": 0.477,
+          "scores": {
+            "water": 0.55,
+            "heat": 0.33,
+            "flood": 0.95,
+            "soil": 0.55,
+            "fodder": 0.9,
+            "income": 0.2,
+            "pest": 0.37
+          },
+          "fieldFreeDate": "10 Nov",
+          "modeledIrrigationExcludingAmanMm": 820,
+          "amanRescueSeasons": 0,
+          "replaySeasons": 25,
+          "illustrativeNetReturnBdtPerHa": 67800,
+          "provenance": {
+            "water": {
+              "kind": "modeled",
+              "source": "NASA POWER (FAO-56 Penman-Monteith ET0) + GPM IMERG Final daily rain; 25-season paddy water balance (research/explore/national_replay.py); other crops: the same FAO-56 method per sowing date (research/explore/crop_choice_replay.py); irrigation weighted by the NASA GLDAS-2.2 (GRACE-assimilated) groundwater trend",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "Satkhira district point: IMERG 0.1° (~10 km), POWER 0.5° x 0.625°"
+            },
+            "heat": {
+              "kind": "modeled",
+              "source": "NASA POWER daily Tmax, bias-corrected by month against BMD station 41895 Shah Mokhdum (NOAA GSOD); research/explore/heat_windows.py",
+              "timePeriod": "2001-2025",
+              "spatialResolution": "POWER 0.5° x 0.625° cell at the Tanore pilot point"
+            },
+            "flood": {
+              "kind": "assumed",
+              "source": "Land-type class: the farmer's, or the upazila default from NASA NASADEM, Landsat surface water and BRRI's 2014-15 survey",
+              "timePeriod": "static",
+              "spatialResolution": "Land-type class"
+            },
+            "soil": {
+              "kind": "assumed",
+              "source": "No SRDI soil card for this area; no fertilizer amount is given; SRDI Soil Fertility Atlas 2020 classes for the upazila",
+              "timePeriod": "not available",
+              "spatialResolution": "not available"
+            },
+            "fodder": {
+              "kind": "assumed",
+              "source": "FAO Gridded Livestock of the World v4, cattle 2015 (Gilbert et al. 2018); residue classes are team estimates",
+              "timePeriod": "2015",
+              "spatialResolution": "District (Satkhira)"
+            },
+            "income": {
+              "kind": "assumed",
+              "source": "Net return per hectare: team estimate (crop_catalog.ts) for Aman; no price and cost data yet; team estimate (crop_catalog.ts), as for BRRI dhan28; moved by Satkhira's BBS 2022-25 yields against the national yields; and by half of each crop's market-price move against food prices since its value's year (DAM via WFP, WFP Bangladesh food prices (HDX, CC BY-IGO), republishing DAM's market prices), where 10+ district or 5+ division markets carry it; a bad price year at each crop's lowest BBS harvest price of 2021-22 to 2024-25. Pending: farmer cost interviews",
+              "timePeriod": "BBS yields 2022-23 to 2024-25; harvest prices 2021-22 to 2024-25; market prices to the latest month WFP holds",
+              "spatialResolution": "District (Satkhira)"
+            },
+            "pest": {
+              "kind": "assumed",
+              "source": "Rotation IPM rules (team) from BRRI/BARI IPM guidance, BWMRI/BRRI variety pages; NASA SEDAC PEST-CHEMGRIDS v1.01 (2020) pesticide estimate for the upazila; NASA POWER disease-weather days 2001-2025 (BLASTAM-style wet hours, Hutton criteria); no field pest counts yet",
+              "timePeriod": "rules; pest sightings come from SAAO field observations",
+              "spatialResolution": "Rotation level"
+            }
+          }
+        }
+      ],
+      "decisionCheck": {
+        "method": "displayed-score-ablation-v1",
+        "scope": "displayed_options_only",
+        "weights": {
+          "water": 0.5,
+          "heat": 0.05,
+          "flood": 0.05,
+          "soil": 0.2,
+          "fodder": 0.05,
+          "income": 0.3,
+          "pest": 0.05
+        },
+        "nominalLeaderIds": [
+          "rot_dhan71_sunflower",
+          "rot_dhan87_barley",
+          "rot_dhan87_sunflower"
+        ],
+        "recommendedOptionId": "rot_dhan71_sunflower",
+        "scenarios": [
+          {
+            "id": "without_income",
+            "label": {
+              "bn": "নমুনা আয়ের পার্থক্য বাদ দিলে",
+              "en": "Without illustrative income differences"
+            },
+            "neutralizedDimensions": [
+              "income"
+            ],
+            "leaderIds": [
+              "rot_dhan71_sunflower",
+              "rot_dhan87_barley",
+              "rot_dhan87_sunflower"
+            ],
+            "scores": [
+              {
+                "optionId": "rot_dhan71_sunflower",
+                "score": 0.7621
+              },
+              {
+                "optionId": "rot_dhan87_barley",
+                "score": 0.7617
+              },
+              {
+                "optionId": "rot_dhan87_sunflower",
+                "score": 0.7621
+              },
+              {
+                "optionId": "rot_dhan71_barley_sunflower_kharif",
+                "score": 0.7325
+              },
+              {
+                "optionId": "rot_dhan71_sunflower_boro_late",
+                "score": 0.5521
+              }
+            ],
+            "nominalLeaderRetained": true
+          },
+          {
+            "id": "without_soil",
+            "label": {
+              "bn": "মাটির অনুমানভিত্তিক স্কোর বাদ দিলে",
+              "en": "Without the soil practice score"
+            },
+            "neutralizedDimensions": [
+              "soil"
+            ],
+            "leaderIds": [
+              "rot_dhan71_sunflower",
+              "rot_dhan87_barley",
+              "rot_dhan87_sunflower"
+            ],
+            "scores": [
+              {
+                "optionId": "rot_dhan71_sunflower",
+                "score": 0.6537
+              },
+              {
+                "optionId": "rot_dhan87_barley",
+                "score": 0.6533
+              },
+              {
+                "optionId": "rot_dhan87_sunflower",
+                "score": 0.6537
+              },
+              {
+                "optionId": "rot_dhan71_barley_sunflower_kharif",
+                "score": 0.6325
+              },
+              {
+                "optionId": "rot_dhan71_sunflower_boro_late",
+                "score": 0.4687
+              }
+            ],
+            "nominalLeaderRetained": true
+          },
+          {
+            "id": "without_heuristics",
+            "label": {
+              "bn": "আয় ও নিয়মভিত্তিক স্কোর বাদ দিলে",
+              "en": "Without income and rule-based scores"
+            },
+            "neutralizedDimensions": [
+              "income",
+              "soil",
+              "pest",
+              "fodder"
+            ],
+            "leaderIds": [
+              "rot_dhan71_sunflower",
+              "rot_dhan87_sunflower"
+            ],
+            "scores": [
+              {
+                "optionId": "rot_dhan71_sunflower",
+                "score": 0.7042
+              },
+              {
+                "optionId": "rot_dhan87_barley",
+                "score": 0.6942
+              },
+              {
+                "optionId": "rot_dhan87_sunflower",
+                "score": 0.7042
+              },
+              {
+                "optionId": "rot_dhan71_barley_sunflower_kharif",
+                "score": 0.6737
+              },
+              {
+                "optionId": "rot_dhan71_sunflower_boro_late",
+                "score": 0.5325
+              }
+            ],
+            "nominalLeaderRetained": true
+          },
+          {
+            "id": "without_water_heat",
+            "label": {
+              "bn": "পানি ও তাপের স্কোর বাদ দিলে",
+              "en": "Without water and heat scores"
+            },
+            "neutralizedDimensions": [
+              "water",
+              "heat"
+            ],
+            "leaderIds": [
+              "rot_dhan87_barley"
+            ],
+            "scores": [
+              {
+                "optionId": "rot_dhan71_sunflower",
+                "score": 0.5017
+              },
+              {
+                "optionId": "rot_dhan87_barley",
+                "score": 0.5112
+              },
+              {
+                "optionId": "rot_dhan87_sunflower",
+                "score": 0.5017
+              },
+              {
+                "optionId": "rot_dhan71_barley_sunflower_kharif",
+                "score": 0.5025
+              },
+              {
+                "optionId": "rot_dhan71_sunflower_boro_late",
+                "score": 0.4633
+              }
+            ],
+            "nominalLeaderRetained": true
+          }
+        ]
+      },
+      "warnings": [
+        {
+          "dataset": "DAM farm-gate prices and farmer cost survey",
+          "issue": "Not collected yet; income uses illustrative team estimates",
+          "affectedDimension": "income"
+        },
+        {
+          "dataset": "Farmer interviews in Talanda",
+          "issue": "Priority weights are defaults until interviews",
+          "affectedDimension": "all"
+        },
+        {
+          "dataset": "River flood model",
+          "issue": "Not modelled; the land type is the farmer's",
+          "affectedDimension": "flood"
+        },
+        {
+          "dataset": "SRDI soil card (fertilizer)",
+          "issue": "No soil card for this area: no fertilizer advice, and the pest score is partial (no nitrogen term), not comparable with the pilot's",
+          "affectedDimension": "pest"
+        },
+        {
+          "dataset": "Soil salinity",
+          "issue": "SRDI's 2009 upazila classes, not this field: a field's own salinity may differ, so test it",
+          "affectedDimension": "income"
+        },
+        {
+          "dataset": "Heat limits for crops outside crop_parameters.csv",
+          "issue": "Literature values, marked as assumed in the crop-choice replay",
+          "affectedDimension": "heat"
+        }
+      ]
+    }
+  ]
+}
