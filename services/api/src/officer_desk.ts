@@ -197,7 +197,6 @@ function loadStore(): Store {
 }
 
 const store: Store = loadStore();
-const sessions = new Map<string, string>(); // token -> officer id
 
 function save(): void {
   fs.mkdirSync(path.dirname(STORE_FILE), { recursive: true });
@@ -239,7 +238,86 @@ export interface AuthUser {
   currentAmanCrop?: string;
 }
 
-const userSessions = new Map<string, AuthUser>();
+// ---- Sessions -------------------------------------------------------------------------------------
+// A session token is signed, not stored: `eden1.<claims>.<HMAC-SHA256>`, where the claims name the kind (guest, demo
+// officer or farmer), the id and the expiry. Any server instance with the same EDEN_SESSION_SECRET can check it, so a
+// sign-in survives Vercel starting a second instance or recycling the first (an in-memory token map did not: a guest
+// token was refused by 36 of 40 parallel requests). Without the variable each process signs with its own random key, so
+// sessions end on a restart, as they always did.
+const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // a session lasts half a day
+const processKey = crypto.randomBytes(32);
+type SessionKind = 'guest' | 'officer' | 'farmer';
+interface SessionClaims { k: SessionKind; id: string; exp: number }
+/** Tokens signed out on this instance, until they expire. A signed token cannot be recalled on every instance. */
+const signedOut = new Map<string, number>();
+
+function sessionKey(): crypto.BinaryLike {
+  return process.env.EDEN_SESSION_SECRET?.trim() || processKey;
+}
+
+function mac(body: string): string {
+  return crypto.createHmac('sha256', sessionKey()).update(body).digest('base64url');
+}
+
+function issueToken(k: SessionKind, id: string, now = Date.now()): string {
+  const body = Buffer.from(JSON.stringify({ k, id, exp: now + SESSION_TTL_MS } satisfies SessionClaims)).toString('base64url');
+  return `eden1.${body}.${mac(body)}`;
+}
+
+function bearer(authorization: string | undefined): string {
+  return authorization?.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
+}
+
+/** The claims of a well-signed, unexpired token that was not signed out here, or null. */
+function readToken(token: string, now = Date.now()): SessionClaims | null {
+  const parts = token.split('.');
+  if (parts.length !== 3 || parts[0] !== 'eden1') return null;
+  const given = Buffer.from(parts[2]);
+  const expected = Buffer.from(mac(parts[1]));
+  if (given.length !== expected.length || !crypto.timingSafeEqual(given, expected)) return null;
+  let claims: SessionClaims;
+  try {
+    claims = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
+  } catch {
+    return null;
+  }
+  if (!claims || typeof claims.id !== 'string' || typeof claims.exp !== 'number' || claims.exp <= now) return null;
+  if (signedOut.has(token)) return null;
+  return claims;
+}
+
+function officerUser(officer: Officer): AuthUser {
+  return {
+    id: officer.id,
+    role: 'officer',
+    nameBangla: officer.nameBangla,
+    nameEnglish: officer.nameEnglish,
+    titleBangla: 'উপসহকারী কৃষি কর্মকর্তা (SAAO)',
+    blockOrVillageBangla: officer.blockBangla,
+  };
+}
+
+function guestUser(): AuthUser {
+  return {
+    id: GUEST_OFFICER.id, role: 'officer',
+    nameBangla: GUEST_OFFICER.nameBangla, nameEnglish: GUEST_OFFICER.nameEnglish,
+    titleBangla: 'অতিথি (নমুনা তথ্য)', blockOrVillageBangla: GUEST_OFFICER.blockBangla,
+  };
+}
+
+function farmerUser(farmer: FarmerRecord): AuthUser {
+  return {
+    id: farmer.id,
+    role: 'farmer',
+    nameBangla: farmer.nameBangla,
+    nameEnglish: farmer.nameEnglish,
+    titleBangla: 'নিবন্ধিত কৃষক',
+    blockOrVillageBangla: farmer.villageBangla,
+    phoneMasked: farmer.phoneMasked,
+    landType: farmer.landType,
+    currentAmanCrop: farmer.currentAmanCrop,
+  };
+}
 
 export function login(officerId: string, accessCode: string): { token: string; officer: Officer } | null {
   const code = demoAccessCode();
@@ -248,30 +326,7 @@ export function login(officerId: string, accessCode: string): { token: string; o
   const given = Buffer.from(String(accessCode ?? ''));
   const expected = Buffer.from(code);
   if (!officer || given.length !== expected.length || !crypto.timingSafeEqual(given, expected)) return null;
-  const token = crypto.randomUUID();
-  sessions.set(token, officer.id);
-  userSessions.set(token, {
-    id: officer.id,
-    role: 'officer',
-    nameBangla: officer.nameBangla,
-    nameEnglish: officer.nameEnglish,
-    titleBangla: 'উপসহকারী কৃষি কর্মকর্তা (SAAO)',
-    blockOrVillageBangla: officer.blockBangla,
-  });
-  return { token, officer };
-}
-
-const GUEST_TTL_MS = 12 * 60 * 60 * 1000; // a guest session lasts half a day
-const GUEST_MAX = 500; // and the server keeps at most this many at once, oldest dropped first
-const guestSessions = new Map<string, number>(); // token -> expires at (ms)
-
-function liveGuest(token: string, now = Date.now()): boolean {
-  const until = guestSessions.get(token);
-  if (until === undefined) return false;
-  if (until > now && guestEnabled()) return true;
-  guestSessions.delete(token);
-  userSessions.delete(token);
-  return false;
+  return { token: issueToken('officer', officer.id), officer };
 }
 
 /**
@@ -280,21 +335,7 @@ function liveGuest(token: string, now = Date.now()): boolean {
  */
 export function guestLogin(now = Date.now()): { token: string; officer: Officer; user: AuthUser; guest: true } | null {
   if (!guestEnabled()) return null;
-  for (const [token, until] of guestSessions) if (until <= now) { guestSessions.delete(token); userSessions.delete(token); }
-  while (guestSessions.size >= GUEST_MAX) {
-    const oldest = guestSessions.keys().next().value as string;
-    guestSessions.delete(oldest);
-    userSessions.delete(oldest);
-  }
-  const token = crypto.randomUUID();
-  guestSessions.set(token, now + GUEST_TTL_MS);
-  const user: AuthUser = {
-    id: GUEST_OFFICER.id, role: 'officer',
-    nameBangla: GUEST_OFFICER.nameBangla, nameEnglish: GUEST_OFFICER.nameEnglish,
-    titleBangla: 'অতিথি (নমুনা তথ্য)', blockOrVillageBangla: GUEST_OFFICER.blockBangla,
-  };
-  userSessions.set(token, user);
-  return { token, officer: GUEST_OFFICER, user, guest: true };
+  return { token: issueToken('guest', GUEST_OFFICER.id, now), officer: GUEST_OFFICER, user: guestUser(), guest: true };
 }
 
 export function loginUser(body: { role?: string; officerId?: string; accessCode?: string; farmerId?: string; phone?: string; pin?: string }): { token: string; user: AuthUser } | null {
@@ -303,7 +344,7 @@ export function loginUser(body: { role?: string; officerId?: string; accessCode?
     const accessCode = body.accessCode || '';
     const res = login(officerId, accessCode);
     if (!res) return null;
-    return { token: res.token, user: userSessions.get(res.token)! };
+    return { token: res.token, user: officerUser(res.officer) };
   } else {
     // Farmer login: lookup by ID (F01, F02, etc.) or phone
     let targetFarmer = body.farmerId ? farmerById(body.farmerId) : undefined;
@@ -320,61 +361,38 @@ export function loginUser(body: { role?: string; officerId?: string; accessCode?
     const pin = body.pin || '1234';
     if (pin !== '1234' && pin !== '0000') return null;
 
-    const token = crypto.randomUUID();
-    const user: AuthUser = {
-      id: targetFarmer.id,
-      role: 'farmer',
-      nameBangla: targetFarmer.nameBangla,
-      nameEnglish: targetFarmer.nameEnglish,
-      titleBangla: 'নিবন্ধিত কৃষক',
-      blockOrVillageBangla: targetFarmer.villageBangla,
-      phoneMasked: targetFarmer.phoneMasked,
-      landType: targetFarmer.landType,
-      currentAmanCrop: targetFarmer.currentAmanCrop,
-    };
-    userSessions.set(token, user);
-    return { token, user };
+    return { token: issueToken('farmer', targetFarmer.id), user: farmerUser(targetFarmer) };
   }
 }
 
 export function userForToken(authorization: string | undefined): AuthUser | null {
-  const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : '';
-  if (!token) return null;
-  if (guestSessions.has(token) && !liveGuest(token)) return null;
-  const user = userSessions.get(token);
-  if (user) return user;
-  const officerId = sessions.get(token);
-  if (officerId) {
-    const officer = OFFICERS.find(o => o.id === officerId);
-    if (officer) {
-      return {
-        id: officer.id,
-        role: 'officer',
-        nameBangla: officer.nameBangla,
-        nameEnglish: officer.nameEnglish,
-        titleBangla: 'উপসহকারী কৃষি কর্মকর্তা (SAAO)',
-        blockOrVillageBangla: officer.blockBangla,
-      };
-    }
+  const claims = readToken(bearer(authorization));
+  if (!claims) return null;
+  if (claims.k === 'guest') return guestEnabled() ? guestUser() : null;
+  if (claims.k === 'officer') {
+    const officer = OFFICERS.find(o => o.id === claims.id);
+    return officer ? officerUser(officer) : null;
   }
-  return null;
+  const farmer = farmerById(claims.id);
+  return farmer ? farmerUser(farmer) : null;
 }
 
 export function logout(authorization: string | undefined): boolean {
-  const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : '';
+  const token = bearer(authorization);
   if (!token) return false;
-  sessions.delete(token);
-  userSessions.delete(token);
-  guestSessions.delete(token);
+  const now = Date.now();
+  for (const [t, exp] of signedOut) if (exp <= now) signedOut.delete(t);
+  const claims = readToken(token, now);
+  if (claims) signedOut.set(token, claims.exp);
   return true;
 }
 
 export function officerForToken(authorization: string | undefined): Officer | null {
-  const token = authorization?.startsWith('Bearer ') ? authorization.slice(7) : '';
-  if (token && liveGuest(token)) return GUEST_OFFICER;
-  if (!demoEnabled()) return null;
-  const officerId = token ? sessions.get(token) : undefined;
-  return officerId ? OFFICERS.find(o => o.id === officerId) ?? null : null;
+  const claims = readToken(bearer(authorization));
+  if (!claims) return null;
+  if (claims.k === 'guest') return guestEnabled() ? GUEST_OFFICER : null;
+  if (claims.k === 'officer' && demoEnabled()) return OFFICERS.find(o => o.id === claims.id) ?? null;
+  return null;
 }
 
 /** True when the site's desk holds farmers a real manager registered (not sample records and not a guest's). */

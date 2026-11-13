@@ -122,16 +122,33 @@ await assert.rejects(requireManager(request(`Bearer ${expired.token}`), verify),
 assert.equal(desk.userForToken(`Bearer ${expired.token}`), null);
 assert.equal(desk.logout(`Bearer ${guest.token}`), true);
 await assert.rejects(requireManager(request(`Bearer ${guest.token}`), verify), (e: any) => e instanceof ApiError && e.status === 401, 'signing out ends the guest session');
-const first = desk.guestLogin()!;
-for (let i = 0; i < 520; i++) desk.guestLogin();
-assert.equal(desk.userForToken(`Bearer ${first.token}`), null, 'the oldest guest sessions are dropped past 500');
+// sessions are signed, not stored: a second server instance (Vercel starts several) accepts a token when both share
+// EDEN_SESSION_SECRET, refuses it when they do not, and nobody can forge or edit one
+const otherInstance = await import('./services/api/src/officer_desk.ts?second-instance');
+const unshared = desk.guestLogin()!;
+assert.equal(otherInstance.officerForToken(`Bearer ${unshared.token}`), null, 'without a shared secret each process signs with its own key');
+process.env.EDEN_SESSION_SECRET = 'a-secret-made-up-by-this-test';
+const shared = desk.guestLogin()!;
+assert.equal(otherInstance.officerForToken(`Bearer ${shared.token}`)?.guest, true, 'another instance with the same secret accepts the guest token');
+assert.equal(otherInstance.userForToken(`Bearer ${shared.token}`)?.role, 'officer', 'and restores the session after a refresh');
+const [tag, body, sig] = shared.token.split('.');
+const edited = Buffer.from(JSON.stringify({ ...JSON.parse(Buffer.from(body, 'base64url').toString()), k: 'officer', id: 'saao_talanda_01' })).toString('base64url');
+assert.equal(desk.officerForToken(`Bearer ${tag}.${edited}.${sig}`), null, 'an edited token is refused');
+assert.equal(desk.officerForToken('Bearer eden1.e30.not-a-signature'), null, 'a forged token is refused');
+process.env.DEMO_MODE = 'true';
+const demoElsewhere = desk.login('saao_talanda_01', 'a-code-made-up-by-this-test')!;
+assert.equal(otherInstance.officerForToken(`Bearer ${demoElsewhere.token}`)?.id, 'saao_talanda_01', 'a demo officer token works on another instance too');
+process.env.DEMO_MODE = 'false';
+const farmerSession = desk.loginUser({ farmerId: 'F01', pin: '1234' })!;
+assert.equal(otherInstance.userForToken(`Bearer ${farmerSession.token}`)?.id, 'F01', 'a farmer session works on another instance too');
+delete process.env.EDEN_SESSION_SECRET;
 const last = desk.guestLogin()!;
 assert.ok(desk.userForToken(`Bearer ${last.token}`), 'the newest guest session works');
 await assert.rejects(requireManager(request('Bearer a-token-from-before-a-restart')), (e: any) => e instanceof ApiError && e.status === 401, 'on a guest server with no account backend an unknown token is a plain 401, so the browser goes back to the picker');
 process.env.GUEST_MODE = 'false';
 await assert.rejects(requireManager(request(`Bearer ${last.token}`), verify), (e: any) => e instanceof ApiError && e.status === 401, 'every guest token stops working when guest mode is turned off');
 await assert.rejects(requireManager(request('Bearer a-token-from-before-a-restart')), (e: any) => e instanceof ApiError && e.status === 503, 'with neither guest nor demo mode, a server with no account backend still says it is not configured');
-console.log('✓ TEST 5 PASSED: the guest manager works only behind GUEST_MODE=true, never passes the real-call gate, expires and is capped.\n');
+console.log('✓ TEST 5 PASSED: the guest manager works only behind GUEST_MODE=true, never passes the real-call gate, expires, and its signed token works on every instance.\n');
 
 // Sign-in field: the browser helper that turns what was typed into the User ID (apps/saao-dashboard/public/auth-client.js)
 const { resolveUserId } = await import('./apps/saao-dashboard/public/auth-client.js');
