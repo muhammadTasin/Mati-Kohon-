@@ -174,6 +174,10 @@ def main() -> None:
     gs = [{"ur": g["umm"]["GranuleUR"], "day": g["umm"]["TemporalExtent"]["RangeDateTime"]["BeginningDateTime"][:10],
            "url": next(u for u in g.data_links() if u.endswith(".h5"))} for g in found]
     print(f"NISAR GCOV: {len(gs)} passes over Bangladesh since {start}", flush=True)
+    if not gs:
+        # no new pass yet (provisional data can lag): keep the last good file rather than writing an empty one
+        print("no passes in the window; the existing nisar_water.json is kept", flush=True)
+        return
     paths: dict[str, str] = {}
     with ProcessPoolExecutor(args.workers, initializer=login) as pool:
         futures = [pool.submit(frame, g, cache) for g in gs]
@@ -182,6 +186,9 @@ def main() -> None:
             print(f"  {ur[:70]}: {Path(got).name if got.endswith('.npz') else got}", flush=True)
             if got.endswith(".npz"):
                 paths[ur] = got
+    if not paths:
+        print("no pass could be read; the existing nisar_water.json is kept", flush=True)
+        return
 
     ups = upazilas()
     dry = dry_season(Reader(FS, ups), args.baseline, args.baseline2, 8)
