@@ -1209,7 +1209,7 @@ backgroundJobManager.recoverInterruptedJobs()
   .then(n => { if (n) console.warn(`Marked ${n} job(s) interrupted by a previous restart as failed (retry them via POST /api/v1/cattle/jobs/:id/retry)`); })
   .catch(err => console.error('Job recovery failed:', err));
 
-// `npm start` runs this file and it listens; on Vercel, api/v1/[...path].ts imports it and calls handler() per request.
+// `npm start` runs this file and it listens; on Vercel, api/index.ts imports it and calls handler() per request.
 if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
   http.createServer(handler).listen(PORT, () => {
     console.log(`✓ EDEN API & SAAO Dashboard server listening on http://localhost:${PORT} (data release ${RELEASE.id})`);
