@@ -127,7 +127,7 @@ export function floodStatus() {
 const daysSince = (iso: string | null | undefined) => ageDays(iso);
 
 /** When the file was made, which NASA sources it holds and how old each one is today. */
-export function liveStatus() {
+export function liveStatus(): Record<string, any> | null {
   const d = load();
   if (!d) return null;
   return {
@@ -174,7 +174,7 @@ export function liveFields(): Map<string, Record<string, any>> {
 }
 
 /** One upazila by id, by name, or the nearest to a point. */
-export function liveUpazila(q: { id?: string | null; name?: string | null; lat?: number; lon?: number }) {
+export function liveUpazila(q: { id?: string | null; name?: string | null; lat?: number; lon?: number }): Record<string, any> | null {
   const d = load();
   if (!d) return null;
   let u = q.id ? d.upazilas.find(x => x.id === q.id) : undefined;

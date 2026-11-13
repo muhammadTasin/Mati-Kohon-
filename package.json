@@ -29,5 +29,8 @@
   "license": "MIT",
   "dependencies": {
     "@supabase/supabase-js": "^2.117.2"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5"
   }
 }
