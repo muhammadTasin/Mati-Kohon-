@@ -119,6 +119,17 @@ export const PROVIDERS: Provider[] = [
     probe: (ctx) => simpleProbe(ctx, 'https://power.larc.nasa.gov/api/temporal/daily/point?parameters=T2M&community=AG&longitude=88.56&latitude=24.62&start=20260901&end=20260902&format=JSON', {}, body => isObject(body) && isObject(body.properties)),
   },
   {
+    id: 'nasa-eonet',
+    name: { bn: 'NASA EONET (ঘূর্ণিঝড়, বন্যা ও আগুনের খবর)', en: 'NASA EONET (cyclones, floods and fires)' },
+    group: null, required: [], keyNeeded: 'none', cost: 'free', signupUrl: null,
+    usedBy: { bn: 'কল ও এসএমএস পাতা: দিনের তালিকার উপরে বাংলাদেশের কাছের ঘূর্ণিঝড়-বন্যার খবর', en: 'The Calls and SMS screen: cyclones and floods near Bangladesh, above the day’s list' },
+    reality: { bn: 'নাসার ট্র্যাকারের সরাসরি তথ্য, শুধু অফিসারকে দেখানো হয়; কোনো কল নিজে বদলায় না। সরকারি সতর্কবার্তা আবহাওয়া অধিদপ্তরের।', en: 'Live from NASA’s tracker, shown to the officer only; it never changes a call by itself. Official warnings come from the BMD.' },
+    status: ({ offline }) => offline
+      ? { label: 'saved', reason: { bn: 'OFFLINE মোড: শেষ সংরক্ষিত উত্তর', en: 'Offline mode: the last answer kept in memory' } }
+      : { label: 'live', reason: { bn: 'চাবি ছাড়াই সরাসরি আনা হয়', en: 'Fetched directly, no key needed' } },
+    probe: (ctx) => simpleProbe(ctx, 'https://eonet.gsfc.nasa.gov/api/v3/events?bbox=80,30,100,5&days=7&limit=1', {}, body => isObject(body) && Array.isArray((body as any).events)),
+  },
+  {
     id: 'open-meteo',
     name: { bn: 'Open-Meteo (আবহাওয়ার পূর্বাভাস)', en: 'Open-Meteo (weather forecast)' },
     group: 'openMeteo', required: [], keyNeeded: 'optional', cost: 'free', signupUrl: 'https://open-meteo.com/',

@@ -93,7 +93,7 @@ for (const id of ['supabase', 'awaj', 'tts', 'llm', 'earth-engine', 'earthdata',
   const row = unsetRows.find(r => r.id === id)!;
   assert.deepEqual([row.set, row.result, row.note], ['UNSET', 'SKIPPED', 'not_configured'], id);
 }
-assert.ok(calls.every(call => /power\.larc|open-meteo|gibs\.earthdata/.test(call.url)), 'with nothing set only the three free no-key services are contacted');
+assert.ok(calls.every(call => /power\.larc|open-meteo|gibs\.earthdata|eonet\.gsfc/.test(call.url)), 'with nothing set only the four free no-key services are contacted');
 console.log('✓ Offline mode uses no network; unset providers are SKIPPED, UNSET and make no request.');
 
 // ---- 3. the four labels

@@ -32,6 +32,7 @@ import { floodCheckList, greennessCheckList, mapLayers, mapYears } from './map_l
 import { fieldConditionsView } from '../../../packages/rotation-engine/src/data/field_conditions.ts';
 import { askAiAssistant } from './ai_assistant.ts';
 import { landingAudio, landingCalls } from './landing.ts';
+import { getHazards } from './hazards.ts';
 import { cropMenu } from '../../../packages/rotation-engine/src/data/crop_choice.ts';
 import { cropsFromKeys, keypadMenu, landFromKey, replyFor, understand } from './voice.ts';
 import { adviseWithNarration, planRequest, rotationEngine, voiceAnswer } from './advice.ts';
@@ -1161,6 +1162,11 @@ const server = http.createServer(async (req, res) => {
       if (!rec) throw new ApiError('not_found', 'No such sample call');
       res.writeHead(200, { 'Content-Type': rec.contentType, 'Content-Length': rec.audio.length, 'Cache-Control': 'public, max-age=3600' });
       return res.end(rec.audio);
+    }
+
+    // NASA EONET: cyclones, floods and fires NASA is tracking near Bangladesh (advisory; shown above the call list)
+    if (pathname === '/api/v1/hazards' && req.method === 'GET') {
+      return sendJSON(res, 200, await getHazards());
     }
 
     // Unknown API paths are JSON 404s, never the HTML page.
