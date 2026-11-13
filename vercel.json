@@ -1,0 +1,10 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "buildCommand": "npm run vercel-build",
+  "outputDirectory": "apps/saao-dashboard/public",
+  "functions": {
+    "api/v1/[...path].ts": {
+      "includeFiles": "{services/api/**/*.ts,services/api/data/**,services/api/fixtures/**,packages/**/*.ts,packages/**/*.json}"
+    }
+  }
+}
