@@ -366,6 +366,12 @@ details.card-source .warning-note { margin: 8px 0 0; color: var(--muted-ink); }
 .calls-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 12px; }
 .calls-date { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: var(--ink-2); margin-right: 4px; }
 .calls-date .form-control { width: auto; padding: 6px 8px; }
+.calls-hazards { margin: 0 0 12px; padding: 10px 14px; border-radius: 12px; border-left: 4px solid var(--teal, #0B4A4F); background: rgba(11,74,79,.06); font-size: 14px; color: var(--ink, #0E3236); }
+.calls-hazards.is-watch { border-left-color: var(--amber, #C07A24); background: rgba(192,122,36,.10); }
+.calls-hazards p { margin: 0; }
+.calls-hazards .hz-src { font-size: 12px; letter-spacing: .04em; color: var(--ink-2, #3F4A48); margin-bottom: 4px; }
+.calls-hazards ul { margin: 6px 0 0; padding: 0; list-style: none; display: grid; gap: 4px; font-size: 13px; color: var(--ink-2, #3F4A48); }
+.calls-hazards .badge { margin-right: 6px; }
 .calls-counts { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
 .calls-list { display: grid; gap: 10px; }
 .call-row, .question-row {

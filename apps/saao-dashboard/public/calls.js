@@ -47,6 +47,7 @@ export function initCalls(ctx) {
   let editing = null; // the call whose script is open for editing
   let note = null; // the last action's result, shown under the list
   let places = null;
+  let hazards = null; // NASA EONET: cyclones and floods near Bangladesh (advisory, shown above the list)
 
   const entry = (farmerId) => data?.farmers.find(f => f.farmer.id === farmerId);
   const where = (e) => [e?.place?.unionBangla ? tr(`${e.place.unionBangla} ইউনিয়ন`, `${e.place.unionEnglish || e.place.unionBangla} union`) : null,
@@ -358,11 +359,32 @@ export function initCalls(ctx) {
     }
   });
 
+  // ------------------------------------------------------------------ NASA EONET above the list
+  const HAZARD = { cyclone: ['ঘূর্ণিঝড়', 'Cyclone'], flood: ['বন্যা', 'Flood'], fire: ['আগুন', 'Fire'], other: ['ঘটনা', 'Event'] };
+  function renderHazards() {
+    const box = $('callsHazards');
+    const h = hazards;
+    if (!box) return;
+    if (!h || !h.events.length && (h.unavailable || !h.fetchedAt)) { box.hidden = true; return; }
+    const day = (d) => new Date(`${d}T00:00:00Z`).toLocaleDateString(tr('bn-BD', 'en-GB'), { day: 'numeric', month: 'short', timeZone: 'UTC' });
+    const away = (e) => (e.kmFromBangladesh === 0 ? tr('বাংলাদেশের ভেতরে', 'inside Bangladesh')
+      : tr(`বাংলাদেশ থেকে প্রায় ${num(e.kmFromBangladesh)} কিমি`, `about ${num(e.kmFromBangladesh)} km from Bangladesh`));
+    const w = h.watch;
+    const head = w
+      ? `<strong>${tr('নজরে রাখুন', 'Watch')}: ${escapeHtml(w.title)}</strong>, ${away(w)} (${day(w.lastSeen)})${tr('। ফসল কাটা ও সেচের কলে সতর্কতা যোগ করার কথা ভাবুন। সরকারি সতর্কবার্তা আবহাওয়া অধিদপ্তরের।', '. Consider a warning in harvest and irrigation calls. Official warnings come from the BMD.')}`
+      : `<strong>${tr('বাংলাদেশের কাছে এখন কোনো চলমান ঘূর্ণিঝড় বা বন্যা নেই', 'Nothing open near Bangladesh right now')}</strong>`;
+    const recent = h.events.slice(0, 4).map(e => `<li><span class="badge ${e.open ? 'badge-warning' : 'badge-neutral'}">${say(HAZARD[e.kind] || HAZARD.other)}</span> ${escapeHtml(e.title)}, ${away(e)}, ${e.open ? tr('চলছে', 'ongoing') : tr(`${day(e.closed || e.lastSeen)} শেষ`, `ended ${day(e.closed || e.lastSeen)}`)}</li>`).join('');
+    box.className = `calls-hazards${w ? ' is-watch' : ''}`;
+    box.innerHTML = `<p class="hz-src">NASA EONET · ${tr(`নাসার প্রাকৃতিক ঘটনা ট্র্যাকার, গত ${num(h.windowDays)} দিন`, `NASA's natural event tracker, last ${num(h.windowDays)} days`)}</p><p>${head}</p>${recent ? `<ul>${recent}</ul>` : ''}`;
+    box.hidden = false;
+  }
+
   function render() {
     const signedIn = ctx.signedIn();
     $('callsGate').hidden = signedIn;
     $('callsWorkspace').hidden = !signedIn || !data;
     if (!signedIn || !data) return;
+    renderHazards();
     renderList();
     renderQuestions();
     renderRegister();
@@ -378,6 +400,7 @@ export function initCalls(ctx) {
         editing = null;
         return render();
       }
+      fetch('/api/v1/hazards').then(r => (r.ok ? r.json() : null)).then(h => { hazards = h; renderHazards(); }).catch(() => {});
       await load('/api/v1/officer/calls/plan');
     },
   };

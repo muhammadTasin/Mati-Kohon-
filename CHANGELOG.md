@@ -2,6 +2,12 @@
 
 What changed in Project EDEN, newest first, with who made each change and the branch it came from. Every branch below was merged into `main` on 1 October 2026.
 
+## 13 November 2026 · NASA EONET cyclone and flood watch (Tasrif, `feature/eonet-hazards`)
+
+- **Live natural events near Bangladesh:** `GET /api/v1/hazards` reads NASA EONET (Earth Observatory Natural Event Tracker, listed on api.nasa.gov) for cyclones, floods and fires in the last 21 days around Bangladesh and the Bay of Bengal, with each event's distance from the country (`services/api/src/hazards.ts`). No key; cached for an hour; `OFFLINE=1` makes no request.
+- **On the Calls and SMS screen:** a banner above the day's list names an open cyclone within 800 km or any open event within 400 km, and lists recent ones, so the officer can add a harvest or irrigation warning. Advisory only: it never adds or changes a call; official warnings come from the BMD.
+- **Integrations:** `nasa-eonet` added to the status page and `docs/integrations.md`; `test_hazards.ts` covers the distance, the watch rule, offline mode and network failure.
+
 ## 10 November 2026 · Evidence and reliability (Tasrif, `feature/evidence-reliability`)
 
 - **Three reproducible comparisons:** current practice, the calendar rule and the full system, with single-source removals (`scripts/evaluate_full_system.ts`, `research/evaluation/`). Negative and unchanged results are kept.
