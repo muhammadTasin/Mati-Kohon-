@@ -175,7 +175,7 @@ export const CROP_GROUPS: Array<{ id: string; bn: string; en: string; crops: str
 // Per-place replay (research/explore/crop_choice_replay.py)
 // ---------------------------------------------------------------------------
 
-type Row = [MonthDay, MonthDay, number, number, number, number, number | null, number?];
+type Row = [MonthDay, MonthDay, number, number, number, number, number | null, number?, (number | null)?];
 
 interface ReplayCrop {
   season: ChoiceSeason;
