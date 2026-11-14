@@ -12,10 +12,11 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { writablePath } from './runtime_paths.ts';
 import { dhakaToday, sampleCall, type SampleFarmer } from './farmer_calls.ts';
 import { synthesizeSpeech, ttsStatus } from './providers/tts.ts';
 
-const AUDIO_DIR = process.env.EDEN_LANDING_AUDIO || path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../data/audio/landing');
+const AUDIO_DIR = process.env.EDEN_LANDING_AUDIO || writablePath(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../data/audio/landing'), 'audio/landing');
 
 type Words = { bn: string; en: string };
 interface Sample extends SampleFarmer {

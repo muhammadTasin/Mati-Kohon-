@@ -2,7 +2,8 @@
  * Server-side text-to-speech adapter, deliberately separate from text generation (llm.ts). Two providers:
  *
  *  - Google Cloud Text-to-Speech, when GOOGLE_TTS_CREDENTIALS names a service-account key file (kept outside the
- *    repository). Signs a token with the key (no Google SDK needed), Bangladeshi Bangla (bn-BD) by default.
+ *    repository), or, on hosts without files such as Vercel, GOOGLE_TTS_CREDENTIALS_JSON holds the key's JSON itself
+ *    (kept only in memory, never written to disk). Signs a token with the key (no Google SDK needed), Bangladeshi Bangla (bn-BD) by default.
  *    TTS_VOICE picks a voice by name, TTS_GENDER (female or male) otherwise; TTS_LANGUAGE overrides bn-BD.
  *    The project needs billing enabled in Google Cloud, or Google refuses with HTTP 403.
  *  - Any HTTP endpoint at TTS_BASE_URL that accepts POST JSON {text, voice, language} and returns audio bytes.
@@ -26,10 +27,31 @@ export interface TtsResult { audio: Buffer; contentType: string }
 /** 'mp3' for browsers and apps; 'wav8k' (16-bit, 8 kHz mono) for telephone calls. */
 export type TtsFormat = 'mp3' | 'wav8k';
 
-export function ttsStatus(env = process.env): TtsStatus {
+interface ServiceAccount { client_email: string; private_key: string; token_uri?: string }
+type KeySource = { json: string } | { file: string };
+
+/** GOOGLE_TTS_CREDENTIALS_JSON (the key itself) first, then GOOGLE_TTS_CREDENTIALS (a key file, or the JSON itself). */
+function keySource(env: NodeJS.ProcessEnv): KeySource | null {
+  const inline = env.GOOGLE_TTS_CREDENTIALS_JSON?.trim();
+  if (inline) return { json: inline };
   const creds = env.GOOGLE_TTS_CREDENTIALS?.trim();
-  if (creds) {
-    if (!fs.existsSync(creds)) return { status: 'unavailable', provider: null, voice: null, reason: 'GOOGLE_TTS_CREDENTIALS points at a file that does not exist' };
+  if (!creds) return null;
+  return creds.startsWith('{') ? { json: creds } : { file: creds };
+}
+
+function readKey(src: KeySource): ServiceAccount {
+  return JSON.parse('json' in src ? src.json : fs.readFileSync(src.file, 'utf8'));
+}
+
+export function ttsStatus(env = process.env): TtsStatus {
+  const src = keySource(env);
+  if (src) {
+    if ('file' in src && !fs.existsSync(src.file)) return { status: 'unavailable', provider: null, voice: null, reason: 'GOOGLE_TTS_CREDENTIALS points at a file that does not exist' };
+    if ('json' in src) {
+      let ok = false;
+      try { const k = readKey(src); ok = Boolean(k.client_email && k.private_key); } catch { ok = false; }
+      if (!ok) return { status: 'unavailable', provider: null, voice: null, reason: 'The Google key JSON is not a service-account key (it needs client_email and private_key)' };
+    }
     return { status: 'configured', provider: 'google', voice: env.TTS_VOICE?.trim() || `${(env.TTS_GENDER || 'female').toLowerCase()} (default)`, language: env.TTS_LANGUAGE?.trim() || 'bn-BD' };
   }
   if (env.TTS_BASE_URL?.trim()) return { status: 'configured', provider: 'http', voice: env.TTS_VOICE?.trim() || null };
@@ -37,31 +59,34 @@ export function ttsStatus(env = process.env): TtsStatus {
 }
 
 // ------------------------------------------------------------------ Google Cloud Text-to-Speech
-let token: { value: string; expires: number; file: string } | null = null;
+let token: { value: string; expires: number; who: string } | null = null;
 const b64url = (b: Buffer | string) => Buffer.from(b).toString('base64').replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_');
 
 /** An OAuth access token from the service-account key (JWT bearer grant), cached until a minute before it ends. */
-async function googleToken(file: string): Promise<string> {
-  if (token && token.file === file && Date.now() < token.expires - 60_000) return token.value;
-  const sa = JSON.parse(fs.readFileSync(file, 'utf8'));
+async function googleToken(env: NodeJS.ProcessEnv): Promise<string> {
+  const src = keySource(env);
+  if (!src) throw new Error('No Google service-account key is configured');
+  const sa = readKey(src);
+  if (token && token.who === sa.client_email && Date.now() < token.expires - 60_000) return token.value;
+  const tokenUri = sa.token_uri || 'https://oauth2.googleapis.com/token';
   const now = Math.floor(Date.now() / 1000);
   const unsigned = `${b64url(JSON.stringify({ alg: 'RS256', typ: 'JWT' }))}.${b64url(JSON.stringify({
-    iss: sa.client_email, scope: 'https://www.googleapis.com/auth/cloud-platform', aud: sa.token_uri, iat: now, exp: now + 3600,
+    iss: sa.client_email, scope: 'https://www.googleapis.com/auth/cloud-platform', aud: tokenUri, iat: now, exp: now + 3600,
   }))}`;
   const signature = b64url(crypto.createSign('RSA-SHA256').update(unsigned).sign(sa.private_key));
-  const res = await fetch(sa.token_uri, {
+  const res = await fetch(tokenUri, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
     body: new URLSearchParams({ grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer', assertion: `${unsigned}.${signature}` }),
   });
   if (!res.ok) throw new Error(`Google sign-in returned HTTP ${res.status}`);
   const data = await res.json() as { access_token: string; expires_in: number };
-  token = { value: data.access_token, expires: Date.now() + data.expires_in * 1000, file };
+  token = { value: data.access_token, expires: Date.now() + data.expires_in * 1000, who: sa.client_email };
   return token.value;
 }
 
 async function googleSpeech(text: string, format: TtsFormat, env: NodeJS.ProcessEnv): Promise<TtsResult> {
-  const access = await googleToken(env.GOOGLE_TTS_CREDENTIALS!.trim());
+  const access = await googleToken(env);
   const languageCode = env.TTS_LANGUAGE?.trim() || 'bn-BD';
   const name = env.TTS_VOICE?.trim();
   const body = {

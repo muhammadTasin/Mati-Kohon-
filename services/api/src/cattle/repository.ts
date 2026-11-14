@@ -9,11 +9,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { FarmAOI, BackgroundJob, ExtractedFeature, CattleAdvisoryResult } from './types.ts';
 import { createFarmAoi } from './aoi.ts';
+import { writablePath } from '../runtime_paths.ts';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const DEFAULT_DATA_DIR = path.resolve(__dirname, '../../.data');
-const DEFAULT_STORE_FILE = process.env.CATTLE_STORE_PATH || path.join(DEFAULT_DATA_DIR, 'cattle_store.json');
+const DEFAULT_STORE_FILE = process.env.CATTLE_STORE_PATH || writablePath(path.join(DEFAULT_DATA_DIR, 'cattle_store.json'), 'cattle_store.json');
 
 export interface ICattleRepository {
   // AOI CRUD

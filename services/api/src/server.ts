@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
+import { writablePath } from './runtime_paths.ts';
 import type { AdviceJSON, CandidateRotation } from '@project-eden/contracts';
 import type { PlanOptionsRequest } from '../../../packages/rotation-engine/src/engine.ts';
 import { UnsupportedUnionError, SUPPORTED_UNIONS } from '../../../packages/rotation-engine/src/engine.ts';
@@ -127,7 +128,7 @@ function requireWriteToken(req: http.IncomingMessage) {
 }
 
 /** Call audio in Google's voice (services/api/data/audio, git-ignored), served at /api/v1/audio/. */
-const AUDIO_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../data/audio');
+const AUDIO_DIR = writablePath(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../data/audio'), 'audio');
 
 /** Recent phone-channel events (Awaj survey answers and the call-backs they triggered), newest first. */
 const CALL_LOG: Array<Record<string, unknown>> = [];

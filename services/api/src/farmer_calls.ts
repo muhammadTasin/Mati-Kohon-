@@ -29,6 +29,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { writablePath } from './runtime_paths.ts';
 import type { CallAttempt, CallSlot, FarmerQuestion, FarmerRecord, PlannedCall, PlannedCallKind } from '@project-eden/contracts';
 import { placeFor, withPlace, type Place } from '../../../packages/rotation-engine/src/data/location.ts';
 import { cropMenu } from '../../../packages/rotation-engine/src/data/crop_choice.ts';
@@ -46,7 +47,7 @@ import { sendSms, smsParts } from './sms.ts';
 import { synthesizeSpeech, ttsStatus } from './providers/tts.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const STORE_FILE = process.env.EDEN_CALL_STORE || path.resolve(__dirname, '../.data/farmer_calls.json');
+const STORE_FILE = process.env.EDEN_CALL_STORE || writablePath(path.resolve(__dirname, '../.data/farmer_calls.json'), 'farmer_calls.json');
 
 export const MAX_A_WEEK = 2;
 const TOPIC_GAP_DAYS = 7;
