@@ -93,7 +93,8 @@ const report = { schema: 'full-system-comparison-v1', asOf: '2026-11-06', dataRe
       'The full system includes local non-NASA evidence. Coastal salinity effects must be attributed to SRDI, not to NASA.',
       'All interventions are shown, including no change and unfavorable results. No case was tuned to force a NASA advantage.',
       'A null final recommendation means an officer must resolve missing or decision-sensitive inputs; ranked alternatives remain discussion material.'] },
-  inputAndCodeSha256: Object.fromEntries(files.map(p => [p, crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex')])), cases: results };
+  // line endings ignored, so a Windows checkout (CRLF) and the Linux CI (LF) agree
+  inputAndCodeSha256: Object.fromEntries(files.map(p => [p, crypto.createHash('sha256').update(fs.readFileSync(p).toString('latin1').replaceAll('\r\n', '\n'), 'latin1').digest('hex')])), cases: results };
 fs.writeFileSync('research/evaluation/full_system_comparison.json', JSON.stringify(report, null, 2) + '\n');
 fs.writeFileSync('apps/saao-dashboard/public/judge-demo.json', JSON.stringify(report) + '\n');
 for (const r of results) console.log(`${r.id}: calendar=${r.calendar?.id}; full=${r.full.id}; ${r.uncertainty?.status}; ${r.interventions.filter(i => i.choiceChanged).map(i => i.id).join(', ') || 'no single-input choice change'}`);

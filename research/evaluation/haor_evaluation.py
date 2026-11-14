@@ -95,7 +95,7 @@ def main() -> None:
         raise ValueError('Expected one source note for the indirect 2004 label')
     result = evaluate(json.loads(protocol_file.read_text(encoding='utf-8')), read_years(rain_file), read_years(label_file), notes[0])
     inputs = [protocol_file, rain_file, label_file, notes_file, Path(__file__), ROOT / 'research/explore/flash_flood_hindcast.py', ROOT / 'research/explore/ffwc_floods.py']
-    result['inputAndCodeSha256'] = {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs}
+    result['inputAndCodeSha256'] = {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes().replace(b'\r\n', b'\n')).hexdigest() for p in inputs}  # line endings ignored: Windows and Linux checkouts hash the same
     (HERE / 'haor_evaluation.json').write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     for name, result in result['results']['primary'].items():
         print(f'{name}: TP={len(result["truePositiveYears"])} FP={len(result["falsePositiveYears"])} FN={len(result["falseNegativeYears"])} TN={len(result["trueNegativeYears"])}; {len(result["unknownYears"])} unknown years')

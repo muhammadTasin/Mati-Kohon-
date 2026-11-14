@@ -79,7 +79,7 @@ const files = (dir: string): string[] => fs.readdirSync(path.join(root, dir), { 
   return e.isDirectory() ? files(relative) : /\.(ts|json|csv)$/.test(e.name) ? [relative] : [];
 });
 const hashes = Object.fromEntries([...files('packages/rotation-engine/src'), 'scripts/evaluate_decisions.ts'].sort().map(file => [file,
-  crypto.createHash('sha256').update(fs.readFileSync(path.join(root, file))).digest('hex')]));
+  crypto.createHash('sha256').update(fs.readFileSync(path.join(root, file)).toString('latin1').replaceAll('\r\n', '\n'), 'latin1').digest('hex')]));  // line endings ignored
 const report = {
   schema: 'model-comparison-v2', asOf: '2026-11-05', method: 'Offline model comparison plus displayed-score ablations',
   interpretation: [

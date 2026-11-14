@@ -134,7 +134,7 @@ def main() -> None:
     protocol = json.loads(protocol_file.read_text(encoding='utf-8'))
     result = compare(protocol, *load_outcomes(aman_file, winter_file))
     inputs = [protocol_file, Path(__file__), aman_file, winter_file, ROOT / 'research/explore/connect_check.py']
-    result['inputAndCodeSha256'] = {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in inputs}
+    result['inputAndCodeSha256'] = {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes().replace(b'\r\n', b'\n')).hexdigest() for p in inputs}  # line endings ignored: Windows and Linux checkouts hash the same
     destination = HERE / 'temporal_comparison.json'
     destination.write_text(json.dumps(result, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
     print(f'Training: {len(result["trainingYearsUsed"])} seasons; evaluation: {len(result["evaluationYearsUsed"])} complete paired seasons.')

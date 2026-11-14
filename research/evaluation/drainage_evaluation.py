@@ -92,7 +92,7 @@ def main():
         'note': 'All available locations, added after inspecting pilot coverage; exploratory, not a preregistered holdout.',
         **evaluate(history, previous, coords, all_sites)}
     paths = [history_file, previous_file, coords_file, Path(__file__), ROOT / 'research/live/drainage.py']
-    result['inputAndCodeSha256'] = {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes()).hexdigest() for p in paths}
+    result['inputAndCodeSha256'] = {p.relative_to(ROOT).as_posix(): hashlib.sha256(p.read_bytes().replace(b'\r\n', b'\n')).hexdigest() for p in paths}  # line endings ignored: Windows and Linux checkouts hash the same
     (ROOT / 'research/evaluation/drainage_evaluation.json').write_text(json.dumps(result, indent=2) + '\n', encoding='utf-8')
     print(json.dumps({'pilotCases': len(result['cases']), 'pilotSummary': result['summary'], 'allLocationSummary': result['exploratoryAllLocations']['summary']}))
 
