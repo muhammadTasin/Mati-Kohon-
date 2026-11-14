@@ -498,6 +498,7 @@ details.fold > summary:hover, details.card-source > summary:hover { color: var(-
 .story-lead { margin: 0; max-width: 64ch; font-size: 17px; line-height: 1.65; color: var(--text); }
 .landing-actions { display: flex; flex-wrap: wrap; gap: 12px; }
 .landing-cta { display: inline-flex; align-items: center; gap: 8px; min-height: 52px; padding: 12px 24px; font-size: 16.5px; }
+a.landing-cta { text-decoration: none; }
 .landing-cta .material-symbols-outlined { font-size: 22px; }
 .landing-time { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13.5px; color: var(--muted-ink); }
 .landing-time .material-symbols-outlined { font-size: var(--icon-sm); }

@@ -31,6 +31,10 @@ const ROLES = {
 const ROLE_NAME = { visitor: ['দর্শনার্থী', 'Visitor'], farmer: ['কৃষক', 'Farmer'], officer: ['ম্যানেজার', 'Manager'] };
 const ROLE_KEY = 'eden.role';
 const FARMER_KEY = 'eden.farmer';
+// The chosen role and the demo farmer's session are kept in localStorage, not sessionStorage: a judge or visitor who looked
+// around without logging in is still in after closing the tab or coming back another day (a demo token that ran out is
+// renewed on the way in). "Change role" forgets them.
+const KEEP = 'localStorage';
 const WEATHER_KEY = 'eden.weather.location';
 
 /** A failed API call with a machine-readable kind (the server's error envelope code, or offline / network). */
@@ -116,7 +120,7 @@ export function initPortals(ctx) {
 
   function enterPortal(next) {
     applyRole(next);
-    store.set('sessionStorage', ROLE_KEY, next);
+    store.set(KEEP, ROLE_KEY, next);
     window.switchScreen(ROLES[next].home);
     if (next === 'farmer') showFarmerTab(farmerTab);
   }
@@ -197,7 +201,7 @@ export function initPortals(ctx) {
       });
       farmerToken = data.token;
       farmerUser = data.user;
-      store.set('sessionStorage', FARMER_KEY, JSON.stringify({ token: data.token, user: data.user }));
+      store.set(KEEP, FARMER_KEY, JSON.stringify({ token: data.token, user: data.user }));
       enterPortal('farmer');
     } catch (err) {
       window.showEntryStep('farmer'); // the one-click entry failed: show the card with the reason and a retry button
@@ -244,6 +248,18 @@ export function initPortals(ctx) {
     if (kind === 'guest') { if (!(await window.guestManagerSignIn())) window.showEntryStep('officer'); }
     else if (kind === 'farmer') await window.farmerDemoSignIn();
     else if (kind === 'tour') window.ronguShow?.(0);
+  };
+
+  /** The landing's "look around without logging in": the whole site as the guest manager when the server allows it, else the open visitor screens. */
+  window.visitWithoutLogin = async function() {
+    const btn = $('landingVisit');
+    if (btn) btn.disabled = true;
+    try {
+      if ((await authConfig())?.guestMode) await window.enterDemo('guest');
+      else enterPortal('visitor');
+    } finally {
+      if (btn) btn.disabled = false;
+    }
   };
 
   /** Manager sign-in with Supabase Auth: the account's email is the user ID plus the server's AUTH_EMAIL_DOMAIN (toAuthEmail). */
@@ -345,8 +361,8 @@ export function initPortals(ctx) {
     if (farmerToken) fetch('/api/v1/auth/logout', { method: 'POST', headers: { Authorization: `Bearer ${farmerToken}` } }).catch(() => {});
     farmerToken = null;
     farmerUser = null;
-    store.set('sessionStorage', FARMER_KEY, null);
-    store.set('sessionStorage', ROLE_KEY, null);
+    store.set(KEEP, FARMER_KEY, null);
+    store.set(KEEP, ROLE_KEY, null);
     ctx.signOutOfficer(); // ends the Supabase session (or the demo one) whatever role was open
     applyRole(null);
     window.showEntryStep('choose');
@@ -364,14 +380,14 @@ export function initPortals(ctx) {
       history.replaceState(history.state, '', url);
       if (demo === 'guest' || demo === 'farmer' || demo === 'tour') { await window.enterDemo(demo); return; }
     }
-    const saved = store.get('sessionStorage', ROLE_KEY);
+    const saved = store.get(KEEP, ROLE_KEY);
     // a Supabase session that survived closing the browser (and that the server accepted at start-up) goes straight back in
     if (!saved) { if (ctx.officerSignedIn()) enterPortal('officer'); return; }
     if (saved === 'visitor') { enterPortal('visitor'); return; }
     if ($('entryChecking')) $('entryChecking').hidden = false;
     try {
       if (saved === 'farmer') {
-        const stored = JSON.parse(store.get('sessionStorage', FARMER_KEY) || 'null');
+        const stored = JSON.parse(store.get(KEEP, FARMER_KEY) || 'null');
         if (!stored?.token) throw new Error('no session');
         const data = await apiJson('/api/v1/auth/session', { headers: { Authorization: `Bearer ${stored.token}` } });
         farmerToken = stored.token;
@@ -382,8 +398,10 @@ export function initPortals(ctx) {
         enterPortal('officer');
       }
     } catch {
-      store.set('sessionStorage', ROLE_KEY, null);
-      store.set('sessionStorage', FARMER_KEY, null);
+      store.set(KEEP, ROLE_KEY, null);
+      store.set(KEEP, FARMER_KEY, null);
+      // the demo farmer's half-day token ran out (or this instance never saw it): sign in again, so the visitor stays in
+      if (saved === 'farmer') await window.farmerDemoSignIn();
     } finally {
       if ($('entryChecking')) $('entryChecking').hidden = true;
     }
@@ -1309,7 +1327,6 @@ export function initPortals(ctx) {
   authConfig().then(cfg => {
     if ($('roleTagGuest')) $('roleTagGuest').hidden = !cfg?.guestMode;
     if ($('roleTagOfficer')) $('roleTagOfficer').hidden = Boolean(cfg?.guestMode);
-    if ($('landingGuest')) $('landingGuest').hidden = !cfg?.guestMode;
   });
   initWeatherLocations();
   idleTexts();

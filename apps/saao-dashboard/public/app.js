@@ -1273,18 +1273,49 @@ function renderOfficerSelect() {
 /** A demo or guest session keeps its own server token; a Supabase session is kept (and refreshed) by Supabase. */
 const hasOwnToken = (session) => session?.source === 'demo' || session?.source === 'guest';
 
+/**
+ * Keeps a demo or guest session in the browser. A guest's is kept in localStorage, so a judge or visitor who looked around
+ * without logging in is still in on a later visit; the demo officer's (an access code) lasts only for this tab.
+ */
+function keepOfficerSession(session) {
+  try {
+    localStorage.removeItem('eden.officer');
+    sessionStorage.removeItem('eden.officer');
+    if (hasOwnToken(session)) (session.source === 'guest' ? localStorage : sessionStorage).setItem('eden.officer', JSON.stringify(session));
+  } catch {
+    // storage blocked: the session lasts until this page closes
+  }
+}
+
+/** A fresh guest token when the old one ran out (half a day) or was refused; null when guest mode is off or the server is out of reach. */
+async function renewGuestSession() {
+  try {
+    const res = await fetch('/api/v1/auth/guest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+    if (!res.ok) return null;
+    officerSession = { ...(await res.json()), source: 'guest' };
+    keepOfficerSession(officerSession);
+    return officerSession;
+  } catch {
+    return null;
+  }
+}
+
 async function officerToken() {
   if (hasOwnToken(officerSession)) return officerSession.token;
   return accessToken();
 }
 
-async function officerFetch(url, options = {}) {
+async function officerFetch(url, options = {}, renewed = false) {
   const res = await fetch(url, {
     ...options,
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await officerToken()}` },
   });
   if (res.status === 403 && (await res.clone().json().catch(() => null))?.error?.code === 'site_required') {
     return res; // a signed-in manager whose account has no site: refused, but still signed in; the caller shows the message
+  }
+  // a guest whose token ran out stays in: one new guest token and the same request again
+  if (res.status === 401 && officerSession?.source === 'guest' && !renewed && await renewGuestSession()) {
+    return officerFetch(url, options, true);
   }
   // a guest's 403 is "not allowed here" (a real call, a desk with real records): the guest session itself is fine
   if (res.status === 401 || (res.status === 403 && officerSession?.source !== 'guest')) {
@@ -1318,11 +1349,7 @@ window.officerSignIn = async function(event) {
   }
   officerSession = { ...(await res.json()), source: 'demo' };
   $('officerCode').value = '';
-  try {
-    sessionStorage.setItem('eden.officer', JSON.stringify(officerSession));
-  } catch {
-    // storage blocked: the session lasts until this page closes
-  }
+  keepOfficerSession(officerSession);
   await loadOfficerDesk();
 };
 
@@ -1338,11 +1365,7 @@ window.officerSignOut = async function() {
   officerDesk = null;
   officerKnowledge = null;
   officerNotice = null;
-  try {
-    sessionStorage.removeItem('eden.officer');
-  } catch {
-    // nothing stored
-  }
+  keepOfficerSession(null);
   renderOfficer();
   renderClimateTrend();
   applyAreaScope();
@@ -2012,14 +2035,8 @@ function startPortals() {
     /** Starts an officer session ({ source: 'supabase' }, a demo { source: 'demo', token, officer } or a guest { source: 'guest', token, officer }) and loads the desk: 'ok' | 'denied' | 'unavailable'. */
     async setOfficerSession(session) {
       officerSession = session;
-      if (hasOwnToken(session)) {
-        // only the demo or guest token is kept here; a Supabase session is kept (and refreshed) by Supabase itself
-        try {
-          sessionStorage.setItem('eden.officer', JSON.stringify(session));
-        } catch {
-          // storage blocked: the session lasts until this page closes
-        }
-      }
+      // only the demo or guest token is kept here; a Supabase session is kept (and refreshed) by Supabase itself
+      keepOfficerSession(session);
       const status = await loadOfficerDesk();
       renderProfile();
       return status;
@@ -2047,7 +2064,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   try {
     const saved = localStorage.getItem('eden.lang');
     if (saved === 'en' || saved === 'bn') lang = saved;
-    const session = sessionStorage.getItem('eden.officer');
+    const session = localStorage.getItem('eden.officer') || sessionStorage.getItem('eden.officer');
     if (session) {
       const saved = JSON.parse(session);
       officerSession = { ...saved, source: saved.source === 'guest' ? 'guest' : 'demo' };
