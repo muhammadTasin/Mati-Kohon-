@@ -103,6 +103,12 @@
             <p class="story-lead" data-i18n="story.lead">মাটি কহন ৫৪৪ উপজেলার প্রেক্ষাপটে নাসার তথ্য, স্থানীয় মাটি ও কৃষকের অগ্রাধিকার মিলিয়ে ফসল চক্র তুলনা করে। জেলার আবহাওয়ার হিসাব ও আঞ্চলিক পর্যবেক্ষণ জমির মাপ নয়। অনিশ্চয়তা দেখিয়ে কর্মকর্তার যাচাইয়ের জন্য বাংলা বার্তা তৈরি করে।</p>
             <div class="landing-actions">
               <a class="btn btn-primary landing-cta" href="/judge/index.html" data-i18n="landing.judge">২ মিনিটে একটি সিদ্ধান্ত দেখুন</a>
+              <!-- Judges and first-time visitors: the manager desk with sample farmers, no ID or password (GUEST_MODE on the
+                   server; portals.js shows it). The same entry as the link /?demo=guest. -->
+              <button class="btn btn-secondary landing-cta" type="button" id="landingGuest" hidden onclick="enterDemo('guest')">
+                <span class="material-symbols-outlined" aria-hidden="true">badge</span>
+                <span data-i18n="landing.guest">লগইন ছাড়া ডেস্ক দেখুন (নমুনা তথ্য)</span>
+              </button>
               <button class="btn btn-secondary landing-cta" type="button" onclick="ronguShow(0)">
                 <span class="material-symbols-outlined" aria-hidden="true">play_arrow</span>
                 <span data-i18n="landing.tour">রঙ্গুর সাথে পুরো সফর</span>

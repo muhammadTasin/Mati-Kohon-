@@ -244,24 +244,36 @@ export interface AuthUser {
 // sign-in survives Vercel starting a second instance or recycling the first (an in-memory token map did not: a guest
 // token was refused by 36 of 40 parallel requests). Without the variable each process signs with its own random key, so
 // sessions end on a restart, as they always did.
+//
+// The two public demo identities are the exception: the guest manager and the sample farmers. Anyone can sign in as
+// them in one click (POST /auth/guest; the farmer demo signs in with a fixed PIN the page itself sends), so their tokens
+// guard nothing a key could protect. Without EDEN_SESSION_SECRET they are signed with a fixed key that every instance shares, so a judge's
+// guest or demo-farmer session never depends on a deploy setting. A real officer's or a registered farmer's token never
+// uses it.
 const SESSION_TTL_MS = 12 * 60 * 60 * 1000; // a session lasts half a day
 const processKey = crypto.randomBytes(32);
+const PUBLIC_DEMO_KEY = 'eden-public-demo-session-v1';
 type SessionKind = 'guest' | 'officer' | 'farmer';
 interface SessionClaims { k: SessionKind; id: string; exp: number }
 /** Tokens signed out on this instance, until they expire. A signed token cannot be recalled on every instance. */
 const signedOut = new Map<string, number>();
 
-function sessionKey(): crypto.BinaryLike {
-  return process.env.EDEN_SESSION_SECRET?.trim() || processKey;
+/** The guest manager or a sample farmer: identities anyone may take (see above). */
+function publicDemo(k: SessionKind, id: string): boolean {
+  return k === 'guest' || (k === 'farmer' && farmerById(id)?.sample === true);
 }
 
-function mac(body: string): string {
-  return crypto.createHmac('sha256', sessionKey()).update(body).digest('base64url');
+function sessionKey(k: SessionKind, id: string): crypto.BinaryLike {
+  return process.env.EDEN_SESSION_SECRET?.trim() || (publicDemo(k, id) ? PUBLIC_DEMO_KEY : processKey);
+}
+
+function mac(body: string, key: crypto.BinaryLike): string {
+  return crypto.createHmac('sha256', key).update(body).digest('base64url');
 }
 
 function issueToken(k: SessionKind, id: string, now = Date.now()): string {
   const body = Buffer.from(JSON.stringify({ k, id, exp: now + SESSION_TTL_MS } satisfies SessionClaims)).toString('base64url');
-  return `eden1.${body}.${mac(body)}`;
+  return `eden1.${body}.${mac(body, sessionKey(k, id))}`;
 }
 
 function bearer(authorization: string | undefined): string {
@@ -272,9 +284,7 @@ function bearer(authorization: string | undefined): string {
 function readToken(token: string, now = Date.now()): SessionClaims | null {
   const parts = token.split('.');
   if (parts.length !== 3 || parts[0] !== 'eden1') return null;
-  const given = Buffer.from(parts[2]);
-  const expected = Buffer.from(mac(parts[1]));
-  if (given.length !== expected.length || !crypto.timingSafeEqual(given, expected)) return null;
+  // the claims are read before the signature is checked only to pick the key: nothing in them counts until it matches
   let claims: SessionClaims;
   try {
     claims = JSON.parse(Buffer.from(parts[1], 'base64url').toString('utf8'));
@@ -282,6 +292,10 @@ function readToken(token: string, now = Date.now()): SessionClaims | null {
     return null;
   }
   if (!claims || typeof claims.id !== 'string' || typeof claims.exp !== 'number' || claims.exp <= now) return null;
+  if (claims.k !== 'guest' && claims.k !== 'officer' && claims.k !== 'farmer') return null;
+  const given = Buffer.from(parts[2]);
+  const expected = Buffer.from(mac(parts[1], sessionKey(claims.k, claims.id)));
+  if (given.length !== expected.length || !crypto.timingSafeEqual(given, expected)) return null;
   if (signedOut.has(token)) return null;
   return claims;
 }
