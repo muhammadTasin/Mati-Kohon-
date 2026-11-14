@@ -207,7 +207,7 @@ export function initPortals(ctx) {
     }
   };
 
-  /** Optional sign-in: the guest manager (GUEST_MODE on the server). No ID, no password; sample data, no real call or SMS. */
+  /** Optional sign-in: the guest manager (GUEST_MODE on the server). No ID, no password; sample data, no real call or SMS. True once in. */
   window.guestManagerSignIn = async function() {
     setEntryError('entryGuestError', '');
     const btn = $('entryGuestBtn');
@@ -216,21 +216,34 @@ export function initPortals(ctx) {
       const res = await fetch('/api/v1/auth/guest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
       if (res.status === 403) {
         setEntryError('entryGuestError', tr('অতিথি প্রবেশ এই সার্ভারে চালু নেই।', 'Guest entry is not turned on on this server.'));
-        return;
+        return false;
       }
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const status = await ctx.setOfficerSession({ ...(await res.json()), source: 'guest' });
       if (status !== 'ok') {
         await ctx.signOutOfficer();
         setEntryError('entryGuestError', tr('সার্ভারে পৌঁছানো যায়নি। সংযোগ দেখে আবার চেষ্টা করুন।', 'Could not reach the server. Check your connection and try again.'));
-        return;
+        return false;
       }
       enterPortal('officer');
+      return true;
     } catch {
       setEntryError('entryGuestError', tr('সার্ভারে পৌঁছানো যায়নি। সংযোগ দেখে আবার চেষ্টা করুন।', 'Could not reach the server. Check your connection and try again.'));
+      return false;
     } finally {
       if (btn) btn.disabled = false;
     }
+  };
+
+  /**
+   * One click (or one shared link) into a demo for judges and first-time visitors: 'guest' (the manager desk with sample
+   * farmers), 'farmer' (sample farmer 01) or 'tour' (Rongu's tour). A failed guest entry opens the manager card, where the
+   * reason and the retry button are; the farmer entry does the same with its own card.
+   */
+  window.enterDemo = async function(kind) {
+    if (kind === 'guest') { if (!(await window.guestManagerSignIn())) window.showEntryStep('officer'); }
+    else if (kind === 'farmer') await window.farmerDemoSignIn();
+    else if (kind === 'tour') window.ronguShow?.(0);
   };
 
   /** Manager sign-in with Supabase Auth: the account's email is the user ID plus the server's AUTH_EMAIL_DOMAIN (toAuthEmail). */
@@ -342,6 +355,15 @@ export function initPortals(ctx) {
 
   /** On load: re-enter a role only for a visitor choice or a demo session the server still accepts. */
   async function restoreSession() {
+    // a shared demo link (/?demo=guest, /?demo=farmer or /?demo=tour) goes straight in; the parameter is dropped from the
+    // address so a refresh restores the session like any other
+    const demo = new URLSearchParams(location.search).get('demo');
+    if (demo) {
+      const url = new URL(location.href);
+      url.searchParams.delete('demo');
+      history.replaceState(history.state, '', url);
+      if (demo === 'guest' || demo === 'farmer' || demo === 'tour') { await window.enterDemo(demo); return; }
+    }
     const saved = store.get('sessionStorage', ROLE_KEY);
     // a Supabase session that survived closing the browser (and that the server accepted at start-up) goes straight back in
     if (!saved) { if (ctx.officerSignedIn()) enterPortal('officer'); return; }
@@ -1287,6 +1309,7 @@ export function initPortals(ctx) {
   authConfig().then(cfg => {
     if ($('roleTagGuest')) $('roleTagGuest').hidden = !cfg?.guestMode;
     if ($('roleTagOfficer')) $('roleTagOfficer').hidden = Boolean(cfg?.guestMode);
+    if ($('landingGuest')) $('landingGuest').hidden = !cfg?.guestMode;
   });
   initWeatherLocations();
   idleTexts();

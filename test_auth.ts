@@ -125,9 +125,39 @@ await assert.rejects(requireManager(request(`Bearer ${guest.token}`), verify), (
 // sessions are signed, not stored: a second server instance (Vercel starts several) accepts a token when both share
 // EDEN_SESSION_SECRET, refuses it when they do not, and nobody can forge or edit one
 const otherInstance = await import('./services/api/src/officer_desk.ts?second-instance');
+// ...except the public demo identities (the guest and the sample farmers): anyone can sign in as them, so with no secret
+// set their tokens use a key every instance shares, and a judge's guest session survives Vercel's many instances
 const unshared = desk.guestLogin()!;
-assert.equal(otherInstance.officerForToken(`Bearer ${unshared.token}`), null, 'without a shared secret each process signs with its own key');
+assert.equal(otherInstance.officerForToken(`Bearer ${unshared.token}`)?.guest, true, 'with no secret, another instance still accepts the guest token');
+assert.equal(otherInstance.userForToken(`Bearer ${unshared.token}`)?.role, 'officer', 'and restores the guest session after a refresh');
+const sampleFarmer = desk.loginUser({ farmerId: 'F01', pin: '1234' })!;
+assert.equal(otherInstance.userForToken(`Bearer ${sampleFarmer.token}`)?.id, 'F01', 'with no secret, the demo (sample) farmer works on another instance too');
+process.env.DEMO_MODE = 'true';
+process.env.EDEN_OFFICER_CODE = 'a-code-made-up-by-this-test';
+const demoUnshared = desk.login('saao_talanda_01', 'a-code-made-up-by-this-test')!;
+assert.equal(desk.officerForToken(`Bearer ${demoUnshared.token}`)?.id, 'saao_talanda_01', 'the demo officer token works where it was issued');
+assert.equal(otherInstance.officerForToken(`Bearer ${demoUnshared.token}`), null, 'but an officer token never uses the shared demo key: without a secret it stays on its own instance');
+{
+  // the shared demo key is in the source, so a token made with it must buy nothing beyond the demo identities
+  const crypto = await import('node:crypto');
+  const forge = (claims: object) => {
+    const b = Buffer.from(JSON.stringify(claims)).toString('base64url');
+    return `Bearer eden1.${b}.${crypto.createHmac('sha256', 'eden-public-demo-session-v1').update(b).digest('base64url')}`;
+  };
+  const exp = Date.now() + 60_000;
+  assert.equal(desk.officerForToken(forge({ k: 'officer', id: 'saao_talanda_01', exp })), null, 'an officer token forged with the demo key is refused');
+  assert.equal(desk.userForToken(forge({ k: 'officer', id: 'saao_talanda_01', exp })), null);
+  const real = desk.registerFarmer('saao_talanda_01', { nameBangla: 'আসল কৃষক', phone: '01712345679', placeId: 'talanda_tanore', unionBangla: 'তালন্দ', landType: 'medium_high', crops: ['lentil'], consent: true, consentMethod: 'in_person' }, 'talanda', false);
+  assert.equal(real.farmer?.sample, false, 'a manager registers a real farmer');
+  assert.equal(desk.userForToken(forge({ k: 'farmer', id: real.farmer!.id, exp })), null, 'a registered farmer\'s token forged with the demo key is refused');
+  assert.equal(desk.userForToken(forge({ k: 'farmer', id: 'F01', exp }))?.id, 'F01', 'a sample farmer\'s is accepted: anyone may sign in as F01');
+  assert.equal(desk.officerForToken(forge({ k: 'guest', id: 'x', exp }))?.id, 'guest_manager', 'a guest token gives the guest manager whatever id it claims');
+  assert.equal(desk.officerForToken(forge({ k: 'admin', id: 'x', exp })), null, 'an unknown kind is refused');
+  desk.resetDesk('talanda');
+}
+process.env.DEMO_MODE = 'false';
 process.env.EDEN_SESSION_SECRET = 'a-secret-made-up-by-this-test';
+assert.equal(desk.officerForToken(`Bearer ${unshared.token}`), null, 'once a secret is set, it signs every token, the demo ones too');
 const shared = desk.guestLogin()!;
 assert.equal(otherInstance.officerForToken(`Bearer ${shared.token}`)?.guest, true, 'another instance with the same secret accepts the guest token');
 assert.equal(otherInstance.userForToken(`Bearer ${shared.token}`)?.role, 'officer', 'and restores the session after a refresh');

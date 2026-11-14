@@ -365,6 +365,7 @@ export const EN = {
   'entry.officer.tagGuest': 'Try as a guest',
   'landing.tour': 'The full tour with Rongu',
   'landing.judge': 'One decision in 2 minutes',
+  'landing.guest': 'See the desk without signing in (sample data)',
   'landing.explore': 'Explore on your own',
   'landing.time': 'The full tour takes about 5 minutes; stop it whenever you like.',
   'landing.loading': 'Rongu is on his way…',
