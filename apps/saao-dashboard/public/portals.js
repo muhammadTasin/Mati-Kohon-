@@ -75,6 +75,7 @@ export function initPortals(ctx) {
   let farmerToken = null;
   let farmerUser = null;
   let farmerTab = 'today';
+  let weatherOpened = false; // the default weather is fetched only once someone opens the weather, not on every page load
 
   const failureText = (failure) => {
     switch (failure?.kind) {
@@ -429,6 +430,7 @@ export function initPortals(ctx) {
 
   function showFarmerTab(tab) {
     if (!document.body.classList.contains('weather-only')) farmerTab = tab;
+    if (tab === 'weather') { weatherOpened = true; queueMicrotask(showDefaultWeather); }
     document.querySelectorAll('.portal-tab').forEach(b => {
       const on = b.dataset.ftab === tab;
       b.classList.toggle('active', on);
@@ -797,6 +799,31 @@ export function initPortals(ctx) {
     uSel.disabled = false;
   }
 
+  /**
+   * The weather to show before anyone picks one: the upazila the dashboard is on (the Talanda pilot is Tanore). The two
+   * lists spell some names differently, so only a sure match (one upazila of that name) is used; otherwise nothing is
+   * picked and the screen asks, as before. Not saved: a person's own choice is.
+   */
+  function weatherForPlace(placeId) {
+    const norm = (t) => String(t || '').toLowerCase().replace(/[^a-z]/g, '');
+    const pilot = !placeId || placeId === 'talanda_tanore' || placeId === 'ADM3_Tanore';
+    const name = norm(pilot ? 'Tanore' : String(placeId).replace(/^ADM3_/, ''));
+    const found = weatherLocations.filter(l => norm(l.upazilaEn) === name && (!pilot || norm(l.districtEn) === 'rajshahi'));
+    return found.length === 1 ? found[0] : null;
+  }
+
+  function showDefaultWeather() {
+    if (selectedWeather || !weatherLocations.length) return;
+    const here = weatherForPlace(ctx.place?.());
+    if (!here) return;
+    selectedWeather = here;
+    const dSel = $('weatherDistrictSelect');
+    if (dSel) dSel.value = here.districtId; // the selectors keep what they show unless told: move them to the default
+    renderWeatherSelectors();
+    setText('weatherDataNotice', tr(`${weatherName(here)}-এর পূর্বাভাস।`, `Forecast for ${weatherName(here)}.`));
+    loadWeatherForecast();
+  }
+
   async function initWeatherLocations() {
     const dSel = $('weatherDistrictSelect');
     const uSel = $('weatherUpazilaSelect');
@@ -811,6 +838,7 @@ export function initPortals(ctx) {
       if (saved?.type === 'gps' && Number.isFinite(saved.lat) && Number.isFinite(saved.lon)) selectedWeather = { id: `gps:${saved.lat},${saved.lon}`, source: 'gps', lat: saved.lat, lon: saved.lon };
       else if (saved?.id) selectedWeather = weatherLocations.find(l => l.id === saved.id) || null;
       renderWeatherSelectors();
+      if (weatherOpened) showDefaultWeather(); // the weather tab was opened before the list arrived
       setText('weatherDataNotice', selectedWeather
         ? tr(`${weatherName(selectedWeather)}-এর পূর্বাভাস।`, `Forecast for ${weatherName(selectedWeather)}.`)
         : tr('আবহাওয়া দেখতে জেলা ও উপজেলা বেছে নিন, অথবা বর্তমান অবস্থান ব্যবহার করুন।', 'Choose a district and upazila, or use your current location.'));
@@ -1008,15 +1036,24 @@ export function initPortals(ctx) {
         if (badge) { badge.className = 'badge badge-success'; badge.textContent = tr('আর্থ ইঞ্জিন প্রস্তুত', 'Earth Engine ready'); }
         if (banner) banner.hidden = true;
       } else {
-        if (badge) { badge.className = 'badge badge-warning'; badge.textContent = ee.status === 'error' ? tr('আর্থ ইঞ্জিনে সমস্যা', 'Earth Engine error') : tr('আর্থ ইঞ্জিন চালু নেই', 'Earth Engine not set up'); }
+        // no Python on this server at all (the online demo on Vercel): the satellite part is simply off here, said plainly;
+        // the server's own wording and the setup steps stay in the collapsed "how to turn it on" box for whoever runs it
+        const offHere = ee.reason === 'worker_unavailable';
+        if (badge) {
+          badge.className = 'badge badge-warning';
+          badge.textContent = ee.status === 'error' ? tr('আর্থ ইঞ্জিনে সমস্যা', 'Earth Engine error')
+            : offHere ? tr('উপগ্রহ: এই ডেমোতে বন্ধ', 'Satellite: off in this demo') : tr('আর্থ ইঞ্জিন চালু নেই', 'Earth Engine not set up');
+        }
         if (banner) banner.hidden = false;
-        setText('cattleEeBannerText', tr(
-          `উপগ্রহের তথ্য (NDVI, মাটির রস, বৃষ্টি) এখন পাওয়া যাচ্ছে না: ${ee.details || ''} আবহাওয়া ও THI আলাদাভাবে কাজ করছে।`,
-          `Satellite data (NDVI, soil moisture, rain) is unavailable: ${ee.details || ''} Weather and THI work on their own.`));
-        setText('cattleEeSetup', ee.setupInstructions || '');
+        setText('cattleEeBannerText', offHere
+          ? tr('উপগ্রহের অংশ (Google Earth Engine: NDVI, মাটির রস, বৃষ্টি) এই অনলাইন ডেমোতে বন্ধ, কারণ এর জন্য আলাদা Python সার্ভার ও আর্থ ইঞ্জিন অ্যাকাউন্ট লাগে। আবহাওয়া পূর্বাভাস, তাপ চাপ (THI), পানি ও চারণ পরামর্শ পুরোপুরি কাজ করছে।',
+            'The satellite part (Google Earth Engine: NDVI, soil moisture, rain) is off in this online demo, as it needs a separate Python server and an Earth Engine account. The weather forecast, heat stress (THI), water and grazing advice all work.')
+          : tr(`উপগ্রহের তথ্য (NDVI, মাটির রস, বৃষ্টি) এখন পাওয়া যাচ্ছে না: ${ee.details || ''} আবহাওয়া ও THI আলাদাভাবে কাজ করছে।`,
+            `Satellite data (NDVI, soil moisture, rain) is unavailable: ${ee.details || ''} Weather and THI work on their own.`));
+        setText('cattleEeSetup', [offHere ? ee.details : '', ee.setupInstructions].filter(Boolean).join('\n\n'));
       }
       setText('cattleDurabilityNote', ready.jobs?.productionDurable === false
-        ? tr('কাজের তালিকা সার্ভারের একটি ফাইলে থাকে; সার্ভার আবার চালু হলে চলমান কাজ থেমে যায় (প্রোডাকশনের উপযোগী নয়)।', 'Jobs live in a local server file and running jobs stop if the server restarts (not production-durable).')
+        ? tr('ডেমো: কাজের তালিকা অস্থায়ী; সার্ভার নতুন করে চালু হলে চলমান কাজ থেমে যায় এবং আবার চালানো যায়।', 'Demo: the job list is temporary; a server restart stops running jobs, and they can be run again.')
         : '');
     } catch (err) {
       cattleNotice('error', `অবস্থা দেখা যায়নি। ${failureText(err)}`, `Could not check the status. ${failureText(err)}`);
