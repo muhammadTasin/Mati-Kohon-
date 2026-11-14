@@ -20,6 +20,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { writablePath } from './runtime_paths.ts';
 import type {
   CallbackRequest,
   CallSlot,
@@ -40,7 +41,7 @@ import { normalizeSite } from './sites.ts';
 import { FORBIDDEN_TERMS } from '../../../packages/narration-core/src/dual_gate_validator.ts';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const STORE_FILE = process.env.EDEN_OFFICER_STORE || path.resolve(__dirname, '../.data/officer_store.json');
+const STORE_FILE = process.env.EDEN_OFFICER_STORE || writablePath(path.resolve(__dirname, '../.data/officer_store.json'), 'officer_store.json');
 
 /** The demo officer login is off unless DEMO_MODE=true. */
 export function demoEnabled(): boolean {

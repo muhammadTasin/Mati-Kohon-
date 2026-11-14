@@ -18,10 +18,11 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { writablePath } from './runtime_paths.ts';
 import { bdMobile } from './awaj.ts';
 
 export type CallRoute = 'voiceblast' | 'broadcast';
-const CACHE = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.data/voiceblast_audio.json');
+const CACHE = writablePath(path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../.data/voiceblast_audio.json'), 'voiceblast_audio.json');
 
 export function systechConfig(env = process.env) {
   const vb = { user: env.VOICEBLAST_USER || '', pass: env.VOICEBLAST_PASSWORD || '', caller: env.VOICEBLAST_CALLER_ID || '' };
