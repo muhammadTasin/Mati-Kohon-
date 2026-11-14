@@ -22,7 +22,9 @@ assert.ok(haor.current.constraints.violations.includes('historical_rainfall_expo
 assert.equal(report.cases.find(c => c.id === 'coast').finalRecommendationId, null);
 const drainage = read('research/evaluation/drainage_evaluation.json');
 for (const artifact of [report, drainage]) for (const [path, sha] of Object.entries(artifact.inputAndCodeSha256)) {
-  assert.equal(crypto.createHash('sha256').update(fs.readFileSync(path)).digest('hex'), sha, `Stale evidence: ${path}. Regenerate evaluations.`);
+  // line endings ignored, so hashes made on Windows (CRLF) match the Linux CI checkout (LF)
+  const lf = fs.readFileSync(path).toString('latin1').replaceAll('\r\n', '\n');
+  assert.equal(crypto.createHash('sha256').update(lf, 'latin1').digest('hex'), sha, `Stale evidence: ${path}. Regenerate evaluations.`);
 }
 for (const c of drainage.cases.concat(drainage.exploratoryAllLocations.cases)) {
   assert.ok(c.lastObservationUsed <= c.asOf, 'No future observations in prediction');
