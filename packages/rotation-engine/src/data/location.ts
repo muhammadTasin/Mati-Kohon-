@@ -41,7 +41,7 @@ interface ProfileFile {
   landRule: string;
   upazilas: Record<string, {
     land?: LocalProfile['land']; patterns?: Array<[string, number]>; boroFallowFallowPct?: number; intensityPct?: number;
-    salinity?: LocalProfile['salinity'];
+    salinity?: LocalProfile['salinity']; opera?: LocalProfile['opera']; hls?: LocalProfile['hls'];
   }>;
   salinityClassesDsM: number[];
   saltTolerance: Record<string, { threshold: number; slope: number; rating: string; basis: string; note: string }>;
