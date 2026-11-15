@@ -1,12 +1,95 @@
-# (Mati Kohon) Project EDEN — Earth Data & Environment Navigator
+# Mati Kohon (মাটি কহন) · Project EDEN
 
-**NASA Space Apps Challenge 2026 · Team WinR · Challenge 07: Field Shift**
+**Seen from space. Said on the farmer's phone.**
 
-EDEN is a Bangla-first crop-rotation decision-support system for Bangladesh. Its farmer-facing service is **মাঠের কথা · Mather Kotha** ("the field's words"): before the Rabi season the farmer's phone rings, and a Bangla call names the two best rotations for their land, water, cattle and priorities, with 25 seasons of NASA Earth observations behind them. Agricultural officers (SAAOs) work from a desktop dashboard, and farmers with smartphones can use the Android app. Every number traces back to the research data in this repository.
+NASA Space Apps Challenge 2026 · Challenge 07: Field Shift · Team Win+R, Bangladesh
 
-## Project status (4 October 2026)
+**[Live site: matikohon.vercel.app](https://matikohon.vercel.app)** · [One decision in two minutes](https://matikohon.vercel.app/judge/) · [Officer desk as a guest](https://matikohon.vercel.app/?demo=guest) · [Field Shift, line by line](docs/field-shift-statement.md)
 
-`main` holds all of the team's work up to 4 October: the research, the apps, Rayyanul's Android fixes (PR #3), the farmer's own crops with the Awaj phone channel, and muhammadTasin's weather and cattle advisories; a GitHub Action adds the daily NASA update. Branch `feature/map-and-pesticide-data` adds a real map of Bangladesh to the dashboard and works on the known limits: NASA SEDAC pesticide estimates in the tips, waterlogging from NASA soil wetness, jute's measured crop coefficient, price-based incomes for five more crops, and the story site's fonts in the app. Branch `feature/merge-edith-web` builds on it and brings in muhammadTasin's [Edith_Web_App_Connectivity](https://github.com/muhammadTasin/Edith_Web_App_Connectivity) work, so one server serves the website and the Android app: the weather forecast, the upazila list and the cattle module on the server, and on the dashboard a role picker, the web farmer portal and the weather and cattle tabs, in the story site's look. Branch `feature/local-advice` builds on that and makes the advice fit each upazila: its land type from NASA elevation and Landsat surface water with BRRI's survey of what farmers grow, the haor's flash floods from NASA rain over the Meghalaya hills, district yields and harvest-price swings, NASA groundwater and pesticide data in the scores, and today's NASA soil moisture before the winter sowing (see [Branches](#branches)):
+[![Verify application](https://github.com/muhammadTasin/Mati-Kohon-/actions/workflows/verify.yml/badge.svg)](https://github.com/muhammadTasin/Mati-Kohon-/actions/workflows/verify.yml)
+
+![The Mati Kohon landing page: NASA sees, Mati Kohon decides, the farmer hears](docs/readme/landing.png)
+
+Mati Kohon is built to help a Bangladeshi farmer and their agricultural officer (SAAO) choose the next crop rotation. It compares the rotation the farmer grows now with at least three others for their upazila. It uses 25 seasons of NASA observations, local soil, crop and price data, and the farmer's own priorities. Each option says why it was suggested, the evidence behind it, its benefits, what is still unknown and what to check locally. The choice then becomes a Bangla phone call and SMS, which the officer reads and approves before anything is sent. It supports the farmer and the officer. It does not replace them.
+
+Why it matters: at Tanore, in the dry Barind, the model estimates that a median winter of Boro rice needs about 800 mm of irrigation and lentil about 200 mm (25 winters of NASA POWER and GPM IMERG through an FAO-56 water balance). NASA GLDAS-2.2 (GRACE-assimilated) shows groundwater storage falling in all 64 districts between 2003–07 and 2021–25, fastest in the north-west.
+
+## Try it in two minutes
+
+Nothing needs an account, and no real call or SMS leaves the public site.
+
+| What you see | Link |
+|---|---|
+| One example farmer, from their current rotation to an officer-reviewed Bangla message (about 2 minutes) | [/judge/](https://matikohon.vercel.app/judge/) |
+| The whole site, guided by Rongu, our mascot (about 5 minutes) | [/?demo=tour](https://matikohon.vercel.app/?demo=tour) |
+| The officer desk: today's call list, the farmer register, rotation plans for any upazila | [/?demo=guest](https://matikohon.vercel.app/?demo=guest) |
+| The farmer portal: today, weather, river erosion, assistant, my farm | [/?demo=farmer](https://matikohon.vercel.app/?demo=farmer) |
+
+## In numbers
+
+| | |
+|---|---|
+| **544** | upazila contexts, each with its own land type, current crop pattern and hazards, combined with its district's weather replay |
+| **25** | seasons replayed for every district, 2001–2025, with temperatures corrected against the nearest BMD station within 100 km |
+| **17** | crops replayed and combined into whole-year rotations |
+| **29** | different default rotations across the country, led by 9 different winter crops (before local advice, every upazila got the same one) |
+| **14** | NASA-linked data sources and display services, each with its role listed below |
+| **1 km** | cropland grid for satellite greenness: each upazila's crops are read from its farmland only (ESA WorldCover), not from towns and rivers |
+| **Daily** | NASA update for every upazila, committed by a GitHub Action at 09:30 Bangladesh time |
+| **99** | automated checks in 15 test files, run on every push and pull request |
+
+## Screens
+
+| | |
+|---|---|
+| ![Overview for Tanore: dated NASA readings, the season and the recommended variety](docs/readme/overview.png) | ![Map of Bangladesh coloured by groundwater decline (NASA GLDAS)](docs/readme/map.png) |
+| **Today.** Each reading carries its date and source: NASA POWER rain, SMAP soil moisture, the recommended Aman variety. | **The map.** All 544 upazilas, coloured by one of its layers; here, how fast groundwater is falling (NASA GLDAS). |
+| ![Three rotations compared on seven scores, with sample and assumed tags](docs/readme/comparison.png) | ![The officer's call list with the Bangla call script and SMS](docs/readme/calls.png) |
+| **Compare options.** Seven scores side by side. Each one explains itself, and weak data is tagged *sample* or *assumed*. | **Calls and SMS.** The day's calls from NASA data and each farmer's land. The officer reads the Bangla script, edits it, then approves. |
+
+## NASA data, and how each one is used
+
+| Dataset | Resolution | How it is used |
+|---|---|---|
+| NASA POWER | 0.5° · daily since 1981 | The 25-season replay of every rotation, and heat and cold alerts for all 544 upazilas every day |
+| GPM IMERG | 10 km · half-hourly | This month's rain against 25 years, dry days at Aman flowering, the haor flash-flood check |
+| MODIS (Terra) | 250 m–1 km · 16-day, since 2000 | Crops a year and winter greenness in every upazila since 2001; the 3-day flood map over the haors |
+| VIIRS | 1 km · 16-day | How the fields look now on the 1 km cropland grid, against their own 25 years |
+| NISAR (NASA-ISRO) | 80 m · 12-day, since 2025 | Flood water under monsoon cloud, and a provisional regional range for when the land drains |
+| OPERA DSWx | 30 m | Flood water now on land that is dry in winter, and how fast it drains |
+| GRACE / GRACE-FO + GLDAS | district · monthly since 2003 | Where groundwater is falling; the water pumped in each rotation's score |
+| NASADEM | 30 m | Whether each upazila's land is high or low, with Landsat surface water |
+| SMAP | 9 km · daily | Soil wetness before the winter sowing; a check on the replay |
+| HLS (Landsat + Sentinel-2) | 30 m · every 2–3 days | Where this year's Aman is missing or weak, so officers check there first |
+| MERRA-2 | 0.5° · hourly | A second reading of rain, so no alert rests on one source |
+| ECOSTRESS | 70 m | A check at the Talanda pilot; not in any score |
+| SEDAC PEST-CHEMGRIDS | ~10 km | The pest score and the less-pesticide tips |
+| GIBS | MODIS and VIIRS true colour | Yesterday's view from space under the dashboard's map |
+
+Local data sits beside them: SRDI soil cards and the Soil Fertility Atlas, BRRI and BARI crop calendars, BBS yields and prices, DAM market prices, BMD stations and BRRI's survey of what each upazila grows. Sources, licences and checks are in [`research/README.md`](research/README.md).
+
+## How it answers Field Shift
+
+- **The existing rotation comes first.** The farmer's current rotation is always one of the options and the reference, and at least three are compared.
+- **Five questions for every option:** why it was suggested, the evidence (each line names its source), the benefits, the information gaps, and what the farmer and officer should check locally.
+- **Crop roles:** nitrogen-fixing, deep-rooted, low-water, soil cover before the monsoon, and fodder.
+- **Bare fields and risky months:** 25 years of NASA data show, under each rotation's timeline, when the soil is bare and when heat, cold or heavy rain hit.
+- **The farmer's priorities and limits:** weights for water, income and soil; whether there is irrigation, machines and a market nearby.
+- **Bangla first, for people without smartphones:** a short call and SMS, an Android app, and an officer who approves every message.
+
+[`docs/field-shift-statement.md`](docs/field-shift-statement.md) maps every line of the challenge statement to the product, with what is still missing.
+
+## What is real and what is sample
+
+- **Real:** the NASA and local data, the 25-season replays, the scores built from them, the daily update and the 1 km grid.
+- **Sample:** the farmers, their farm profiles and some income figures. The screens tag them *sample* or *assumed*. On the public site, calls and SMS are dry runs.
+- **Not claimed:** this is a working hackathon prototype with reproducible tests. There has been no farmer trial, so no measured yield, income or groundwater benefit is claimed, and field and comprehension testing with farmers and officers is still to come. We tested whether NASA data can forecast district yields; it does not beat the district trend yet, so the app does not forecast yields.
+- Every public claim, with its allowed and not-allowed wording, is in [`docs/claims-register.json`](docs/claims-register.json).
+- The full list is in [Known limits](#known-limits).
+
+## What is in this repository
+
+`main` holds all of the team's work, merged through pull requests (the latest, #21, on 14 November 2026). The live site deploys from `main`, and changes are listed, newest first, in [`CHANGELOG.md`](CHANGELOG.md).
 
 | Part | Folder | What works |
 |---|---|---|
@@ -18,13 +101,13 @@ EDEN is a Bangla-first crop-rotation decision-support system for Bangladesh. Its
 | Screen designs | `design/` | Six SAAO desktop screens and the portrait mobile companion |
 | Daily NASA update | `research/live/` | NASA POWER every day for all 544 upazilas (64 districts), GPM IMERG rain at 10 km with an Earthdata Login, and the live haor flash-flood check with the MODIS flood map |
 
-The dashboard advises any of the 544 upazilas (pick the district and upazila at the top of the overview); Talanda union (Tanore) remains the most detailed pilot. Sample farmers, the farm profile and the income scores are sample values and are labelled as such on screen. The story site that presents the project lives in its own repository, [Mati-Kohon](https://github.com/Tasrif-Ahmed-Mohsin/Mati-Kohon). Changes are listed, newest first, in [`CHANGELOG.md`](CHANGELOG.md).
+The dashboard advises any of the 544 upazilas (pick the district and upazila at the top of the overview); Talanda union (Tanore) remains the most detailed pilot. Sample farmers, the farm profile and the income scores are sample values and are labelled as such on screen. The story site that presents the project lives in its own repository, [Mati-Kohon](https://github.com/Tasrif-Ahmed-Mohsin/Mati-Kohon).
 
 ## Run it
 
 ```bash
 npm install
-npm test          # 16 engine tests, 7 cattle tests and every API check
+npm test          # 15 test files, 99 checks: engine, evidence, cattle, sign-in, data sources and every API route
 npm start         # API and SAAO dashboard on http://localhost:4000
 npm run check:integrations   # which outside services are set up and answer (SET/UNSET, PASS/FAIL/SKIPPED; never prints a value); see docs/integrations.md
 npm run call:test -- --to 01XXXXXXXXX --crops sunflower,lentil   # the Bangla call script; a dry run until Awaj is set up
@@ -434,7 +517,7 @@ Do not commit secrets, local environment files, dependency folders, generated AP
 
 ## Tests
 
-`npm test` runs `test_pipeline.ts` (engine), `test_cattle.ts` (cattle AOI, THI and job rules) and `test_server.js` (API, on port 4317 or `TEST_PORT`). They check:
+`npm test` runs 15 test files, 99 checks in all. GitHub runs them on every push to `main` and every pull request (`.github/workflows/verify.yml`), then rebuilds the evaluations and checks that the evidence still matches its source files. The files are `test_pipeline.ts` (engine), `test_input_sensitivity.ts`, `test_evidence.mjs`, `test_current_practice.ts` and `test_reliability.ts` (the evidence and reliability checks), `test_cattle.ts` (cattle AOI, THI and job rules), `test_auth.ts`, `test_config.ts`, `test_power.ts`, `test_scope.ts`, `test_soil_card.ts`, `test_integrations.ts`, `test_hazards.ts`, `test_mascot.mjs` and `test_server.js` (API, on port 4317 or `TEST_PORT`). Among other things they check:
 
 - the ranking, feature flags and narration gates (a fake model that invents "১২ টন" and a loan offer falls back to the template);
 - that Boro is scored with Boro data, that unions without data are refused and that a stated priority leads the ranking;
@@ -617,23 +700,15 @@ The yield model (`research/explore/yield_model.py`) still uses MODIS: HLS greenn
 
 ## Branches
 
-| Branch | What it holds |
-|---|---|
-| `feature/local-advice` | `feature/merge-edith-web` plus advice that fits each upazila: land type from NASA NASADEM, Landsat and BRRI's survey, current practice as a plan, haor flash-flood limits and the early Boro, district yields and bad price years, GLDAS groundwater and PEST-CHEMGRIDS in the scores, today's NASA soil before the winter sowing, the keypad land question, and TEST 17 |
-| `feature/merge-edith-web` | `feature/map-and-pesticide-data` plus muhammadTasin's Edith_Web_App_Connectivity (c922eec): its server (forecast, locations, cattle, config, TTS and LLM adapters, error envelope, API contract and setup docs, cattle tests), three-way merged against the shared 1 October base, and its role picker, farmer portal and weather and cattle tabs rebuilt in this dashboard in the story site's look |
-| `feature/map-and-pesticide-data` | `main` (4 October) plus the map of Bangladesh, PEST-CHEMGRIDS pesticide numbers, waterlogging from NASA soil wetness, jute's measured crop coefficient, BBS-based incomes for five more crops, the app's bundled fonts, and a daily update that keeps the last IMERG reading |
-| `feature/crop-choice-and-calls` | Merged into `main` on 4 October: `sync/all-latest` plus the farmer's own crops and main crop (rice optional), soil-and-water tips, the Bangla request reader, the voice answer, Awaj calls and keypad menu, MODIS greenness for every upazila, and the story site's look for the dashboard and the app |
-| `sync/all-latest` | Everything: `research/data-access` (`0469020`) and `codex/android-app-latest` (`8e633aa`, which already carried `codex/android-apk`, `feature/eden-screen-recreation` and `demo/research-data`), plus the daily NASA update, the live haor check, advice for every upazila and Rayyanul's Android fixes (`f5a1b11`, PR #3). Merge it into `main` with a pull request ("Create a merge commit"). |
-| `feature/daily-nasa-update` | The daily NASA update, the live haor check and every-upazila advice; the same commits as `sync/all-latest` |
-| `main` | Everything up to 4 October (the two branches above, muhammadTasin's weather and cattle advisories and Android launcher icon) and the daily NASA update commits |
-
-Start new work from `main`. GitHub runs the daily NASA workflow only from `main`.
+All finished work is merged into `main` through pull requests; the older feature branches are kept for history only. Start new work from `main`. GitHub runs the daily NASA workflow only from `main`.
 
 ## Team
 
-- muhammadTasin
-- Anindya Shiddhartha
-- Jarin Subah
-- Mohammed Rayyanul Haque
-- Safin Rahman
-- Tasrif Ahmed
+Team Win+R, Bangladesh:
+
+- **Safin Rahman:** research, resource management, direction
+- **Tasrif Ahmed Mohsin:** UI/UX, full-stack development
+- **Muhammad Tasfiq Tasin** ([muhammadTasin](https://github.com/muhammadTasin)): backend and ML
+- **Mohammed Rayyanul Haque:** backend and ML
+- **Tasneem Bin Mahmood:** app development
+- **Jarin Subah:** research, pitch, scalability and narration

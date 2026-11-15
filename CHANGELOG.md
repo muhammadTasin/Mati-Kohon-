@@ -2,6 +2,11 @@
 
 What changed in Project EDEN, newest first, with who made each change and the branch it came from. Every branch below was merged into `main` on 1 October 2026.
 
+## 14 November 2026 · README for judges, and green tests after the data refresh (Tasrif, `docs/readme-for-judges`)
+
+- **README top:** the live site, the judge walkthrough and guest links, the project in numbers, four screenshots of the live site (`docs/readme/`), the 14 NASA-linked sources with how each is used, how the product answers Field Shift, and what is real and what is sample. The wording follows `docs/claims-register.json`. The status, Branches and Team sections were brought up to date, and the test section names all 15 test files.
+- **Evidence after the 13 November data refresh:** the refresh rewrote `water_history.json`, so `test_evidence.mjs` failed on `main` (stale source hash). `drainage_evaluation.json`, `full_system_comparison.json` and `judge-demo.json` were regenerated: the new passes add pilot cases (16 to 20) and right-censored cases (15 to 19); the measured interval errors (3.42, 2.73 and 28.55 days) are unchanged.
+
 ## 13 November 2026 · NASA EONET cyclone and flood watch (Tasrif, `feature/eonet-hazards`)
 
 - **Live natural events near Bangladesh:** `GET /api/v1/hazards` reads NASA EONET (Earth Observatory Natural Event Tracker, listed on api.nasa.gov) for cyclones, floods and fires in the last 21 days around Bangladesh and the Bay of Bengal, with each event's distance from the country (`services/api/src/hazards.ts`). No key; cached for an hour; `OFFLINE=1` makes no request.
