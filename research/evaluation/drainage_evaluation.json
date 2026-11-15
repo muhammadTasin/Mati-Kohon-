@@ -7,7 +7,7 @@
     "ADM3_Shyamnagar",
     "ADM3_Batiaghata"
   ],
-  "historyMade": "2026-10-30T19:36:27+00:00",
+  "historyMade": "2026-11-13T08:46:20+00:00",
   "protocol": [
     "At each October-December observation, forecast using only the prefix available on that date.",
     "Compare seasonal peak-to-latest, a recent-trend baseline and last year's recorded 90%-recession date shifted one year.",
@@ -100,6 +100,26 @@
       "lastObservationUsed": "2026-10-18"
     },
     {
+      "site": "ADM3_Khaliajuri",
+      "asOf": "2026-10-29",
+      "sensor": "nisar",
+      "predictions": {
+        "peak": null,
+        "recent_trend": null,
+        "last_year_proxy": "2026-12-21"
+      },
+      "dateRange": null,
+      "targetObservationInterval": null,
+      "rightCensored": true,
+      "intervalErrorDays": {
+        "peak": null,
+        "recent_trend": null,
+        "last_year_proxy": null
+      },
+      "observationsAvailable": 22,
+      "lastObservationUsed": "2026-10-29"
+    },
+    {
       "site": "ADM3_Itna",
       "asOf": "2026-10-04",
       "sensor": "nisar",
@@ -178,6 +198,26 @@
       },
       "observationsAvailable": 21,
       "lastObservationUsed": "2026-10-18"
+    },
+    {
+      "site": "ADM3_Itna",
+      "asOf": "2026-10-30",
+      "sensor": "nisar",
+      "predictions": {
+        "peak": null,
+        "recent_trend": null,
+        "last_year_proxy": "2026-12-09"
+      },
+      "dateRange": null,
+      "targetObservationInterval": null,
+      "rightCensored": true,
+      "intervalErrorDays": {
+        "peak": null,
+        "recent_trend": null,
+        "last_year_proxy": null
+      },
+      "observationsAvailable": 22,
+      "lastObservationUsed": "2026-10-30"
     },
     {
       "site": "ADM3_Shyamnagar",
@@ -261,6 +301,26 @@
       },
       "observationsAvailable": 20,
       "lastObservationUsed": "2026-10-23"
+    },
+    {
+      "site": "ADM3_Shyamnagar",
+      "asOf": "2026-10-29",
+      "sensor": "nisar",
+      "predictions": {
+        "peak": "2026-11-07",
+        "recent_trend": null,
+        "last_year_proxy": null
+      },
+      "dateRange": null,
+      "targetObservationInterval": null,
+      "rightCensored": true,
+      "intervalErrorDays": {
+        "peak": null,
+        "recent_trend": null,
+        "last_year_proxy": null
+      },
+      "observationsAvailable": 21,
+      "lastObservationUsed": "2026-10-29"
     },
     {
       "site": "ADM3_Batiaghata",
@@ -347,23 +407,46 @@
       },
       "observationsAvailable": 26,
       "lastObservationUsed": "2026-10-23"
+    },
+    {
+      "site": "ADM3_Batiaghata",
+      "asOf": "2026-10-31",
+      "sensor": "nisar",
+      "predictions": {
+        "peak": "2026-10-26",
+        "recent_trend": "2026-10-24",
+        "last_year_proxy": null
+      },
+      "dateRange": [
+        "2026-10-31",
+        "2026-11-05"
+      ],
+      "targetObservationInterval": null,
+      "rightCensored": true,
+      "intervalErrorDays": {
+        "peak": null,
+        "recent_trend": null,
+        "last_year_proxy": null
+      },
+      "observationsAvailable": 27,
+      "lastObservationUsed": "2026-10-31"
     }
   ],
   "summary": {
     "peak": {
-      "issued": 3,
+      "issued": 5,
       "evaluable": 0,
       "meanAbsoluteIntervalErrorDays": null,
       "medianSignedIntervalErrorDays": null
     },
     "recent_trend": {
-      "issued": 2,
+      "issued": 3,
       "evaluable": 0,
       "meanAbsoluteIntervalErrorDays": null,
       "medianSignedIntervalErrorDays": null
     },
     "last_year_proxy": {
-      "issued": 8,
+      "issued": 10,
       "evaluable": 0,
       "meanAbsoluteIntervalErrorDays": null,
       "medianSignedIntervalErrorDays": null
@@ -375,7 +458,7 @@
     "recent_trend": null,
     "last_year_proxy": null
   },
-  "rightCensoredCases": 15,
+  "rightCensoredCases": 19,
   "exploratoryAllLocations": {
     "sites": 544,
     "note": "All available locations, added after inspecting pilot coverage; exploratory, not a preregistered holdout.",
@@ -442,6 +525,26 @@
         },
         "observationsAvailable": 11,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Agailjhara",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 12,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_Ajmiriganj",
@@ -562,6 +665,26 @@
         },
         "observationsAvailable": 30,
         "lastObservationUsed": "2026-10-21"
+      },
+      {
+        "site": "ADM3_Ajmiriganj",
+        "asOf": "2026-11-01",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-11-29"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 31,
+        "lastObservationUsed": "2026-11-01"
       },
       {
         "site": "ADM3_Akhaura",
@@ -688,6 +811,26 @@
         },
         "observationsAvailable": 19,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Alamdanga",
+        "asOf": "2026-10-27",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 20,
+        "lastObservationUsed": "2026-10-27"
       },
       {
         "site": "ADM3_Alfadanga",
@@ -851,6 +994,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Alfadanga",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-17"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 41,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Amtali",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -1012,6 +1175,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Araihazar",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Ashuganj",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -1147,6 +1330,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Assasuni",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-07",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Atgharia",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -1256,6 +1459,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Atgharia",
+        "asOf": "2026-10-27",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-10",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 20,
+        "lastObservationUsed": "2026-10-27"
+      },
+      {
         "site": "ADM3_Atpara",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -1340,6 +1563,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Atpara",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Atrai",
@@ -1428,6 +1671,29 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Atrai",
+        "asOf": "2026-10-26",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-15",
+          "recent_trend": "2026-11-04",
+          "last_year_proxy": "2026-10-15"
+        },
+        "dateRange": [
+          "2026-10-26",
+          "2026-11-25"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-26"
+      },
+      {
         "site": "ADM3_Austagram",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -1508,6 +1774,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Austagram",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-12-23"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Badalgachhi",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -1552,6 +1838,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Badda",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-31"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-28"
       },
       {
         "site": "ADM3_BagerhatSadar",
@@ -1666,6 +1972,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_BagerhatSadar",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 37,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Bagha",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -1746,6 +2072,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Bagha",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-21"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 20,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Baghmara",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -1824,6 +2170,26 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Baghmara",
+        "asOf": "2026-10-26",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-26"
       },
       {
         "site": "ADM3_Bahubal",
@@ -1958,6 +2324,26 @@
         "lastObservationUsed": "2026-10-21"
       },
       {
+        "site": "ADM3_Bahubal",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Bajitpur",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -2038,6 +2424,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Bajitpur",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-11-17"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Bakerganj",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -2082,6 +2488,26 @@
         },
         "observationsAvailable": 17,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Bakerganj",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-17",
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-05"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 18,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Balaganj",
@@ -2162,6 +2588,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-21"
+      },
+      {
+        "site": "ADM3_Balaganj",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-12-11"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-28"
       },
       {
         "site": "ADM3_BaliaKandi",
@@ -2291,6 +2737,26 @@
         },
         "observationsAvailable": 30,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_BaliaKandi",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-04",
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-03"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 31,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Bamna",
@@ -2451,6 +2917,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Banchharampur",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-24"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Baniachong",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -2569,6 +3055,26 @@
         },
         "observationsAvailable": 31,
         "lastObservationUsed": "2026-10-21"
+      },
+      {
+        "site": "ADM3_Baniachong",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-12-26"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-10-31"
       },
       {
         "site": "ADM3_Banshkhali",
@@ -2885,6 +3391,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Barhatta",
+        "asOf": "2026-11-01",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-22",
+          "recent_trend": "2026-10-25",
+          "last_year_proxy": "2026-08-16"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-11-01"
+      },
+      {
         "site": "ADM3_Barlekha",
         "asOf": "2026-10-06",
         "sensor": "nisar",
@@ -3006,6 +3532,26 @@
         },
         "observationsAvailable": 31,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Barlekha",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-04",
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-16"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-10-28"
       },
       {
         "site": "ADM3_Barura",
@@ -3157,6 +3703,29 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Basail",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-11",
+          "recent_trend": "2026-10-31",
+          "last_year_proxy": "2026-10-27"
+        },
+        "dateRange": [
+          "2026-10-30",
+          "2026-11-13"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 31,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Batiaghata",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -3243,6 +3812,29 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Batiaghata",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-26",
+          "recent_trend": "2026-10-24",
+          "last_year_proxy": null
+        },
+        "dateRange": [
+          "2026-10-31",
+          "2026-11-05"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 27,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Bauphal",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -3307,6 +3899,26 @@
         },
         "observationsAvailable": 17,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Bauphal",
+        "asOf": "2026-11-01",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-22",
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-15"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 18,
+        "lastObservationUsed": "2026-11-01"
       },
       {
         "site": "ADM3_BeaniBazar",
@@ -3636,6 +4248,29 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Bera",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-12-02",
+          "recent_trend": "2026-11-06",
+          "last_year_proxy": "2026-10-27"
+        },
+        "dateRange": [
+          "2026-10-30",
+          "2026-12-09"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 30,
+        "lastObservationUsed": "2026-10-28"
+      },
+      {
         "site": "ADM3_Betagi",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -3769,6 +4404,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Bhairab",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-12-11"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Bhandaria",
@@ -3972,6 +4627,29 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Bhanga",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-27",
+          "recent_trend": "2026-10-28",
+          "last_year_proxy": null
+        },
+        "dateRange": [
+          "2026-10-29",
+          "2026-10-30"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 31,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Bhangura",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -4112,6 +4790,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Bhangura",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-27"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 30,
+        "lastObservationUsed": "2026-10-28"
+      },
+      {
         "site": "ADM3_Bhedarganj",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -4195,6 +4893,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Bhedarganj",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-31",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Bheramara",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -4273,6 +4991,26 @@
         },
         "observationsAvailable": 19,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Bheramara",
+        "asOf": "2026-10-27",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-07",
+          "recent_trend": null,
+          "last_year_proxy": "2026-12-16"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 20,
+        "lastObservationUsed": "2026-10-27"
       },
       {
         "site": "ADM3_Bholahat",
@@ -4395,6 +5133,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Bholahat",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-30",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 29,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Bhuapur",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -4473,6 +5231,26 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Bhuapur",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_Bhurungamari",
@@ -4582,6 +5360,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Bijoynagar",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-23",
+          "recent_trend": "2026-10-21",
+          "last_year_proxy": "2026-11-27"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_BimanBandar",
@@ -4779,6 +5577,26 @@
         "lastObservationUsed": "2026-10-21"
       },
       {
+        "site": "ADM3_Bishwambarpur",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-09"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Bishwanath",
         "asOf": "2026-10-06",
         "sensor": "nisar",
@@ -4863,6 +5681,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-21"
+      },
+      {
+        "site": "ADM3_Bishwanath",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-28"
       },
       {
         "site": "ADM3_Boalkhali",
@@ -5049,6 +5887,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Boalmari",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 41,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_BrahmanPara",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -5182,6 +6040,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_BrahmanbariaSadar",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-11-29"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_Burhanuddin",
@@ -5365,6 +6243,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Chakaria",
+        "asOf": "2026-11-03",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-13",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-11-03"
+      },
+      {
         "site": "ADM3_Chandina",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -5432,6 +6330,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Chandina",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_CharBhadrasan",
@@ -5563,6 +6481,29 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_CharBhadrasan",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-06",
+          "recent_trend": "2026-11-01",
+          "last_year_proxy": "2027-01-19"
+        },
+        "dateRange": [
+          "2026-10-31",
+          "2026-11-08"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 31,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_CharFasson",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -5673,6 +6614,26 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_CharRajibpur",
+        "asOf": "2026-11-02",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-19"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-11-02"
       },
       {
         "site": "ADM3_Chatkhil",
@@ -5830,6 +6791,29 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Chatmohar",
+        "asOf": "2026-10-27",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-17",
+          "recent_trend": "2026-11-16",
+          "last_year_proxy": "2026-10-20"
+        },
+        "dateRange": [
+          "2026-11-09",
+          "2026-11-24"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 30,
+        "lastObservationUsed": "2026-10-27"
+      },
+      {
         "site": "ADM3_Chauddagram",
         "asOf": "2026-10-06",
         "sensor": "nisar",
@@ -5976,6 +6960,29 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Chauhali",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-12-03",
+          "recent_trend": "2026-11-04",
+          "last_year_proxy": "2026-12-14"
+        },
+        "dateRange": [
+          "2026-10-30",
+          "2026-12-10"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 30,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Chhatak",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -6105,6 +7112,26 @@
         "lastObservationUsed": "2026-10-21"
       },
       {
+        "site": "ADM3_Chhatak",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-12-11"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Chilmari",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -6188,6 +7215,26 @@
         "lastObservationUsed": "2026-10-16"
       },
       {
+        "site": "ADM3_Chilmari",
+        "asOf": "2026-11-03",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-11-08"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-11-03"
+      },
+      {
         "site": "ADM3_ChittagongPort",
         "asOf": "2026-10-06",
         "sensor": "nisar",
@@ -6254,6 +7301,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_ChittagongPort",
+        "asOf": "2026-11-03",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 28,
+        "lastObservationUsed": "2026-11-03"
+      },
+      {
         "site": "ADM3_ChuadangaSadar",
         "asOf": "2026-10-11",
         "sensor": "nisar",
@@ -6312,6 +7379,26 @@
         },
         "observationsAvailable": 19,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_ChuadangaSadar",
+        "asOf": "2026-10-25",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 20,
+        "lastObservationUsed": "2026-10-25"
       },
       {
         "site": "ADM3_Chunarughat",
@@ -6435,6 +7522,26 @@
         "lastObservationUsed": "2026-10-21"
       },
       {
+        "site": "ADM3_Chunarughat",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_ComillaSadarDakshin",
         "asOf": "2026-10-06",
         "sensor": "nisar",
@@ -6536,6 +7643,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-21"
+      },
+      {
+        "site": "ADM3_Companiganj_185666",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-22"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Companiganj_539746",
@@ -6642,6 +7769,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_CoxsBazarSadar",
+        "asOf": "2026-11-03",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-23",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-11-03"
       },
       {
         "site": "ADM3_Dacope",
@@ -6833,6 +7980,26 @@
         "lastObservationUsed": "2026-10-21"
       },
       {
+        "site": "ADM3_DakshinSunamganj",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-12-23"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-10-28"
+      },
+      {
         "site": "ADM3_DakshinSurma",
         "asOf": "2026-10-06",
         "sensor": "nisar",
@@ -6913,6 +8080,26 @@
         "lastObservationUsed": "2026-10-21"
       },
       {
+        "site": "ADM3_DakshinSurma",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-28"
+      },
+      {
         "site": "ADM3_Dakshinkhan",
         "asOf": "2026-10-18",
         "sensor": "nisar",
@@ -6931,6 +8118,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Dakshinkhan",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-31"
       },
       {
         "site": "ADM3_Damudya",
@@ -7065,6 +8272,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Damurhuda",
+        "asOf": "2026-10-26",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-08-18"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 20,
+        "lastObservationUsed": "2026-10-26"
+      },
+      {
         "site": "ADM3_Dashmina",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -7129,6 +8356,26 @@
         },
         "observationsAvailable": 17,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Dashmina",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-09-23"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 18,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Daudkandi",
@@ -7217,6 +8464,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Daudkandi",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-09-18"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Daulatpur_326946",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -7295,6 +8562,26 @@
         },
         "observationsAvailable": 19,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Daulatpur_326946",
+        "asOf": "2026-10-26",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-15"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 20,
+        "lastObservationUsed": "2026-10-26"
       },
       {
         "site": "ADM3_Daulatpur_839920",
@@ -7463,6 +8750,29 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Daulatpur_839920",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-28",
+          "recent_trend": "2026-11-18",
+          "last_year_proxy": "2026-11-20"
+        },
+        "dateRange": [
+          "2026-11-11",
+          "2026-12-05"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 38,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Debhata",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -7561,6 +8871,26 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Debhata",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Debidwar",
@@ -7745,6 +9075,26 @@
         },
         "observationsAvailable": 36,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Debiganj",
+        "asOf": "2026-11-02",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-24",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 37,
+        "lastObservationUsed": "2026-11-02"
       },
       {
         "site": "ADM3_Delduar",
@@ -7982,6 +9332,26 @@
         "lastObservationUsed": "2026-10-21"
       },
       {
+        "site": "ADM3_Derai",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-07"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Dewanganj",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -8046,6 +9416,26 @@
         },
         "observationsAvailable": 17,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Dewanganj",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-11-10"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 18,
+        "lastObservationUsed": "2026-10-31"
       },
       {
         "site": "ADM3_Dhamrai",
@@ -8195,6 +9585,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Dharampasha",
+        "asOf": "2026-11-01",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-02"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-11-01"
       },
       {
         "site": "ADM3_Dhobaura",
@@ -8424,6 +9834,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Dighinala",
+        "asOf": "2026-11-02",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 41,
+        "lastObservationUsed": "2026-11-02"
+      },
+      {
         "site": "ADM3_Dimla",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -8550,6 +9980,29 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Dimla",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-10",
+          "recent_trend": "2026-11-01",
+          "last_year_proxy": "2026-10-17"
+        },
+        "dateRange": [
+          "2026-10-31",
+          "2026-11-17"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 29,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Dohar",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -8674,6 +10127,26 @@
         },
         "observationsAvailable": 30,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Dohar",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-25",
+          "recent_trend": "2026-10-25",
+          "last_year_proxy": "2026-10-15"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 31,
+        "lastObservationUsed": "2026-10-31"
       },
       {
         "site": "ADM3_Dowarabazar",
@@ -8805,6 +10278,26 @@
         "lastObservationUsed": "2026-10-21"
       },
       {
+        "site": "ADM3_Dowarabazar",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-24"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Dumki",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -8869,6 +10362,26 @@
         },
         "observationsAvailable": 17,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Dumki",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-05"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 18,
+        "lastObservationUsed": "2026-10-31"
       },
       {
         "site": "ADM3_Dumuria",
@@ -8954,6 +10467,29 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Dumuria",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-25",
+          "recent_trend": "2026-10-24",
+          "last_year_proxy": null
+        },
+        "dateRange": [
+          "2026-10-31",
+          "2026-11-04"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Durgapur_169588",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -9018,6 +10554,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Durgapur_169588",
+        "asOf": "2026-11-01",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-22",
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-05"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-11-01"
       },
       {
         "site": "ADM3_Faridpur",
@@ -9158,6 +10714,26 @@
         },
         "observationsAvailable": 29,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Faridpur",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-20"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 30,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_FaridpurSadar",
@@ -9318,6 +10894,29 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_FaridpurSadar",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-03",
+          "recent_trend": "2026-10-28",
+          "last_year_proxy": "2026-10-03"
+        },
+        "dateRange": [
+          "2026-10-31",
+          "2026-11-08"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 41,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Fatikchhari",
         "asOf": "2026-10-23",
         "sensor": "nisar",
@@ -9336,6 +10935,26 @@
         },
         "observationsAvailable": 31,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Fatikchhari",
+        "asOf": "2026-11-02",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-11-02"
       },
       {
         "site": "ADM3_Fenchuganj",
@@ -9416,6 +11035,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-21"
+      },
+      {
+        "site": "ADM3_Fenchuganj",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-12-21"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-28"
       },
       {
         "site": "ADM3_Fulbari",
@@ -9550,6 +11189,26 @@
         "lastObservationUsed": "2026-10-16"
       },
       {
+        "site": "ADM3_Fulchhari",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-19"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 18,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Gabtali",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -9636,6 +11295,26 @@
         "lastObservationUsed": "2026-10-16"
       },
       {
+        "site": "ADM3_GaibandhaSadar",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-09",
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-05"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 18,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Galachipa",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -9700,6 +11379,26 @@
         },
         "observationsAvailable": 17,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Galachipa",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-20",
+          "recent_trend": null,
+          "last_year_proxy": "2026-07-20"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 18,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_Gangachara",
@@ -9828,6 +11527,29 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Gangachara",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-27",
+          "recent_trend": "2026-10-26",
+          "last_year_proxy": "2026-09-23"
+        },
+        "dateRange": [
+          "2026-10-29",
+          "2026-11-03"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 31,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Gangni",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -9869,6 +11591,26 @@
         },
         "observationsAvailable": 19,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Gangni",
+        "asOf": "2026-10-27",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 20,
+        "lastObservationUsed": "2026-10-27"
       },
       {
         "site": "ADM3_Gazaria",
@@ -9957,6 +11699,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Gazaria",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-27"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_GazipurSadar",
         "asOf": "2026-10-06",
         "sensor": "nisar",
@@ -9998,6 +11760,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_GazipurSadar",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_Ghatail",
@@ -10173,6 +11955,26 @@
         },
         "observationsAvailable": 30,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Ghior",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-21",
+          "recent_trend": "2026-10-24",
+          "last_year_proxy": "2026-10-03"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 31,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_Ghoraghat",
@@ -10364,6 +12166,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Goalandaghat",
+        "asOf": "2026-11-01",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-19"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 35,
+        "lastObservationUsed": "2026-11-01"
+      },
+      {
         "site": "ADM3_Gobindaganj",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -10467,6 +12289,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Godagari",
+        "asOf": "2026-10-26",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-27"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-26"
+      },
+      {
         "site": "ADM3_Golabganj",
         "asOf": "2026-10-06",
         "sensor": "nisar",
@@ -10548,6 +12390,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-21"
+      },
+      {
+        "site": "ADM3_Golabganj",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-02",
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-24"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-28"
       },
       {
         "site": "ADM3_Gomastapur",
@@ -10688,6 +12550,26 @@
         },
         "observationsAvailable": 28,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Gomastapur",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-04",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 29,
+        "lastObservationUsed": "2026-10-31"
       },
       {
         "site": "ADM3_GopalganjSadar",
@@ -10831,6 +12713,26 @@
         },
         "observationsAvailable": 36,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_GopalganjSadar",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-11",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 37,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Gopalpur",
@@ -10997,6 +12899,26 @@
         "lastObservationUsed": "2026-10-21"
       },
       {
+        "site": "ADM3_Gowainghat",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-10"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Gurudaspur",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -11078,6 +13000,26 @@
         },
         "observationsAvailable": 19,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Gurudaspur",
+        "asOf": "2026-10-26",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-01",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 20,
+        "lastObservationUsed": "2026-10-26"
       },
       {
         "site": "ADM3_HabiganjSadar",
@@ -11212,6 +13154,26 @@
         "lastObservationUsed": "2026-10-21"
       },
       {
+        "site": "ADM3_HabiganjSadar",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_HaimChar",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -11321,6 +13283,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Hajiganj",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-07-20"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Halishahar",
         "asOf": "2026-10-06",
         "sensor": "nisar",
@@ -11387,6 +13369,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Halishahar",
+        "asOf": "2026-11-02",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-08-16"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 28,
+        "lastObservationUsed": "2026-11-02"
+      },
+      {
         "site": "ADM3_Haluaghat",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -11448,6 +13450,26 @@
         },
         "observationsAvailable": 19,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Haripur",
+        "asOf": "2026-10-25",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 20,
+        "lastObservationUsed": "2026-10-25"
       },
       {
         "site": "ADM3_Harirampur",
@@ -11576,6 +13598,29 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Harirampur",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-08",
+          "recent_trend": "2026-11-03",
+          "last_year_proxy": "2026-11-20"
+        },
+        "dateRange": [
+          "2026-11-01",
+          "2026-11-10"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 31,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Hathazari",
         "asOf": "2026-10-23",
         "sensor": "nisar",
@@ -11594,6 +13639,26 @@
         },
         "observationsAvailable": 24,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Hathazari",
+        "asOf": "2026-11-03",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 25,
+        "lastObservationUsed": "2026-11-03"
       },
       {
         "site": "ADM3_Hatibandha",
@@ -11722,6 +13787,29 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Hatibandha",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-12",
+          "recent_trend": "2026-10-31",
+          "last_year_proxy": "2026-09-05"
+        },
+        "dateRange": [
+          "2026-10-30",
+          "2026-11-19"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 31,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Hatiya",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -11786,6 +13874,26 @@
         },
         "observationsAvailable": 17,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Hatiya",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-17",
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-03"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 18,
+        "lastObservationUsed": "2026-10-31"
       },
       {
         "site": "ADM3_Hizla",
@@ -11926,6 +14034,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Homna",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-12"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Ishwardi",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -12009,6 +14137,29 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Ishwardi",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-30",
+          "recent_trend": "2026-10-30",
+          "last_year_proxy": null
+        },
+        "dateRange": [
+          "2026-10-28",
+          "2026-11-09"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 15,
+        "lastObservationUsed": "2026-10-28"
+      },
+      {
         "site": "ADM3_Islampur",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -12089,6 +14240,26 @@
         "lastObservationUsed": "2026-10-16"
       },
       {
+        "site": "ADM3_Islampur",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-31"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Itna",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -12167,6 +14338,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Itna",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-12-09"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Jagannathpur",
@@ -12289,6 +14480,26 @@
         "lastObservationUsed": "2026-10-21"
       },
       {
+        "site": "ADM3_Jagannathpur",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-16"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Jaintiapur",
         "asOf": "2026-10-06",
         "sensor": "nisar",
@@ -12370,6 +14581,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-21"
+      },
+      {
+        "site": "ADM3_Jaintiapur",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-12-21"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Jamalganj",
@@ -12492,6 +14723,26 @@
         "lastObservationUsed": "2026-10-21"
       },
       {
+        "site": "ADM3_Jamalganj",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-14"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_JamalpurSadar",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -12559,6 +14810,26 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_JibanNagar",
+        "asOf": "2026-10-25",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-25"
       },
       {
         "site": "ADM3_Juri",
@@ -12668,6 +14939,26 @@
         },
         "observationsAvailable": 31,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Juri",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-30",
+          "recent_trend": null,
+          "last_year_proxy": "2026-12-09"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-10-28"
       },
       {
         "site": "ADM3_Kabirhat",
@@ -12786,6 +15077,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Kachua_371605",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-08-30"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Kahaloo",
@@ -13096,6 +15407,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Kalia",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-29",
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-08"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 30,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Kaliakair",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -13219,6 +15550,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Kaliakair",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-17"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 31,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Kaliganj_086039",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -13302,6 +15653,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Kaliganj_086039",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Kaliganj_663470",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -13380,6 +15751,26 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Kaliganj_663470",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-26",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_Kalihati",
@@ -13583,6 +15974,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Kalmakanda",
+        "asOf": "2026-11-01",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-21"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-11-01"
+      },
+      {
         "site": "ADM3_Kalukhali",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -13732,6 +16143,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Kalukhali",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-28",
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-17"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 30,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Kamalganj",
         "asOf": "2026-10-06",
         "sensor": "nisar",
@@ -13802,6 +16233,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-21"
+      },
+      {
+        "site": "ADM3_Kamalganj",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_Kamalnagar",
@@ -14008,6 +16459,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Kanaighat",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-23",
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-24"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Kanthalia",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -14161,6 +16632,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Karimganj",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-11-22"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Kasba",
@@ -14352,6 +16843,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Kashiani",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 41,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Katiadi",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -14438,6 +16949,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Katiadi",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Kaunia",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -14499,6 +17030,26 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Kaunia",
+        "asOf": "2026-11-01",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-11-01"
       },
       {
         "site": "ADM3_Kawkhali",
@@ -14627,6 +17178,26 @@
         "lastObservationUsed": "2026-10-16"
       },
       {
+        "site": "ADM3_Kazipur",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-31"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Kendua",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -14696,6 +17267,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Kendua",
+        "asOf": "2026-11-01",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-11-01"
+      },
+      {
         "site": "ADM3_Keraniganj",
         "asOf": "2026-10-18",
         "sensor": "nisar",
@@ -14714,6 +17305,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Keraniganj",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-15"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-28"
       },
       {
         "site": "ADM3_Keshabpur",
@@ -14819,6 +17430,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Khaliajuri",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-12-21"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Khetlal",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -14860,6 +17491,26 @@
         },
         "observationsAvailable": 29,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Khetlal",
+        "asOf": "2026-10-26",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-08-16"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 30,
+        "lastObservationUsed": "2026-10-26"
       },
       {
         "site": "ADM3_Khilgaon",
@@ -14905,6 +17556,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Khilgaon",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-12-26"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Khilkhet",
         "asOf": "2026-10-18",
         "sensor": "nisar",
@@ -14923,6 +17594,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Khilkhet",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_Khoksa",
@@ -15356,6 +18047,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Kumarkhali",
+        "asOf": "2026-10-26",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-02",
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-31"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 20,
+        "lastObservationUsed": "2026-10-26"
+      },
+      {
         "site": "ADM3_KurigramSadar",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -15439,6 +18150,26 @@
         "lastObservationUsed": "2026-10-16"
       },
       {
+        "site": "ADM3_KurigramSadar",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-13",
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-15"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Kutubdia",
         "asOf": "2026-10-16",
         "sensor": "nisar",
@@ -15477,6 +18208,26 @@
         },
         "observationsAvailable": 17,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Kutubdia",
+        "asOf": "2026-11-03",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 18,
+        "lastObservationUsed": "2026-11-03"
       },
       {
         "site": "ADM3_Lakhai",
@@ -15543,6 +18294,29 @@
         },
         "observationsAvailable": 16,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Lakhai",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-09",
+          "recent_trend": "2026-11-14",
+          "last_year_proxy": "2026-12-11"
+        },
+        "dateRange": [
+          "2026-10-30",
+          "2026-11-24"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 17,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Laksam",
@@ -15651,6 +18425,26 @@
         "lastObservationUsed": "2026-10-16"
       },
       {
+        "site": "ADM3_LalmonirhatSadar",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-13",
+          "recent_trend": null,
+          "last_year_proxy": "2026-09-09"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Lalpur",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -15752,6 +18546,26 @@
         },
         "observationsAvailable": 19,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Lalpur",
+        "asOf": "2026-10-27",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-05",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 20,
+        "lastObservationUsed": "2026-10-27"
       },
       {
         "site": "ADM3_Lohagara_691580",
@@ -15920,6 +18734,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Lohagara_691580",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-03"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 41,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Lohajang",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -16000,6 +18834,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Lohajang",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-20",
+          "recent_trend": null,
+          "last_year_proxy": "2026-11-22"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Madan",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -16078,6 +18932,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Madan",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-12-23"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_Madarganj",
@@ -16172,6 +19046,26 @@
         "lastObservationUsed": "2026-10-16"
       },
       {
+        "site": "ADM3_Madarganj",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-16",
+          "recent_trend": "2026-10-16",
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-28"
+      },
+      {
         "site": "ADM3_MadaripurSadar",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -16256,6 +19150,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_MadaripurSadar",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-25",
+          "recent_trend": null,
+          "last_year_proxy": "2026-09-23"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_Madhabpur",
@@ -16465,6 +19379,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Madhukhali",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-26",
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-17"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 31,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Mahadebpur",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -16649,6 +19583,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Maheshkhali",
+        "asOf": "2026-11-03",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-11-03"
+      },
+      {
         "site": "ADM3_Manda",
         "asOf": "2026-10-11",
         "sensor": "nisar",
@@ -16692,6 +19646,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Manda",
+        "asOf": "2026-10-26",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 20,
+        "lastObservationUsed": "2026-10-26"
+      },
+      {
         "site": "ADM3_Manikchhari",
         "asOf": "2026-10-21",
         "sensor": "nisar",
@@ -16730,6 +19704,26 @@
         },
         "observationsAvailable": 40,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Manikchhari",
+        "asOf": "2026-11-02",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 41,
+        "lastObservationUsed": "2026-11-02"
       },
       {
         "site": "ADM3_ManikganjSadar",
@@ -16856,6 +19850,26 @@
         },
         "observationsAvailable": 30,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_ManikganjSadar",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-20",
+          "recent_trend": "2026-10-20",
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 31,
+        "lastObservationUsed": "2026-10-28"
       },
       {
         "site": "ADM3_Manirampur",
@@ -16990,6 +20004,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Manoharganj",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-08-25"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Manpura",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -17054,6 +20088,26 @@
         },
         "observationsAvailable": 17,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Manpura",
+        "asOf": "2026-11-01",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-21",
+          "recent_trend": null,
+          "last_year_proxy": "2026-09-21"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 18,
+        "lastObservationUsed": "2026-11-01"
       },
       {
         "site": "ADM3_Mathbaria",
@@ -17200,6 +20254,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_MatlabDakshin",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-09-09"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_MatlabUttar",
         "asOf": "2026-10-06",
         "sensor": "nisar",
@@ -17312,6 +20386,26 @@
         "lastObservationUsed": "2026-10-21"
       },
       {
+        "site": "ADM3_MaulviBazarSadar",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-10-28"
+      },
+      {
         "site": "ADM3_Meghna",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -17398,6 +20492,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Meghna",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_MeherpurSadar",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -17459,6 +20573,26 @@
         },
         "observationsAvailable": 19,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_MeherpurSadar",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 20,
+        "lastObservationUsed": "2026-10-28"
       },
       {
         "site": "ADM3_Melandaha",
@@ -17551,6 +20685,26 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Melandaha",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-19",
+          "recent_trend": "2026-10-20",
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-28"
       },
       {
         "site": "ADM3_Mirsharai",
@@ -17783,6 +20937,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Mirzapur",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-24",
+          "recent_trend": "2026-10-21",
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 31,
+        "lastObservationUsed": "2026-10-28"
+      },
+      {
         "site": "ADM3_Mithamain",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -17861,6 +21035,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Mithamain",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-11-27"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_Mohammadpur_792291",
@@ -18015,6 +21209,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Mohanganj",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-12-23"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Mohanpur",
         "asOf": "2026-10-11",
         "sensor": "nisar",
@@ -18056,6 +21270,26 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Mohanpur",
+        "asOf": "2026-10-26",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-26"
       },
       {
         "site": "ADM3_Mongla",
@@ -18210,6 +21444,29 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Morrelganj",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-29",
+          "recent_trend": "2026-10-31",
+          "last_year_proxy": "2026-07-25"
+        },
+        "dateRange": [
+          "2026-10-29",
+          "2026-11-07"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 28,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_MujibNagar",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -18288,6 +21545,26 @@
         },
         "observationsAvailable": 19,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_MujibNagar",
+        "asOf": "2026-10-27",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 20,
+        "lastObservationUsed": "2026-10-27"
       },
       {
         "site": "ADM3_Muksudpur",
@@ -18462,6 +21739,29 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Muksudpur",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-27",
+          "recent_trend": "2026-10-25",
+          "last_year_proxy": "2026-10-27"
+        },
+        "dateRange": [
+          "2026-10-29",
+          "2026-11-01"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 41,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_MunshiganjSadar",
         "asOf": "2026-10-06",
         "sensor": "nisar",
@@ -18520,6 +21820,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_MunshiganjSadar",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-19",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Muradnagar",
@@ -18815,6 +22135,26 @@
         "lastObservationUsed": "2026-10-21"
       },
       {
+        "site": "ADM3_Nabiganj",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Nabinagar",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -18902,6 +22242,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Nabinagar",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-21",
+          "recent_trend": "2026-10-24",
+          "last_year_proxy": "2026-11-29"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Nagarkanda",
@@ -19068,6 +22428,29 @@
         },
         "observationsAvailable": 40,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Nagarkanda",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-26",
+          "recent_trend": "2026-10-25",
+          "last_year_proxy": "2026-10-17"
+        },
+        "dateRange": [
+          "2026-10-30",
+          "2026-10-31"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 41,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Nagarpur",
@@ -19246,6 +22629,26 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Nageshwari",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-01",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Nakla",
@@ -19674,6 +23077,29 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_NarailSadar",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-26",
+          "recent_trend": "2026-10-25",
+          "last_year_proxy": "2026-09-14"
+        },
+        "dateRange": [
+          "2026-10-30",
+          "2026-11-05"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Naria",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -19757,6 +23183,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Naria",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-01",
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-15"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_NarsingdiSadar",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -19838,6 +23284,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_NarsingdiSadar",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-13",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_Nasirnagar",
@@ -19926,6 +23392,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Nasirnagar",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-12-11"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_NatoreSadar",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -19987,6 +23473,26 @@
         },
         "observationsAvailable": 19,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_NatoreSadar",
+        "asOf": "2026-10-27",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-23",
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-15"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 20,
+        "lastObservationUsed": "2026-10-27"
       },
       {
         "site": "ADM3_NawabganjSadar",
@@ -20129,6 +23635,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_NawabganjSadar",
+        "asOf": "2026-10-26",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-15"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 29,
+        "lastObservationUsed": "2026-10-26"
+      },
+      {
         "site": "ADM3_Nawabganj_222310",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -20213,6 +23739,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Nawabganj_222310",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-08-30"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_NetrokonaSadar",
@@ -20321,6 +23867,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Nikli",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-12-04"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Paba",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -20399,6 +23965,26 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Paba",
+        "asOf": "2026-10-27",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-27"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-27"
       },
       {
         "site": "ADM3_PabnaSadar",
@@ -20507,6 +24093,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_PabnaSadar",
+        "asOf": "2026-10-27",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-11",
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-24"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 20,
+        "lastObservationUsed": "2026-10-27"
+      },
+      {
         "site": "ADM3_Pahartali",
         "asOf": "2026-10-23",
         "sensor": "nisar",
@@ -20525,6 +24131,26 @@
         },
         "observationsAvailable": 27,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Pahartali",
+        "asOf": "2026-11-02",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 28,
+        "lastObservationUsed": "2026-11-02"
       },
       {
         "site": "ADM3_Paikgachha",
@@ -20610,6 +24236,29 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Paikgachha",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-22",
+          "recent_trend": "2026-11-04",
+          "last_year_proxy": null
+        },
+        "dateRange": [
+          "2026-10-31",
+          "2026-12-02"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Panchhari",
         "asOf": "2026-10-23",
         "sensor": "nisar",
@@ -20628,6 +24277,26 @@
         },
         "observationsAvailable": 40,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Panchhari",
+        "asOf": "2026-11-02",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 41,
+        "lastObservationUsed": "2026-11-02"
       },
       {
         "site": "ADM3_Pangsha",
@@ -20736,6 +24405,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Pangsha",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-04",
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-27"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 20,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Patenga",
         "asOf": "2026-10-11",
         "sensor": "nisar",
@@ -20777,6 +24466,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Patenga",
+        "asOf": "2026-11-03",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-11-03"
       },
       {
         "site": "ADM3_Patharghata",
@@ -20963,6 +24672,26 @@
         "lastObservationUsed": "2026-10-16"
       },
       {
+        "site": "ADM3_PatuakhaliSadar",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-09-23"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 18,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Pekua",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -21046,6 +24775,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Pekua",
+        "asOf": "2026-11-03",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-07",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-11-03"
+      },
+      {
         "site": "ADM3_Phulbari",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -21124,6 +24873,26 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Phulbari",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-24",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_Phulpur",
@@ -21250,6 +25019,26 @@
         },
         "observationsAvailable": 19,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Porsha",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-01",
+          "recent_trend": null,
+          "last_year_proxy": "2026-11-16"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 20,
+        "lastObservationUsed": "2026-10-31"
       },
       {
         "site": "ADM3_Purbadhala",
@@ -21433,6 +25222,26 @@
         "lastObservationUsed": "2026-10-16"
       },
       {
+        "site": "ADM3_Rajarhat",
+        "asOf": "2026-11-02",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-26",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-11-02"
+      },
+      {
         "site": "ADM3_RajbariSadar",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -21556,6 +25365,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_RajbariSadar",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-02",
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-29"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 30,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Rajnagar",
         "asOf": "2026-10-06",
         "sensor": "nisar",
@@ -21637,6 +25466,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-21"
+      },
+      {
+        "site": "ADM3_Rajnagar",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-02"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-28"
       },
       {
         "site": "ADM3_Rajoir",
@@ -21731,6 +25580,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Rajoir",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-24",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 23,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Rajpara",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -21809,6 +25678,26 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Rajpara",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-27"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-31"
       },
       {
         "site": "ADM3_Ramganj",
@@ -21937,6 +25826,29 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Rampal",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-28",
+          "recent_trend": "2026-11-08",
+          "last_year_proxy": null
+        },
+        "dateRange": [
+          "2026-10-31",
+          "2026-12-08"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 27,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Raninagar",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -22052,6 +25964,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Ranisankail",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 18,
+        "lastObservationUsed": "2026-10-28"
+      },
+      {
         "site": "ADM3_Raozan",
         "asOf": "2026-10-09",
         "sensor": "nisar",
@@ -22159,6 +26091,26 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Raumari",
+        "asOf": "2026-11-03",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-25",
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-17"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-11-03"
       },
       {
         "site": "ADM3_Royganj",
@@ -22296,6 +26248,29 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Roypura",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-11",
+          "recent_trend": "2026-11-19",
+          "last_year_proxy": "2026-11-17"
+        },
+        "dateRange": [
+          "2026-11-09",
+          "2026-11-21"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Rupganj",
         "asOf": "2026-10-06",
         "sensor": "nisar",
@@ -22354,6 +26329,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Rupganj",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_Sadarpur",
@@ -22485,6 +26480,29 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Sadarpur",
+        "asOf": "2026-11-01",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-06",
+          "recent_trend": "2026-11-10",
+          "last_year_proxy": "2027-01-09"
+        },
+        "dateRange": [
+          "2026-11-04",
+          "2026-11-12"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 31,
+        "lastObservationUsed": "2026-11-01"
+      },
+      {
         "site": "ADM3_Saghatta",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -22563,6 +26581,26 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Saghatta",
+        "asOf": "2026-10-27",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-26",
+          "recent_trend": null,
+          "last_year_proxy": "2026-11-20"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-27"
       },
       {
         "site": "ADM3_Sakhipur",
@@ -22777,6 +26815,29 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Saltha",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-04",
+          "recent_trend": "2026-10-28",
+          "last_year_proxy": "2026-10-17"
+        },
+        "dateRange": [
+          "2026-10-31",
+          "2026-11-09"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 41,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Sandwip",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -22864,6 +26925,29 @@
         },
         "observationsAvailable": 24,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Sandwip",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-08",
+          "recent_trend": "2026-11-05",
+          "last_year_proxy": null
+        },
+        "dateRange": [
+          "2026-10-30",
+          "2026-11-15"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 25,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Santhia",
@@ -22995,6 +27079,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Santhia",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 30,
+        "lastObservationUsed": "2026-10-28"
+      },
+      {
         "site": "ADM3_Sarail",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -23078,6 +27182,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Sarail",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-11-29"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Sariakandi",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -23156,6 +27280,26 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Sariakandi",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-31"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Sarishabari",
@@ -23262,6 +27406,29 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Sarishabari",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-24",
+          "recent_trend": "2026-11-02",
+          "last_year_proxy": "2026-10-15"
+        },
+        "dateRange": [
+          "2026-10-28",
+          "2026-11-05"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-28"
       },
       {
         "site": "ADM3_Satkania",
@@ -23410,6 +27577,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_SatkhiraSadar",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-08"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-28"
+      },
+      {
         "site": "ADM3_Saturia",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -23520,6 +27707,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Savar",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_Senbagh",
@@ -23732,6 +27939,26 @@
         },
         "observationsAvailable": 29,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Shahjadpur",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": "2026-11-06",
+          "last_year_proxy": "2026-11-20"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 30,
+        "lastObservationUsed": "2026-10-28"
       },
       {
         "site": "ADM3_Shahrasti",
@@ -23958,6 +28185,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Sharsha",
+        "asOf": "2026-10-26",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-25",
+          "recent_trend": null,
+          "last_year_proxy": "2026-09-17"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-26"
+      },
+      {
         "site": "ADM3_SherpurSadar",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -24065,6 +28312,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_ShibChar",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-09-23"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-31"
       },
       {
         "site": "ADM3_Shibalaya",
@@ -24253,6 +28520,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Shibalaya",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-31"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 40,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Shibganj_581700",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -24393,6 +28680,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Shibganj_581700",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 29,
+        "lastObservationUsed": "2026-10-28"
+      },
+      {
         "site": "ADM3_Shyamnagar",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -24474,6 +28781,26 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Shyamnagar",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-07",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_Singair",
@@ -24568,6 +28895,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Singair",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-20",
+          "recent_trend": "2026-10-20",
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 31,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Singra",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -24658,6 +29005,29 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Singra",
+        "asOf": "2026-10-26",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-03",
+          "recent_trend": "2026-11-12",
+          "last_year_proxy": "2026-10-11"
+        },
+        "dateRange": [
+          "2026-10-26",
+          "2026-11-22"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-26"
       },
       {
         "site": "ADM3_SirajganjSadar",
@@ -24760,6 +29130,26 @@
         "lastObservationUsed": "2026-10-16"
       },
       {
+        "site": "ADM3_SirajganjSadar",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-19"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-28"
+      },
+      {
         "site": "ADM3_Sonagazi",
         "asOf": "2026-10-06",
         "sensor": "nisar",
@@ -24801,6 +29191,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Sonagazi",
+        "asOf": "2026-11-02",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-18",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-11-02"
       },
       {
         "site": "ADM3_Sonaimuri",
@@ -24883,6 +29293,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_Sonaimuri",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-08-16"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Sonargaon",
         "asOf": "2026-10-06",
         "sensor": "nisar",
@@ -24924,6 +29354,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Sonargaon",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_Sonatola",
@@ -25141,6 +29591,26 @@
         "lastObservationUsed": "2026-10-21"
       },
       {
+        "site": "ADM3_Sreemangal",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-12"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Sreenagar",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -25222,6 +29692,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Sreenagar",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-15"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-31"
       },
       {
         "site": "ADM3_Subarnachar",
@@ -25390,6 +29880,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Sujanagar",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 30,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Sulla",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -25508,6 +30018,26 @@
         },
         "observationsAvailable": 30,
         "lastObservationUsed": "2026-10-21"
+      },
+      {
+        "site": "ADM3_Sulla",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-12-23"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 31,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_SunamganjSadar",
@@ -25636,6 +30166,26 @@
         "lastObservationUsed": "2026-10-21"
       },
       {
+        "site": "ADM3_SunamganjSadar",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-14"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Sundarganj",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -25725,6 +30275,26 @@
         "lastObservationUsed": "2026-10-16"
       },
       {
+        "site": "ADM3_Sundarganj",
+        "asOf": "2026-11-01",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-23",
+          "recent_trend": "2026-10-21",
+          "last_year_proxy": "2026-10-05"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-11-01"
+      },
+      {
         "site": "ADM3_SylhetSadar",
         "asOf": "2026-10-06",
         "sensor": "nisar",
@@ -25809,6 +30379,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-21"
+      },
+      {
+        "site": "ADM3_SylhetSadar",
+        "asOf": "2026-10-28",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-22"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-28"
       },
       {
         "site": "ADM3_Tahirpur",
@@ -25931,6 +30521,26 @@
         "lastObservationUsed": "2026-10-21"
       },
       {
+        "site": "ADM3_Tahirpur",
+        "asOf": "2026-11-02",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2027-01-04"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-11-02"
+      },
+      {
         "site": "ADM3_Tala",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -26031,6 +30641,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Tala",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-24",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_TangailSadar",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -26120,6 +30750,26 @@
         "lastObservationUsed": "2026-10-16"
       },
       {
+        "site": "ADM3_TangailSadar",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-08",
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-05"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 26,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_Tarail",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -26204,6 +30854,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Tarail",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-11-17"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-30"
       },
       {
         "site": "ADM3_Tarash",
@@ -26358,6 +31028,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Tarash",
+        "asOf": "2026-10-26",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-19",
+          "recent_trend": null,
+          "last_year_proxy": "2026-11-20"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 30,
+        "lastObservationUsed": "2026-10-26"
+      },
+      {
         "site": "ADM3_Tazumuddin",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -26402,6 +31092,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Teknaf",
+        "asOf": "2026-11-04",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-11-04"
       },
       {
         "site": "ADM3_Tentulia",
@@ -26507,6 +31217,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Terokhada",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": "2026-08-30"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 23,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Titas",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -26588,6 +31318,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Titas",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-12",
+          "recent_trend": null,
+          "last_year_proxy": "2026-09-18"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-29"
       },
       {
         "site": "ADM3_Trishal",
@@ -26699,6 +31449,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_TungiPara",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-26",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 30,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Ulipur",
         "asOf": "2026-10-01",
         "sensor": "nisar",
@@ -26777,6 +31547,26 @@
         },
         "observationsAvailable": 20,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Ulipur",
+        "asOf": "2026-11-01",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-22",
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-15"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 21,
+        "lastObservationUsed": "2026-11-01"
       },
       {
         "site": "ADM3_UllahPara",
@@ -26931,6 +31721,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_UllahPara",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-12-03",
+          "recent_trend": null,
+          "last_year_proxy": "2026-10-17"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 30,
+        "lastObservationUsed": "2026-10-29"
+      },
+      {
         "site": "ADM3_UttarKhan",
         "asOf": "2026-10-06",
         "sensor": "nisar",
@@ -26991,6 +31801,26 @@
         "lastObservationUsed": "2026-10-18"
       },
       {
+        "site": "ADM3_UttarKhan",
+        "asOf": "2026-10-31",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-10-31"
+      },
+      {
         "site": "ADM3_Wazirpur",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -27029,6 +31859,26 @@
         },
         "observationsAvailable": 14,
         "lastObservationUsed": "2026-10-16"
+      },
+      {
+        "site": "ADM3_Wazirpur",
+        "asOf": "2026-10-27",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 15,
+        "lastObservationUsed": "2026-10-27"
       },
       {
         "site": "ADM3_Zakiganj",
@@ -27151,6 +32001,26 @@
         "lastObservationUsed": "2026-10-23"
       },
       {
+        "site": "ADM3_Zakiganj",
+        "asOf": "2026-10-30",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-28",
+          "recent_trend": null,
+          "last_year_proxy": "2026-07-20"
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 32,
+        "lastObservationUsed": "2026-10-30"
+      },
+      {
         "site": "ADM3_Zanjira",
         "asOf": "2026-10-04",
         "sensor": "nisar",
@@ -27235,6 +32105,26 @@
         },
         "observationsAvailable": 21,
         "lastObservationUsed": "2026-10-18"
+      },
+      {
+        "site": "ADM3_Zanjira",
+        "asOf": "2026-11-01",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-11-03",
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "dateRange": null,
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 22,
+        "lastObservationUsed": "2026-11-01"
       },
       {
         "site": "ADM3_Zianagar",
@@ -27324,23 +32214,46 @@
         },
         "observationsAvailable": 27,
         "lastObservationUsed": "2026-10-23"
+      },
+      {
+        "site": "ADM3_Zianagar",
+        "asOf": "2026-10-29",
+        "sensor": "nisar",
+        "predictions": {
+          "peak": "2026-10-26",
+          "recent_trend": "2026-10-26",
+          "last_year_proxy": "2026-10-17"
+        },
+        "dateRange": [
+          "2026-10-29",
+          "2026-11-02"
+        ],
+        "targetObservationInterval": null,
+        "rightCensored": true,
+        "intervalErrorDays": {
+          "peak": null,
+          "recent_trend": null,
+          "last_year_proxy": null
+        },
+        "observationsAvailable": 28,
+        "lastObservationUsed": "2026-10-29"
       }
     ],
     "summary": {
       "peak": {
-        "issued": 639,
+        "issued": 740,
         "evaluable": 147,
         "meanAbsoluteIntervalErrorDays": 3.42,
         "medianSignedIntervalErrorDays": 0
       },
       "recent_trend": {
-        "issued": 369,
+        "issued": 411,
         "evaluable": 89,
         "meanAbsoluteIntervalErrorDays": 2.73,
         "medianSignedIntervalErrorDays": 0
       },
       "last_year_proxy": {
-        "issued": 815,
+        "issued": 961,
         "evaluable": 158,
         "meanAbsoluteIntervalErrorDays": 28.55,
         "medianSignedIntervalErrorDays": -11.0
@@ -27352,10 +32265,10 @@
       "recent_trend": 2.88,
       "last_year_proxy": 28.08
     },
-    "rightCensoredCases": 953
+    "rightCensoredCases": 1190
   },
   "inputAndCodeSha256": {
-    "services/api/data/live/water_history.json": "93c730e0447832c30e8db409a1eb27bab102f87d538e51373595ca163756b887",
+    "services/api/data/live/water_history.json": "c9b0d127228dd2a3c1b643e1771ce611913b16cda0a2aa38fb9bc589c93f8c46",
     "research/floods/opera_water_upazila.csv": "5b3320f7f1a11c185ad7b09c82120b19e5f889b2b20263372537b6071af08919",
     "research/sites/adm3_centroids.csv": "a61b1be9845bc05c06db55d44e1cd718906f39634c8ed484e39d82ea98b35f90",
     "research/evaluation/drainage_evaluation.py": "138d127acf1b3c6406f6cbc8337673cd6f2ece9059bea86d15c415c1a88693cf",
