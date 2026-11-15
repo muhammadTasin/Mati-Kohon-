@@ -3,22 +3,22 @@
   "asOf": "2026-11-06",
   "dataRelease": "tanore-2026.09.30",
   "drainageEvaluation": {
-    "historyMade": "2026-10-30T19:36:27+00:00",
+    "historyMade": "2026-11-13T08:46:20+00:00",
     "pilotSummary": {
       "peak": {
-        "issued": 3,
+        "issued": 5,
         "evaluable": 0,
         "meanAbsoluteIntervalErrorDays": null,
         "medianSignedIntervalErrorDays": null
       },
       "recent_trend": {
-        "issued": 2,
+        "issued": 3,
         "evaluable": 0,
         "meanAbsoluteIntervalErrorDays": null,
         "medianSignedIntervalErrorDays": null
       },
       "last_year_proxy": {
-        "issued": 8,
+        "issued": 10,
         "evaluable": 0,
         "meanAbsoluteIntervalErrorDays": null,
         "medianSignedIntervalErrorDays": null
@@ -112,7 +112,7 @@
     "packages/rotation-engine/src/review.ts": "57bf6b1c518dadaf05348f7f78057f9e5a9f1c58b709b864437d395fd54349db",
     "packages/rotation-engine/src/stewardship.ts": "f95f94ab2c1095aa0b2af959ce345934ad3c49605f8c37a57dce68c4fbd17a44",
     "packages/rotation-engine/src/understand.ts": "5df302c6ada25200656714d77a01561a9f49dd9c848b59d7fa8ec8e98e21f6d5",
-    "research/evaluation/drainage_evaluation.json": "1de9a45c364c54f03488382906413c519eb5270992b5e7afb4f696d1189b1524",
+    "research/evaluation/drainage_evaluation.json": "de6afcfdd46adcf23b3d4e32e69bfc4b76d1508c91f40292013ccbbee536ab1c",
     "scripts/evaluate_full_system.ts": "462c106889d916df2a8deffd8140fe6bb2e853bbc1d0d746200cf5110dd40a64"
   },
   "cases": [
