@@ -708,7 +708,7 @@ Team Win+R, Bangladesh:
 
 - **Safin Rahman:** research, resource management, direction
 - **Tasrif Ahmed Mohsin:** UI/UX, full-stack development
-- **Muhammad Tasfiq Tasin** ([muhammadTasin](https://github.com/muhammadTasin)): backend and ML
-- **Mohammed Rayyanul Haque:** backend and ML
+- **Muhammad Tasfiq Tasin** ([muhammadTasin](https://github.com/muhammadTasin)): Project architecture backend ML & app development
+- **Mohammed Rayyanul Haque:** backend and ML 
 - **Tasneem Bin Mahmood:** app development
 - **Jarin Subah:** research, pitch, scalability and narration
