@@ -11,6 +11,11 @@ and are kept here so the advice does not drift back to them.
   3. The Aman record against BBS: district Aman production 2012-13 to 2024-25 (research/bbs/crop_district_panel.csv),
      its departure from each district's own log-linear trend, against the district's cropland greenness departure in
      mid-September to October (the record's window), and which large losses the record also shows.
+  4. "SMAP can say whether the topsoil is wetter or drier than usual before the winter sowing" (research/grid/smap.py).
+     Did not hold: SMAP's record breaks dry from late December 2023, against NASA POWER's rain and MERRA-2's surface
+     wetness at the 64 district centres (research/data/power/daily, the reprocessed archive), and its change from one
+     October to the next barely follows GPM IMERG's rain (research/data/imerg_nrt, the Late run against its own
+     2001-2025 baseline, which also says how dry this October is).
 
 Output: research/pilots/field_grid_checks.json
 Usage : python research/grid/checks.py   (after build.py; EDEN_GRID_DIR as for build.py)
@@ -28,6 +33,7 @@ from scipy import stats
 
 import history
 import ndvi
+import smap
 from _grid import ENGINE_DATA, RESEARCH, load_grid
 
 YEARS = list(range(2001, 2025))
@@ -64,6 +70,111 @@ def aman_cut_day(m_dates, cube) -> np.ndarray:
 
 def norm(s: str) -> str:
     return re.sub(r"[^a-z]", "", str(s).lower())
+
+
+def smap_check(g) -> dict:
+    """Claim 4: SMAP's topsoil as "wetter or drier than usual"."""
+    dates, val = smap.load(g)
+    D = pd.DatetimeIndex(dates)
+    farm = g.crop_km2 >= 20
+    farm[0] = False
+    v = np.nanmean(np.stack([val["am"], val["pm"]]), 0)
+    seasons = {"Dec-Feb": (12, 1, 2), "Jun-Sep": (6, 7, 8, 9), "Oct-Nov": (10, 11)}
+    out: dict = {"days": len(dates), "from": dates[0].isoformat(), "to": dates[-1].isoformat()}
+
+    # the break: each farm upazila's seasons, 2021-22 against 2024-25, and the national monthly means
+    def mean_of(years, months, x=v):
+        return np.nanmean(x[D.year.isin(years) & D.month.isin(months)], 0)
+    brk = {}
+    for s, months in seasons.items():
+        d = (mean_of([2024, 2025], months) - mean_of([2021, 2022], months))[farm]
+        d = d[np.isfinite(d)]
+        brk[s] = {"upazilas": len(d), "medianChange": round(float(np.median(d)), 3), "shareDrier": round(float((d < 0).mean()), 2)}
+    monthly = {}
+    for y in sorted(set(D.year)):
+        sel = [(D.year == y) & (D.month == m) for m in range(1, 13)]
+        monthly[str(y)] = [round(float(np.nanmean(v[s][:, farm])), 3) if s.any() else None for s in sel]
+    out["break"] = {"upazilaChange2021_22to2024_25": brk, "nationalMonthly": monthly}
+
+    # against the rain and MERRA-2's wetness at each district centre (NASA POWER's reprocessed archive)
+    dist = np.array([""] + [norm(p["district"]) for p in g.places])
+    power = {norm(p.stem[5:]): p for p in (RESEARCH / "data" / "power" / "daily").glob("ADM2_*.parquet")}
+    per = []
+    by_district = {}
+    for dn in sorted(set(dist[1:])):
+        us = [u for u in range(1, len(dist)) if dist[u] == dn and farm[u]]
+        if not us:
+            continue
+        w = g.crop_km2[us]
+        x = v[:, us]
+        ok = np.isfinite(x)
+        with np.errstate(all="ignore"):
+            series = np.where(ok.sum(1) >= 1, np.nansum(np.where(ok, x * w, 0), 1) / (ok * w).sum(1), np.nan)
+        by_district[dn] = pd.Series(series, index=D)
+        if dn not in power:
+            continue
+        pw = pd.read_parquet(power[dn])
+        pw.index = pd.to_datetime(pw.index)
+        for s, months in seasons.items():
+            row = {"district": dn, "season": s}
+            for tag, yrs in (("a", (2019, 2020, 2021, 2022, 2023)), ("b", (2024, 2025))):
+                sm = by_district[dn][D.year.isin(yrs) & D.month.isin(months)].dropna()
+                p = pw[pw.index.year.isin(yrs) & pw.index.month.isin(months)]
+                row[f"sm_{tag}"] = sm.mean()
+                row[f"gw_{tag}"] = pw["GWETTOP"].reindex(sm.index).mean()
+                row[f"rain_{tag}"] = p["PRECTOTCORR"].mean()
+            per.append(row)
+    t = pd.DataFrame(per).dropna()
+    vs_power = {}
+    for s, x in t.groupby("season"):
+        d_sm, d_gw, rain = x.sm_b - x.sm_a, x.gw_b - x.gw_a, 100 * x.rain_b / x.rain_a
+        vs_power[s] = {"districts": len(x), "smapChange": round(float(d_sm.median()), 3),
+                       "merra2WetnessChange": round(float(d_gw.median()), 3), "rainPctOf2019_23": round(float(rain.median())),
+                       "smapDrierWhileRainAndMerra2Not": int(((d_sm < -0.02) & (rain >= 90) & (d_gw >= 0)).sum())}
+    out["againstPower"] = vs_power
+
+    # does SMAP's change from one October to the next follow the rain? (GPM IMERG Late, district centres)
+    im_dir = RESEARCH / "data" / "imerg_nrt"
+    if (im_dir / "imerg_daily_sites.parquet").exists() and (im_dir / "imerg_late_baseline_sites.parquet").exists():
+        late = pd.concat([pd.read_parquet(im_dir / "imerg_late_baseline_sites.parquet"),
+                          pd.read_parquet(im_dir / "imerg_daily_sites.parquet")[["site_id", "date", "precip_mm"]]])
+        late["date"] = pd.to_datetime(late["date"])
+        late = late.drop_duplicates(["site_id", "date"], keep="last")
+        end = pd.Timestamp(dates[-1])
+        def rain(site, y):
+            e = end.replace(year=y)
+            r = late[(late.site_id == site) & (late.date > e - pd.Timedelta(days=30)) & (late.date <= e)]
+            return r.precip_mm.sum() if len(r) >= 28 else np.nan
+        sites = {norm(s[5:]): s for s in late.site_id.unique() if s.startswith("ADM2_")}
+        pairs, dry = [], []
+        for dn, series in by_district.items():
+            if dn not in sites:
+                continue
+            def sm(y):
+                e = end.replace(year=y)
+                x = series[(series.index > e - pd.Timedelta(days=30)) & (series.index <= e)].dropna()
+                return x.mean() if len(x) >= smap.MIN_PASSES else np.nan
+            pairs.append((sm(end.year) - sm(end.year - 1), rain(sites[dn], end.year) - rain(sites[dn], end.year - 1)))
+        for dn, site in sites.items():
+            past = np.array([rain(site, y) for y in range(2001, end.year)])
+            now = rain(site, end.year)
+            if np.isfinite(now) and np.isfinite(past).sum() >= 20:
+                dry.append((dn, now, np.nanmedian(past), int((past < now).sum()), int(np.isfinite(past).sum())))
+        p = np.array([x for x in pairs if np.all(np.isfinite(x))])
+        rho = stats.spearmanr(p[:, 0], p[:, 1])
+        out["followsRain"] = {"window": f"30 days to {end.date()}, {end.year} against {end.year - 1}", "districts": len(p),
+                              "spearman": round(float(rho.correlation), 2), "p": round(float(rho.pvalue), 3),
+                              "medianRainChangeMm": round(float(np.median(p[:, 1]))),
+                              "medianSmapChange": round(float(np.median(p[:, 0])), 3)}
+        dd = pd.DataFrame(dry, columns=["district", "mm", "medianMm", "yearsLower", "years"])
+        out["rainThisOctober"] = {
+            "window": f"30 days to {end.date()}", "source": "GPM IMERG Late, against the Late run's own 2001-2025",
+            "districts": len(dd), "lowestOfAllYears": int((dd.yearsLower == 0).sum()),
+            "medianPctOfMedian": round(float((100 * dd.mm / dd.medianMm).median())),
+            "wettest": dd.assign(pct=(100 * dd.mm / dd.medianMm).round()).nlargest(5, "pct")[["district", "pct"]].values.tolist()}
+    out["verdict"] = ("SMAP L3 is not used for 'wetter or drier than usual': its record breaks dry from late December 2023, "
+                      "and its year-to-year change barely follows the rain over Bangladesh's cropland")
+    return out
 
 
 def main() -> None:
@@ -168,6 +279,9 @@ def main() -> None:
         "widespread": rec["widespread"],
         "verdict": "the record shows long, severe losses (Aila, the 2020 and 2024 floods) but BBS district figures "
                    "are too noisy to calibrate it"}
+
+    # 4. SMAP's topsoil as "wetter or drier than usual"
+    out["smapCheck"] = smap_check(g)
     OUT.write_text(json.dumps(out, indent=1) + "\n", encoding="utf-8")
     print(json.dumps({k: {kk: vv for kk, vv in v.items() if kk not in ("largeLosses",)} if isinstance(v, dict) else v
                       for k, v in out.items()}, indent=1))
